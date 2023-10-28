@@ -1,0 +1,362 @@
+﻿body {
+    padding-top: 60px;
+    padding-bottom: 20px;
+}
+
+/* Set padding to keep content from hitting the edges */
+.body-content {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Override the default bootstrap behavior where horizontal description lists 
+   will truncate terms that are too long to fit in the left column 
+*/
+.dl-horizontal dt {
+    white-space: normal;
+}
+
+/* Set width on the form input elements since they're 100% wide by default */
+input,
+select,
+textarea {
+    max-width: 280px;
+}
+
+select {
+    font-size:12px;
+}
+
+select {
+    font-size: 12px !important;
+    padding: 3px !important;
+    height: 26px !important;
+}
+
+.form-control {
+    font-size: 12px !important;
+    padding: 3px !important;
+    height: 26px !important;
+}
+
+.panel-heading {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+    font-size: 13px !important;
+    font-weight: bold !important;
+}
+
+form label {
+    font-size: 11px;
+    margin-top: 8px;
+    line-height: 12px;
+}
+
+table td,
+table th {
+    padding: 5px !important;
+}
+
+.panel {
+    padding: 0px !important;
+    padding-bottom: 15px !important;
+}
+
+.panel-body {
+    padding-top: 0px !important;
+    padding-bottom:0px !important;
+}
+
+.panel-group {
+    padding:0px !important;
+}
+
+.panel-default .panel-heading {
+    background-color: #bde9ff !important;
+}
+
+.navbar-default {
+    background-color: #1679c3;
+    border-color: #0055dd;
+}
+
+    .navbar-default .navbar-brand {
+        color: #ecf0f1;
+    }
+
+        .navbar-default .navbar-brand:hover,
+        .navbar-default .navbar-brand:focus {
+            color: #dbf3ff;
+        }
+
+    .navbar-default .navbar-text {
+        color: #ecf0f1;
+    }
+
+    .navbar-default .navbar-nav > li > a {
+        color: #ecf0f1;
+    }
+
+        .navbar-default .navbar-nav > li > a:hover,
+        .navbar-default .navbar-nav > li > a:focus {
+            color: #dbf3ff;
+        }
+
+    .navbar-default .navbar-nav > li > .dropdown-menu {
+        background-color: #1679c3;
+    }
+
+        .navbar-default .navbar-nav > li > .dropdown-menu > li > a {
+            color: #ecf0f1;
+        }
+
+            .navbar-default .navbar-nav > li > .dropdown-menu > li > a:hover,
+            .navbar-default .navbar-nav > li > .dropdown-menu > li > a:focus {
+                color: #dbf3ff;
+                background-color: #0055dd;
+            }
+
+        .navbar-default .navbar-nav > li > .dropdown-menu > li.divider {
+            background-color: #0055dd;
+        }
+
+    .navbar-default .navbar-nav .open .dropdown-menu > .active > a,
+    .navbar-default .navbar-nav .open .dropdown-menu > .active > a:hover,
+    .navbar-default .navbar-nav .open .dropdown-menu > .active > a:focus {
+        color: #dbf3ff;
+        background-color: #0055dd;
+    }
+
+    .navbar-default .navbar-nav > .active > a,
+    .navbar-default .navbar-nav > .active > a:hover,
+    .navbar-default .navbar-nav > .active > a:focus {
+        color: #dbf3ff;
+        background-color: #0055dd;
+    }
+
+    .navbar-default .navbar-nav > .open > a,
+    .navbar-default .navbar-nav > .open > a:hover,
+    .navbar-default .navbar-nav > .open > a:focus {
+        color: #dbf3ff;
+        background-color: #0055dd;
+    }
+
+    .navbar-default .navbar-toggle {
+        border-color: #0055dd;
+    }
+
+        .navbar-default .navbar-toggle:hover,
+        .navbar-default .navbar-toggle:focus {
+            background-color: #0055dd;
+        }
+
+        .navbar-default .navbar-toggle .icon-bar {
+            background-color: #ecf0f1;
+        }
+
+    .navbar-default .navbar-collapse,
+    .navbar-default .navbar-form {
+        border-color: #ecf0f1;
+    }
+
+    .navbar-default .navbar-link {
+        color: #ecf0f1;
+    }
+
+        .navbar-default .navbar-link:hover {
+            color: #dbf3ff;
+        }
+
+@media (max-width: 767px) {
+    .navbar-default .navbar-nav .open .dropdown-menu > li > a {
+        color: #ecf0f1;
+    }
+
+        .navbar-default .navbar-nav .open .dropdown-menu > li > a:hover,
+        .navbar-default .navbar-nav .open .dropdown-menu > li > a:focus {
+            color: #dbf3ff;
+        }
+
+    .navbar-default .navbar-nav .open .dropdown-menu > .active > a,
+    .navbar-default .navbar-nav .open .dropdown-menu > .active > a:hover,
+    .navbar-default .navbar-nav .open .dropdown-menu > .active > a:focus {
+        color: #dbf3ff;
+        background-color: #0055dd;
+    }
+}
+
+.navbar-default a {
+    padding-top: 10px!important;
+    padding-bottom: 10px!important;
+}
+
+
+
+
+
+/* Da ne bježi ovo cancel dugme ulijevo */
+.k-grid .k-i-cancel {
+    left: 2px !important;
+}
+
+/* css za edit dugme */
+.k-button.k-button-icontext.k-grid-edit {
+    min-width: 0px !important;
+    min-height: 0px !important;
+    width: 30px !important;
+    height: 25px !important;
+    margin: 0px !important;
+    padding: 0px !important;
+}
+
+.k-button.k-button-icontext.k-grid-update {
+    min-width: 0px !important;
+    min-height: 0px !important;
+    width: 30px !important;
+    height: 25px !important;
+    margin: 0px !important;
+    padding: 0px !important;
+}
+
+/* css za delete dugme */
+.k-button.k-button-icontext.k-grid-delete {
+    min-width: 0px !important;
+    min-height: 0px !important;
+    width: 30px !important;
+    height: 25px !important;
+    margin: 0px !important;
+    padding: 0px !important;
+    margin-left: 4px !important;
+}
+
+.k-button.k-button-icontext.k-grid-cancel {
+    min-width: 0px !important;
+    min-height: 0px !important;
+    width: 30px !important;
+    height: 25px !important;
+    margin: 0px !important;
+    padding: 0px !important;
+}
+
+/*css za širinu popup edit prozora*/
+div.k-edit-form-container {
+    width: auto;
+    width: 500px;
+}
+
+.k-dropdown {
+}
+
+.k-list-container {
+    min-width: 200px !important;
+}
+
+.k-grid td {
+    /*max-width: 100px;*/
+    /*display:inline;*/
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.k-filter-menu > div, /* wrapper element */
+.k-filter-menu .k-input, /* dropdownlists */
+.k-filter-menu button /* filter and clear button */ {
+    font-size: 12px !important;
+}
+
+ul.k-group.k-menu-group.k-popup {
+    font-size: 12px !important;
+}
+
+    ul.k-group.k-menu-group.k-popup input[type=checkbox] {
+        top: 2px !important;
+        position: relative !important;
+        margin-right: 3px !important;
+    }
+
+.k-loading-mask,
+.k-loading-image,
+.k-loading-color {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+}
+
+.k-loading-image {
+    z-index: 2 !important;
+    background-image: none !important;
+}
+
+.k-i-loading {
+    z-index: 2 !important;
+    background-image: none !important;
+}
+
+    .k-i-loading::before, .k-loading-image::before,
+    .k-i-loading::after,
+    .k-loading-image::after {
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        display: inline-block !important;
+        content: "" !important;
+        box-sizing: inherit !important;
+        border-radius: 50% !important;
+        border-width: .05em !important;
+        border-style: solid !important;
+        border-color: currentColor !important;
+        border-top-color: transparent !important;
+        border-bottom-color: transparent !important;
+        background-color: transparent !important;
+    }
+
+.k-icon.k-i-loading::before, .k-icon.k-loading-image::before,
+.k-icon.k-i-loading::after,
+.k-icon.k-loading-image::after {
+    content: "" !important;
+}
+
+.k-i-loading::before, .k-loading-image::before {
+    margin-top: -.5em !important;
+    margin-left: -.5em !important;
+    width: 1em !important;
+    height: 1em !important;
+    animation: k-loading-animation .7s linear infinite !important;
+}
+
+.k-i-loading::after, .k-loading-image::after {
+    margin-top: -.25em !important;
+    margin-left: -.25em !important;
+    width: .5em !important;
+    height: .5em !important;
+    animation: k-loading-animation reverse 1.4s linear infinite !important;
+}
+
+.k-loading-image::before,
+.k-loading-image::after {
+    border-width: .015em !important;
+    font-size: 4em !important;
+}
+
+@keyframes k-loading-animation {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.k-popup-edit-form.k-window-content.k-content {
+    padding-top: 7px !important;
+    padding-bottom: 12px !important;
+    overflow-y: hidden !important;
+}
+
+.k-multiselect .k-button {
+    width: calc(100% - 35px) !important;
+}

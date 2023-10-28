@@ -1,0 +1,29 @@
+﻿@{ 
+    var errors = ViewBag.Errors as Dictionary<string, List<string>>;
+}
+
+
+<script type="text/javascript">
+
+</script>
+
+<div>
+
+    <h4 style="text-align:center; position:sticky; top:0px;">@ViewBag.Desc</h4>
+    
+    <div style="margin-top:25px; padding:25px; padding-top:top;">
+        @foreach (var p in errors)
+        {
+            <div>
+                @p.Key
+                <ul style="margin-top:2px; margin-bottom:20px;">
+                    @foreach (var e in p.Value)
+                    {
+                        <li>@e</li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+    
+</div>

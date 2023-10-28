@@ -1,0 +1,53 @@
+﻿@section Scripts {
+
+
+	<script type="text/javascript">
+		function UploadFile(e) {
+			e.preventDefault();
+			var form = $('#certForm')[0];
+			var formData = new FormData(form);
+
+			$.each($("input[type='file']")[0].files, function (i, file) {
+				formData.append('certFile', file);
+			});
+
+			formData.append('certPassword', $('#certPassword').val());
+			formData.append('certType', $('#certType').val());
+			formData.append('legalEntity', $('#legalEntity').val());
+
+			$.ajax({
+				url: '/upload-cert',
+				type: 'POST',
+				data: formData,
+				contentType: false,
+				processData: false,
+				success: function (data) {
+
+				},
+				error: function () {
+
+				}
+			});
+		}
+	</script>
+}
+
+
+<form onsubmit="UploadFile(event)" method="POST" action="/upload-cert" name="certForm">
+	<div class="row justify-content-center">
+		<div class="col-12 mb-3">
+			<label class="form-label" for="certFile">Select file to upload</label>
+			<input type="file" class="form-control" id="certFile" name="certFile">
+		</div>
+		<div class="col-12 mb-3">
+			<label class="form-label" for="certPassword">Enter password</label>
+			<input type="text" class="form-control" id="certPassword" name="certPassword">
+		</div>
+		<input type="hidden" id="certType" value="@ViewBag.Type" />
+		<input type="hidden" id="legalEntity" value="@ViewBag.LegalEntity" />
+		<div class="col-3 mb-3 mt-3">
+			<button type="submit" class="btn btn-outline-theme w-100">Create request</button>
+		</div>
+	</div>
+</form>
+

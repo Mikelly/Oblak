@@ -1,0 +1,40 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@(
+Html.Kendo().Grid<UserViewModel>()
+    .Name("userGrid")
+    .Columns(columns =>
+    {
+        columns.Bound(p => p.Id).Filterable(false).Width(10);
+        columns.Bound(p => p.LegalEntity).Width(200);
+        columns.Bound(p => p.UserName).Width(100);
+        columns.Bound(p => p.Email).Width(150);
+        columns.Bound(p => p.PhoneNumber).Width(150);
+        columns.Bound(p => p.UserCreatedDate).Format("{0:MM/dd/yyyy}").Width(140);
+        columns.Bound(p => p.UserCreated).Width(140);
+    })
+    .Pageable(p => p.Refresh(true))
+    .Sortable()
+    .Selectable()
+    .Scrollable()
+    .Filterable()
+    .HtmlAttributes(new { style = "height:100%;" })
+    .DataSource(ds => ds
+        .Ajax()
+        .PageSize(20)
+        .Model(m =>
+            {
+                m.Id(a => a.Id);
+                m.Field(a => a.Id);
+                m.Field(a => a.UserName);
+                m.Field(a => a.Email);
+                m.Field(a => a.PhoneNumber);
+                m.Field(a => a.UserCreatedDate);
+                m.Field(a => a.UserCreated);
+                m.Field(a => a.EfiOperator);
+            })
+        .Read(read => read.Action("Read", "User"))
+     )
+)

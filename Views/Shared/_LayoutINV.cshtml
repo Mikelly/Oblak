@@ -1,0 +1,597 @@
+﻿@{ 
+    var a = "reg";
+    var c = "";
+    var d = "block";
+    if (a == "reg" && c == "inv") {
+        d = "none";
+    }
+
+    bool fiscAdmin = true;
+    bool fiscPartner = true;
+    bool rbAdmin = true;
+    bool Administrator = true;
+    bool admin = fiscAdmin || Administrator || fiscPartner;
+
+    var adm = "none";
+    if (admin)
+    {
+        adm = "block";
+    }
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewBag.Title</title>
+
+    <link href="@Url.Content("~/Content/menu.css")" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.kendostatic.com/2021.3.1207/styles/kendo.common-bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.kendostatic.com/2021.3.1207/styles/kendo.bootstrap-main.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.kendostatic.com/2021.3.1207/js/jquery.min.js"></script>
+    <script src="https://cdn.kendostatic.com/2021.3.1207/js/jszip.min.js"></script>
+    <script src="https://cdn.kendostatic.com/2021.3.1207/js/kendo.all.min.js"></script>
+    <script src="https://cdn.kendostatic.com/2021.3.1207/js/kendo.aspnetmvc.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+
+
+    <script src="@Url.Content("~/Scripts/kendo.culture.sr-Latn-ME.min.js")"></script>
+    <script src="@Url.Content("~/Scripts/kendo.messages.sr-Latn-ME.min.js")"></script>
+
+    <link href="@Url.Content("~/Content/SiteSAP.css")" rel="stylesheet" type="text/css" />
+
+
+    @*<link href="@Url.Content("~/Content/nav.less")" rel="stylesheet/less" type="text/css" />*@
+    <link href="@Url.Content("~/Content/menu.css")" rel="stylesheet/less" type="text/css" />
+    @*<script src="//cdn.jsdelivr.net/npm/less"></script>*@
+
+    <link href="https://fonts.googleapis.com/css?family=Asap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Dosis&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Catamaran" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Mada" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Rubik&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lexend+Exa&display=swap" rel="stylesheet">
+
+    <script type="text/kendo-template" id="kendo_error_message">
+        <div class="k-widget k-tooltip k-tooltip-validation field-validation-error" onclick="$(this).hide()" style="margin: 0.5em; display:block; cursor:pointer;" data-for="#=field#" data-valmsg-for="#=field#" id="#=field#_validationMessage">
+            <span style="top:-1px!important" class="k-icon k-i-warning"></span>#=message#<div class="k-callout k-callout-n"></div>
+        </div>
+    </script>
+
+    <script type="text/kendo-template" id="kendo_error_message_form">
+        <div class="k-widget k-tooltip k-tooltip-validation field-validation-error" onclick="$(this).hide()" style="margin: 0.5em; display:block; white-space: nowrap; max-width:400px; cursor:pointer; position:sticky;" data-for="#=field#" data-valmsg-for="#=field#" id="#=field#_validationMessage">
+            <span style="top:0px!important; padding-top:1px" class="k-icon k-i-warning"></span>#=message#<div class="k-callout k-callout-w"></div>
+        </div>
+    </script>
+
+    <script type="text/javascript">
+        kendo.culture("sr-Latn-ME");
+    </script>
+
+    <style>
+        .swal2-container {
+            z-index: 1000000000!important;
+        }
+
+        #wndStatus {
+            overflow:hidden!important;
+        }
+
+    </style>
+</head>
+<body>
+    <ul id="menucool" style="display:@d">
+        <li class="li-home">
+            <img onclick="window.location='/inv/dash'" style='width:36px;height:36px;position:relative;top:3px;left:3px;right:0px;cursor:pointer;margin-right:20px; margin-left:20px;' src='/Content/Icons/home_page_black.png' />
+        </li>
+        <li>
+            <a style="position:relative; top:0px;" href="#0"><img style="position:relative; top:4px; width:22px; height:22px;" src="~/Content/Icons/invoice_white.png"><span style="position:relative;top:-1px;margin-left:3px;">E-Fakture</span></a>
+            <ul>
+                <li><a onclick="newdoc('r','')" href="#">Nova faktura</a></li>
+                <li><a onclick="newdoc('f','')" href="#">Nova faktura usluga</a></li>
+                <li><a onclick="newdoc('c','')" href="#">Novo knjižno odobrenje</a></li>
+                <li><a href="/inv/l/f">Lista faktura</a></li>
+                <li><a onclick="newdoc('r','p')" href="#">Nova profaktura</a></li>
+                <li><a onclick="newdoc('f','p')" href="#">Nova profaktura usluga</a></li>
+                <li><a href="/inv/l/p">Lista profaktura</a></li>
+                <li><a href="#" onclick="reports2()">Izvještaji</a></li>
+            </ul>
+        </li>
+        <li>
+            <a style="position:relative; top:0px;" href="#0"><img style="position:relative; top:2px; width:24px; height:24px;" src="~/Content/Icons/cash_register_white.png"><span style="position:relative;top:-3px;margin-left:3px;">E-KASA</span></a>
+            <ul>
+                <li><a href="/pos/pos">Novi račun</a></li>
+                <li><a href="#" onclick="status()">Pregled prometa</a></li>
+                <li><a href="/pos/pos?vrsta=p">Novi predračun</a></li>
+                <li><a href="/pos/listv">Pregled računa<br />i predračuna</a></li>
+                <li><a href="/inv/pzr">Dnevni pazari</a></li>
+                <li><a href="/inv/tk?v=m">Trgovačka knjiga</a></li>
+                <li><a href="#" onclick="reports()">Izvještaji</a></li>
+            </ul>
+        </li>
+        <li>
+            <a style="position:relative; top:0px;" href="#0"><img style="position:relative; top:2px; width:24px; height:24px;" src="~/Content/Icons/box_white.png"><span style="position:relative;top:-3px;margin-left:3px;">MAGACIN</span></a>
+            <ul style="width:150px;">
+                <li style="width:150px;"><a href="/inv/ml?tr=in">Ulazi robe</a></li>
+                <li style="width:150px;"><a href="/inv/ml?tr=out">Izlazi robe</a></li>
+                <li style="width:150px;"><a href="/inv/ml?tr=level">Nivelacije</a></li>
+                <li style="width:150px;"><a href="/inv/ml?tr=invnt">Popisi</a></li>
+                <li style="width:150px;"><a href="/inv/stck">Stanje zaliha</a></li>
+            </ul>
+        </li>
+        @if (rbAdmin)
+        {
+            <li>
+                <a style="position:relative; top:0px;" href="#0"><img style="position:relative; top:2px; width:24px; height:24px; opacity:0.85" src="~/Content/Icons/occupied_bed_white.png"><span style="position:relative;top:-3px;margin-left:3px;">PRIJAVA GOSTIJU</span></a>
+                <ul>
+                    <li><a href="/rbobj/rbobj">Smještajni objekti</a></li>
+                    <li><a href="/prijava/prijava">Individualne prijave</a></li>
+                    <li><a href="/rbgrp/rbgrp">Grupne prijave</a></li>
+                    <li><a href="/rbrzrv/sch">Rezervacije</a></li>
+                </ul>
+            </li>
+        }
+        <li>
+            <a style="position:relative; top:0px;" href="#0"><img style="position:relative; top:3px; width:22px; height:22px;" src="~/Content/Icons/settings_white.png"><span style="position:relative;top:-1px;margin-left:3px;">Podešavanja</span></a>
+            <ul>
+                <li><a href="/invs/item">Lista artikala</a></li>
+                <li><a href="/invs/prtn">Lista partnera</a></li>
+                @if (admin)
+                {
+                    <li><a href="/invs/set">Sistemska<br />podešavanja</a></li>
+                    <li><a href="/invs/rset">Podešavanje<br />štampe</a></li>
+                    <li><a href="/invs/exp">Export<br />podataka</a></li>
+                    if (fiscPartner || Administrator)
+                    {
+                        <li><a href="/invs/frm">Lista firmi<br />podataka</a></li>
+                    }
+                }
+            </ul>
+        </li>
+        <li>
+            <a style="position:relative; top:0px;" href="#0"><img style="position:relative; top:3px; width:22px; height:22px;" src="~/Content/Icons/extras_white.png"><span style="position:relative;top:-1px;margin-left:3px;">EXTRAS</span></a>
+            <ul>
+                <li><a href="/kredit/calculator">Kreditni kalkulator</a></li>
+                <li><a href="/inv/pyrll">Obračun zarade</a></li>
+            </ul>
+        </li>
+
+        @if (User.Identity.IsAuthenticated == true)
+        {
+            <li style="float:right;" class="li-acc">
+                <img onclick="window.location='/inv/prfl'" style='width:36px;height:36px;position:relative;top:3px;left:-3px;right:10px;cursor:pointer;margin-left:15px;margin-right:20px;' src='/Content/Icons/account_settings_black.png' />
+            </li>
+            <li style="float:right; position:relative; top:0px; font-family: 'Lexend Exa', sans-serif; color:#c5c3c3; margin-right:10px;">
+                <input id="DashInput" type="text" style="border-radius:4px; display:inline-block; margin-top:8px; margin-left:10px; margin-right:15px; width:200px; background-position: right center; background-image:url('/Content/searchBox.png'); background-repeat:no-repeat; padding-right:25px;" onclick="ToggleDash()" onchange="GetDocs()" autocomplete="off">
+                <span style="display:inline-block;">Dobrodošli </span><span style="margin-left:5px; margin-right:5px;"><b>@User.Identity.Name!</b></span>[<span onclick="window.location='/account/logoff'" onmouseout="this.style.textDecoration='none'" onmouseover="this.style.textDecoration='underline'" style="cursor:pointer;">odjava</span>]
+            </li>
+        }
+        else
+        {
+            <li style="float:right; position:relative; top:20px; font-family: 'Lexend Exa', sans-serif; color:#c5c3c3; margin-right:10px;">
+                [<span onclick="window.location='/inv/login'" onmouseout="this.style.textDecoration='none'" onmouseover="this.style.textDecoration='underline'" style="cursor:pointer;">prijava</span>]
+            </li>
+        }
+    </ul>
+    <div class="grid-wrapper" id="body">
+        @RenderBody()
+    </div>
+
+    @(Html.Kendo().Dialog()
+        .Name("mydialog")
+        .Title("Title")
+        .Content("<p>Content<p>")
+        .Width(400).ButtonLayout("normal")
+        .Modal(true).Visible(false)
+        .Actions(actions => { actions.Add().Text("OK").Primary(true).Action("function(){ $('#mydialog').data('kendoDialog').close(); }"); })
+    )
+
+    @Html.Kendo().Window().Name("wndStatus").Title("Pregled prometa").Visible(false).Modal(true).Draggable(true).Width(900).Height(700).HtmlAttributes(new { style = "padding:10px; padding-right:0px; overflow:hidden!important;" })
+
+    @Html.Kendo().Window().Name("wndDiscount").Title("Popust").Visible(false).Modal(true).Draggable(true).Width(228).Height(320).HtmlAttributes(new { style = "padding:10px; padding-right:0px;" })
+
+    @Html.Kendo().Window().Name("wndDeposit").Title("Unos depozita").Visible(false).Modal(true).Draggable(true).Width(228).Height(320).HtmlAttributes(new { style = "padding:10px; padding-right:0px;" })
+</body>
+</html>
+
+<script type="text/javascript">
+
+    //$('#Meni').last('li').removeClass('k-last');
+    //$('#Meni').append('</li style="float:left;" class="k-item k-state-default k-last"><input id="DashInput" type="text" style="float:right; margin-top:7px; margin-left:10px; width:200px; background-position: right center; background-image:url(\'/Content/searchBox.png\'); background-repeat:no-repeat; padding-right:25px;" onclick="ToggleDash()" onchange="GetDocs()" autocomplete="off"></li>')
+    //$('#menucool').append('<div style="float:right; margin-top:5px; margin-right:5px; margin-left:15px;">Dobrodošli <span id="LoggedUser"><strong>milos</strong></span>! [ <a href="/Account/LogOff">Odjava</a> ]</div>');
+    //$('#menucool').append('<input id="DashInput" type="text" style="float:right; margin-top:7px; margin-left:10px; width:200px; background-position: right center; background-image:url(\'/Content/searchBox.png\'); background-repeat:no-repeat; padding-right:25px;" onclick="ToggleDash()" onchange="GetDocs()" autocomplete="off">')
+
+    function ul() {
+        var v = document.getElementById("latefisc").value;
+        var p = document.getElementById("paragonNo").value;
+        if (v != "") {
+            if (v == "PARAGON" && p != "") $('#swal2-validation-message').hide();
+            if (v != "PARAGON") $('#swal2-validation-message').hide();
+        }
+
+        if (v == "PARAGON") {
+            document.getElementById("PW").style.display = 'block';
+        }
+        else {
+            document.getElementById("PW").style.display = 'none';
+        }
+    }
+
+    function up() {
+        var v = document.getElementById("latefisc").value;
+        var p = document.getElementById("paragonNo").value;
+        if (v != "" && p != "") $('#swal2-validation-message').hide();
+    }
+
+    function reports() {
+        $.ajax({
+            url: '@Url.Content("~/inv/reports/")',
+            success: function (data) {
+                var dialog = $('#wndStatus').data('kendoWindow');
+                dialog.setOptions({ width: 400, height: 400 });
+                dialog.title('Izvještaji');
+                dialog.content(data);
+                dialog.center();
+                dialog.open();
+            }
+        });
+    }
+
+    function reports2() {
+        $.ajax({
+            url: '@Url.Content("~/inv/reports2/")',
+            success: function (data) {
+                var dialog = $('#wndStatus').data('kendoWindow');
+                dialog.setOptions({ width: 400, height: 460 });
+                dialog.title('Izvještaji');
+                dialog.content(data);
+                dialog.center();
+                dialog.open();
+            }
+        });
+    }
+
+
+    function xReport() {
+        kendo.ui.progress($(body), true);
+        $.ajax({
+            url: '@Url.Content("~/pos/posreport")' + '?what=X',
+            complete: function (data) { kendo.ui.progress($(body), false); },
+            success: function (data) {
+                try {
+                    debugger;
+                    try {
+                        $.ajax({
+                            url: 'http://localhost:8080?type=report&report=x',
+                            type: 'POST',
+                            data: JSON.stringify(data),
+                            success: function (data1) {
+                                debugger;
+                            },
+                            error: function (data1) {
+                                debugger;
+                            },
+                            complete: function (data1) { }
+                        });
+                    }
+                    catch { debugger; }
+                }
+                catch { }
+            }
+        });
+    }
+
+
+    function zReport() {
+
+        kendo.ui.progress($(body), true);
+
+        $.ajax({
+            url: '@Url.Content("~/pos/posreport")' + '?what=Z',
+            complete: function (data) {
+                kendo.ui.progress($(body), false);
+            },
+            success: function (data) {
+                try {
+                    inv = data;
+                    try {
+                        $.ajax({
+                            url: 'http://localhost:8080?type=report&report=z',
+                            type: 'POST',
+                            data: JSON.stringify(data),
+                            success: function (data1) {
+                                debugger;
+                            },
+                            error: function (data1) {
+                                debugger;
+                            }
+                        });
+                    }
+                    catch{ debugger; }
+                }
+                catch { }
+            }
+        });
+    }
+
+    function status() {
+        $.ajax({
+            url: '@Url.Content("~/pos/statuswrap/")',
+            success: function (data) {
+                var dialog = $('#wndStatus').data('kendoWindow');
+                dialog.setOptions({ width: 900, height: 600 });
+                dialog.title('Pregled prometa');
+                dialog.content(data);
+                dialog.center();
+                dialog.open();
+            }
+        });
+    }
+
+    function deposit() {
+        $.ajax({
+            url: '@Url.Content("~/pos/deposit?type=i")',
+            success: function (data) {
+                try {
+                    if ('info' in data && data.info != "") {
+                        Swal.fire({ icon: 'info', title: data.info, confirmButtonText: `U redu` });
+                    }
+                }
+                catch
+                {
+                    $('#wndDeposit').data('kendoWindow').content(data).title('Unos depozita');
+                    $('#wndDeposit').data('kendoWindow').center();
+                    $('#wndDeposit').data('kendoWindow').open();
+                }
+            }
+        });
+    }
+
+    function withdraw() {
+        $.ajax({
+            url: '@Url.Content("~/pos/deposit?type=w")',
+            success: function (data) {
+                $('#wndDeposit').data('kendoWindow').content(data).title('Podizanje gotovine');
+                $('#wndDeposit').data('kendoWindow').center();
+                $('#wndDeposit').data('kendoWindow').open();
+            }
+        });
+    }
+
+    function newdoc(what, p) {
+        var s = 'h=1024&w=768';
+        window.location = '/inv/' + what + '?p=' + p + '&s=' + btoa(s);
+    }
+
+    function resizeGrid() {
+        gridElement.data("kendoGrid").resize();
+    }
+
+    $(window).resize(function () {
+        $('.k-grid').each(function () {
+            $(this).data('kendoGrid').resize();
+            calcKendoGridPageSize(true);
+        });
+    });
+
+
+    function calcKendoGridPageSize(force) {
+        $('.k-grid').each(function (a, b) {
+            var grid = $(this).data('kendoGrid');
+            grid = $(b).data('kendoGrid');
+            debugger;
+            if ((force != undefined && force == true) || (typeof grid.calcPageSize === 'undefined' && grid.options.pageable != false)) {
+                var dom = grid.element;
+                var dataSource = grid.dataSource;
+                var h = $(dom).find('.k-grid-content').height();
+                if (grid.options.editable == false)
+                    dataSource.pageSize(Math.floor(h / 28));
+                else
+                    dataSource.pageSize(Math.floor(h / 31));
+                grid.pager.refresh();
+                dataSource.read();
+                grid.calcPageSize = 'Y';
+            }
+        });
+    }
+
+    $(document).ready(function () {
+        debugger;
+        calcKendoGridPageSize();
+    });
+
+    $(document).ajaxComplete(function (event, xhr, settings) {
+        if (xhr.status == 403) {
+            $.blockUI({ title: 'Obavještenje', message: '<h3>Nemate prava da izvršite ovu akciju.</h3>', timeout: 1500 });
+        }
+        $('input').attr('autocomplete', 'off');
+        idleTime = 0;
+    });
+
+    function formError(args) {
+        if (args.Errors) {
+
+            var gridElement = $('#gedit');
+            validationMessageTemplate = kendo.template($("#kendo_error_message_form").html());
+
+            map = new Object();
+
+            if (args.Errors.MODEL) {
+                $('#mydialog').data('kendoDialog').title('Info').content(args.errors.MODEL.errors).open();
+            }
+
+            var top = $(gridElement).offset().top;
+            var bot = top + $(gridElement).height();
+
+            $.each(args.Errors, function (key, value) {
+                debugger;
+                if (value.errors) {
+                    gridElement.find("[data-valmsg-for=" + key + "],[data-val-msg-for=" + key + "]")
+                        .replaceWith(validationMessageTemplate({ field: key, message: value.errors[0] }));
+                    gridElement.find("input[name=" + key + "]").focus();
+                    if ($(gridElement).hasClass('k-grid-edit-row') == false) {
+                        var i = $('#' + key);
+                        var wdgt = i.parentsUntil(gridElement, '.k-widget');
+                        if (wdgt.length == 1) i = wdgt;
+                        var pos = i.offset();
+                        var pad = Number.parseInt(i.css('padding-left'));
+                        var tt = gridElement.find('#' + key + '_validationMessage');
+                        tt.css('position', 'fixed');
+                        pos.left = pos.left + 12 + i.width() + pad;
+                        pos.top = pos.top + i.outerHeight() / 2 - tt.outerHeight() / 2;
+                        tt.offset(pos);
+                        setTimeout(
+                            function () {
+                                pos.top = pos.top + i.outerHeight() / 2 - tt.outerHeight() / 2;
+                                tt.offset(pos);
+                                if (pos.top > bot) $(tt).replaceWith('<div data-forr=' + key + '><div>');
+                            }, 0);
+                        map[key] = tt;
+                    }
+                }
+            });
+
+            for (var error in args.Errors) {
+                showError(gridElement, error, args.Errors[error].errors);
+            }
+        }
+    }
+
+    function showError(container, name, errors) {
+
+        var txt = container.find('#' + name);
+
+        if (txt != null) {
+            txt.css('border-color', 'red');
+            txt.attr('title', errors[0]);
+        }
+
+        var dd = txt.prev('.k-dropdown-wrap');
+        if (dd != undefined) {
+            dd.css('border-color', 'red');
+            dd.attr('title', errors[0]);
+        }
+
+        var dd = txt.closest('.k-picker-wrap,.k-numeric-wrap');
+        if (dd != undefined) {
+            dd.css('border-color', 'red');
+            dd.attr('title', errors[0]);
+        }
+    }
+
+    function prtnedit(e) {
+        var dom = $('#gedit');
+        var v = $(dom).find('#Vrsta').val();
+
+        var isp = $(dom).find('#StrProperty2');
+        var ispv = $(isp).closest('div');
+        var ispl = $(ispv).prev();
+
+        var vld = $(dom).find('#LDVrsta');
+        var vldv = $(vld).closest('div');
+        var vldl = $(vldv).prev();
+
+        var bld = $(dom).find('#LDBroj');
+        var bldv = $(bld).closest('div');
+        var bldl = $(bldv).prev();
+
+        var vsb = $(ispv).css('display');
+
+        skew = 0;
+
+        if (v == "DP") {
+            ispv.show();
+            ispl.show();
+            bldv.hide();
+            bldl.hide();
+            vldv.hide();
+            vldl.hide();
+            skew = 1;
+        }
+        else if (v == "FL") {
+            ispv.hide();
+            ispl.hide();
+            bldv.show();
+            bldl.show();
+            vldv.show();
+            vldl.show();
+            skew = 2;
+        }
+        else {
+            ispv.hide();
+            ispl.hide();
+            bldv.hide();
+            bldl.hide();
+            vldv.hide();
+            vldl.hide();
+            skew = -3;
+        }
+
+        $(ispv).nextAll('div').each(function () {
+            var d = $(this);
+            var ix = Number($(d).css('grid-row-start'));
+            $(d).css('grid-row-start', (ix + skew).toString());
+        });
+    }
+
+    function prtntypchng(e) {
+        var val = $(e.target).val();
+        var dom = $(e.target).closest('div#gedit');
+
+        var isp = $(dom).find('#StrProperty2');
+        var ispv = $(isp).closest('div');
+        var ispl = $(ispv).prev();
+
+        var vld = $(dom).find('#LDVrsta');
+        var vldv = $(vld).closest('div');
+        var vldl = $(vldv).prev();
+
+        var bld = $(dom).find('#LDBroj');
+        var bldv = $(bld).closest('div');
+        var bldl = $(bldv).prev();
+
+        $(ispv).nextAll('div').each(function () {
+            var d = $(this);
+            var ix = Number($(d).css('grid-row-start'));
+            $(d).css('grid-row-start', (ix - skew).toString());
+        });
+
+        skew = 0;
+
+        if (val == "DP") {
+            ispv.show();
+            ispl.show();
+            bldv.hide();
+            bldl.hide();
+            vldv.hide();
+            vldl.hide();
+            skew = -2;
+        }
+        else if (val == "FL") {
+            ispv.hide();
+            ispl.hide();
+            bldv.show();
+            bldl.show();
+            vldv.show();
+            vldl.show();
+            skew = -1;
+        }
+        else {
+            ispv.hide();
+            ispl.hide();
+            bldv.hide();
+            bldl.hide();
+            vldv.hide();
+            vldl.hide();
+            skew = -3;
+        }
+
+        $(ispv).nextAll('div').each(function () {
+            var d = $(this);
+            var ix = Number($(d).css('grid-row-start'));
+            $(d).css('grid-row-start', (ix + skew).toString());
+        });
+    }
+
+</script>

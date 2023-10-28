@@ -1,0 +1,87 @@
+﻿<style type="text/css">
+    .k-textbox .k-input {
+        border: 0px !important;
+    }
+</style>
+
+<script type="text/javascript">
+
+    function filterJedinice() {
+        return {
+            objekat: $("#objekti").val()
+        };
+    }
+
+    function newGroup2() {
+        var o = $('#objekti').val();
+        var j = $('#jedinice').val();
+        var d1 = kendo.toString($('#dolazak').data('kendoDatePicker').value(), 'dd.MM.yyyy');
+        var d2 = kendo.toString($('#odlazak').data('kendoDatePicker').value(), 'dd.MM.yyyy');
+        var e = $('#email').val();
+
+        if (o == '') {
+            Swal.fire({ icon: 'error', title: 'Morate odabrati barem smještajni objekat', confirmButtonText: `U redu` });            
+        }
+
+        $.ajax({
+            url: '@Url.Content("~/rbgrp/novagrupa")' + `?objekat=${o}&jedinica=${j}&dolazak=${d1}&odlazak=${d2}&email=${e}`,
+            type: 'GET',
+            success: function (data, status, xhr) {                                
+                window.location = '/rbgrp/ogrp?g=' + data.Grupa;
+            }
+        });
+
+    }
+
+</script>
+
+<div>
+
+    <h4>Izaberite smještajni objekat:</h4>
+    @(Html.Kendo().DropDownList()
+          .Name("objekti")
+          .HtmlAttributes(new { style = "width:100%; font-size:14px;" })
+          .OptionLabel("Izaberite smještajni objekat...")
+          .DataTextField("Naziv")
+          .DataValueField("ID")
+          .DataSource(ds => ds.Read(r => r.Action("rbobjekti", "rbgrp")))
+    )
+
+    <h4 style="margin-top: 2em;">Izaberite smještajnu jedinicu/apartman:</h4>
+    @(Html.Kendo().DropDownList()
+          .Name("jedinice")
+          .HtmlAttributes(new { style = "width:100%; font-size:14px;" })
+          .OptionLabel("Izaberite smještajnu jedinicu...")
+          .DataTextField("Naziv")
+          .DataValueField("ID")
+          .DataSource(source =>
+                  {
+              source.Read(read =>
+              {
+                  read.Action("rbjedinice", "rbgrp").Data("filterJedinice");
+              })
+              .ServerFiltering(true);
+          })
+          .Enable(false)
+          .AutoBind(false)
+          .CascadeFrom("objekti")
+    )
+
+    <h4>Očekivani datum dolaska:</h4>
+    @(Html.Kendo().DatePicker().Name("dolazak").HtmlAttributes(new { style = "width:100%; font-size:14px;" }))
+
+    <h4>Očekivani datum odlaska:</h4>
+    @(Html.Kendo().DatePicker().Name("odlazak").HtmlAttributes(new { style = "width:100%; font-size:14px;" }))
+
+    <h4>e-mail:</h4>
+    @(Html.Kendo().TextBox().Name("email").HtmlAttributes(new { style = "width:100%; font-size:14px;" }))
+
+    <div style="display: block; margin-top:40px; text-align:center;">
+        @(Html.Kendo().Button().Name("btnNewGroup2")
+            .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/user_group_new.png'></img>")
+            .HtmlAttributes(new { onclick = "newGroup2(event)", style = "width:80px; height:80px; border-radius:50%;" })
+            )
+        <div style="margin-top: 3px; font-size: 14px;"><b>Nova<br />prijava</b></div>
+    </div>
+
+</div>

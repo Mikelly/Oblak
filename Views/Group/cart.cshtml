@@ -1,0 +1,257 @@
+﻿@{
+    SelectList payTypes = new SelectList(new Dictionary<string, string>() { { "1", "Gotovina" }, { "2", "Virman" }, { "3", "Kartica" } }, "Key", "Value", (((int?)ViewBag.Payment) ?? 2).ToString());
+    SelectList payees = new SelectList(ViewBag.Kupci as List<SelectListItem>, "Value", "Text");
+    SelectList docTypes = new SelectList(new Dictionary<string, string>() { { "ID", "Lična karta" }, { "P", "Pasoš" }, { "O", "Ostalo" } }, "Key", "Value", ((string)ViewBag.Vrd) ?? "P");
+    
+}
+
+<style type="text/css">
+    .k-textbox .k-input {
+        border: 0px !important;
+    }
+
+    .paysel {
+        /*border: 2px solid red !important;*/
+        box-shadow: 0 0 2px 1.5px red;
+    }
+    .payseld {
+        border: 2px solid red !important;        
+    }
+
+</style>
+
+<script type="text/javascript">
+
+    $(document).ready(() => {
+        selPay('@ViewBag.Payment', false)
+    });
+
+    function selPay(i, u)
+    {
+        $('.pay').removeClass('paysel')
+
+        if ('@ViewBag.Enable' == 'True') {
+            if (i == 1) $('#btnGotovina').addClass('paysel');
+            if (i == 2) $('#btnVirman').addClass('paysel');
+            if (i == 3) $('#btnKartica').addClass('paysel');
+        }
+        else {
+            if (i == 1) $('#btnGotovina').addClass('payseld');
+            if (i == 2) $('#btnVirman').addClass('payseld');
+            if (i == 3) $('#btnKartica').addClass('payseld');
+        }
+
+        if (u == true) {
+
+            $.ajax({
+                url: '@Url.Content("~/rbgrp/pay?g=")' + '@ViewBag.Grupa' + '&p=' + i,
+                success: function (data) {
+                    if (data.status == 'OK') {
+
+                    }
+                    else {
+                        Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                    }
+                }
+            });
+
+        }
+    }
+
+    function vrstaSelect(e) {
+        var idx = e.indices;
+        var vrsta = idx == 0 ? 'FL' : 'PL';
+
+        $('#divRacuni').load('/pos/listgrid?period=' + period + '&type=' + type + '&vrsta=' + vrsta);
+
+        //var grid = $('#PosListGrid').data('kendoGrid');
+        //grid.dataSource.transport.options.read.url = '/pos/list_read?period=' + period + '&type=' + type + '&vrsta=' + vrsta;
+        //grid.dataSource.read();
+    }
+
+</script>
+
+<div style="position:absolute; top:15px; left:15px; right:500px; bottom:240px;">
+
+    @(Html.Kendo().Grid<RegBor.Models.ViewModels.rb_CartVM>().Name("CartGrid").HtmlAttributes(new { style = "font-size:10px; width:100%;" })
+    .HtmlAttributes(new { style = "height:100%;" })
+    .DataSource(ds => { SISTEM.Models.KendoConfig.DataSourceConfig(ds, ViewBag.Settings as List<SISTEM.Models.DisplaySetting>, "rbgrp", new { grupa = ViewBag.Grupa }, "ReadCart", "CreateCart", "UpdateCart", "DestroyCart"); ds.Ajax().Events(e => e.RequestEnd("cartRequestEnd")); })
+    .Columns(c => { SISTEM.Models.KendoConfig.ColumnConfig(c, ViewBag.Settings as List<SISTEM.Models.DisplaySetting>, ViewBag.Enable == true ? SISTEM.Models.KendoConfig.GridFlags.All : SISTEM.Models.KendoConfig.GridFlags.Filterable | SISTEM.Models.KendoConfig.GridFlags.Sortable); })
+    .Selectable().Pageable(pp => pp.Enabled(false)).Sortable().Scrollable(s => s.Enabled(true)).AutoBind(true).Editable()
+    )
+
+</div>
+
+<div style="position:absolute; top:15px; left:720px; right:15px; bottom:240px;">
+
+    @(Html.Kendo().Grid<RegBor.Models.ViewModels.ArtikalViewModel>()
+    .Name("ArtikalGrid")
+    .HtmlAttributes(new { style = "height: calc(100% - 0px); font-size:12px; font-family: 'Roboto Condensed', sans-serif;" })
+    .Columns(columns => {
+
+        columns.Bound(p => p.Naziv).HeaderHtmlAttributes(new { style = "text-align:left" }).Width("60%");
+        //columns.Bound(p => p.Sifra).HeaderHtmlAttributes(new { style = "text-align:left" }).Width("150px");
+        columns.Bound(p => p.Cijena).Width("125px").Format("{0:n2}").HtmlAttributes(new { style = "font-family: Roboto Mono; text-align:right;" });
+        if ((bool)ViewBag.Enable) { columns.Command(a => a.Custom("applyButton").IconClass("k-icon k-i-add").HtmlAttributes(new { style = "min-width:0px; max-width:40px; width:30px; padding-left:8px; padding-right:2px;" }).Click("insert1").Text(" ")).Title("+").Width(40); }
+    })
+    .Scrollable().AutoBind(true)
+    .Selectable(s => s.Enabled(false))
+    .Sortable()
+    .Pageable(p => p.Enabled(false))
+    .PersistSelection()
+    .DataSource(dataSource => dataSource.Ajax().PageSize(125).Model(model => model.Id(p => p.IdArtikal)).Read(read => read.Action("reada", "rbgrp", new { grupa = ViewBag.Grupa }))
+    ))
+
+</div>
+
+
+
+<div style="position:absolute; left:20px; right:15px; bottom:0px; height: 227px; display:flex; justify-content:space-between; align-content:center; align-items:center;">
+
+    <div style="display:inline-block;">
+
+        <div style="display:inline-block; margin-right: 25px; text-align:center;">
+            @(Html.Kendo().Button().Name("btnFISC").Enable(ViewBag.Enable)
+            .Content("<img style='width:58px;height:58px;text-align:center; position:relative; top:-4px;' src='/Content/Icons/cash_register_color.png'></img>")
+            .HtmlAttributes(new { onclick = "doFisc(event)", style = "width:80px; height:80px; border-radius:50%;" })
+            )
+            <div style="margin-top:3px;"><b>Fiskalizuj<br />račun!</b></div>
+        </div>
+
+        <div style="display: inline-block; margin-right: 25px; text-align:center;">
+            @(Html.Kendo().Button().Name("btnINV").Enable(ViewBag.Enable)
+            .Content("<img style='width:54px;height:54px;text-align:center; position:relative; top:0px; left:5px;' src='/Content/Icons/edit_file.png'></img>")
+            .HtmlAttributes(new { onclick = "showInv(event)", style = "width:80px; height:80px; border-radius:50%;" })
+            )
+            <div style="margin-top:3px;"><b>Prikaži račun<br />za dalju obradu</b></div>
+        </div>
+
+        <div style="display: inline-block; margin-right: 10px; text-align:center;">
+            @(Html.Kendo().Button().Name("btnRESET").Enable(ViewBag.Enable)
+            .Content("<img style='width:54px;height:54px;text-align:center; position:relative; top:1px; left:1px;' src='/Content/Icons/reset.png'></img>")
+            .HtmlAttributes(new { onclick = "resetINV(event)", style = "width:80px; height:80px; border-radius:50%;" })
+            )
+            <div style="margin-top:3px;"><b>Resetuj račun<br />na osnovu prijave</b></div>
+        </div>
+    </div>
+
+    <div style="display:inline-block;">
+
+        <div id="payeelbl" style="margin-top:3px; display:inline-block; position:relative; top:-4px;">Gost kao kupac:</div>
+        @Html.Kendo().DropDownList().Name("payee").BindTo(payees).HtmlAttributes(new { style = "width:262px; margin-bottom:10px; font-size:13px; font-weight:bold;" }).Events(e => e.Change("payeeChanged")).Enable(ViewBag.Enable)
+        <br />
+
+        <div id="kupacDIV1">
+
+            @(Html.Kendo().TabStrip().Name("kupacTabStrip").HtmlAttributes(new { style = "width:348px; height:150px;" }).Events(e => e.Select("kupacTabChanged"))
+            .Items(i =>
+            {
+                i.Add().Selected((string)ViewBag.KupacVrs == "FL").Text("Fizičko lice").Content(
+                   @<text>
+                    <div style="height:90px;">
+                       <div style="display:block; margin-bottom:2px;">
+                            <div id="payeelbl" style="margin-top:3px;">Unesite ime i prezime fizičkog lica</div>
+                            @Html.Kendo().TextBox().Name("kupacime1").Value((string)ViewBag.KupacIme).HtmlAttributes(new { style = "width:315px; margin-bottom:0px; font-size:12px; font-weight:bold;" }).Events(e => e.Change("kupacChanged")).Enable(ViewBag.Enable)
+                       </div>
+                       <div style="display:inline-block;">
+                            <div id="payeelblBRD" style="margin-top:3px;">Vrsta dokumenta</div>
+                            @Html.Kendo().DropDownList().Name("kupacvrd").BindTo(docTypes).HtmlAttributes(new { style = "width:151px; font-size:13px; font-weight:bold;" }).Events(e => e.Change("kupacChanged")).Enable(ViewBag.Enable)
+
+                       </div>
+                       <div style="display:inline-block; margin-left:10px;">
+                            <div id="payeelblVRD" style="margin-top:3px;">Broj dokumenta</div>
+                            @Html.Kendo().TextBox().Name("kupacbrd").Value((string)ViewBag.KupacBrd).HtmlAttributes(new { style = "width:151px; font-size:12px; font-weight:bold;" }).Events(e => e.Change("kupacChanged")).Enable(ViewBag.Enable)
+                       </div>
+                    </div>
+                   </text>);
+                i.Add().Selected((string)ViewBag.KupacVrs == "PL").Text("Pravno lice").Content(
+                   @<text>
+                    <div style="height:90px;">
+                       <div style="display:block; margin-bottom:2px;">
+                            <div id="payeelbl" style="margin-top:3px;">Unesite naziv pravnog lica</div>
+                            @Html.Kendo().TextBox().Name("kupacime2").Value((string)ViewBag.KupacIme).HtmlAttributes(new { style = "width:315px; margin-bottom:0px; font-size:12px; font-weight:bold;" }).Events(e => e.Change("kupacChanged")).Enable(ViewBag.Enable)
+                       </div>
+                       <div style="display:block; margin-bottom:2px;">
+                            <div id="payeelbl" style="margin-top:3px;">Unesite PIB pravnog lica</div>
+                            @Html.Kendo().TextBox().Name("kupacpib").Value((string)ViewBag.KupacPib).HtmlAttributes(new { style = "width:315px; margin-bottom:0px; font-size:12px; font-weight:bold;" }).Events(e => e.Change("kupacChanged")).Enable(ViewBag.Enable)
+                       </div>
+                    </div>
+                   </text>);
+               }))
+
+        </div>
+
+        <div id="kupacDIV" style="display:none;">
+
+            <div style="display:inline-block;">
+                <div id="payeeTypelbl" style="margin-top:3px;">Vrsta kupca</div>
+                @(Html.Kendo().ButtonGroup().HtmlAttributes(new { style = "height:30px;" }).Name("kupacvrs").Items(t => { t.Add().Text("Fizičko").Selected((string)ViewBag.KupacVrs == "FL"); t.Add().Text("Pravno").Selected((string)ViewBag.KupacVrs == "PL"); }).Events(e => e.Select("kupacChanged")))
+            </div>
+
+            <div style="display:inline-block;">
+                <div id="payeelbl" style="margin-top:3px;">Unesite naziv kupca</div>
+                @Html.Kendo().TextBox().Name("kupacime3").Value((string)ViewBag.KupacIme).HtmlAttributes(new { style = "width:250px; margin-bottom:0px; font-size:14px; font-weight:bold;" }).Events(e => e.Change("kupacChanged"))
+            </div>
+
+            <div>
+                <div style="display:inline-block;">
+                    <div id="payeelblPIB" style="margin-top:3px;">Br. dokumenta (fizičko lice)</div>
+                    @Html.Kendo().TextBox().Name("kupacbrd3").Value((string)ViewBag.KupacBrd).HtmlAttributes(new { style = "width:145px; font-size:14px; font-weight:bold;" }).Events(e => e.Change("kupacChanged"))
+                </div>
+
+                <div style="display:inline-block; width:4px;"></div>
+
+                <div style="display:inline-block;">
+                    <div id="payeelblPIB" style="margin-top:3px;">PIB kupca (pravno lice)</div>
+                    @Html.Kendo().TextBox().Name("kupacpib3").Value((string)ViewBag.KupacPib).HtmlAttributes(new { style = "width:145px; font-size:14px; font-weight:bold; margin-left:0px;" }).Events(e => e.Change("kupacChanged"))
+                </div>
+            </div>
+
+        </div>
+
+        @*<div id="paylbl">Izaberite način plaćanja</div>
+            @(Html.Kendo().DropDownList().Name("payType").BindTo(payTypes)//.Events(e => e.Open("payTypesOpen"))
+                    .HtmlAttributes(new { style = "width:265px; font-size:14px; font-weight:bold; margin-right:00px; vertical-align:middle;" }).Events(e => e.Change("payTypeChanged"))
+                    .Template("<div style='display:inline-block; position:relative; top:0px; left:0px; width:45px; height:35px; #:bh(data.Value)#'></div><div style='display:inline-block; vertical-align:top; position:relative; top:8px; left:0px;'>#:data.Text#</div>")
+                    .ValueTemplate("<div style='display:inline-block; position:relative; top:-1px; left:-7px; width:45px; height:25px; #:bh1(data.Value)#'></div><div style='display:inline-block; vertical-align:top; position:relative; top:0px; left:-10px;'>#:data.Text#</div>")
+                    )*@
+    </div>
+
+    <div style="display:inline-block; text-align:center;">
+
+        Izaberite način plaćanja
+        <br />
+
+        @Html.Kendo().Button().Name("btnVirman").HtmlAttributes(new { type = "button", onclick = "selPay(2, true)", @class = "pay", style = "height:45px; width:150px; margin-left:5px; margin-top:0px; padding-top:0px; padding-bottom:0px;" }).Content("<div style='width:100%;height:100%; padding-left:0px; display:flex; align-items:center;'><img style='width:38px;height:38px;' src='/Content/Icons/checkbook_color.png'/><span style='font-weight:bold; font-size:13px; width:100px; border: 0px solid black;'>VIRMAN</span></div>").Enable(ViewBag.Enable)
+
+        <br />
+
+        @Html.Kendo().Button().Name("btnGotovina").HtmlAttributes(new { type = "button", onclick = "selPay(1, true)", @class = "pay", style = "height:45px; width:150px; margin-left:5px; margin-top:5px; padding-top:0px; padding-bottom:0px;" }).Content("<div style='width:100%;height:100%; padding-left:0px; display:flex; align-items:center;'><img style='width:41px;height:41px;' src='/Content/Icons/money_single_color.png'/><span style='font-weight:bold; font-size:13px; width:100px; border: 0px solid black;'>GOTOVINA</span></div>").Enable(ViewBag.Enable)
+
+        <br />
+
+        @Html.Kendo().Button().Name("btnKartica").HtmlAttributes(new { type = "button", onclick = "selPay(3, true)", @class = "pay", style = "height:45px; width:150px; margin-left:5px; margin-top:5px; padding-top:0px; padding-bottom:0px;" }).Content("<div style='width:100%;height:100%; padding-left:0px; display:flex; align-items:center;'><img style='width:40px;height:40px;' src='/Content/Icons/creditcard_color.png'/><span style='font-weight:bold; font-size:13px; width:100px; border: 0px solid black;'>KARTICA</span></div>").Enable(ViewBag.Enable)
+
+
+    </div>
+
+    <div style="display:inline-block;">
+
+        <div style="display: inline-block; float:right; text-align:center; margin-right:5px; margin-top:0px;">
+            <div style="display:block; font-weight:bold;">IZNOS RAČUNA</div>
+            <div style="display:block; vertical-align:top;">
+                @(Html.Kendo().NumericTextBox().Name("numTotal").Spinners(false).Enable(false).Value((double)ViewBag.Iznos).Format("##.00\\€").HtmlAttributes(new { @class = "num-total", style = "height:54px; position:relative; left:-0px; width:220px; background-color:white!important; display:block; text-align:right; vertical-align:top;", @readonly = "readonly" }))
+            </div>
+        </div>
+
+        <br />
+
+        <div style="display: inline-block; float:right; text-align:center; margin-right:5px; margin-top:14px;">
+            <div style="display:block; font-weight:bold;">IZNOS BORAVIŠNE TAKSE</div>
+            <div style="display:block; vertical-align:top;">
+                @(Html.Kendo().NumericTextBox().Name("numBorTax").Spinners(false).Enable(false).Value((double)ViewBag.BorTax).Format("##.00\\€").HtmlAttributes(new { @class = "num-total", style = "height:54px; position:relative; left:-0px; width:220px; background-color:white!important; display:block; text-align:right; vertical-align:top;", @readonly = "readonly" }))
+            </div>
+        </div>
+
+    </div>
+</div>

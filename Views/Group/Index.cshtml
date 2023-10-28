@@ -1,0 +1,161 @@
+﻿@using Oblak.Models.rb90;
+@{
+    ViewBag.Title = "Prijave gostiju";
+    Layout = "~/Views/Shared/_LayoutINV.cshtml";
+
+}
+
+<script type="text/javascript">
+
+    $(document).on('dblclick', '#GrupeGrid tbody tr', function (e) {
+        debugger;
+        var tr = $(this);
+        var grid = $('#GrupeGrid').data('kendoGrid');
+        var item = grid.dataItem(tr);
+
+        doShowGroup(item.ID);
+    });
+
+    function doShowGroup(g) {
+        window.location = '/rbgrp/ogrp?g=' + g;
+    }
+
+    function newGroup(e) {
+        $.ajax({
+            url: '@Url.Content("~/rbgrp/newgrp")',
+            type: 'GET',
+            success: function (data, status, xhr) {
+
+                var ct = xhr.getResponseHeader("content-type") || "";
+                if (ct.indexOf('html') > -1) {
+                    $('#wndNewGroup').data('kendoWindow').content(data);
+                    $('#wndNewGroup').data('kendoWindow').center();
+                    $('#wndNewGroup').data('kendoWindow').open();
+                }
+                if (ct.indexOf('json') > -1) {
+                    doShowGroup(data.Grupa);
+                    //window.location = '/rbgrp/ogrp?grupa=' + data.Grupa;
+                }
+
+            }
+        });
+    }
+
+    function sendLink(e) {
+        $.ajax({
+            url: '@Url.Content("~/rbgrp/sendlink")',
+            type: 'GET',
+            success: function (data, status, xhr) {
+                $('#wndSendLink').data('kendoWindow').content(data);
+                $('#wndSendLink').data('kendoWindow').center();
+                $('#wndSendLink').data('kendoWindow').open();
+            }
+        });
+    }
+
+    function deleteGroup(e) {
+
+        var grid = $('#GrupeGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) {
+            Swal.fire({ icon: 'error', title: 'Morate odabrati prijavu', confirmButtonText: `U redu` });
+        }
+
+        $.ajax({
+            url: '@Url.Content("~/rbgrp/delgrp/")' + item.ID,
+            type: 'GET',
+            success: function (data, status, xhr) {
+                if (data.error != "") Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                if (data.info != "") {
+                    grid.dataSource.read();
+                    Swal.fire({ icon: 'info', title: data.info, confirmButtonText: `U redu` });
+                }
+            }
+        });
+    }
+
+
+    function showGroup(event) {
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        event.stopPropagation();
+
+        var grid = $('#GrupeGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati prijavu', confirmButtonText: `U redu` });
+        else doShowGroup(item.ID);
+    }
+
+</script>
+
+<style type="text/css">
+</style>
+
+<div>
+    <div style="display: inline-block; margin-right: 35px; margin-left:20px; margin-top:10px; text-align:center;">
+        @(Html.Kendo().Button().Name("btnNewGroup")
+            .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/user_group_new.png'></img>")
+            .HtmlAttributes(new { onclick = "newGroup(event)", style = "width:80px; height:80px; border-radius:50%;" })
+            )
+        <div style="margin-top:3px;"><b>Nova prijava gostiju</b></div>
+    </div>
+    <div style="display: inline-block; margin-right: 35px; text-align:center;">
+        @(Html.Kendo().Button().Name("btnOpenGroup")
+            .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-2px; left:2px;' src='/Content/Icons/view_glass.png'></img>")
+            .HtmlAttributes(new { onclick = "showGroup(event)", style = "width:80px; height:80px; border-radius:50%;" })
+            )
+        <div style="margin-top:3px;"><b>Prikaži prijavu gostiju</b></div>
+    </div>
+    <div style="display: inline-block; margin-right: 35px; text-align:center;">
+        @(Html.Kendo().Button().Name("btnDeleteGroup")
+            .Content("<img style='width:58px;height:58px;text-align:center; position:relative; top:-1px;' src='/Content/Icons/remove.png'></img>")
+            .HtmlAttributes(new { onclick = "deleteGroup(event)", style = "width:80px; height:80px; border-radius:50%;" })
+            )
+        <div style="margin-top:3px;"><b>Obriši prijavu gostiju</b></div>
+    </div>
+    <div style="display: inline-block; margin-right: 35px; text-align:center;">
+        @(Html.Kendo().Button().Name("btnSendLink")
+            .Content("<img style='width:58px;height:58px;text-align:center; position:relative; top:0px; left:1px;' src='/Content/Icons/website.png'></img>")
+            .HtmlAttributes(new { onclick = "sendLink(event)", style = "width:80px; height:80px; border-radius:50%;" })
+            )
+        <div style="margin-top:3px;"><b>Pošalji link</b></div>
+    </div>
+</div>
+
+<div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
+    @(Html.Kendo().Grid<rb_GrupaVM>()
+        .Name("groupGrid")
+        .Columns(columns =>
+        {
+            columns.Bound(p => p.ID).Filterable(false).Width(100);
+            columns.Bound(p => p.Dolazak).Width(200);
+            columns.Bound(p => p.Odlazak).Width(100);
+            columns.Bound(p => p.Email).Width(150);
+        })
+        .Pageable(p => p.Refresh(true))
+        .Sortable()
+        .Selectable()
+        .Scrollable()
+        .Filterable()
+        .HtmlAttributes(new { style = "height:100%;" })
+        .DataSource(ds => ds
+        .Ajax()
+        .PageSize(20)
+        .Model(m =>
+        {
+            m.Id(a => a.ID);
+            m.Field(a => a.ID);
+            m.Field(a => a.Dolazak);
+            m.Field(a => a.Odlazak);
+            m.Field(a => a.Email);            
+        })
+        .Read(read => read.Action("Read", "Group"))
+    ))
+</div>
+
+
+@Html.Kendo().Window().Name("wndNewGroup").Title("Nova prijava").Visible(false).Modal(true).Draggable(false).Width(400).Height(550).HtmlAttributes(new { style = "padding:20px;" })
+@Html.Kendo().Window().Name("wndSendLink").Title("Slanje linka").Visible(false).Modal(true).Draggable(false).Width(400).Height(450).HtmlAttributes(new { style = "padding:20px;" })

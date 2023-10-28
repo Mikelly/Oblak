@@ -1,0 +1,40 @@
+﻿@using Oblak.Models.Api;
+
+    @(
+        Html.Kendo().Grid<PropertyDto>()
+                .Name("UnitsGrid")
+                .Columns(columns =>
+                {
+                    columns.Bound(p => p.Id).Filterable(false).Width(100);
+                    columns.Bound(p => p.Name).Width(200);
+                    columns.Bound(p => p.ExternalId).Width(100);
+                    columns.Bound(p => p.Address).Width(150);
+                    columns.Bound(p => p.AutoCheckOut).Width(150);
+                    columns.Bound(p => p.AutoCheckOutTime).Format("{0:HH:mm}").Width(140);
+                    columns.Bound(p => p.Municipality).Width(140);
+                    columns.Bound(p => p.DefaultEntryPoint).Width(140);
+                })
+            .Pageable(p => p.Refresh(true))
+            .Sortable()
+            .Selectable()
+            .Scrollable()
+            .Filterable()
+            .HtmlAttributes(new { style = "height:100%;" })
+            .DataSource(ds => ds
+                .Ajax()
+                .PageSize(20)
+                .Read(read => read.Action("ReadUnit", "Property"))
+                .Model(m =>
+                {
+                    m.Id(a => a.Id);
+                    m.Field(a => a.Id);
+                    m.Field(a => a.Name);
+                    m.Field(a => a.ExternalId);
+                    m.Field(a => a.Address);
+                    m.Field(a => a.AutoCheckOut);
+                    m.Field(a => a.AutoCheckOutTime);
+                    m.Field(a => a.Municipality);
+                    m.Field(a => a.DefaultEntryPoint);
+                })
+            )
+        )

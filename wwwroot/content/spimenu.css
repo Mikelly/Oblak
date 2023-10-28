@@ -1,0 +1,249 @@
+/* Main menu */
+#menucool {
+    padding-left: unset;
+    width: 100%;
+    margin: 0;
+    list-style: none;
+    background-color: #7f7f7f;
+    background: -moz-linear-gradient(#7f7f7f, #383636);
+    background: -webkit-gradient(linear,left bottom,left top,color-stop(0, #7f7f7f),color-stop(1, 383636));
+    background: -webkit-linear-gradient(#7f7f7f, #383636);
+    background: -o-linear-gradient(#7f7f7f, #383636);
+    background: -ms-linear-gradient(#7f7f7f, #383636);
+    background: linear-gradient(#7f7f7f, #383636);
+    -moz-box-shadow: 0 2px 1px #9c9c9c;
+    -webkit-box-shadow: 0 2px 1px #9c9c9c;
+    box-shadow: 1px 3px 7px 0px #9c9c9c;
+}
+
+#menucool li
+{
+	float: left;
+	position: relative;
+    line-height: 0;
+}
+
+#menucool a {
+    float: left;
+    height: 25px;
+    vertical-align: middle;
+    padding: 7px 15px 8px 15px;
+    color: #c5c3c3;
+    text-transform: uppercase;
+    font: bold 14px/25px 'Dosis', sans-serif, Arial, Helvetica;
+    text-decoration: none;
+    text-shadow: 0 1px 0 #000;
+    transition: 0.25s;
+}
+
+#menucool li:hover > a
+{
+	color: white !important;
+}
+
+    *html #menucool li a:hover /* IE6 */ {
+        color: white !important;
+    }
+
+#menucool li:hover > ul
+{
+	display: block;
+}
+
+/* Sub-menu */
+
+#menucool ul
+{
+    list-style: none;
+    margin: 0;
+    padding: 0;    
+    display: none;
+    position: absolute;
+    top: 40px;
+    left: 0;
+    z-index: 99999;    
+    background-color: #383636;
+    background: -moz-linear-gradient(#7f7f7f, #383636);
+    background: -webkit-gradient(linear,left bottom,left top,color-stop(0, #7f7f7f),color-stop(1, #383636));
+    background: -webkit-linear-gradient(#7f7f7f, #383636);    
+    background: -o-linear-gradient(#7f7f7f, #383636);	
+    background: -ms-linear-gradient(#7f7f7f, #383636);	
+    background: linear-gradient(#7f7f7f, #383636);
+    -moz-box-shadow: 0 0 2px rgba(255,255,255,.5);
+    -webkit-box-shadow: 0 0 2px rgba(255,255,255,.5);
+    box-shadow: 0 0 2px rgba(255,255,255,.5);	
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+}
+
+#menucool ul ul
+{
+  top: 0;
+  left: 215;
+  /* left: 150px; */
+}
+
+#menucool ul li
+{
+    float: none;
+    margin: 0;
+    padding: 0;
+    display: block;  
+    -moz-box-shadow: 0 1px 0 #111111, 0 2px 0 #777777;
+    -webkit-box-shadow: 0 1px 0 #111111, 0 2px 0 #777777;
+    box-shadow: 0 1px 0 #111111, 0 2px 0 #777777;
+}
+
+    #menucool ul li:last-child {
+        -moz-box-shadow: none;
+        -webkit-box-shadow: none;
+        box-shadow: none;
+        margin: 0;
+    }
+
+#menucool ul a
+{    
+    padding: 10px;
+	height: 10px;
+    width: 215px;
+    white-space: pre-line;
+	height: auto;
+    line-height: 1.5;
+    display: block;
+    white-space: nowrap;
+    float: none;
+    text-transform: none;
+    transition: background-color 0.3s ease-out;
+}
+
+*html #menucool ul a /* IE6 */
+{    
+    height: 10px;
+}
+
+*:first-child+html #menucool ul a /* IE7 */
+{    
+	height: 10px;
+}
+
+#menucool ul a:hover
+{
+    background-color: #abaaaa;
+}
+
+#menucool ul li:first-child > a
+{
+    -moz-border-radius: 5px 5px 0 0;
+    border-radius: 5px 5px 0 0;
+}
+
+/*triangle shape that appears along with the sub-menu*/
+#menucool ul li:first-child > a:after
+{
+    content: '';
+    position: absolute;
+    left: 30px;
+    top: -8px;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 8px solid #7f7f7f;
+}
+
+#menucool ul ul li:first-child a:after
+{
+    left: -8px;
+    top: 15px;
+    width: 0;
+    height: 0;
+    border-left: 0;	
+    border-bottom: 5px solid transparent;
+    border-top: 5px solid transparent;
+    border-right: 8px solid #7f7f7f;
+}
+
+#menucool ul li:first-child a:hover:after
+{
+    border-bottom-color: #9ea4a9; 
+}
+
+#menucool ul ul li:first-child a:hover:after
+{
+    border-right-color: #9ea4a9; 
+    border-bottom-color: transparent; 	
+}
+
+
+#menucool ul li:last-child > a
+{
+    -moz-border-radius: 0 0 5px 5px;
+    border-radius: 0 0 5px 5px;
+}
+
+/* Clear floated elements */
+#menucool:after 
+{
+	visibility: hidden;
+	display: block;
+	font-size: 0;
+	content: " ";
+	clear: both;
+	height: 0;
+}
+
+/*The sub-menu is displayed when hovering on a li element. As you already know, IE6 doesn’t support hovering on a non-anchor element.*/
+/*Target IE6 & IE7 browsers*/
+* html #menucool             { zoom: 1; } /* IE6 */
+*:first-child+html #menucool { zoom: 1; } /* IE7 */
+
+.glyphicon{
+    margin-right: 5px;
+}
+
+#menucool .account-menu {
+    left: unset;
+    right: 1px!important;
+}
+
+#menucool .account-menu a {
+    width: 105px;
+}
+
+
+#menucool ul.account-menu li:first-child > a:after {
+    right: 30px;
+    top: -8px;
+    left: unset;
+}
+
+ul#menucool li.li-home a {
+    color: white;
+    background: black;
+    font-size:18px;
+}
+
+.badge1 {
+    position: relative;
+}
+
+.badge1[data-badge]:after {
+    content: attr(data-badge);
+    position: relative;
+    top: -2px;
+    left:5px;
+    right: 0px;
+    font-size: 0.75em;
+    font-weight:normal!important;
+    font-family:Arial, Helvetica, sans-serif;
+    background: lightgray;
+    color: black;
+    width: 35px;
+    height: 35px;
+    padding:3px!important;
+    padding-right:4px!important;
+    text-align: center;
+    line-height: 16px;
+    border-radius: 50%;
+    box-shadow: 0 0 1px #333;
+}

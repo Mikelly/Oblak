@@ -1,0 +1,35 @@
+﻿@using Oblak.Models;
+@using Kendo.Mvc.TagHelpers;
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";    
+}
+
+<style>
+    .k-form-field
+    {
+        margin:0px!important;
+    }
+</style>
+
+<div class="demo-section">
+    <div id="validation-success"></div>
+    @(
+        Html.Kendo().Form<RegisterViewModel>()
+            .Name("signInForm")            
+            .HtmlAttributes(new { action = "/sign-in", method = "POST" })
+            .Layout("grid")            
+            .Items(items =>
+            {
+                items.AddGroup()
+                .Label("Podaci o korisniku")
+                .Layout("grid")
+                .Grid(a => a.Cols(2).Gutter(30))
+                .Items(i =>
+                {                    
+                    i.Add().Field(f => f.UserName).Label(l => l.Text("Korisničko ime:"));
+                    i.Add().Field(f => f.Password).Label(l => l.Text("Lozinka:"));                 
+                });                
+            })            
+        )
+</div>

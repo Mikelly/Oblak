@@ -1,0 +1,191 @@
+﻿body {
+    padding-top: 90px;
+    padding-bottom: 20px;
+}
+
+/* Set padding to keep content from hitting the edges */
+.body-content {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Override the default bootstrap behavior where horizontal description lists 
+   will truncate terms that are too long to fit in the left column 
+*/
+.dl-horizontal dt {
+    white-space: normal;
+}
+
+/* Set width on the form input elements since they're 100% wide by default */
+input,
+select,
+textarea {
+    max-width: 280px;
+}
+
+select {
+    font-size:12px;
+}
+
+select {
+    font-size: 12px !important;
+    padding: 3px !important;
+    height: 26px !important;
+}
+
+.form-control {
+    font-size: 12px !important;
+    padding: 3px !important;
+    height: 26px !important;
+}
+
+.panel-heading {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+    font-size: 13px !important;
+    font-weight: bold !important;
+}
+
+form label {
+    font-size: 11px;
+    margin-top: 8px;
+    line-height: 12px;
+}
+
+table td,
+table th {
+    padding: 5px !important;
+}
+
+.panel {
+    padding: 0px !important;
+    padding-bottom: 15px !important;
+}
+
+.panel-body {
+    padding-top: 0px !important;
+    padding-bottom:0px !important;
+}
+
+.panel-group {
+    padding:0px !important;
+}
+
+.panel-default .panel-heading {
+    background-color: #bde9ff !important;
+}
+
+.navbar-default {
+    background-color: #1679c3;
+    border-color: #0055dd;
+}
+
+    .navbar-default .navbar-brand {
+        color: #ecf0f1;
+    }
+
+        .navbar-default .navbar-brand:hover,
+        .navbar-default .navbar-brand:focus {
+            color: #dbf3ff;
+        }
+
+    .navbar-default .navbar-text {
+        color: #ecf0f1;
+    }
+
+    .navbar-default .navbar-nav > li > a {
+        color: #ecf0f1;
+    }
+
+        .navbar-default .navbar-nav > li > a:hover,
+        .navbar-default .navbar-nav > li > a:focus {
+            color: #dbf3ff;
+        }
+
+    .navbar-default .navbar-nav > li > .dropdown-menu {
+        background-color: #1679c3;
+    }
+
+        .navbar-default .navbar-nav > li > .dropdown-menu > li > a {
+            color: #ecf0f1;
+        }
+
+            .navbar-default .navbar-nav > li > .dropdown-menu > li > a:hover,
+            .navbar-default .navbar-nav > li > .dropdown-menu > li > a:focus {
+                color: #dbf3ff;
+                background-color: #0055dd;
+            }
+
+        .navbar-default .navbar-nav > li > .dropdown-menu > li.divider {
+            background-color: #0055dd;
+        }
+
+    .navbar-default .navbar-nav .open .dropdown-menu > .active > a,
+    .navbar-default .navbar-nav .open .dropdown-menu > .active > a:hover,
+    .navbar-default .navbar-nav .open .dropdown-menu > .active > a:focus {
+        color: #dbf3ff;
+        background-color: #0055dd;
+    }
+
+    .navbar-default .navbar-nav > .active > a,
+    .navbar-default .navbar-nav > .active > a:hover,
+    .navbar-default .navbar-nav > .active > a:focus {
+        color: #dbf3ff;
+        background-color: #0055dd;
+    }
+
+    .navbar-default .navbar-nav > .open > a,
+    .navbar-default .navbar-nav > .open > a:hover,
+    .navbar-default .navbar-nav > .open > a:focus {
+        color: #dbf3ff;
+        background-color: #0055dd;
+    }
+
+    .navbar-default .navbar-toggle {
+        border-color: #0055dd;
+    }
+
+        .navbar-default .navbar-toggle:hover,
+        .navbar-default .navbar-toggle:focus {
+            background-color: #0055dd;
+        }
+
+        .navbar-default .navbar-toggle .icon-bar {
+            background-color: #ecf0f1;
+        }
+
+    .navbar-default .navbar-collapse,
+    .navbar-default .navbar-form {
+        border-color: #ecf0f1;
+    }
+
+    .navbar-default .navbar-link {
+        color: #ecf0f1;
+    }
+
+        .navbar-default .navbar-link:hover {
+            color: #dbf3ff;
+        }
+
+@media (max-width: 767px) {
+    .navbar-default .navbar-nav .open .dropdown-menu > li > a {
+        color: #ecf0f1;
+    }
+
+        .navbar-default .navbar-nav .open .dropdown-menu > li > a:hover,
+        .navbar-default .navbar-nav .open .dropdown-menu > li > a:focus {
+            color: #dbf3ff;
+        }
+
+    .navbar-default .navbar-nav .open .dropdown-menu > .active > a,
+    .navbar-default .navbar-nav .open .dropdown-menu > .active > a:hover,
+    .navbar-default .navbar-nav .open .dropdown-menu > .active > a:focus {
+        color: #dbf3ff;
+        background-color: #0055dd;
+    }
+}
+
+.navbar-default a {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+}

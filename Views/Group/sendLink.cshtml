@@ -1,0 +1,91 @@
+﻿@{ 
+    SelectList langs = new SelectList(new Dictionary<string, string>() { { "MNE", "Crnogorski" }, { "ENG", "Engleski" }, { "RUS", "Ruski" }, { "DEU", "Njemački" }, { "ITA", "Italijanski" }, { "FRA", "Francuski" } }, "Key", "Value", "MNE");
+}
+
+<style type="text/css">
+    .k-textbox .k-input {
+        border: 0px !important;
+    }
+</style>
+
+<script type="text/javascript">
+
+    function filterJedinice() {
+        return {
+            objekat: $("#objekti").val()
+        };
+    }
+
+    function sendLink2() {
+        var o = $('#objekti').val();
+        var j = $('#jedinice').val();        
+        var e = $('#email').val();
+        var l = $('#lang').val();
+
+        if (o == '') {
+            Swal.fire({ icon: 'error', title: 'Morate odabrati smještajni objekat', confirmButtonText: `U redu` });            
+        }
+        if (e == '') {
+            Swal.fire({ icon: 'error', title: 'Morate unijeti email adresu', confirmButtonText: `U redu` });
+        }
+
+        $.ajax({
+            url: '@Url.Content("~/rb/guestURL")' + `?objekat=${o}&jedinica=${j}&email=${e}&lang=${l}`,
+            type: 'GET',
+            success: function (data, status, xhr) {                                
+                Swal.fire({ icon: 'info', title: 'Link za popunjavanje podataka je uspješno poslat', confirmButtonText: `U redu` });       
+                $('#wndSendLink').data('kendoWindow').close();
+            }
+        });
+
+    }
+
+</script>
+
+<div>
+
+    <h4>Izaberite smještajni objekat:</h4>
+    @(Html.Kendo().DropDownList()
+          .Name("objekti")
+          .HtmlAttributes(new { style = "width:100%; font-size:14px;" })
+          .OptionLabel("Izaberite smještajni objekat...")
+          .DataTextField("Naziv")
+          .DataValueField("ID")
+          .DataSource(ds => ds.Read(r => r.Action("rbobjekti", "rbgrp")))
+    )
+
+    <h4 style="margin-top: 2em;">Izaberite smještajnu jedinicu/apartman:</h4>
+    @(Html.Kendo().DropDownList()
+          .Name("jedinice")
+          .HtmlAttributes(new { style = "width:100%; font-size:14px;" })
+          .OptionLabel("Izaberite smještajnu jedinicu...")
+          .DataTextField("Naziv")
+          .DataValueField("ID")
+          .DataSource(source =>
+                  {
+              source.Read(read =>
+              {
+                  read.Action("rbjedinice", "rbgrp").Data("filterJedinice");
+              })
+              .ServerFiltering(true);
+          })
+          .Enable(false)
+          .AutoBind(false)
+          .CascadeFrom("objekti")
+    )
+
+    <h4>e-mail:</h4>
+    @(Html.Kendo().TextBox().Name("email").HtmlAttributes(new { style = "width:100%; font-size:14px;" }))
+
+    <h4>Jezik:</h4>
+    @(Html.Kendo().DropDownList().Name("lang").BindTo(langs).HtmlAttributes(new { style = "width:100%; font-size:14px;" }))
+
+    <div style="display: block; margin-top:40px; text-align:center;">
+        @(Html.Kendo().Button().Name("btnSendLink2")
+            .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:0px; left:1px;' src='/Content/Icons/website.png'></img>")
+            .HtmlAttributes(new { onclick = "sendLink2(event)", style = "width:80px; height:80px; border-radius:50%;" })
+            )
+        <div style="margin-top: 3px; font-size: 14px;"><b>Pošalji link</b></div>
+    </div>
+
+</div>

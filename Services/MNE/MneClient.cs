@@ -24,6 +24,9 @@ using Oblak.Services.SRB.Models;
 using RestSharp;
 using System.IdentityModel.Tokens.Jwt;
 using AutoMapper;
+using Oblak.Data.Enums;
+using Telerik.Documents.Common.Model;
+using Telerik.Windows.Documents.Flow.Model.Styles;
 
 namespace Oblak.Services.MNE
 {
@@ -528,7 +531,7 @@ namespace Oblak.Services.MNE
             foreach (MnePerson p in group.Persons)
             {
                 var one = Validate(p, checkInDate, checkOutDate);
-                if (one.Errors.Any()) result.Add(one);
+                if (one.ValidationErrors.Any()) result.Add(one);
             }
             return result;
         }
@@ -539,25 +542,25 @@ namespace Oblak.Services.MNE
             var err = new PersonErrorDto();
             var now = DateTime.Now;
 
-            if (p.DocumentValidTo < now) err.Errors.Add(new PersonError() { Field = nameof(p.DocumentValidTo), Error = "Datum važenja ličnog dokumenta mora biti u budućnosti." });
-            if (p.BirthDate.Date >= now) err.Errors.Add(new PersonError() { Field = nameof(p.BirthDate), Error = "Datum rođenja mora biti u prošlosti." });
-            if (p.CheckIn.Date >= now) err.Errors.Add(new PersonError() { Field = nameof(p.CheckIn), Error = "Datum prijave ne smije biti u budućnosti." });
-            if (p.CheckOut.HasValue && p.CheckOut.Value.Date < p.CheckIn.Date) err.Errors.Add(new PersonError() { Field = nameof(p.CheckIn), Error = "Datum odjave mora biti nakon datuma prijave." });
-            if (p.ExternalId != null && p.CheckOut.HasValue && p.CheckOut.Value.Date < now.Date) err.Errors.Add(new PersonError() { Field = nameof(p.ExternalId), Error = "Neaktivan boravak se ne može mijenjati." });
-            if (string.IsNullOrEmpty(p.FirstName)) err.Errors.Add(new PersonError() { Field = nameof(p.FirstName), Error = "Morate unijeti ime gosta." });
-            if (string.IsNullOrEmpty(p.LastName)) err.Errors.Add(new PersonError() { Field = nameof(p.LastName), Error = "Morate unijeti prezime gosta." });
-            if (string.IsNullOrEmpty(p.Nationality)) err.Errors.Add(new PersonError() { Field = nameof(p.Nationality), Error = "Morate unijeti državljanstvi gosta." });
-            if (string.IsNullOrEmpty(p.PersonalNumber)) err.Errors.Add(new PersonError() { Field = nameof(p.PersonalNumber), Error = "Morate unijeti matični broj gosta." });
-            if (string.IsNullOrEmpty(p.Gender)) err.Errors.Add(new PersonError() { Field = nameof(p.Gender), Error = "Morate unijeti pol gosta." });
-            if (string.IsNullOrEmpty(p.BirthPlace)) err.Errors.Add(new PersonError() { Field = nameof(p.BirthPlace), Error = "Morate unijeti mjesto rođenja gosta." });
-            if (p.BirthDate == null) err.Errors.Add(new PersonError() { Field = nameof(p.BirthDate), Error = "Morate unijeti državu rođenja gosta." });
-            if (string.IsNullOrEmpty(p.PermanentResidencePlace)) err.Errors.Add(new PersonError() { Field = nameof(p.PermanentResidencePlace), Error = "Morate unijeti mjesto prebivališta gosta." });
-            if (string.IsNullOrEmpty(p.PermanentResidenceAddress)) err.Errors.Add(new PersonError() { Field = nameof(p.PermanentResidenceAddress), Error = "Morate unijeti adresu prebivališta gosta." });
-            if (string.IsNullOrEmpty(p.PermanentResidenceCountry)) err.Errors.Add(new PersonError() { Field = nameof(p.PermanentResidenceCountry), Error = "Morate unijeti državu prebivališta gosta." });
-            if (string.IsNullOrEmpty(p.DocumentType)) err.Errors.Add(new PersonError() { Field = nameof(p.DocumentType), Error = "Morate unijeti vrstu ličnog dokumenta gosta." });            
-            if (string.IsNullOrEmpty(p.DocumentNumber)) err.Errors.Add(new PersonError() { Field = nameof(p.DocumentNumber), Error = "Morate unijeti broj ličnog dokumenta gosta." });
-            if (string.IsNullOrEmpty(p.DocumentCountry)) err.Errors.Add(new PersonError() { Field = nameof(p.DocumentCountry), Error = "Morate unijeti državu izdavanja ličnog dokumenta gosta." });
-            if (string.IsNullOrEmpty(p.DocumentIssuer)) err.Errors.Add(new PersonError() { Field = nameof(p.DocumentIssuer), Error = "Morate unijeti izdavaoca ličnog dokumenta gosta." });
+            if (p.DocumentValidTo < now) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.DocumentValidTo), Error = "Datum važenja ličnog dokumenta mora biti u budućnosti." });
+            if (p.BirthDate.Date >= now) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.BirthDate), Error = "Datum rođenja mora biti u prošlosti." });
+            if (p.CheckIn.Date >= now) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.CheckIn), Error = "Datum prijave ne smije biti u budućnosti." });
+            if (p.CheckOut.HasValue && p.CheckOut.Value.Date < p.CheckIn.Date) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.CheckIn), Error = "Datum odjave mora biti nakon datuma prijave." });
+            if (p.ExternalId != null && p.CheckOut.HasValue && p.CheckOut.Value.Date < now.Date) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ExternalId), Error = "Neaktivan boravak se ne može mijenjati." });
+            if (string.IsNullOrEmpty(p.FirstName)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.FirstName), Error = "Morate unijeti ime gosta." });
+            if (string.IsNullOrEmpty(p.LastName)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.LastName), Error = "Morate unijeti prezime gosta." });
+            if (string.IsNullOrEmpty(p.Nationality)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.Nationality), Error = "Morate unijeti državljanstvi gosta." });
+            if (string.IsNullOrEmpty(p.PersonalNumber)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.PersonalNumber), Error = "Morate unijeti matični broj gosta." });
+            if (string.IsNullOrEmpty(p.Gender)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.Gender), Error = "Morate unijeti pol gosta." });
+            if (string.IsNullOrEmpty(p.BirthPlace)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.BirthPlace), Error = "Morate unijeti mjesto rođenja gosta." });
+            if (p.BirthDate == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.BirthDate), Error = "Morate unijeti državu rođenja gosta." });
+            if (string.IsNullOrEmpty(p.PermanentResidencePlace)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.PermanentResidencePlace), Error = "Morate unijeti mjesto prebivališta gosta." });
+            if (string.IsNullOrEmpty(p.PermanentResidenceAddress)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.PermanentResidenceAddress), Error = "Morate unijeti adresu prebivališta gosta." });
+            if (string.IsNullOrEmpty(p.PermanentResidenceCountry)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.PermanentResidenceCountry), Error = "Morate unijeti državu prebivališta gosta." });
+            if (string.IsNullOrEmpty(p.DocumentType)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.DocumentType), Error = "Morate unijeti vrstu ličnog dokumenta gosta." });            
+            if (string.IsNullOrEmpty(p.DocumentNumber)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.DocumentNumber), Error = "Morate unijeti broj ličnog dokumenta gosta." });
+            if (string.IsNullOrEmpty(p.DocumentCountry)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.DocumentCountry), Error = "Morate unijeti državu izdavanja ličnog dokumenta gosta." });
+            if (string.IsNullOrEmpty(p.DocumentIssuer)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.DocumentIssuer), Error = "Morate unijeti izdavaoca ličnog dokumenta gosta." });
 
             return err;
         }
@@ -593,6 +596,241 @@ namespace Oblak.Services.MNE
                 _logger.LogError($"ERROR MNE: Properties {e.Message}");                
                 throw;
             }
+        }
+
+        public async Task<Document> CreateInvoice(Group g, PaymentType? pay)
+        { 
+            var doc = new Document();
+            doc.GroupId = g.Id;
+            doc.PropertyId = g.PropertyId;
+            doc.LegalEntityId = g.LegalEntityId;
+            doc.InvoiceDate = DateTime.Now;
+            doc.BusinessUnitCode = g.Property.BusinessUnitCode;
+            doc.FiscalEnuCode = g.Property.FiscalEnuCode;
+            doc.OperatorCode = _user.EfiOperator;            
+
+            var person = g.Persons.First() as MnePerson;
+
+            if (person != null)
+            {
+                doc.PartnerName = $"{person.FirstName} {person.LastName}";
+                doc.PartnerIdType = person.DocumentType switch { "1" => BuyerIdType.Passport, "2" => BuyerIdType.ID, _ => BuyerIdType.Passport };
+                doc.PartnerIdNumber = person.DocumentNumber;
+                doc.PartnerType = BuyerType.Person;
+                doc.PartnerAddress = person.PermanentResidenceAddress ?? "";
+            }
+
+            _db.Documents.Add(doc);
+            _db.SaveChanges();
+
+            doc.IdEncrypted = Encryptor.Base64Encode(Encryptor.EncryptSimple(doc.Id.ToString()));
+            _db.SaveChanges();
+
+            (var bor, var btax) = CheckItems();
+
+            var boravak = g.Persons.Select(a => a as MnePerson).ToList().Select(a => new
+            {
+                Item = bor,
+                Quant = ((a.CheckOut ?? DateTime.Now) - a.CheckIn).TotalDays,
+                Price = a.Property.Price ?? 1m
+            }).ToList();
+
+            var taxes = g.Persons.Select(a => a as MnePerson).ToList().Select(a => new
+            {
+                Item = btax,
+                Quant = ((a.CheckOut ?? DateTime.Now) - a.CheckIn).TotalDays,
+                Price = (a.Property.ResidenceTax ?? 1) * (new DateTime(1, 1, 1) + (DateTime.Now - a.BirthDate)).Year - 1 switch { >= 18 => 1m, >= 12 => 0.5m, _ => 0m }
+            }).ToList();
+
+            foreach (var i in boravak.Union(taxes))
+            {
+                var sd = new DocumentItem();
+                sd.DocumentId = doc.Id;
+                sd.ItemId = i.Item.Id;
+                sd.ItemCode = i.Item.Code ?? "";
+                sd.ItemName = i.Item.Name;
+                sd.ItemUnit = i.Item.Unit;
+                sd.UnitPrice = i.Price;
+                sd.Quantity = (decimal)i.Quant;
+                sd.Discount = 0;
+                sd.FinalPrice = i.Price;
+                sd.VatExempt = i.Item.VatExempt;
+                _db.DocumentItems.Add(sd);
+                _db.SaveChanges();
+                SetItemValues(sd);
+                _db.SaveChanges();
+            }
+
+            Payment(doc, pay ?? PaymentType.Cash);
+
+            return doc;
+        }
+
+        public (Item, Item) CheckItems()
+        {
+            var le = _user.LegalEntityId;
+
+            var boravak = _db.Items.Where(a => a.LegalEntityId == le && a.Code == "BORAV").FirstOrDefault();                
+            if (boravak == null)
+            {
+                boravak = new Item();
+                boravak.LegalEntityId = le;
+                boravak.Code = "BORAV";
+                boravak.Name = "Usluga smještaja";
+                boravak.Description = "Usluga smještaja";
+                boravak.Unit = "KOM";
+                boravak.VatRate = _user.LegalEntity.InVat ? 21 : 0; // Konfigurisati stopu poreza
+                boravak.Price = 100;
+                _db.Items.Add(boravak);
+                _db.SaveChanges();
+            }
+
+            var btax = _db.Items.Where(a => a.LegalEntityId == le && a.Code == "BTAX").FirstOrDefault();            
+            if (btax == null)
+            {
+                btax = new Item();
+                btax.LegalEntityId = le;
+                btax.Code = "BTAX";
+                btax.Name = "Boravišna taksa";
+                btax.Description = "Boravišna taksa";
+                btax.Unit = "KOM";
+                btax.VatRate = 0;
+                btax.VatExempt = MneVatExempt.VAT_CL20;
+                btax.Price = 1;
+                _db.Items.Add(btax);
+                _db.SaveChanges();
+            }
+
+            return (boravak, btax);
+        }
+
+        public void SetItemValues(DocumentItem s)
+        {
+            s.ItemUnit = s.Item.Unit;
+            s.UnitPriceWoVat = s.UnitPrice * 100m / (100m + s.VatRate);
+            s.LineAmount = s.Quantity * s.UnitPrice;
+            s.LineTotalWoVat = s.Quantity * s.FinalPrice * 100m / (100m + s.VatRate);
+            s.VatAmount = s.Quantity * s.FinalPrice * s.VatRate / (100m + s.VatRate);
+            s.LineTotal = s.Quantity * s.FinalPrice;
+        }
+
+        public void Payment(Document doc, PaymentType pType)
+        {
+            var payment = doc.DocumentPayments.FirstOrDefault();
+            if (payment == null)
+            {
+                payment = new DocumentPayment();
+                payment.DocumentId = doc.Id;
+                payment.PaymentType = pType;
+                payment.Amount = doc.DocumentItems.Select(a => a.LineTotal).Sum().Round2();
+                _db.DocumentPayments.Add(payment);
+                _db.SaveChanges();
+            }
+            else
+            {
+                payment.Amount = doc.DocumentItems.Select(a => a.LineTotal).Sum().Round2();
+                payment.PaymentType = pType;
+                _db.SaveChanges();
+            }
+        }
+
+        public async Task<Stream> InvoicePdf(Document doc, string output = "pdf")
+        {
+            var docxProvider = new DocxFormatProvider();
+            var pdfProvider = new PdfFormatProvider();
+            RadFlowDocument document;
+
+            //var path = _webHostEnvironment.WebRootPath + _configuration["REPORINT:MNE:Invoice"];
+            var path = "C:\\CERT\\MneInvoice.docx";
+
+            using (Stream input = File.OpenRead(path))
+            {
+                document = docxProvider.Import(input);
+            }
+
+            RadFlowDocumentEditor editor = new RadFlowDocumentEditor(document);
+
+            IEnumerable<Table> tables = document.EnumerateChildrenOfType<Table>();
+
+            var header = tables.FirstOrDefault();
+            var invoice = tables.Skip(1).FirstOrDefault();
+            var items = tables.Skip(2).FirstOrDefault();
+            var totals = tables.Skip(3).FirstOrDefault();
+            var taxes = tables.Skip(4).FirstOrDefault();
+
+            using (Stream firstImage = File.OpenRead(@"C:\CERT\26.png"))
+            {
+                //var inImage = header.Rows[0].Cells[2].Blocks.AddParagraph().Inlines.AddImageInline();
+                header.Rows[0].Cells[2].Blocks.Clear();
+                var inImage = header.Rows[0].Cells[2].Blocks.AddParagraph().Inlines.AddImageInline();
+                inImage.Image.ImageSource = new Telerik.Windows.Documents.Media.ImageSource(firstImage, "png");
+                inImage.Image.SetWidth(true, 110);
+                inImage.Paragraph.TextAlignment = Telerik.Windows.Documents.Flow.Model.Styles.Alignment.Right;
+            }
+
+            header.Rows.First().Cells.Skip(1).First().ColumnSpan = 2;
+
+            var c = 1;
+            foreach (var i in doc.DocumentItems)
+            {
+                var row = items.Rows.AddTableRow();
+                row.Height = new TableRowHeight(HeightType.Exact, 30);
+
+                row.Cells.AddTableCell().Blocks.AddParagraph().Inlines.AddRun($"{c++}");                
+                row.Cells.AddTableCell().Blocks.AddParagraph().Inlines.AddRun($"{i.ItemName}");                
+                row.Cells.AddTableCell().Blocks.AddParagraph().Inlines.AddRun($"{i.ItemUnit}");
+                row.Cells.AddTableCell().Blocks.AddParagraph().Inlines.AddRun($"{i.Quantity}");
+                row.Cells.AddTableCell().Blocks.AddParagraph().Inlines.AddRun($"{i.UnitPriceWoVat}");
+                row.Cells.AddTableCell().Blocks.AddParagraph().Inlines.AddRun($"{i.Discount}");
+                row.Cells.AddTableCell().Blocks.AddParagraph().Inlines.AddRun($"{i.FinalPrice}");
+                row.Cells.AddTableCell().Blocks.AddParagraph().Inlines.AddRun($"{i.VatRate}");
+                row.Cells.AddTableCell().Blocks.AddParagraph().Inlines.AddRun($"{i.FinalPrice}");
+                row.Cells.AddTableCell().Blocks.AddParagraph().Inlines.AddRun($"{i.LineAmount.ToString("n2")}");
+
+                foreach (var cell in row.Cells)
+                {
+                    //cell.VerticalAlignment = VerticalAlignment.Center;                    
+                    cell.Padding = new Telerik.Windows.Documents.Primitives.Padding(5);
+                    cell.Blocks.OfType<Paragraph>().First().Spacing.SpacingAfter = 5;
+                    cell.Blocks.OfType<Paragraph>().First().Spacing.SpacingBefore = 3;
+
+                    if (new int[] { 1 }.Contains(cell.GridColumnIndex)) cell.Blocks.OfType<Paragraph>().First().TextAlignment = Alignment.Left;
+                    else if (new int[] { 0, 2 }.Contains(cell.GridColumnIndex)) cell.Blocks.OfType<Paragraph>().First().TextAlignment = Alignment.Center;
+                    else cell.Blocks.OfType<Paragraph>().First().TextAlignment = Alignment.Right;
+                    
+                    if(cell.GridRowIndex % 2 == 1) cell.Shading.BackgroundColor = ThemableColor.FromArgb(255, 255, 255, 255);
+                    else cell.Shading.BackgroundColor = ThemableColor.FromArgb(255, 225, 225, 225);
+                }
+            }
+
+            c = 2;
+            foreach (var t in doc.DocumentItems.GroupBy(a => new { a.VatRate, a.VatExempt }))
+            {
+                var row = totals.Rows.Skip(c++).FirstOrDefault();
+                //row.Height = new TableRowHeight(HeightType.Exact, 10);
+
+                row.Cells.Skip(0).First().Blocks.OfType<Paragraph>().First().Inlines.AddRun($"{(t.Key.VatExempt != null ? $"Oslob. po čl. {t.Key.VatExempt.ToString().Replace("VAT_CL", "")}" : $"{t.Key.VatRate}%")}");
+                row.Cells.Skip(1).First().Blocks.OfType<Paragraph>().First().Inlines.AddRun($"{t.Sum(a => a.LineTotalWoVat)}");
+                row.Cells.Skip(2).First().Blocks.OfType<Paragraph>().First().Inlines.AddRun($"{t.Sum(a => a.VatAmount * a.Quantity).ToString("n2")}");
+
+                foreach (var cell in row.Cells.Take(3))
+                {
+                    cell.Padding = new Telerik.Windows.Documents.Primitives.Padding(4);
+                    cell.Blocks.OfType<Paragraph>().First().Spacing.SpacingAfter = 2;
+                    cell.Blocks.OfType<Paragraph>().First().Spacing.SpacingBefore = 0;
+                    cell.Blocks.OfType<Paragraph>().First().TextAlignment = Alignment.Right;
+                    cell.Borders = new TableCellBorders(new Border(BorderStyle.Thick));
+                    //if (cell.GridRowIndex % 2 == 1) cell.Shading.BackgroundColor = ThemableColor.FromArgb(255, 255, 255, 255);
+                    //else cell.Shading.BackgroundColor = ThemableColor.FromArgb(255, 225, 225, 225);
+                }
+            }
+
+            var stream = new MemoryStream();
+            if (output == "docx") docxProvider.Export(document, stream);
+            if (output == "pdf") pdfProvider.Export(document, stream);            
+            stream.Seek(0, SeekOrigin.Begin);
+
+            return stream;
         }
     }
 }

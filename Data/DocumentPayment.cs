@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Oblak.Data.Enums;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Oblak.Data
@@ -10,7 +11,7 @@ namespace Oblak.Data
         public int Id { get; set; } 
         public int DocumentId { get; set; }
         public Document Document { get; set; }
-        public int PaymentType { get; set; }
+        public PaymentType PaymentType { get; set; } = PaymentType.Cash;
         public decimal Amount { get; set; }
     }
 }

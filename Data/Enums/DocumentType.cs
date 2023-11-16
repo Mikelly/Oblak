@@ -3,7 +3,8 @@
     public enum DocumentType
     {
         Invoice,
-        CorrectiveInvoce,     
+        CorrectiveInvoce,   
+        ProformaInvoice,
         Payment
     }
 }

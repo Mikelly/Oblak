@@ -8,8 +8,8 @@ namespace Oblak.Data
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-        
-        [StringLength(450)]        
+
+        [StringLength(450)]
         public string? Guid { get; set; }
                 
         public int? ExternalId { get; set; }

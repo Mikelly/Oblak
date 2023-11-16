@@ -7,20 +7,20 @@ public class SrbPersonDto
     public int Id { get; set; }    
     public int? ExternalId { get; set; }
     public string? Guid { get; set; }
-    public int LegalEntityId { get; set; }
-    public int PropertyId { get; set; }
-    public int GroupId { get; set; }
-    public string LastName { get; set; }
-    public string FirstName { get; set; }
+    public int? LegalEntityId { get; set; }
+    public int? PropertyId { get; set; }
+    public int? GroupId { get; set; }
+    public string? LastName { get; set; }
+    public string? FirstName { get; set; }
     public string? PersonalNumber { get; set; }
-    public string Gender { get; set; }
+    public string? Gender { get; set; }
     public DateTime? BirthDate { get; set; }
     public string? Status { get; set; }
     public string? Error { get; set; }      
 
     public bool IsDomestic { get; set; }
 
-    public bool IsForeignBorn { get; set; }
+    public bool? IsForeignBorn { get; set; }
 
     public string? BirthPlaceName { get; set; }
 
@@ -53,7 +53,7 @@ public class SrbPersonDto
 
     public string? DocumentNumber { get; set; }
 
-    public DateTime DocumentIssueDate { get; set; }
+    public DateTime? DocumentIssueDate { get; set; }
 
     public string? VisaType { get; set; }
 
@@ -62,12 +62,12 @@ public class SrbPersonDto
 
     // Samo prijava, samo strani gost, samo ako postoji vrsta vize
     public string? VisaIssuingPlace { get; set; }
-
-
-    
+        
 
 
     public DateTime? EntryDate { get; set; }
+
+    public string? EntryPlace { get; set; }
 
     public string? EntryPlaceCode { get; set; }
 
@@ -109,6 +109,7 @@ public class SrbPersonDto
     #endregion
 
     public DateTime? CheckIn { get; set; }
+    
     [NotMapped]
     public bool? CheckedIn { get; set; }
 
@@ -132,6 +133,7 @@ public class SrbPersonDto
     // Ne smije proći više od dozvoljenog roka za odjavu (koliki je taj rok?)
     // Samo za odjavu, domaći i strani gost
     public DateTime? CheckOut { get; set; }
+    
     [NotMapped]
     public bool? CheckedOut { get; set; }
 

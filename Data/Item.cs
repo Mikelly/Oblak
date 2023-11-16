@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Oblak.Data.Enums;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Oblak.Data
@@ -30,7 +31,7 @@ namespace Oblak.Data
         public bool PriceInclVat { get; set; }
 
         [StringLength(450)]
-        public string VatExempt { get; set; }
+        public MneVatExempt? VatExempt { get; set; } = null;
 
 
         public LegalEntity LegalEntity { get; set; }

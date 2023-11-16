@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Oblak.Data.Enums;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Oblak.Data
@@ -22,7 +23,7 @@ namespace Oblak.Data
         [StringLength(450)]
         public string ItemUnit { get; set; }
         
-        public string? VatExempt { get; set; }
+        public MneVatExempt? VatExempt { get; set; }
         
         public decimal Quantity { get; set; }
         

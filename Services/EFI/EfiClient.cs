@@ -1,6 +1,5 @@
 ﻿using EfiService;
 using Oblak.Data;
-using QRCoder;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Security.Cryptography.X509Certificates;
@@ -20,6 +19,8 @@ using Telerik.Windows.Documents.Flow.FormatProviders.Pdf;
 using Oblak.Services;
 using System.Xml.Serialization;
 using Oblak.Data.Enums;
+using System.Security.Policy;
+using Net.Codecrete.QrCodeGenerator;
 
 namespace Oblak.Services;
 
@@ -64,11 +65,11 @@ public class EfiClient
 
     public async Task<RegisterInvoiceRequest> Fiscalize(Document doc, string correct, string late)
     {  
-        if (doc.Status == "F") throw new Exception("Račun je već fiskalizovan!");
+        if (doc.Status == DocumentStatus.Fiscalized) throw new Exception("Račun je već fiskalizovan!");
 
         var enu = _db.FiscalEnu.FirstOrDefault(a => a.Code == doc.FiscalEnuCode)!;
 
-        if (doc.TypeOfInvoce == "CASH" && enu.AutoDeposit.HasValue)
+        if (doc.TypeOfInvoce == TypeOfInvoice.Cash && enu.AutoDeposit.HasValue)
         {
             var deposit = _db.FiscalRequests.Any(a => a.FiscalEnuCode == doc.FiscalEnuCode && a.FicalizationDate.Date == doc.InvoiceDate.Date && a.RequestType == Data.Enums.FiscalRequestType.RegisterCashDeposit && a.FCDC != null);
             if (deposit == false)
@@ -88,7 +89,7 @@ public class EfiClient
 
         // ------- GENERISANJE REQUESTA --------
         _logger.LogDebug("CREATE REQUEST");
-        var request = Invoice(doc, correct, late);
+        var request = Invoice(doc, correct, late);     
 
         System.Net.ServicePointManager.ServerCertificateValidationCallback += (se, cert, chain, sslerror) => { return true; };
 
@@ -113,41 +114,36 @@ public class EfiClient
             fr.RequestType = FiscalRequestType.RegisterInvoice;
             fr.Invoice = doc.Id;
             fr.InvoiceNo = doc.No;
-            //fr.Company = f;                
-            //fr.FiscalEnu = doc.FiscalEnuCode;
-            fr.FiscalEnuCode = doc.FiscalEnuCode;
-            //fr.BusinessUnit = doc.BusinessUnitCode;
+            fr.LegalEntityId = doc.LegalEntityId;
+            fr.FiscalEnuCode = doc.FiscalEnuCode;            
             fr.BusinessUnitCode = doc.BusinessUnitCode;
             fr.Amount = request.Invoice.TotPrice;
             fr.FicalizationDate = DateTime.Now;
             fr.Status = "A";
-            doc.Status = "A";
-            //doc.IntProperty5 = 2; // Neuspješno fiskalizovan;
-            doc.IIC = request.Invoice.IIC;                
-
+            doc.Status = DocumentStatus.Active;            
+            doc.IIC = request.Invoice.IIC;     
             fr.Request = xml;            
             fr.IIC = request.Invoice.IIC;
-            //doc.QR = request.URL;
-            
-            QRCodeGenerator qrGenerator = new QRCodeGenerator();
-            QRCodeData qrCodeData = qrGenerator.CreateQrCode(doc.Qr, QRCodeGenerator.ECCLevel.M);
-            QRCode qrCode = new QRCode(qrCodeData);
-            var qrCodeImage = qrCode.GetGraphic(3, SixLabors.ImageSharp.Color.Black, SixLabors.ImageSharp.Color.White, false);
-            //Bitmap qrCodeImage = qrCode.GetGraphic(3, Color.Black, Color.White, false);
-            //Bitmap resized = new Bitmap(qrCodeImage, new Size(qrCodeImage.Width / 7, qrCodeImage.Height / 7));
-            var path = Path.Combine(_env.WebRootPath, $"~/QR/{doc.Id}.bmp");
-            doc.QrPath = path;
-            _db.SaveChanges();
-            //qrCodeImage = qrCodeImage.Clone(new Rectangle(0, 0, qrCodeImage.Width, qrCodeImage.Height), PixelFormat.Format1bppIndexed);
-            //qrCodeImage.Save(path, ImageFormat.Bmp);
 
+            var inv = request.Invoice;
+            var d = inv.IssueDateTime;
+            var dtm = $"{d.ToString("yyyy")}-{d.ToString("MM")}-{d.ToString("dd")}T{d.ToString("HH")}:{d.ToString("mm")}:{d.ToString("ss")}{d.ToString("zzz")}";
+            var qrurl = GetFiscalParameter("QR");
+            doc.Qr = $@"{qrurl}/ic/#/verify?iic={inv.IIC}&tin={inv.Seller.IDNum}&crtd={dtm}&ord={inv.InvOrdNum}&bu={inv.BusinUnitCode}&cr={inv.TCRCode}&sw={inv.SoftCode}&prc={inv.TotPrice.ToString("n2", System.Globalization.CultureInfo.GetCultureInfo("en-US")).Replace(",", "")}";
+            _db.SaveChanges();
+
+            var qr = QrCode.EncodeText(doc.Qr, QrCode.Ecc.Medium);
+            var path = Path.Combine(_env.WebRootPath, $"QR/{doc.Id}.png");
+            qr.SaveAsPng(path, 10, 3);
+            _db.SaveChanges();
+            
             response = client.registerInvoice(request);
                         
             fr.Response = response.ToXML();
             fr.FIC = response.FIC.ToUpper().Replace("-", "");
             fr.Status = "F";
             doc.FIC = fr.FIC;
-            doc.Status = "F";
+            doc.Status = DocumentStatus.Fiscalized;
             doc.FIC = fr.FIC;                
             _db.SaveChanges();
         }
@@ -160,13 +156,13 @@ public class EfiClient
             if (excp is System.ServiceModel.FaultException)
             {
                 error = Exceptions.ParseException(excp);
-                doc.Status = "A";
+                doc.Status = DocumentStatus.Active;
                 throw new Exception(error);
             }
             else
             {
                 error = Exceptions.StringException(excp);
-                doc.Status = "N";
+                doc.Status = DocumentStatus.NotFiscalized;
                 fr.Error = error;
             }
         }
@@ -260,7 +256,7 @@ public class EfiClient
         inv.Header = new RegisterInvoiceRequestHeaderType();
         inv.Id = "Request";
         inv.Version = 1;
-        inv.Invoice = new InvoiceType();
+        inv.Invoice = new EfiService.InvoiceType();
 
         // DEFINICIJA TIPA RACUNA...
         inv.Invoice.InvType = InvoiceTSType.INVOICE;
@@ -274,9 +270,9 @@ public class EfiClient
         inv.Invoice.TCRCode = doc.FiscalEnuCode;
         if (late == null || late == "TAXPERIOD") inv.Invoice.IssueDateTime = now.forXML();
         inv.Invoice.BusinUnitCode = doc.BusinessUnitCode;
-        inv.Invoice.InvOrdNum = doc.No;
-        inv.Invoice.IsIssuerInVAT = _appUser!.LegalEntity.InVat;           
-                             
+        inv.Invoice.InvOrdNum = doc.OrdinalNo;
+        inv.Invoice.InvNum = $"{inv.Invoice.BusinUnitCode}/{inv.Invoice.InvOrdNum}/{inv.Invoice.IssueDateTime.Year}/{inv.Invoice.TCRCode}";
+        inv.Invoice.IsIssuerInVAT = _appUser!.LegalEntity.InVat;
 
         if (late != null && late != "PARAGON" && late != "TAXPERIOD")
         {
@@ -314,13 +310,13 @@ public class EfiClient
         inv.Invoice.Seller.Name = _appUser.LegalEntity.Name;
         inv.Invoice.Seller.Address = _appUser.LegalEntity.Address;
         
-        inv.Invoice.Buyer = new BuyerType();
+        inv.Invoice.Buyer = new EfiService.BuyerType();
         if (doc.PartnerIdNumber != null && doc.PartnerIdType != null && doc.PartnerName != null)
         {
             inv.Invoice.Buyer.IDType = doc.PartnerIdType switch
             { 
-                "ID" => IDTypeSType.ID,
-                "PASS" => IDTypeSType.PASS,
+                BuyerIdType.ID => IDTypeSType.ID,
+                BuyerIdType.Passport => IDTypeSType.PASS,
                 _ => IDTypeSType.TIN,
             };
             inv.Invoice.Buyer.IDNum = doc.PartnerIdNumber;
@@ -377,10 +373,10 @@ public class EfiClient
                 pay.Amt = p.Amount.Round2();                        
                 pay.Type = p.PaymentType switch
                 {
-                    1 => PaymentMethodTypeSType.BANKNOTE,
-                    2 => PaymentMethodTypeSType.ACCOUNT,
-                    3 => PaymentMethodTypeSType.CARD,
-                    4 => PaymentMethodTypeSType.ADVANCE,
+                    PaymentType.Cash => PaymentMethodTypeSType.BANKNOTE,
+                    PaymentType.BankAccount => PaymentMethodTypeSType.ACCOUNT,
+                    PaymentType.CreditCard => PaymentMethodTypeSType.CARD,
+                    PaymentType.Advance => PaymentMethodTypeSType.ADVANCE,
                     _ => PaymentMethodTypeSType.OTHER,
                 };                        
                 payments.Add(pay);
@@ -412,13 +408,13 @@ public class EfiClient
             {
                 itm.EX = s.VatExempt switch
                 {
-                    "VAT_CL17" => ExemptFromVATSType.VAT_CL17,
-                    "VAT_CL20" => ExemptFromVATSType.VAT_CL20,
-                    "VAT_CL26" => ExemptFromVATSType.VAT_CL26,
-                    "VAT_CL27" => ExemptFromVATSType.VAT_CL27,
-                    "VAT_CL28" => ExemptFromVATSType.VAT_CL28,
-                    "VAT_CL29" => ExemptFromVATSType.VAT_CL29,
-                    "VAT_CL30" => ExemptFromVATSType.VAT_CL30,
+                    MneVatExempt.VAT_CL17 => ExemptFromVATSType.VAT_CL17,
+                    MneVatExempt.VAT_CL20 => ExemptFromVATSType.VAT_CL20,
+                    MneVatExempt.VAT_CL26 => ExemptFromVATSType.VAT_CL26,
+                    MneVatExempt.VAT_CL27 => ExemptFromVATSType.VAT_CL27,
+                    MneVatExempt.VAT_CL28 => ExemptFromVATSType.VAT_CL28,
+                    MneVatExempt.VAT_CL29 => ExemptFromVATSType.VAT_CL29,
+                    MneVatExempt.VAT_CL30 => ExemptFromVATSType.VAT_CL30,
                     _ => ExemptFromVATSType.VAT_CL20,
                 };
                 itm.EXSpecified = true;
@@ -511,7 +507,7 @@ public class EfiClient
         //iicInput = $"{this.Invoice.Seller.IDNum}|{this.Invoice.IssueDateTime.ToString("yyyy-MM-ddTHH:mm:sszzz")}|{this.Invoice.InvOrdNum}|{this.Invoice.BusinUnitCode}|{this.Invoice.TCRCode}|{this.Invoice.SoftCode}|{this.Invoice.TotPrice.ToString("n2", System.Globalization.CultureInfo.GetCultureInfo("en-US"))}";
         iicInput = $"{inv.Invoice.Seller.IDNum}|{dtm}|{inv.Invoice.InvOrdNum}|{inv.Invoice.BusinUnitCode}|{inv.Invoice.TCRCode}|{inv.Invoice.SoftCode}|{inv.Invoice.TotPrice.ToString("n2", System.Globalization.CultureInfo.GetCultureInfo("en-US")).Replace(",", "")}";
 
-        X509Certificate2 keyStore = new X509Certificate2(cert);
+        X509Certificate2 keyStore = new X509Certificate2(cert, pass);
 
         // Load a private from a key store
         RSA privateKey = keyStore.GetRSAPrivateKey();
@@ -536,7 +532,7 @@ public class EfiClient
         var cert = _appUser!.LegalEntity.EfiCertData;
         var pass = _appUser!.LegalEntity.EfiPassword;
 
-        using (X509Certificate2 keyStore = new X509Certificate2(cert))
+        using (X509Certificate2 keyStore = new X509Certificate2(cert, pass))
         {
             try
             {
@@ -636,11 +632,11 @@ public class EfiClient
         var cert = _appUser!.LegalEntity.EfiCertData;
         var pass = _appUser.LegalEntity!.EfiPassword;
 
-        using (X509Certificate2 keyStore = new X509Certificate2(cert))
+        using (X509Certificate2 keyStore = new X509Certificate2(cert, pass))
         {
             try
             {
-                var REQUEST_TO_SIGN = this.ToXML();
+                var REQUEST_TO_SIGN = cash.ToXML();
 
                 // Load a private from a key store
                 RSA privateKey = keyStore.GetRSAPrivateKey()!;
@@ -729,7 +725,7 @@ public class EfiClient
     }
 
 
-    public string GetFiscalParameter(string parameter, bool test = false)
+    public string GetFiscalParameter(string parameter, bool test = true)
     {
         if (parameter == "URL" && test == false) return _config["EFI:PROD:URL"]!;
         if (parameter == "URL" && test == true) return _config["EFI:TEST:URL"]!;

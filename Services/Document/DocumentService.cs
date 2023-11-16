@@ -1,6 +1,5 @@
 ﻿using EfiService;
 using Oblak.Data;
-using QRCoder;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Security.Cryptography.X509Certificates;
@@ -19,6 +18,7 @@ using Telerik.Windows.Documents.Flow.Model;
 using Telerik.Windows.Documents.Flow.FormatProviders.Pdf;
 using Oblak.Services;
 using System.Xml.Serialization;
+using Oblak.Data.Enums;
 
 namespace Oblak.Services;
 
@@ -91,14 +91,14 @@ public class DocumentService
        
         var doc = new Document();            
         doc.No = 0;
-        doc.Status = "A";
+        doc.Status = DocumentStatus.Active;
         doc.CurrencyCode = "EUR";
         doc.ExchangeRate = 1;
         obj.BusinessUnitCode = obj.BusinessUnitCode;
         doc.FiscalEnuCode = obj.FiscalEnuCode; 
         doc.InvoiceDate = DateTime.Now;
         doc.GroupId = g;
-        doc.TypeOfInvoce = "CASH";
+        doc.TypeOfInvoce = TypeOfInvoice.Cash;
         _db.Documents.Add(doc);
         _db.SaveChanges();
         doc.IdEncrypted = Encryptor.Base64Encode(Encryptor.EncryptSimple(doc.Id.ToString()));
@@ -134,61 +134,65 @@ public class DocumentService
             _db.SaveChanges();
         }
 
-        Payment(doc, null);
+        Payment(doc, PaymentType.Cash);
 
         return doc;
     }
 
 
-    public (Document, string, string) CreateRacun(Racun racun, Property property)
+    public (Document, string, string) CreateRacun(Invoice racun, Property property)
     {
-        var doc = _db.Documents.Where(a => a.Id == racun!.ID).FirstOrDefault();
+        var doc = _db.Documents.Where(a => a.Id == racun!.Id).FirstOrDefault();
         if (doc == null)
         {
             doc = new Document();
+            _db.Documents.Add(doc);
+            doc.LegalEntityId = property.LegalEntityId;
+            doc.PropertyId = property.Id;
+            doc.IdEncrypted = string.Empty;
+            doc.BusinessUnitCode = property.BusinessUnitCode;
+            doc.FiscalEnuCode = property.FiscalEnuCode;
+            doc.Status = DocumentStatus.Active;
+            doc.No = 0;
+            doc.ExternalNo = "";
+            doc.OrdinalNo = 0;
+            doc.InvoiceDate = racun.InvoiceDate;
+            doc.GroupId = racun.GroupId;
+            doc.OperatorCode = _appUser.EfiOperator;
 
-            doc.Status = "A";
+            if (racun.PartnerId.HasValue)
+            {
+            }
+            else
+            {
+                doc.PartnerName = racun.PartnerName;
+                doc.PartnerType = racun.PartnerType;
+                doc.PartnerIdType = racun.PartnerIdType;
+                doc.PartnerIdNumber = racun.PartnerIdNumber;
+            }
+
             _db.SaveChanges();
             doc.IdEncrypted = Encryptor.Base64Encode(Encryptor.EncryptSimple(doc.Id.ToString()));
             _db.SaveChanges();
         }
         else
         {
-            if (doc.Status == "F")
+            if (doc.Status == DocumentStatus.Fiscalized)
             {
                 return (doc, "", "Ne možete mijenjati račun koji je fiskalizovan");                                        
             }
         }
 
-        doc.No = 0;
-        doc.BusinessUnitCode = property.BusinessUnitCode;
-        doc.FiscalEnuCode = property.FiscalEnuCode;
-        doc.InvoiceDate = racun.Datum;
-        doc.GroupId = racun.PrijavaID;
-        doc.TypeOfInvoce = "CASH";
-        _db.SaveChanges();
-
-        var to_delete = doc.DocumentItems.Where(a => racun.stavke.Any(b => b.ID != 0 && b.ID == a.Id) == false).ToList();
+        var to_delete = doc.DocumentItems.Where(a => racun.DocumentItems.Any(b => b.ID != 0 && b.ID == a.Id) == false).ToList();
         foreach (var del in to_delete) _db.DocumentItems.Remove(del);
         _db.SaveChanges();
 
-        foreach (var stavka in racun.stavke)
+        foreach (var stavka in racun.DocumentItems)
         {
             var s = UpdateStavka(doc, stavka, "N");
         }
 
-        Payment(doc, racun.NacinPlacanja);
-
-        var ime = racun.Kupac ?? "";
-        var brd = racun.Dokument ?? "";
-        var pib = racun.PIB ?? "";
-        var vrs = racun.VrstaKupca;
-        var vrd = racun.VrstaDokumenta;
-
-        doc.PartnerName = racun.Kupac;
-        doc.PartnerType = racun.VrstaKupca;
-        doc.PartnerIdType = racun.VrstaKupca;
-        doc.PartnerIdNumber = racun.Dokument;
+        Payment(doc, racun.PaymentType);
 
         _db.SaveChanges();
 
@@ -226,16 +230,22 @@ public class DocumentService
             return new DocumentItem();
         }
 
+
         var art = _db.Items.Where(a => a.Id == s.Artikal).FirstOrDefault();
 
         sd.DocumentId = doc.Id;
         sd.ItemId = art.Id;
+        sd.ItemCode = art.Code;
         sd.ItemUnit = art.Unit;
         sd.ItemName = art.Name;
         sd.Quantity = s.Kolicina;
-        sd.UnitPrice = s.Cijena;
+        sd.UnitPrice = s.Cijena;        
         sd.Discount = 0;
+        sd.FinalPrice = sd.UnitPrice * (100m - sd.Discount) / 100m;
         sd.VatRate = art.VatRate;
+        _db.SaveChanges();
+        _db.Entry(sd).Reference(a => a.Item).Load();
+        SetItemValues(sd);
         _db.SaveChanges();
 
         return sd;
@@ -251,14 +261,22 @@ public class DocumentService
         s.LineTotal = s.Quantity * s.FinalPrice;
     }
 
-    public void Payment(Document doc, int? p)
+    public void Payment(Document doc, PaymentType pType)
     {
+        //var pType = p switch
+        //{
+        //    1 => PaymentType.Cash, 
+        //    2 => PaymentType.BankAccount, 
+        //    3 => PaymentType.CreditCard,
+        //    _ => PaymentType.Cash
+        //};
+        
         var payment = doc.DocumentPayments.FirstOrDefault();
         if (payment == null)
         {
             payment = new DocumentPayment();
             payment.DocumentId = doc.Id;                
-            payment.PaymentType = p ?? 2;
+            payment.PaymentType = pType;
             payment.Amount = doc.DocumentItems.Select(a => a.LineTotal).Sum().Round2();
             _db.DocumentPayments.Add(payment);
             _db.SaveChanges();
@@ -266,46 +284,44 @@ public class DocumentService
         else
         {
             payment.Amount = doc.DocumentItems.Select(a => a.LineTotal).Sum().Round2();
-            if (p != null) payment.PaymentType = p.Value;
+            payment.PaymentType = pType;
             _db.SaveChanges();
         }
     }
 
 
-    public Racun Doc2Racun(Document d)
+    public Invoice Doc2Racun(Document d)
     {
-        var r = new Racun();
-        r.ID = d.Id;
-        r.Datum = d.InvoiceDate;
-        r.PrijavaID = d.GroupId;
-        r.BrojGostiju = 0;
-        r.BrojNocenja = 0;
-        r.ENU = d.FiscalEnuCode;
+        var r = new Invoice();
+        r.Id = d.Id;
+        r.InvoiceDate = d.InvoiceDate;
+        r.GroupId = d.GroupId;
+        r.FiscalEnuCode = d.FiscalEnuCode;
+        r.BusinessUnitCode = d.BusinessUnitCode;
         r.Status = d.Status;
-        r.Kupac = d.PartnerName;
-        r.Dokument = d.PartnerIdNumber;
-        r.VrstaKupca = d.PartnerType;
-        r.VrstaDokumenta = d.PartnerIdType;
-        r.PIB = "";                        
+        r.PartnerName = d.PartnerName;
+        r.PartnerIdNumber = d.PartnerIdNumber;
+        r.PartnerType = d.PartnerType;
+        r.PartnerIdType = d.PartnerIdType;                     
 
         var pay = d.DocumentPayments.ToList();
 
         if (pay.Any())
         {
-            r.Iznos = pay.Sum(a => a.Amount);
-            r.NacinPlacanja = pay.First().PaymentType;
+            r.Amount = pay.Sum(a => a.Amount);
+            r.PaymentType = pay.First().PaymentType;
         }
         else
         {
-            r.Iznos = 0;
-            r.NacinPlacanja = 0;
+            r.Amount = 0;
+            r.PaymentType = 0;
         }
 
-        r.stavke = new List<Stavka>();
+        r.DocumentItems = new List<Stavka>();
 
         foreach (var s in d.DocumentItems.ToList())
         {
-            r.stavke.Add(new Stavka()
+            r.DocumentItems.Add(new Stavka()
             {
                 ID = s.Id,
                 RacunID = s.DocumentId,
@@ -345,7 +361,7 @@ public class DocumentService
             btax.Name = "Boravišna taksa";
             btax.Unit = "KOM";
             btax.VatRate = _appUser.LegalEntity.InVat ? 21m : 0m;
-            btax.VatExempt = "CL_20";
+            btax.VatExempt = MneVatExempt.VAT_CL20;
             _db.Items.Add(boravak);
             _db.SaveChanges();
         }

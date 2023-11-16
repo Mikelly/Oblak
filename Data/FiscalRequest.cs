@@ -27,9 +27,9 @@ public partial class FiscalRequest
     [StringLength(450)]
     public FiscalRequestType RequestType { get; set; }
         
-    public string Request { get; set; }    
+    public string? Request { get; set; }    
 
-    public string Response { get; set; }    
+    public string? Response { get; set; }    
 
     public decimal Amount { get; set; }
 

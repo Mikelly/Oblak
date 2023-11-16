@@ -296,9 +296,6 @@ namespace Oblak.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("BusinessUnitId")
-                        .HasColumnType("int");
-
                     b.Property<string>("CurrencyCode")
                         .IsRequired()
                         .HasMaxLength(450)
@@ -321,7 +318,6 @@ namespace Oblak.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("FIC")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
@@ -331,7 +327,6 @@ namespace Oblak.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("FiscalNo")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
@@ -342,7 +337,6 @@ namespace Oblak.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("IIC")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
@@ -374,7 +368,6 @@ namespace Oblak.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("PartnerAddress")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
@@ -405,12 +398,10 @@ namespace Oblak.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Qr")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("QrPath")
-                        .IsRequired()
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
@@ -523,8 +514,9 @@ namespace Oblak.Migrations
                     b.Property<int>("DocumentId")
                         .HasColumnType("int");
 
-                    b.Property<int>("PaymentType")
-                        .HasColumnType("int");
+                    b.Property<string>("PaymentType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -646,7 +638,6 @@ namespace Oblak.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Request")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("RequestType")
@@ -654,7 +645,6 @@ namespace Oblak.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Response")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
@@ -800,7 +790,6 @@ namespace Oblak.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("VatExempt")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
@@ -842,6 +831,14 @@ namespace Oblak.Migrations
                     b.Property<bool>("InVat")
                         .HasColumnType("bit");
 
+                    b.Property<string>("InvoiceHeader")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<byte[]>("Logo")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(450)
@@ -875,9 +872,10 @@ namespace Oblak.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("Type")
+                    b.Property<string>("Type")
+                        .IsRequired()
                         .HasMaxLength(450)
-                        .HasColumnType("int");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("UserCreated")
                         .HasMaxLength(450)
@@ -1484,6 +1482,9 @@ namespace Oblak.Migrations
                     b.Property<string>("EntryPlaceCode")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("ExternalId2")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsDomestic")
                         .HasColumnType("bit");

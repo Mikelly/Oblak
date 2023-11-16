@@ -44,6 +44,7 @@ namespace EfiService
     /// <remarks/>
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "2.1.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.Xml.Serialization.XmlRoot(Namespace = "https://efi.tax.gov.me/fs/schema")]
     [System.Xml.Serialization.XmlTypeAttribute(AnonymousType=true, Namespace="https://efi.tax.gov.me/fs/schema")]
     public partial class RegisterInvoiceRequest
     {
@@ -5637,6 +5638,7 @@ namespace EfiService
     /// <remarks/>
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "2.1.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.Xml.Serialization.XmlRoot(Namespace = "https://efi.tax.gov.me/fs/schema")]
     [System.Xml.Serialization.XmlTypeAttribute(AnonymousType=true, Namespace="https://efi.tax.gov.me/fs/schema")]
     public partial class RegisterTCRRequest
     {
@@ -5861,6 +5863,7 @@ namespace EfiService
     /// <remarks/>
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "2.1.0")]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.Xml.Serialization.XmlRoot(Namespace = "https://efi.tax.gov.me/fs/schema")]
     [System.Xml.Serialization.XmlTypeAttribute(AnonymousType=true, Namespace="https://efi.tax.gov.me/fs/schema")]
     public partial class RegisterCashDepositRequest
     {

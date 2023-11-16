@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Oblak.Data;
+using Oblak.Data.Enums;
+using System.Text.Json.Serialization;
 
 namespace Oblak.Models.rb90;
 
@@ -21,25 +23,26 @@ public class PrijavaStatus
     public int Progress { get; set; }
 }
 
-public class Racun
+public class Invoice
 {
-    public int ID { get; set; }
-    public int? ObjekatID { get; set; }
-    public int? PrijavaID { get; set; }
-    public DateTime Datum { get; set; }
-    public int BrojNocenja { get; set; }
-    public int BrojGostiju { get; set; }
-    public string Kupac { get; set; }
-    public string VrstaKupca { get; set; }
-    public string PIB { get; set; }
-    public string Dokument { get; set; }
-    public string VrstaDokumenta { get; set; }
-    public decimal Iznos { get; set; }
-    public int NacinPlacanja { get; set; }
-    public string Status { get; set; }
-    public string ENU { get; set; }
+    public int Id { get; set; }
+    public int? PropertyId { get; set; }
+    public int? GroupId { get; set; }
+    public DateTime InvoiceDate { get; set; }
+    public int? PartnerId { get; set; }
+    public string PartnerName { get; set; }
+    public BuyerType PartnerType { get; set; }    
+    public BuyerIdType PartnerIdType { get; set; }
+    public string PartnerIdNumber { get; set; }
+    public PaymentType PaymentType { get; set; }
+    public decimal Amount { get; set; }
 
-    public List<Stavka> stavke { get; set; }
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public DocumentStatus Status { get; set; }    
+    public string? FiscalEnuCode { get; set; }
+    public string? BusinessUnitCode { get; set; }
+
+    public List<Stavka> DocumentItems { get; set; }
 }
 
 public class Stavka
@@ -52,6 +55,3 @@ public class Stavka
     public decimal Cijena { get; set; }
     public decimal Iznos { get; set; }
 }
-
-
-

@@ -4,6 +4,8 @@
     {
         BankAccount,
         Cash,
-        CreditCard
+        CreditCard,
+        Advance,
+        Other
     }
 }

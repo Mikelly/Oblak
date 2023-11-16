@@ -7,7 +7,7 @@
 <script type="text/javascript">
 
     const connection = new signalR.HubConnectionBuilder()
-        .withUrl("/chathub")
+        .withUrl("/messageHub")
         .configureLogging(signalR.LogLevel.Information)
         .withAutomaticReconnect()
         .build();

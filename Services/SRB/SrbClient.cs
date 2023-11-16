@@ -132,6 +132,7 @@ public class SrbClient : Register
             request.AddHeader("RefreshToken", $"{_refreshToken}");
             var json = JsonSerializer.Serialize(checkInRequest);
             request.AddJsonBody(json);
+            //request.AddJsonBody(checkInRequest);
             var response = await _client.ExecutePostAsync(request);
             //var jsonstring = JsonSerializer.Deserialize<string>(response.Content!);
             CheckInOutResponse result = JsonSerializer.Deserialize<CheckInOutResponse>(response.Content!)!;
@@ -187,16 +188,11 @@ public class SrbClient : Register
                 foreach (var pr in data) pr.CheckOut = checkOutDate.Value;
             }
 
-            //var errors = Validate(group, checkInDate, checkOutDate);
+            var errors = new List<PersonErrorDto>();
 
-            //if (errors.Any()) return errors;
+            errors = Validate(group, checkInDate, checkOutDate);
 
-            //if (test)
-            //{
-            //    foreach (var pr in data) pr.ExternalId = 0;
-            //    _db.SaveChanges();
-            //    return null;
-            //}
+            if (errors.Any()) return errors;
 
             int total = data.Count();
 
@@ -226,27 +222,37 @@ public class SrbClient : Register
                     {
                         var response = await CheckOut(pr);
                         if (response.errors.Any()) pr.Error = JsonSerializer.Serialize(response.errors);
-                        else { pr.CheckedOut = true; pr.ExternalId = int.Parse(response.identifikator); }
+                        else { pr.CheckedOut = true; pr.ExternalId = int.Parse(response.identifikator); pr.Error = null; }
                     }
                     else
                     { 
-                        var response = await CheckIn(pr);
+                        var response = await CheckIn(pr);                        
                         if (response.errors.Any()) pr.Error = JsonSerializer.Serialize(response.errors);
-                        else { pr.CheckedIn = true; pr.ExternalId = int.Parse(response.identifikator); }
+                        else { pr.CheckedIn = true; pr.ExternalId = int.Parse(response.identifikator); pr.Error = null; }
                         _db.SaveChanges();
-                    }
-                    Thread.Sleep(100);
+                    }                    
                 }
                 catch (Exception e)
                 { 
                     pr.Error = Exceptions.StringException(e);
                     _db.SaveChanges();
                 }
-            }           
+            }
 
-            await _messageHub.Clients.User(_context.User.Identity!.Name!).SendAsync("status", 100, $"Prijavljivanje završeno");            
+            await Persons(group);
 
-            return null;
+            await _messageHub.Clients.User(_context.User.Identity!.Name!).SendAsync("status", 100, $"Prijavljivanje završeno");
+
+            if (data.Any(a => a.Error != null))
+            {
+                foreach (var err in data.Where(a => a.Error != null))
+                {
+                    errors.Add(new PersonErrorDto() { PersonId = err.Id, ExternalErrors = err.Error != null ? JsonSerializer.Deserialize<List<string>>(err.Error)! : null });
+                }
+            }
+
+            if (errors.Any()) return errors;
+            else return null;
         }
         catch (Exception e)
         {
@@ -270,7 +276,7 @@ public class SrbClient : Register
             OsnovniPodaci = new osnovniPodaci
             {
                 Izmena = person.CheckedIn ? true : false,
-                ExternalId = person.Id.ToString(),
+                ExternalId = person.Guid,
                 Ime = person.FirstName,
                 Prezime = person.LastName,
                 Jmbg = person.IsDomestic ? person.PersonalNumber : null,
@@ -301,7 +307,7 @@ public class SrbClient : Register
                 RazlogBoravkaSifra = person.ReasonForStay,
                 SmestajneJedinice = null,
                 NazivAgencije = null,
-                BarkodoviVaucera = new string[0],
+                BarkodoviVaucera = null,
             },
             IdentifikacioniDokumentStranogLica = new identifikacioniDokumentStranogLica
             { 
@@ -309,8 +315,8 @@ public class SrbClient : Register
                 VrstaPutneIspraveSifra = person.DocumentType,
                 MestoUlaskaURepublikuSrbiju = person.EntryPlace,
                 MestoUlaskaURepublikuSrbijuSifra = person.EntryPlaceCode,
-                DatumUlaskaURepublikuSrbiju = person.EntryDate.Value.ToString("yyyy-MM-dd"),
-                DatumIzdavanjaPutneIsprave = person.DocumentIssueDate.Value.ToString("yyyy-MM-dd"),
+                DatumUlaskaURepublikuSrbiju = person.EntryDate.HasValue ? person.EntryDate.Value.ToString("yyyy-MM-dd") : null,
+                DatumIzdavanjaPutneIsprave = person.DocumentIssueDate.HasValue ? person.DocumentIssueDate.Value.ToString("yyyy-MM-dd") : null,
                 OrganIzdavanjaPutneIsprave = person.IssuingAuthorithy,
                 DatumDoKadaJeOdobrenBoravakURepubliciSrbiji = person.StayValidTo,
                 VrstaVizeSifra = person.VisaType,
@@ -340,7 +346,7 @@ public class SrbClient : Register
 
     public override Task<List<CodeList>> CodeLists()
     {
-        return null;
+        return _db.CodeLists.Where(a => a.Country == Data.Enums.Country.SRB.ToString()).ToListAsync();
     }
 
     public override async Task<object> Authenticate()
@@ -418,26 +424,38 @@ public class SrbClient : Register
         {
             try
             {
-                var confirmationPdfEndpoint = _configuration["SRB:Endpoints:Persons"]!.Trim('/');
-                var request = new RestRequest(confirmationPdfEndpoint, Method.Post);
-                request.AddHeader("Authorization", $"Bearer {_token}");
-                request.AddHeader("RefreshToken", $"{_refreshToken}");
-                var tr = new TuristRequest()
+                if (p.ExternalId != null)
                 {
-                    ime = p.FirstName,
-                    prezime = p.LastName,
-                    datumIvremeDolaskaOd = p.CheckIn.Value.Date.ToString("yyyy-MM-ddTHH:mm:00.0000Z"),
-                    datumIvremeDolaskaDo = p.CheckIn.Value.Date.AddDays(1).AddMinutes(-1).ToString("yyyy-MM-ddTHH:mm:00.0000Z"),
-                    casDolaskaOd = p.CheckIn.Value.AddMinutes(-1).ToString("HH:mm"),
-                    casDolaskaDo = p.CheckIn.Value.AddMinutes(+1).ToString("HH:mm"),
-                    pageIndex = 0,
-                    pageSize = 1000
-                };
-                var json = JsonSerializer.Serialize(tr);
-                request.AddJsonBody(json);
-                var response = await _client.ExecutePostAsync(request);
-                var result = JsonSerializer.Deserialize<TuristResponse>(response.Content!)!;
-                if (result.totalRowsCount == 1) ids.Add(result.data.First().turistaId);
+                    ids.Add(p.ExternalId2!.Value);
+                }
+                else
+                {
+                    var confirmationPdfEndpoint = _configuration["SRB:Endpoints:Persons"]!.Trim('/');
+                    var request = new RestRequest(confirmationPdfEndpoint, Method.Post);
+                    request.AddHeader("Authorization", $"Bearer {_token}");
+                    request.AddHeader("RefreshToken", $"{_refreshToken}");
+                    var tr = new TuristRequest()
+                    {
+                        ime = p.FirstName,
+                        prezime = p.LastName,
+                        datumIvremeDolaskaOd = p.CheckIn!.Value.Date.ToString("yyyy-MM-ddTHH:mm:00.0000Z"),
+                        datumIvremeDolaskaDo = p.CheckIn!.Value.Date.AddDays(1).AddMinutes(-1).ToString("yyyy-MM-ddTHH:mm:00.0000Z"),
+                        casDolaskaOd = p.CheckIn!.Value.AddMinutes(-1).ToString("HH:mm"),
+                        casDolaskaDo = p.CheckIn!.Value.AddMinutes(+1).ToString("HH:mm"),
+                        pageIndex = 0,
+                        pageSize = 1000
+                    };
+                    var json = JsonSerializer.Serialize(tr);
+                    request.AddJsonBody(json);
+                    var response = await _client.ExecutePostAsync(request);
+                    var result = JsonSerializer.Deserialize<TuristResponse>(response.Content!)!;
+                    if (result.totalRowsCount == 1)
+                    {
+                        p.ExternalId2 = result.data.First().turistaId;
+                        _db.SaveChanges();
+                        ids.Add(result.data.First().turistaId);
+                    }
+                }
             }
             catch (Exception e)
             {
@@ -469,13 +487,11 @@ public class SrbClient : Register
             srbPerson = _db.SrbPersons.FirstOrDefault(a => a.Id == dto.Id)!;
         }        
 
-        dto.LegalEntityId = _user.LegalEntityId;
+        dto.LegalEntityId = _user.LegalEntityId;        
                 
         _mapper.Map(dto, srbPerson);
         
-        _db.SaveChanges();
-
-
+        _db.SaveChanges();        
 
         return srbPerson;
     }
@@ -484,11 +500,11 @@ public class SrbClient : Register
     public override List<PersonErrorDto> Validate(Group group, DateTime? checkInDate, DateTime? checkOutDate)
     {
         var result = new List<PersonErrorDto>();
-        _db.Entry(group).Collection(a => a.Persons.OfType<SrbPerson>()).Load();
+        _db.Entry(group).Collection(a => a.Persons).Load();
         foreach (var p in group.Persons)
         {
             var one = Validate(p, checkInDate, checkOutDate);
-            if (one.Errors.Any()) result.Add(one);
+            if (one.ValidationErrors.Any()) result.Add(one);
         }
         return result;
     }
@@ -501,103 +517,103 @@ public class SrbClient : Register
 
         if (checkOutDate.HasValue)
         {
-            if (p.LegalEntity.Type == Data.Enums.LegalEntityType.Company) if (p.NumberOfServices == null) err.Errors.Add(new PersonError() { Field = nameof(p.NumberOfServices), Error = "Podatak 'Broj pruženih usluga' je obavezan za unos." });
-            if (p.CheckOut == null) err.Errors.Add(new PersonError() { Field = nameof(p.CheckOut), Error = "Morate uneti podatak 'Datum i čas odlaska'." });
-            if (p.CheckOut.HasValue && DateTime.Now > p.CheckIn.Value.AddMonths(10)) err.Errors.Add(new PersonError() { Field = nameof(p.CheckIn), Error = "'Datum i čas odlaska' ne sme biti više od 10 meseci u prošlosti." });
+            if (p.LegalEntity.Type == Data.Enums.LegalEntityType.Company) if (p.NumberOfServices == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.NumberOfServices), Error = "Podatak 'Broj pruženih usluga' je obavezan za unos." });
+            if (p.CheckOut == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.CheckOut), Error = "Morate uneti podatak 'Datum i čas odlaska'." });
+            if (p.CheckOut.HasValue && DateTime.Now > p.CheckIn.Value.AddMonths(10)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.CheckIn), Error = "'Datum i čas odlaska' ne sme biti više od 10 meseci u prošlosti." });
         }
-        else if (checkInDate.HasValue) 
+        else if (checkInDate.HasValue || p.CheckIn.HasValue) 
         {
-            if (p.FirstName == null) err.Errors.Add(new PersonError() { Field = nameof(p.FirstName), Error = "Podatak 'Ime' je obavezan za unos." });
-            if (p.LastName == null) err.Errors.Add(new PersonError() { Field = nameof(p.LastName), Error = "Podatak 'Prezime' je obavezan za unos." });
-            if (p.BirthDate == null) err.Errors.Add(new PersonError() { Field = nameof(p.BirthDate), Error = "Podatak 'Datum rođenja' je obavezan za unos." });
-            if (p.Gender == null) err.Errors.Add(new PersonError() { Field = nameof(p.Gender), Error = "Podatak 'Pol' je obavezan za unos." });
+            if (p.FirstName == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.FirstName), Error = "Podatak 'Ime' je obavezan za unos." });
+            if (p.LastName == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.LastName), Error = "Podatak 'Prezime' je obavezan za unos." });
+            if (p.BirthDate == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.BirthDate), Error = "Podatak 'Datum rođenja' je obavezan za unos." });
+            if (p.Gender == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.Gender), Error = "Podatak 'Pol' je obavezan za unos." });
             // JMBG
             if (p.BirthCountryIso2 == null && p.BirthCountryIso3 == null)
             {
-                err.Errors.Add(new PersonError() { Field = nameof(p.BirthCountryIso2), Error = "Morate uneti ili podatak 'Država rođenja alfa 2' ili podatak 'Država rođenja alfa 3'." });
-                err.Errors.Add(new PersonError() { Field = nameof(p.BirthCountryIso3), Error = "Morate uneti ili podatak 'Država rođenja alfa 2' ili podatak 'Država rođenja alfa 3'." });
+                err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.BirthCountryIso2), Error = "Morate uneti ili podatak 'Država rođenja alfa 2' ili podatak 'Država rođenja alfa 3'." });
+                err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.BirthCountryIso3), Error = "Morate uneti ili podatak 'Država rođenja alfa 2' ili podatak 'Država rođenja alfa 3'." });
             }
             if (p.BirthCountryIso2 != null && p.BirthCountryIso3 != null)
             {
-                err.Errors.Add(new PersonError() { Field = nameof(p.BirthCountryIso2), Error = "Ne smete uneti i podatak 'Država rođenja alfa 2' i podatak 'Država rođenja alfa 3'." });
-                err.Errors.Add(new PersonError() { Field = nameof(p.BirthCountryIso3), Error = "Ne smete uneti i podatak 'Država rođenja alfa 2' i podatak 'Država rođenja alfa 3'." });
+                err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.BirthCountryIso2), Error = "Ne smete uneti i podatak 'Država rođenja alfa 2' i podatak 'Država rođenja alfa 3'." });
+                err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.BirthCountryIso3), Error = "Ne smete uneti i podatak 'Država rođenja alfa 2' i podatak 'Država rođenja alfa 3'." });
             }
-            if (p.PropertyExternalId == null) err.Errors.Add(new PersonError() { Field = nameof(p.PropertyExternalId), Error = "Morate uneti podatak 'Jedinstveni identifikator ugostiteljskog objekta'." });
-            if (p.ServiceType == null) err.Errors.Add(new PersonError() { Field = nameof(p.ServiceType), Error = "Morate uneti podatak 'Vrsta pruženih usluga'." });
-            if (p.ArrivalType == null) err.Errors.Add(new PersonError() { Field = nameof(p.ArrivalType), Error = "Morate uneti podatak 'Način dolaska'." });
-            if (p.ReasonForStay == null) err.Errors.Add(new PersonError() { Field = nameof(p.ReasonForStay), Error = "Morate uneti podatak 'Razlog boravka'." });
-            if (p.LegalEntity.Type == Data.Enums.LegalEntityType.Company && p.ResidenceTaxDiscountReason == null) err.Errors.Add(new PersonError() { Field = nameof(p.ResidenceTaxDiscountReason), Error = "Morate uneti podatak 'Uslov za umanjenje boravišne takse'." });
+            if (p.PropertyExternalId == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.PropertyExternalId), Error = "Morate uneti podatak 'Jedinstveni identifikator ugostiteljskog objekta'." });
+            if (p.ServiceType == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ServiceType), Error = "Morate uneti podatak 'Vrsta pruženih usluga'." });
+            if (p.ArrivalType == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ArrivalType), Error = "Morate uneti podatak 'Način dolaska'." });
+            if (p.ReasonForStay == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ReasonForStay), Error = "Morate uneti podatak 'Razlog boravka'." });
+            if (p.LegalEntity.Type == Data.Enums.LegalEntityType.Company && p.ResidenceTaxDiscountReason == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ResidenceTaxDiscountReason), Error = "Morate uneti podatak 'Uslov za umanjenje boravišne takse'." });
             // Naziv agencije
             // Smeštajne jedinice
-            if (p.CheckIn == null) err.Errors.Add(new PersonError() { Field = nameof(p.CheckIn), Error = "Morate uneti podatak 'Datum i čas dolaska'." });
-            if (p.CheckIn.HasValue && DateTime.Now > p.CheckIn.Value.AddHours(26)) err.Errors.Add(new PersonError() { Field = nameof(p.CheckIn), Error = "'Datum i čas dolaska' ne sme biti više od 26 sati u prošlosti." });
-            if (p.CheckIn.HasValue && DateTime.Now < p.CheckIn.Value) err.Errors.Add(new PersonError() { Field = nameof(p.CheckIn), Error = "'Datum i čas dolaska' ne sme biti u budućnosti." });
-            if (p.PlannedCheckOut == null) err.Errors.Add(new PersonError() { Field = nameof(p.PlannedCheckOut), Error = "Morate uneti podatak 'Planirani datum odlaska'." });
-            if (p.PlannedCheckOut.HasValue && p.CheckIn.HasValue && p.PlannedCheckOut < p.CheckIn) err.Errors.Add(new PersonError() { Field = nameof(p.PlannedCheckOut), Error = "Podatak 'Planirani datum odlaska' ne sme biti pre 'Datuma i časa dolaska'." });
+            if (p.CheckIn == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.CheckIn), Error = "Morate uneti podatak 'Datum i čas dolaska'." });
+            if (p.CheckIn.HasValue && DateTime.Now > p.CheckIn.Value.AddHours(26)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.CheckIn), Error = "'Datum i čas dolaska' ne sme biti više od 26 sati u prošlosti." });
+            if (p.CheckIn.HasValue && DateTime.Now < p.CheckIn.Value) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.CheckIn), Error = "'Datum i čas dolaska' ne sme biti u budućnosti." });
+            if (p.PlannedCheckOut == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.PlannedCheckOut), Error = "Morate uneti podatak 'Planirani datum odlaska'." });
+            if (p.PlannedCheckOut.HasValue && p.CheckIn.HasValue && p.PlannedCheckOut < p.CheckIn) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.PlannedCheckOut), Error = "Podatak 'Planirani datum odlaska' ne sme biti pre 'Datuma i časa dolaska'." });
 
             if (p.IsDomestic)
             {
-                if (p.DocumentNumber != null) err.Errors.Add(new PersonError() { Field = nameof(p.DocumentNumber), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Broj putne isprave'." });
-                if (p.DocumentType != null) err.Errors.Add(new PersonError() { Field = nameof(p.DocumentType), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Vrsta putne isprave'." });
-                if (p.DocumentType != null) err.Errors.Add(new PersonError() { Field = nameof(p.DocumentIssueDate), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Datum izdavanja putne isprave'." });
-                if (p.IssuingAuthorithy != null) err.Errors.Add(new PersonError() { Field = nameof(p.IssuingAuthorithy), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Organ izdavanja putne isprave'." });
+                if (p.DocumentNumber != null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.DocumentNumber), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Broj putne isprave'." });
+                if (p.DocumentType != null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.DocumentType), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Vrsta putne isprave'." });
+                if (p.DocumentType != null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.DocumentIssueDate), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Datum izdavanja putne isprave'." });
+                if (p.IssuingAuthorithy != null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.IssuingAuthorithy), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Organ izdavanja putne isprave'." });
 
-                if (p.EntryPlaceCode != null) err.Errors.Add(new PersonError() { Field = nameof(p.EntryPlaceCode), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Šifra mesta ulaska u republiku Srbiju'." });
-                if (p.EntryPlace != null) err.Errors.Add(new PersonError() { Field = nameof(p.EntryPlace), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Mesto ulaska u republiku Srbiju'." });
-                if (p.StayValidTo != null) err.Errors.Add(new PersonError() { Field = nameof(p.StayValidTo), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Datum do kada je odobren boravak u republici Srbiji'." });
+                if (p.EntryPlaceCode != null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.EntryPlaceCode), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Šifra mesta ulaska u republiku Srbiju'." });
+                if (p.EntryPlace != null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.EntryPlace), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Mesto ulaska u republiku Srbiju'." });
+                if (p.StayValidTo != null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.StayValidTo), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Datum do kada je odobren boravak u republici Srbiji'." });
 
-                if (p.VisaType != null) err.Errors.Add(new PersonError() { Field = nameof(p.VisaType), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Vrsta vize'." });
-                if (p.VisaNumber != null) err.Errors.Add(new PersonError() { Field = nameof(p.VisaNumber), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Broj vize'." });
-                if (p.VisaIssuingPlace != null) err.Errors.Add(new PersonError() { Field = nameof(p.VisaIssuingPlace), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Mesto izdavanja vize'." });
+                if (p.VisaType != null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.VisaType), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Vrsta vize'." });
+                if (p.VisaNumber != null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.VisaNumber), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Broj vize'." });
+                if (p.VisaIssuingPlace != null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.VisaIssuingPlace), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Mesto izdavanja vize'." });
 
-                if (p.Note != null) err.Errors.Add(new PersonError() { Field = nameof(p.Note), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Napomena'." });
+                if (p.Note != null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.Note), Error = "Kada se prijavljuje domaći gost, ne treba unositi podatak 'Napomena'." });
 
-                if (p.ResidenceCountryIso2 == null && p.ResidenceCountryIso2 == null)
+                if (p.ResidenceCountryIso2 == null && p.ResidenceCountryIso3 == null)
                 {
-                    err.Errors.Add(new PersonError() { Field = nameof(p.ResidenceCountryIso2), Error = "Morate uneti ili podatak 'Država prebivališta alfa 2' ili podatak 'Država prebivališta alfa 3'." });
-                    err.Errors.Add(new PersonError() { Field = nameof(p.ResidenceCountryIso2), Error = "Morate uneti ili podatak 'Država prebivališta alfa 2' ili podatak 'Država prebivališta alfa 3'." });
+                    err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ResidenceCountryIso2), Error = "Morate uneti ili podatak 'Država prebivališta alfa 2' ili podatak 'Država prebivališta alfa 3'." });
+                    err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ResidenceCountryIso3), Error = "Morate uneti ili podatak 'Država prebivališta alfa 2' ili podatak 'Država prebivališta alfa 3'." });
                 }
-                if (p.ResidenceCountryIso2 != null && p.ResidenceCountryIso2 != null)
+                if (p.ResidenceCountryIso2 != null && p.ResidenceCountryIso3 != null)
                 {
-                    err.Errors.Add(new PersonError() { Field = nameof(p.ResidenceCountryIso2), Error = "Ne smete uneti i podatak 'Država prebivališta alfa 2' i podatak 'Država prebivališta alfa 3'." });
-                    err.Errors.Add(new PersonError() { Field = nameof(p.ResidenceCountryIso3), Error = "Ne smete uneti i podatak 'Država prebivališta alfa 2' i podatak 'Država prebivališta alfa 3'." });
+                    err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ResidenceCountryIso2), Error = "Ne smete uneti i podatak 'Država prebivališta alfa 2' i podatak 'Država prebivališta alfa 3'." });
+                    err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ResidenceCountryIso3), Error = "Ne smete uneti i podatak 'Država prebivališta alfa 2' i podatak 'Država prebivališta alfa 3'." });
                 }
                 if (p.ResidenceCountryIso2 == "RS" || p.ResidenceCountryIso3 == "SRB")
                 {
-                    if (p.ResidenceMunicipalityCode == null) err.Errors.Add(new PersonError() { Field = nameof(p.ResidenceMunicipalityCode), Error = "Morate uneti podatak 'Matični broj opštine previbališta'." });
-                    if (p.ResidenceMunicipalityName == null) err.Errors.Add(new PersonError() { Field = nameof(p.ResidenceMunicipalityName), Error = "Morate uneti podatak 'Naziv opštine previbališta'." });
-                    if (p.ResidencePlaceCode == null) err.Errors.Add(new PersonError() { Field = nameof(p.ResidencePlaceCode), Error = "Morate uneti podatak 'Matični broj mesta previbališta'." });
+                    if (p.ResidenceMunicipalityCode == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ResidenceMunicipalityCode), Error = "Morate uneti podatak 'Matični broj opštine previbališta'." });
+                    if (p.ResidenceMunicipalityName == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ResidenceMunicipalityName), Error = "Morate uneti podatak 'Naziv opštine previbališta'." });
+                    if (p.ResidencePlaceCode == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ResidencePlaceCode), Error = "Morate uneti podatak 'Matični broj mesta previbališta'." });
                 }
 
-                if (p.ResidencePlaceName == null || p.ResidencePlaceName.StartsWith(" ")) err.Errors.Add(new PersonError() { Field = nameof(p.ResidencePlaceName), Error = "Morate uneti podatak 'Naziv mesta previbališta' i naziv ne sme počinjati sa razmakom." });
+                if (p.ResidencePlaceName == null || p.ResidencePlaceName.StartsWith(" ")) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ResidencePlaceName), Error = "Morate uneti podatak 'Naziv mesta previbališta' i naziv ne sme počinjati sa razmakom." });
             }
             else
             {
-                if (p.ExternalId.HasValue) err.Errors.Add(new PersonError() { Field = nameof(p.ExternalId), Error = "Podaci o stranom državljaninu se ne mogu menjati." });
-                if (p.NationalityIso2 == null && p.NationalityIso2 == null)
+                if (p.ExternalId.HasValue) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ExternalId), Error = "Podaci o stranom državljaninu se ne mogu menjati." });
+                if (p.NationalityIso2 == null && p.NationalityIso3 == null)
                 {
-                    err.Errors.Add(new PersonError() { Field = nameof(p.NationalityIso2), Error = "Morate uneti ili podatak 'Nacionalnost alfa 2' ili podatak 'Nacionalnost alfa 3'." });
-                    err.Errors.Add(new PersonError() { Field = nameof(p.NationalityIso3), Error = "Morate uneti ili podatak 'Nacionalnost alfa 2' ili podatak 'Nacionalnost alfa 3'." });
+                    err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.NationalityIso2), Error = "Morate uneti ili podatak 'Nacionalnost alfa 2' ili podatak 'Nacionalnost alfa 3'." });
+                    err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.NationalityIso3), Error = "Morate uneti ili podatak 'Nacionalnost alfa 2' ili podatak 'Nacionalnost alfa 3'." });
                 }
                 if (p.NationalityIso2 != null && p.NationalityIso3 != null)
                 {
-                    err.Errors.Add(new PersonError() { Field = nameof(p.NationalityIso2), Error = "Ne smete uneti i podatak 'Nacionalnost alfa 2' i podatak 'Nacionalnost alfa 3'." });
-                    err.Errors.Add(new PersonError() { Field = nameof(p.NationalityIso3), Error = "Ne smete uneti i podatak 'Nacionalnost alfa 2' i podatak 'Nacionalnost alfa 3'." });
+                    err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.NationalityIso2), Error = "Ne smete uneti i podatak 'Nacionalnost alfa 2' i podatak 'Nacionalnost alfa 3'." });
+                    err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.NationalityIso3), Error = "Ne smete uneti i podatak 'Nacionalnost alfa 2' i podatak 'Nacionalnost alfa 3'." });
                 }
 
-                if (p.DocumentNumber == null) err.Errors.Add(new PersonError() { Field = nameof(p.DocumentNumber), Error = "Kada se prijavljuje strani gost, morate uneti podatak 'Broj putne isprave'." });
-                if (p.DocumentType == null) err.Errors.Add(new PersonError() { Field = nameof(p.DocumentType), Error = "Kada se prijavljuje strani gost, morate uneti podatak 'Vrsta putne isprave'." });
-                if (p.DocumentType == null) err.Errors.Add(new PersonError() { Field = nameof(p.DocumentIssueDate), Error = "Kada se prijavljuje strani gost, morate uneti podatak 'Datum izdavanja putne isprave'." });
+                if (p.DocumentNumber == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.DocumentNumber), Error = "Kada se prijavljuje strani gost, morate uneti podatak 'Broj putne isprave'." });
+                if (p.DocumentType == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.DocumentType), Error = "Kada se prijavljuje strani gost, morate uneti podatak 'Vrsta putne isprave'." });
+                if (p.DocumentType == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.DocumentIssueDate), Error = "Kada se prijavljuje strani gost, morate uneti podatak 'Datum izdavanja putne isprave'." });
                 //if (p.IssuingAuthorithy != null) err.Errors.Add(new PersonFieldError() { Field = nameof(p.IssuingAuthorithy), Error = "Kada se prijavljuje domaći gost, ne treba unositi polje 'Organ izdavanja putne isprave'." });
 
-                if (p.EntryPlaceCode == null) err.Errors.Add(new PersonError() { Field = nameof(p.EntryPlaceCode), Error = "Kada se prijavljuje strani gost, morate uneti podatak 'Šifra mesta ulaska u republiku Srbiju'." });
-                if (p.EntryPlace == null) err.Errors.Add(new PersonError() { Field = nameof(p.EntryPlace), Error = "Kada se prijavljuje strani gost, morate uneti podatak 'Mesto ulaska u republiku Srbiju'." });
+                if (p.EntryPlaceCode == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.EntryPlaceCode), Error = "Kada se prijavljuje strani gost, morate uneti podatak 'Šifra mesta ulaska u republiku Srbiju'." });
+                if (p.EntryPlace == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.EntryPlace), Error = "Kada se prijavljuje strani gost, morate uneti podatak 'Mesto ulaska u republiku Srbiju'." });
                 //if (p.StayValidTo != null) err.Errors.Add(new PersonFieldError() { Field = nameof(p.StayValidTo), Error = "Kada se prijavljuje domaći gost, ne treba unositi polje 'Datum do kada je odobren boravak u republici Srbiji'." });
 
                 if (p.VisaType != null)
                 {
-                    if (p.VisaNumber != null) err.Errors.Add(new PersonError() { Field = nameof(p.VisaNumber), Error = "Kada se prijavljuje strani gost, i kada ste uneli podatak 'Vrsta vize', morate uneti podatak 'Broj vize'." });
-                    if (p.VisaIssuingPlace != null) err.Errors.Add(new PersonError() { Field = nameof(p.VisaIssuingPlace), Error = "Kada se prijavljuje strani gost, i kada ste uneli podatak 'Vrsta vize', morate uneti podatak 'Mesto izdavanja vize'." });
+                    if (p.VisaNumber != null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.VisaNumber), Error = "Kada se prijavljuje strani gost, i kada ste uneli podatak 'Vrsta vize', morate uneti podatak 'Broj vize'." });
+                    if (p.VisaIssuingPlace != null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.VisaIssuingPlace), Error = "Kada se prijavljuje strani gost, i kada ste uneli podatak 'Vrsta vize', morate uneti podatak 'Mesto izdavanja vize'." });
                 }
             }
         }
@@ -608,6 +624,7 @@ public class SrbClient : Register
     public async override Task<object> Properties()
     {
         var pr = new ObjektiRequest();
+        await RefreshToken();
         var token_decoded = new JwtSecurityTokenHandler().ReadToken(_token) as JwtSecurityToken;
         var id = token_decoded.Claims.Where(a => a.Type == "DodatnoPolje1").FirstOrDefault().Value;
         pr.ownerJmbg = 1;

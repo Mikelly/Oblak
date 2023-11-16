@@ -17,6 +17,7 @@ using Oblak.SignalR;
 using RB90;
 using SendGrid.Extensions.DependencyInjection;
 using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -118,7 +119,11 @@ builder.Services.Configure<IdentityOptions>(options =>
 // Add framework services.
 builder.Services
     .AddControllersWithViews()
-    .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
+    .AddRazorRuntimeCompilation()
+    .AddJsonOptions(options => {
+        options.JsonSerializerOptions.PropertyNamingPolicy = null;
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());    
+    });
 
 builder.Services.AddKendo();
 builder.Services.AddSignalR();
@@ -226,5 +231,8 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.MapHub<MessageHub>("/messageHub");
+
+Telerik.Windows.Documents.Extensibility.FixedExtensibilityManager.FontsProvider = new Oblak.Helpers.TelerikFontsProvider();
+Telerik.Windows.Documents.Extensibility.FixedExtensibilityManager.JpegImageConverter = new Telerik.Documents.ImageUtils.JpegImageConverter();
 
 app.Run();

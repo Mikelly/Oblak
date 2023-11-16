@@ -67,6 +67,8 @@ namespace Oblak.Data
             modelBuilder.Entity<LegalEntity>().HasMany(a => a.Groups).WithOne(a => a.LegalEntity).OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<LegalEntity>().HasMany(a => a.Documents).WithOne(a => a.LegalEntity).OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<LegalEntity>().HasMany(a => a.ResTaxes).WithOne(a => a.LegalEntity).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<LegalEntity>().Property(a => a.Type).HasConversion(new EnumToStringConverter<LegalEntityType>());
+            modelBuilder.Entity<LegalEntity>().Property(a => a.Country).HasConversion(new EnumToStringConverter<Country>());
 
             modelBuilder.Entity<Property>().HasOne(a => a.LegalEntity);
             modelBuilder.Entity<Property>().HasMany(a => a.GuestTokens);
@@ -109,6 +111,19 @@ namespace Oblak.Data
             modelBuilder.Entity<Document>().HasOne(a => a.LegalEntity);
             modelBuilder.Entity<Document>().HasOne(a => a.Group);
             modelBuilder.Entity<Document>().Property(a => a.Amount).HasPrecision(18, 2);
+            modelBuilder.Entity<Document>().Property(a => a.DocumentType).HasConversion(new EnumToStringConverter<DocumentType>());
+            modelBuilder.Entity<Document>().Property(a => a.TypeOfInvoce).HasConversion(new EnumToStringConverter<TypeOfInvoice>());
+            modelBuilder.Entity<Document>().Property(a => a.InvoiceType).HasConversion(new EnumToStringConverter<InvoiceType>());
+            modelBuilder.Entity<Document>().Property(a => a.Status).HasConversion(new EnumToStringConverter<DocumentStatus>());
+            modelBuilder.Entity<Document>().Property(a => a.PartnerType).HasConversion(new EnumToStringConverter<BuyerType>());
+            modelBuilder.Entity<Document>().Property(a => a.PartnerIdType).HasConversion(new EnumToStringConverter<BuyerIdType>());
+
+            modelBuilder.Entity<DocumentPayment>().HasOne(a => a.Document);
+            modelBuilder.Entity<DocumentPayment>().Property(a => a.PaymentType).HasConversion(new EnumToStringConverter<PaymentType>());
+
+            modelBuilder.Entity<Item>().Property(a => a.VatExempt).HasConversion(new EnumToStringConverter<MneVatExempt>());
+            
+            modelBuilder.Entity<DocumentItem>().Property(a => a.VatExempt).HasConversion(new EnumToStringConverter<MneVatExempt>());
 
             modelBuilder.Entity<FiscalRequest>().HasOne(a => a.LegalEntity);
 

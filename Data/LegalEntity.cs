@@ -14,6 +14,9 @@ namespace Oblak.Data
         public LegalEntityType Type { get; set; }
 
         [StringLength(450)]
+        public Country Country { get; set; }
+
+        [StringLength(450)]
         public string Name { get; set; }
 
         [StringLength(450)]
@@ -22,8 +25,10 @@ namespace Oblak.Data
         [StringLength(2000)]
         public string Address { get; set; }
 
-        [StringLength(450)]
-        public string Country { get; set; }
+        [StringLength(2000)]
+        public string? InvoiceHeader { get; set; }
+
+        public byte[] Logo { get; set; }    
         
         public bool InVat { get; set; }
 

@@ -4,6 +4,8 @@ namespace Oblak.Data;
 
 public class SrbPerson : Person
 {    
+    public int? ExternalId2 { get; set; }
+
     [Obsolete("Da li je lice domaće")]
     // Prijava i odjava, domaće i strano lice, obavezan unos
     public bool IsDomestic { get; set; }

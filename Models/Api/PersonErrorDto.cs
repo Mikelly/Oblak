@@ -4,10 +4,12 @@
     { 
         public int PersonId { get; set; }
 
-        public List<PersonError> Errors { get; set; } = new List<PersonError>();
+        public List<PersonValidationError> ValidationErrors { get; set; } = new List<PersonValidationError>();
+
+        public List<string> ExternalErrors { get; set; }
     }
 
-    public class PersonError
+    public class PersonValidationError
     { 
         public string Field { get; set; }
         public string Error { get; set; }

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Oblak.Data.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace Oblak.Models.Account
 {
@@ -22,7 +23,7 @@ namespace Oblak.Models.Account
         public string ConfirmPassword { get; set; }
 
         [Required(ErrorMessage = "Morate unijeti državu korisnika")]
-        public string Country { get; set; }
+        public Country Country { get; set; }
 
         [Required(ErrorMessage = "Morate odabrati da li je korisnik pravno ili fizičko lice")]
         public string LegalEntityType { get; set; }

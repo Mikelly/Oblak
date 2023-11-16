@@ -10,7 +10,16 @@ namespace Oblak.Mappers
     public class GroupDtoMapper : Profile
     {
         public GroupDtoMapper() {
-            CreateMap<Group, GroupDto>();
+            CreateMap<Group, GroupDto>()
+                .ReverseMap();
+        }
+    }
+
+    public class GroupEnrichedDtoMapper : Profile
+    {
+        public GroupEnrichedDtoMapper()
+        {
+            CreateMap<Group, GroupEnrichedDto>();
         }
     }
 }

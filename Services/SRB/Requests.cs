@@ -19,10 +19,6 @@ public class CheckOutRequest
 
 public class CheckInRequest
 {
-    public string ExternalId { get; set; }
-
-    public bool Izmena { get; set; }
-
     public osnovniPodaci OsnovniPodaci { get; set; }
 
     public identifikacioniDokumentStranogLica IdentifikacioniDokumentStranogLica { get; set; }

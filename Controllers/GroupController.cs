@@ -2,29 +2,18 @@
 using Kendo.Mvc.Extensions;
 using Kendo.Mvc.UI;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Oblak.Data;
 using Oblak.Data.Enums;
-using Oblak.Interfaces;
+using Oblak.Models.Api;
 using Oblak.Models.rb90;
 using Oblak.Services;
 using Oblak.Services.MNE;
 using Oblak.Services.SRB;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Web;
-using Telerik.Windows.Documents.Flow.Model;
 
 namespace RegBor.Controllers
 {
@@ -355,29 +344,100 @@ namespace RegBor.Controllers
 			return Json(new { error = "", js = "" });
 		}
 
-		public virtual ActionResult Read([DataSourceRequest] DataSourceRequest request)
-		{
-			var data = _db.Groups.Where(a => a.LegalEntityId == _company).Select(a => new rb_GrupaVM { });
+        //public virtual ActionResult Read([DataSourceRequest] DataSourceRequest request)
+        //{
+        //	var data = _db.Groups.Where(a => a.LegalEntityId == _company).Select(a => new rb_GrupaVM { });
 
-			return Json(data.ToDataSourceResult(request));
-			
-		}
+        //	return Json(data.ToDataSourceResult(request));
 
-		public ActionResult Create([DataSourceRequest] DataSourceRequest request, rb_GrupaVM vm)
-		{
-			var m = new Group();
-			_mapper.Map(vm, m);
+        //}
 
-			if (ModelState.IsValid)
-			{
-				_db.Groups.Add(m);
-				_db.SaveChanges();
-			}
+        public virtual ActionResult Read([DataSourceRequest] DataSourceRequest request)
+        {
+            var data = _db.Groups
+                .Where(a => a.LegalEntityId == 4)
+                .Include(a => a.Property)
+				.OrderByDescending(x => x.Date)
+                .Select(a => new GroupDto
+                {
+                    Id = a.Id,
+                    Date = a.Date,
+                    PropertyName = a.Property.PropertyName,
+                    CheckIn = a.CheckIn,
+                    CheckOut = a.CheckOut,
+                    Email = a.Email,
+                    Guests = $"{a.Persons.Count}: {string.Join(", ", a.Persons.Select(p => $"{p.FirstName} {p.LastName}"))}"
+                });
 
-			return Json(new[] { _mapper.Map(m, vm) }.ToDataSourceResult(request, ModelState));
-		}
+            return Json(data.ToDataSourceResult(request));
+        }
 
-		public ActionResult Update([DataSourceRequest] DataSourceRequest request, rb_GrupaVM vm)
+        //public ActionResult Create([DataSourceRequest] DataSourceRequest request, rb_GrupaVM vm)
+        //{
+        //	var m = new Group();
+        //	_mapper.Map(vm, m);
+
+        //	if (ModelState.IsValid)
+        //	{
+        //		_db.Groups.Add(m);
+        //		_db.SaveChanges();
+        //	}
+
+        //	return Json(new[] { _mapper.Map(m, vm) }.ToDataSourceResult(request, ModelState));
+        //}
+
+        public ActionResult GetPropertyList()
+        {
+            var properties = _db.Properties.ToList();
+            return Json(properties);
+        }
+
+        public ActionResult GetPropertyUnits(int propertyId)
+        {
+            var propertyUnits = _db.PropertyUnits.Where(p => p.PropertyId == propertyId).ToList();
+            return Json(propertyUnits);
+        }
+
+        [Route("save-group")]
+        [HttpPost]
+        public ActionResult Create(GroupDto groupDto, [DataSourceRequest] DataSourceRequest request)
+        {
+            try
+            {
+                //var property = _db.Properties.Where(p => p.Id == groupDto.PropertyId).First();
+
+                // Map GroupDto properties to your Group entity properties
+                var newGroup = new Group
+                {
+					Date = DateTime.Now,
+                    CheckIn = groupDto.CheckIn,
+                    CheckOut = groupDto.CheckOut,
+                    Email = groupDto.Email,
+                    // Map other properties as needed
+                    PropertyId = groupDto.PropertyId,
+                    UnitId = groupDto.UnitId,
+					LegalEntityId = 4,
+					Guid = new Guid().ToString(),
+					PropertyExternalId = groupDto.PropertyId,
+                };
+
+				//if (ModelState.IsValid)
+				//{
+					_db.Groups.Add(newGroup);
+					_db.SaveChanges();
+				//}
+
+				// Return success or any other relevant information
+				return Json(new[] { newGroup }.ToDataSourceResult(request));
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions and return error information
+                return Json(new DataSourceResult { Errors = ex.Message });
+            }
+        }
+
+        public ActionResult Update([DataSourceRequest] DataSourceRequest request, rb_GrupaVM vm)
 		{
 			var m = _db.Groups.SingleOrDefault(a => a.Id == vm.ID);
 			_mapper.Map(vm, m);
@@ -390,20 +450,46 @@ namespace RegBor.Controllers
 			return Json(new[] { _mapper.Map(m, vm) }.ToDataSourceResult(request, ModelState));
 		}
 
-		public ActionResult Destroy([DataSourceRequest] DataSourceRequest request, rb_GrupaVM vm)
-		{
-			var m = _db.Groups.SingleOrDefault(a => a.Id == vm.ID);
+        //public ActionResult Destroy([DataSourceRequest] DataSourceRequest request, rb_GrupaVM vm)
+        //{
+        //	var m = _db.Groups.SingleOrDefault(a => a.Id == vm.ID);
 
-			if (ModelState.IsValid)
-			{
-				_db.Groups.Remove(m);
-				_db.SaveChanges();
-			}
+        //	if (ModelState.IsValid)
+        //	{
+        //		_db.Groups.Remove(m);
+        //		_db.SaveChanges();
+        //	}
 
-			return Json(new[] { vm }.ToDataSourceResult(request, ModelState));
-		}
+        //	return Json(new[] { vm }.ToDataSourceResult(request, ModelState));
+        //}
 
-		public ActionResult delgrp(int id)
+        [HttpGet]
+        public JsonResult DeleteGroup(int groupId)
+        {
+            try
+            {
+                // TODO: Implement your logic to delete the group with the specified ID
+                var group = _db.Groups.Find(groupId);
+
+                if (group != null)
+                {
+                    _db.Groups.Remove(group);
+                    _db.SaveChanges();
+                    return Json(new { info = "Group deleted successfully." });
+                }
+                else
+                {
+                    return Json(new { error = "Group not found." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { error = "An error occurred while deleting the group." });
+            }
+        }
+
+
+        public ActionResult delgrp(int id)
 		{
 			var m = _db.Groups.SingleOrDefault(a => a.Id == id);
 

@@ -12,4 +12,12 @@ namespace Oblak.Mappers
                 .ReverseMap();
         }
     }
+
+    public class MnePersonEnrichedDtoMapper : Profile
+    {
+        public MnePersonEnrichedDtoMapper()
+        {
+            CreateMap<MnePerson, MnePersonEnrichedDto>();
+        }
+    }
 }

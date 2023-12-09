@@ -1,0 +1,776 @@
+﻿@using Oblak.Models.Api;
+@using Oblak.Models.rb90;
+@{
+    ViewBag.Title = "Prijave gostiju";
+    Layout = "~/Views/Shared/_LayoutINV.cshtml";
+}
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#btnNewGuest").click(function () {
+            $("#wndNewGuest").data("kendoWindow").center().open();
+        });
+
+        $("#btnSubmitNewGuest").click(function () {
+            // Gather input values
+            var propertyId = $("#property").data("kendoDropDownList").value();
+            var personType = $("#persontype").data("kendoDropDownList").value();
+            var firstName = $("#firstname").val();
+            var lastName = $("#lastname").val();
+            var personalNumber = $("#personalnumber").val();
+            var birthDate = $("#birthdate").data("kendoDatePicker").value();
+            var gender = $("#gender").data("kendoDropDownList").value();
+            var nationality = $("#nationality").data("kendoDropDownList").value();
+            var birthPlace = $("#birthplace").val();
+            var birthCountry = $("#birthcountry").data("kendoDropDownList").value();
+            var residencePlace = $("#residenceplace").val();
+            var residenceAddress = $("#residenceaddress").val();
+            var residenceCountry = $("#residencecountry").data("kendoDropDownList").value();
+            var documentType = $("#documenttype").data("kendoDropDownList").value();
+            var documentNumber = $("#documentnumber").val();
+            var documentValidTo = $("#documentvalidto").data("kendoDatePicker").value();
+            var documentCountry = $("#documentcountry").data("kendoDropDownList").value();
+            var documentIssuer = $("#documentissuer").val();
+            var checkInDate = $("#checkin").data("kendoDatePicker").value();
+            var checkOutDate = $("#checkout").data("kendoDatePicker").value();
+            var entryPoint = $("#entrypoint").data("kendoDropDownList").value();
+            var entryPointDate = $("#entrypointdate").data("kendoDatePicker").value();
+            var visaType = $("#visatype").data("kendoDropDownList").value();
+            var visaNumber = $("#visanumber").val();
+            var visaIssuePlace = $("#visaissueplace").val();
+            var visaValidFrom = $("#visavalidfrom").data("kendoDatePicker").value();
+            var visaValidTo = $("#visavalidto").data("kendoDatePicker").value();
+
+            // Create DTO object
+            var newGuestDto = {
+                PropertyId: propertyId,
+                PersonType: personType,
+                FirstName: firstName,
+                LastName: lastName,
+                PersonalNumber: personalNumber,
+                BirthDate: birthDate,
+                Gender: gender,
+                Nationality: nationality,
+                BirthPlace: birthPlace,
+                BirthCountry: birthCountry,
+                ResidencePlace: residencePlace,
+                ResidenceAddress: residenceAddress,
+                ResidenceCountry: residenceCountry,
+                DocumentType: documentType,
+                DocumentNumber: documentNumber,
+                DocumentValidTo: documentValidTo,
+                DocumentCountry: documentCountry,
+                DocumentIssuer: documentIssuer,
+                CheckInDate: checkInDate,
+                CheckOutDate: checkOutDate,
+                EntryPoint: entryPoint,
+                EntryPointDate: entryPointDate,
+                VisaType: visaType,
+                VisaNumber: visaNumber,
+                VisaIssuePlace: visaIssuePlace,
+                VisaValidFrom: visaValidFrom,
+                VisaValidTo: visaValidTo
+            };
+
+            // Call the controller method to save the new guest
+            saveNewGuest(newGuestDto);
+        });
+    });
+
+    function saveNewGuest(newGuestDto) {
+        var propertyId = $("#property").data("kendoDropDownList").value();
+        var personType = $("#persontype").data("kendoDropDownList").value();
+        var firstName = $("#firstname").val();
+        var lastName = $("#lastname").val();
+        var personalNumber = $("#personalnumber").val();
+        var birthDate = $("#birthdate").data("kendoDatePicker").value();
+        var formattedBirthDate = kendo.toString(birthDate, "yyyy-MM-ddTHH:mm:ss");
+        var gender = $("#gender").data("kendoDropDownList").value();
+        var nationality = $("#nationality").data("kendoDropDownList").value();
+        var birthPlace = $("#birthplace").val();
+        var birthCountry = $("#birthcountry").data("kendoDropDownList").value();
+        var residencePlace = $("#residenceplace").val();
+        var residenceAddress = $("#residenceaddress").val();
+        var residenceCountry = $("#residencecountry").data("kendoDropDownList").value();
+        var documentType = $("#documenttype").data("kendoDropDownList").value();
+        var documentNumber = $("#documentnumber").val();
+        var documentValidTo = $("#documentvalidto").data("kendoDatePicker").value();
+        var formattedDocumentValidTo = kendo.toString(documentValidTo, "yyyy-MM-ddTHH:mm:ss");
+        var documentCountry = $("#documentcountry").data("kendoDropDownList").value();
+        var documentIssuer = $("#documentissuer").val();
+        var checkInDate = $("#checkin").data("kendoDatePicker").value();
+        var formattedCheckInDate = kendo.toString(checkInDate, "yyyy-MM-ddTHH:mm:ss");
+        var checkOutDate = $("#checkout").data("kendoDatePicker").value();
+        var formattedCheckOutDate = kendo.toString(checkOutDate, "yyyy-MM-ddTHH:mm:ss");
+        var entryPoint = $("#entrypoint").data("kendoDropDownList").value();
+        var entryPointDate = $("#entrypointdate").data("kendoDatePicker").value();
+        var formattedEntryPointDate = kendo.toString(entryPointDate, "yyyy-MM-ddTHH:mm:ss");
+        var visaType = $("#visatype").data("kendoDropDownList").value();
+        var visaNumber = $("#visanumber").val();
+        var visaIssuePlace = $("#visaissueplace").val();
+        var visaValidFrom = $("#visavalidfrom").data("kendoDatePicker").value();
+        var formattedVisaValidFrom = kendo.toString(visaValidFrom, "yyyy-MM-ddTHH:mm:ss");
+        var visaValidTo = $("#visavalidto").data("kendoDatePicker").value();
+        var formattedVisaValidTo = kendo.toString(visaValidTo, "yyyy-MM-ddTHH:mm:ss");
+
+        newGuestDto.PropertyId = propertyId;
+        newGuestDto.PersonType = personType;
+        newGuestDto.FirstName = firstName;
+        newGuestDto.LastName = lastName;
+        newGuestDto.PersonalNumber = personalNumber;
+        newGuestDto.BirthDate = formattedBirthDate;
+        newGuestDto.Gender = gender;
+        newGuestDto.Nationality = nationality;
+        newGuestDto.BirthPlace = birthPlace;
+        newGuestDto.BirthCountry = birthCountry;
+        newGuestDto.PermanentResidencePlace = residencePlace;
+        newGuestDto.PermanentResidenceAddress = residenceAddress;
+        newGuestDto.PermanentResidenceCountry = residenceCountry;
+        newGuestDto.DocumentType = documentType;
+        newGuestDto.DocumentNumber = documentNumber;
+        newGuestDto.DocumentValidTo = formattedDocumentValidTo;
+        newGuestDto.DocumentCountry = documentCountry;
+        newGuestDto.DocumentIssuer = documentIssuer;
+        newGuestDto.CheckIn = formattedCheckInDate;
+        newGuestDto.CheckOut = formattedCheckOutDate;
+        newGuestDto.EntryPoint = entryPoint;
+        newGuestDto.EntryPointDate = entryPointDate;
+        newGuestDto.VisaType = visaType;
+        newGuestDto.VisaNumber = visaNumber;
+        newGuestDto.VisaIssuePlace = visaIssuePlace;
+        newGuestDto.VisaValidFrom = visaValidFrom;
+        newGuestDto.VisaValidTo = visaValidTo;
+        newGuestDto.GroupId = '@ViewBag.GroupId';
+
+        $.ajax({
+            url: '@Url.Action("CreateMnePerson", "Person")',
+            type: 'POST',
+            data: {
+                newGuestDto: newGuestDto
+            },
+            success: function (data) {
+                if (data.success) {
+                    console.log("hi");
+                    $("#wndNewGuest").data("kendoWindow").close();
+                    $('#mnePersonGrid').data('kendoGrid').dataSource.read();
+                } else {
+                    if (data.errors) {
+                        var errorMessages = data.errors.map(function (v) {
+                            return v.Error;
+                        }).join('<br>');
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Validaciona greška',
+                            html: errorMessages,
+                            footer: 'Molimo provjerite formu zbog grešaka.'
+                        });
+                    }
+                    else {
+                        console.error(error);
+                        alert("Došlo je do greške.");
+                    }
+                }
+            },
+            error: function (error) {
+                console.error(error);
+                alert("Došlo je do greške.");
+            }
+        });
+    }
+
+    function showGuest(event) {
+        var grid = $("#mnePersonGrid").data("kendoGrid");
+
+        // Check if any row is selected
+        if (!grid.select().length) {
+            // If no row is selected, show an error message using SweetAlert
+            Swal.fire({
+                icon: 'error',
+                title: 'Greška',
+                text: 'Morate odabrati gosta.',
+            });
+            return;
+        }
+
+        var dataItem = grid.dataItem(grid.select());
+
+        var wnd = $("#wndNewGuest").data("kendoWindow");
+
+        // Attach an event handler to the open event
+        wnd.one("open", function () {
+            // Use a setTimeout to make sure the code runs after the window is fully open
+            setTimeout(function () {
+                // Use jQuery selectors to directly access the elements within the window content
+                $("#property").data("kendoDropDownList").value(dataItem.PropertyId);
+                $("#persontype").data("kendoDropDownList").value(dataItem.PersonType);
+                $("#firstname").val(dataItem.FirstName);
+                $("#lastname").val(dataItem.LastName);
+                $("#personalnumber").val(dataItem.PersonalNumber);
+                $("#birthdate").data("kendoDatePicker").value(dataItem.BirthDate);
+                $("#gender").data("kendoDropDownList").value(dataItem.Gender);
+                $("#nationality").data("kendoDropDownList").value(dataItem.Nationality);
+                $("#birthplace").val(dataItem.BirthPlace);
+                $("#birthcountry").data("kendoDropDownList").value(dataItem.BirthCountry);
+                $("#residenceplace").val(dataItem.PermanentResidencePlace);
+                $("#residenceaddress").val(dataItem.PermanentResidenceAddress);
+                $("#residencecountry").data("kendoDropDownList").value(dataItem.PermanentResidenceCountry);
+                $("#documenttype").data("kendoDropDownList").value(dataItem.DocumentType);
+                $("#documentnumber").val(dataItem.DocumentNumber);
+                $("#documentvalidto").data("kendoDatePicker").value(dataItem.DocumentValidTo);
+                $("#documentcountry").data("kendoDropDownList").value(dataItem.DocumentValidTo);
+                $("#documentissuer").val(dataItem.DocumentIssuer);
+                $("#checkin").data("kendoDatePicker").value(dataItem.CheckIn);
+                $("#checkout").data("kendoDatePicker").value(dataItem.CheckOut);
+                $("#entrypoint").data("kendoDropDownList").value(dataItem.EntryPoint);
+                $("#entrypointdate").data("kendoDatePicker").value(dataItem.EntryPointDate);
+                $("#visatype").data("kendoDropDownList").value(dataItem.VisaType);
+                $("#visanumber").val(dataItem.VisaNumber);
+                $("#visaissueplace").val(dataItem.VisaIssuePlace);
+                $("#visavalidfrom").data("kendoDatePicker").value(dataItem.VisaValidFrom);
+                $("#visavalidto").data("kendoDatePicker").value(dataItem.VisaValidTo);
+
+            }, 0);
+        });
+
+        // Attach an event handler to the close event
+        wnd.one("close", function () {
+            // Use jQuery selectors to clear the inputs within the window content
+            $("#property").data("kendoDropDownList").value("");
+            $("#persontype").data("kendoDropDownList").value("");
+            $("#firstname").val("");
+            $("#lastname").val("");
+            $("#personalnumber").val("");
+            $("#birthdate").data("kendoDatePicker").value(null);
+            $("#gender").data("kendoDropDownList").value("");
+            $("#nationality").data("kendoDropDownList").value("");
+            $("#birthplace").val("");
+            $("#birthcountry").data("kendoDropDownList").value("");
+            $("#residenceplace").val("");
+            $("#residenceaddress").val("");
+            $("#residencecountry").data("kendoDropDownList").value("");
+            $("#documenttype").data("kendoDropDownList").value("");
+            $("#documentnumber").val("");
+            $("#documentvalidto").data("kendoDatePicker").value(null);
+            $("#documentcountry").data("kendoDropDownList").value("");
+            $("#documentissuer").val("");
+            $("#checkin").data("kendoDatePicker").value(null);
+            $("#checkout").data("kendoDatePicker").value(null);
+            $("#entrypoint").data("kendoDropDownList").value("");
+            $("#entrypointdate").data("kendoDatePicker").value(null);
+            $("#visatype").data("kendoDropDownList").value("");
+            $("#visanumber").val("");
+            $("#visaissueplace").val("");
+            $("#visavalidfrom").data("kendoDatePicker").value(null);
+            $("#visavalidto").data("kendoDatePicker").value(null);
+        });
+
+        wnd.center().open();
+    }
+
+    function deleteGuest(e) {
+        var grid = $('#mnePersonGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) {
+            Swal.fire({ icon: 'error', title: 'Morate odabrati prijavu', confirmButtonText: `U redu` });
+        } else {
+            Swal.fire({
+                title: 'Da li ste sigurni?',
+                text: 'Ova radnja je nepovratna!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Da, obriši!',
+                cancelButtonText: 'Odustani'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '@Url.Content("~/Person/DeleteMnePerson/")',
+                        data: { guestId: item.Id },
+                        type: 'GET',
+                        success: function (data, status, xhr) {
+                            if (data.error != "") {
+                                Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                            }
+                            if (data.info != "") {
+                                grid.dataSource.read();
+                                Swal.fire({ icon: 'info', title: data.info, confirmButtonText: `U redu` });
+                            }
+                        },
+                        error: function () {
+                            Swal.fire({ icon: 'error', title: 'Došlo je do greške prilikom brisanja grupe.', confirmButtonText: `U redu` });
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+</script>
+
+<style type="text/css">
+    .box {
+        padding-right: 0px;
+        padding-left: 5px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        padding-top: 0px;
+        display: inline-block;
+    }
+
+    #prijavaForm label {
+        display: block
+    }
+
+    .k-textbox input {
+        border: 0px !important;
+    }
+
+    label {
+        font-weight: normal;
+    }
+
+    .mribbon {
+        padding-bottom: 0px;
+        background-color: #4d6aa3;
+    }
+
+</style>
+
+<div>
+    <div style="display:inline-block; float:left; margin-top:10px;">
+        <div style="display: inline-block; margin-right: 35px; margin-left:20px; text-align:center;">
+            @(Html.Kendo().Button().Name("btnNewGuest")
+                .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-1px; left:1px;' src='/Content/Icons/new_contact_plus.png'></img>")
+                .HtmlAttributes(new { style = "width:80px; height:80px; border-radius:50%;" })
+                )
+            <div style="margin-top:3px;"><b>Novi gost</b></div>
+        </div>
+        <div style="display: inline-block; margin-right: 35px; text-align:center;">
+            @(Html.Kendo().Button().Name("btnOpenGuest")
+                .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-2px; left:2px;' src='/Content/Icons/view_glass.png'></img>")
+                .HtmlAttributes(new { onclick = "showGuest(event)", style = "width:80px; height:80px; border-radius:50%;" })
+                )
+            <div style="margin-top:3px;"><b>Prikaži detalje gosta</b></div>
+        </div>
+        <div style="display: inline-block; margin-right: 35px; text-align:center;">
+            @(Html.Kendo().Button().Name("btnDeleteGuest")
+                .Content("<img style='width:58px;height:58px;text-align:center; position:relative; top:-1px;' src='/Content/Icons/remove.png'></img>")
+                .HtmlAttributes(new { onclick = "deleteGuest(event)", style = "width:80px; height:80px; border-radius:50%;" })
+                )
+            <div style="margin-top:3px;"><b>Obriši gosta</b></div>
+        </div>
+    </div>
+
+    <div style="display:inline-block; float:right; margin-top:10px;">
+        <div style="display: inline-block; margin-right:35px; text-align:center;">
+            @(Html.Kendo().Button().Name("btnSignIn")
+                .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-7px;' src='/Content/Icons/police.png'></img><img style='filter: drop-shadow(0px 0px 1px #222); width:30px;height:30px;text-align:center; position:absolute; top:46px; left:26px' src='/Content/Icons/plus2.png'></img>")
+                .HtmlAttributes(new { onclick = "showMUP(event, 'p')", style = "width:80px; height:80px; border-radius:50%;" })
+                )
+            <div style="margin-top:3px;"><b>Prijavi sve MUP-u</b></div>
+        </div>
+        <div style="display: inline-block; margin-right: 35px; text-align:center;">
+            @(Html.Kendo().Button().Name("btnSignOut")
+                .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-7px;' src='/Content/Icons/police.png'></img><img style='filter: drop-shadow(0px 0px 1px #222); width:30px;height:30px;text-align:center; position:absolute; top:46px; left:26px' src='/Content/Icons/minus2.png'></img>")
+                .HtmlAttributes(new { onclick = "showMUP(event, 'o')", style = "width:80px; height:80px; border-radius:50%;" })
+                )
+            <div style="margin-top:3px;"><b>Odjavi sve iz MUP-a</b></div>
+        </div>
+        <div style="display: inline-block; margin-right: 35px; text-align:center;">
+            @(Html.Kendo().Button().Name("btnCert")
+                .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:0px;left:-1px;' src='/Content/Icons/licence_color.png'></img></img>")
+                .HtmlAttributes(new { onclick = "sendCert(event)", style = "width:80px; height:80px; border-radius:50%;" })
+                )
+            <div style="margin-top:3px;"><b>Potvrde o prijavi</b></div>
+        </div>
+        <div style="display: inline-block; margin-right: 35px; text-align:center;">
+            @(Html.Kendo().Button().Name("btnFiscalInvoice")
+                .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-1px;' src='/Content/Icons/cash_register_color.png'></img>")
+                .HtmlAttributes(new { onclick = "showCart(event)", style = "width:80px; height:80px; border-radius:50%;" })
+                )
+            <div style="margin-top:3px;"><b>Fiskalni račun</b></div>
+        </div>
+    </div>
+
+</div>
+
+<div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
+    @(Html.Kendo().Grid<MnePersonEnrichedDto>()
+        .Name("mnePersonGrid")
+        .Columns(columns =>
+        {
+            // First Level Header
+            columns.Group(group => group
+            .Title("Boravak")
+            .HeaderHtmlAttributes(new { style = "text-align: center;" })
+            .Columns(col =>
+            {
+                col.Bound(g => g.FullName).Title("Ime i prezime").Width(250);
+                col.Bound(g => g.PropertyName).Title("Smještajni objekat").Width(250);
+                col.Bound(g => g.PersonType).Title("Tip gosta").Width(250);
+                col.Bound(g => g.CheckIn).Title("Prijava").Format("{0:dd.MM.yyyy}").Width(100);
+                col.Bound(g => g.CheckOut).Title("Odjava").Format("{0:dd.MM.yyyy}").Width(100);
+            })
+            );
+
+            // Second Level Header
+            columns.Group(group => group
+            .Title("Lični dokument")
+            .HeaderHtmlAttributes(new { style = "text-align: center;" })
+            .Columns(col =>
+            {
+                col.Bound(g => g.DocumentType).Title("Vrsta").Width(150);
+                col.Bound(g => g.DocumentNumber).Title("Broj").Width(100);
+                col.Bound(g => g.DocumentValidTo).Title("Važi do").Format("{0:dd.MM.yyyy}").Width(100);
+            })
+            );
+
+            // Third Level Header (Status)
+            columns.Group(group => group
+            .Title("Status")
+            .HeaderHtmlAttributes(new { style = "text-align: center;" })
+            .Columns(col =>
+            {
+                // Display boolean fields as non-clickable checkboxes using Kendo UI elements
+                col.Bound(g => g.Registered).Title("Prijavljen").Width(100).ClientTemplate("#= Registered ? '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' #");
+                col.Bound(g => g.Locked).Title("Zaključan").Width(100).ClientTemplate("#= Locked ? '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' #");
+                col.Bound(g => g.Deleted).Title("Obrisan").Width(100).ClientTemplate("#= Deleted ? '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' #");
+            })
+            );
+        })
+        .Pageable(p => p.Refresh(true))
+        .Sortable()
+        .Selectable()
+        .Scrollable()
+        .HtmlAttributes(new { style = "height:100%;" })
+        .DataSource(ds => ds
+        .Ajax()
+        .PageSize(20)
+        .Model(m =>
+        {
+            m.Field(g => g.Id);
+            m.Field(g => g.FullName);
+            m.Field(g => g.PropertyName);
+            m.Field(g => g.PersonType);
+            m.Field(g => g.CheckIn);
+            m.Field(g => g.CheckOut);
+            m.Field(g => g.DocumentType);
+            m.Field(g => g.DocumentNumber);
+            m.Field(g => g.DocumentValidTo);
+            m.Field(g => g.Registered);
+            m.Field(g => g.Locked);
+            m.Field(g => g.Deleted);
+        })
+        .Read(read => read.Action("ReadMnePersons", "Person").Data("function() { return { groupId: " + ViewBag.GroupId + " }; }"))
+        ))
+</div>
+
+@(Html.Kendo().Window().Name("wndNewGuest")
+    .Title("Nova prijava")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(1200)
+    .Height(900)
+    .HtmlAttributes(new { style = "padding:20px;" })
+    .Content(@<text>
+    <div id="newGuestForm">
+        <fieldset style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px;">
+            <div class="form-group">
+                <div class="box">
+                    <label for="property">Smještajni objekat:</label>
+                    @(Html.Kendo().DropDownList()
+                    .Name("property")
+                    .DataTextField("Name")
+                    .DataValueField("Id")
+                    .OptionLabel("Izaberite smještajni objekat")
+                    .DataSource(source => source.Read(read => read.Action("GetPropertyList", "Group")))
+                    .Value(ViewBag.PropertyId != null ? ViewBag.PropertyId.ToString() : "") // Set the initial value based on ViewBag.PropertyId
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+
+                <div class="box">
+                    <label for="persontype">Tip gosta:</label>
+                    @(Html.Kendo().DropDownList()
+                    .Name("persontype")
+                    .DataTextField("Name")
+                    .DataValueField("ExternalId")
+                    .OptionLabel("Izaberite tip gosta")
+                    .BindTo(Model.PersonTypeCodeList)
+                    .Value("4")
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+            </div>
+        </fieldset>
+        <fieldset style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px;">
+            <div class="form-group">
+                <div class="box">
+                    <label for="firstname">Ime <span style="color: red;">*</span></label>
+                    @(Html.Kendo().TextBox()
+                    .Name("firstname")
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="lastname">Prezime <span style="color: red;">*</span></label>
+                    @(Html.Kendo().TextBox()
+                    .Name("lastname")
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="personalnumber">Matični broj <span style="color: red;">*</span></label>
+                    @(Html.Kendo().TextBox()
+                    .Name("personalnumber")
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="birthdate">Datum rođenja <span style="color: red;">*</span></label>
+                    @(Html.Kendo().DatePicker()
+                    .Name("birthdate")
+                    .Value(DateTime.UtcNow)
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="gender">Pol <span style="color: red;">*</span></label>
+                    @(Html.Kendo().DropDownList()
+                    .Name("gender")
+                    .DataTextField("Text")
+                    .DataValueField("Value")
+                    .OptionLabel("Izaberite pol")
+                    .BindTo(new List<SelectListItem>
+                    {
+                    new SelectListItem { Text = "Muški", Value = "M" },
+                    new SelectListItem { Text = "Ženski", Value = "Z" }
+                    })
+                    .Value("M") // Set the initial value to "M" for Muški
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="nationality">Nacionalnost <span style="color: red;">*</span></label>
+                    @(Html.Kendo().DropDownList()
+                    .Name("nationality")
+                    .DataTextField("Name")
+                    .DataValueField("ExternalId")
+                    .OptionLabel("Izaberite nacionalnost")
+                    .BindTo(Model.CountryCodeList)
+                    .Filter("contains") // Set the filter type to "contains" for client-side filtering
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="box">
+                    <label for="birthplace">Mjesto rođenja <span style="color: red;">*</span></label>
+                    @(Html.Kendo().TextBox()
+                    .Name("birthplace")
+                    .Value("-")
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="birthcountry">Država rođenja <span style="color: red;">*</span></label>
+                @(Html.Kendo().DropDownList()
+                    .Name("birthcountry")
+                    .DataTextField("Name")
+                    .DataValueField("ExternalId")
+                    .OptionLabel("Izaberite državu rođenja")
+                    .BindTo(Model.CountryCodeList)
+                    .Filter("contains") // Set the filter type to "contains" for client-side filtering
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="residenceplace">Mesto prebivališta <span style="color: red;">*</span></label>
+                    @(Html.Kendo().TextBox()
+                    .Name("residenceplace")
+                    .Value("-")
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="residenceaddress">Adresa prebivališta <span style="color: red;">*</span></label>
+                    @(Html.Kendo().TextBox()
+                    .Name("residenceaddress")
+                    .Value("-")
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="residencecountry">Država prebivališta <span style="color: red;">*</span></label>
+                    @(Html.Kendo().DropDownList()
+                    .Name("residencecountry")
+                    .DataTextField("Name")
+                    .DataValueField("ExternalId")
+                    .OptionLabel("Izaberite državu prebivališta")
+                    .BindTo(Model.CountryCodeList)
+                    .Filter("contains") // Set the filter type to "contains" for client-side filtering
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+            </div>
+        </fieldset>
+        <fieldset style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px;">
+            <div class="form-group">
+                <div class="box">
+                    <label for="documenttype">Vrsta ličnog dokumenta <span style="color: red;">*</span></label>
+                    @(Html.Kendo().DropDownList()
+                    .Name("documenttype")
+                    .DataTextField("Name")
+                    .DataValueField("ExternalId")
+                    .OptionLabel("Izaberite vrstu ličnog dokumenta")
+                    .BindTo(Model.DocumentTypeCodeList)
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="documentnumber">Broj ličnog dokumenta <span style="color: red;">*</span></label>
+                    @(Html.Kendo().TextBox()
+                    .Name("documentnumber")
+                    .Value("-")
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="documentvalidto">Važi do <span style="color: red;">*</span></label>
+                    @(Html.Kendo().DatePicker()
+                    .Name("documentvalidto")
+                    .Value(DateTime.UtcNow)
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="documentcountry">Država izdavanja <span style="color: red;">*</span></label>
+                    @(Html.Kendo().DropDownList()
+                    .Name("documentcountry")
+                    .DataTextField("Name")
+                    .DataValueField("ExternalId")
+                    .OptionLabel("Izaberite državu izdavanja")
+                    .BindTo(Model.CountryCodeList)
+                    .Filter("contains") // Set the filter type to "contains" for client-side filtering
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="documentissuer">Izdavaoc ličnog dokumenta <span style="color: red;">*</span></label>
+                    @(Html.Kendo().TextBox()
+                    .Name("documentissuer")
+                    .Value("-")
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+            </div>
+        </fieldset>
+        <fieldset style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px;">
+            <div class="form-group">
+                <div class="box">
+                    <label for="checkin">Datum prijave <span style="color: red;">*</span></label>
+                    @(Html.Kendo().DatePicker()
+                    .Name("checkin")
+                    .Value((DateTime?)ViewBag.CheckIn)
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="checkout">Datum odjave</label>
+                    @(Html.Kendo().DatePicker()
+                    .Name("checkout")
+                    .Value((DateTime?)ViewBag.CheckOut)
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="entrypoint">Mjesto ulaska u CG</label>
+                    @(Html.Kendo().DropDownList()
+                    .Name("entrypoint")
+                    .DataTextField("Name")
+                    .DataValueField("ExternalId")
+                    .OptionLabel("Izaberite mjesto ulaska")
+                    .BindTo(Model.EntryPointCodeList)
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="entrypointdate">Datum ulaska u CG</label>
+                    @(Html.Kendo().DatePicker()
+                    .Name("entrypointdate")
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+            </div>
+        </fieldset>
+        <fieldset style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px;">
+            <div class="form-group">
+                <div class="box">
+                    <label for="visatype">Vrsta vize</label>
+                    @(Html.Kendo().DropDownList()
+                    .Name("visatype")
+                    .DataTextField("Name")
+                    .DataValueField("ExternalId")
+                    .OptionLabel("Izaberite vrstu vize")
+                    .BindTo(Model.VisaTypeCodeList)
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="visanumber">Broj vize</label>
+                    @(Html.Kendo().TextBox()
+                    .Name("visanumber")
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="visaissueplace">Mjesto izdavanja vize</label>
+                    @(Html.Kendo().TextBox()
+                    .Name("visaissueplace")
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="visavalidfrom">Viza važi od</label>
+                    @(Html.Kendo().DatePicker()
+                    .Name("visavalidfrom")
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+                <div class="box">
+                    <label for="visavalidto">Viza važi do</label>
+                    @(Html.Kendo().DatePicker()
+                    .Name("visavalidto")
+                    .HtmlAttributes(new { style = "width:100%" })
+                    )
+                </div>
+            </div>
+        </fieldset>
+
+        <!-- Buttons -->
+        <div style="display:inline-block; float:left; margin-top:10px;">
+            <div style="display: inline-block; margin-right: 35px; margin-left:20px; text-align:center;">
+                @(Html.Kendo().Button().Name("btnSubmitNewGuest")
+                .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/user_group_new.png'></img>")
+                .HtmlAttributes(new { style = "width:80px; height:80px; border-radius:50%; margin-top: 10px;" })
+                )
+                <div style="margin-top:3px;"><b>Nova prijava</b></div>
+            </div>
+        </div>
+
+        <div style="display:inline-block; float:right; margin-top:10px;">
+            <div style="display: inline-block; margin-right:35px; text-align:center;">
+                @(Html.Kendo().Button().Name("btnRegisterMUP")
+                .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/police.png'></img>")
+                .HtmlAttributes(new { style = "width:80px; height:80px; border-radius:50%; margin-top: 10px;" })
+                )
+                <div style="margin-top:3px;"><b>Prijava boravka MUP-u</b></div>
+            </div>
+        </div>
+    </div>
+</text>)
+)

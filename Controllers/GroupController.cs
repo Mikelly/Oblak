@@ -4,7 +4,6 @@ using Kendo.Mvc.UI;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Oblak.Data;
 using Oblak.Data.Enums;
 using Oblak.Models.Api;
@@ -46,7 +45,7 @@ namespace RegBor.Controllers
             if (username != null)
             {
                 _appUser = _db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.Properties).FirstOrDefault(a => a.UserName == username)!;
-				var _company = _appUser?.LegalEntityId;
+				_company = _appUser.LegalEntityId;
                 if (_appUser.LegalEntity.Country == Country.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>();
                 if (_appUser.LegalEntity.Country == Country.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>();
             }
@@ -55,10 +54,11 @@ namespace RegBor.Controllers
 		[HttpGet]
 		[Route("groups", Name = "Groups")]
 		public ActionResult Index()
-		{			
-			return View();
+		{
+            return View();
 		}
-		/*
+
+        /*
 		[HttpGet]
 		[Route("new-group", Name = "NewGroup")]
 		public ActionResult newgrp()
@@ -76,7 +76,7 @@ namespace RegBor.Controllers
 			}
 		}
 		*/
-		[HttpGet]
+        [HttpGet]
 		[Route("guest-link", Name = "NewGroup")]
 		public ActionResult sendLink()
 		{
@@ -355,10 +355,10 @@ namespace RegBor.Controllers
         public virtual ActionResult Read([DataSourceRequest] DataSourceRequest request)
         {
             var data = _db.Groups
-                .Where(a => a.LegalEntityId == 4)
+                .Where(a => a.LegalEntityId == _company)
                 .Include(a => a.Property)
 				.OrderByDescending(x => x.Date)
-                .Select(a => new GroupDto
+                .Select(a => new GroupEnrichedDto
                 {
                     Id = a.Id,
                     Date = a.Date,
@@ -366,29 +366,15 @@ namespace RegBor.Controllers
                     CheckIn = a.CheckIn,
                     CheckOut = a.CheckOut,
                     Email = a.Email,
-                    Guests = $"{a.Persons.Count}: {string.Join(", ", a.Persons.Select(p => $"{p.FirstName} {p.LastName}"))}"
+                    Guests = a.Persons.Any() ? $"{a.Persons.Count}: {string.Join(", ", a.Persons.Select(p => $"{p.FirstName} {p.LastName}"))}" : ""
                 });
 
             return Json(data.ToDataSourceResult(request));
         }
 
-        //public ActionResult Create([DataSourceRequest] DataSourceRequest request, rb_GrupaVM vm)
-        //{
-        //	var m = new Group();
-        //	_mapper.Map(vm, m);
-
-        //	if (ModelState.IsValid)
-        //	{
-        //		_db.Groups.Add(m);
-        //		_db.SaveChanges();
-        //	}
-
-        //	return Json(new[] { _mapper.Map(m, vm) }.ToDataSourceResult(request, ModelState));
-        //}
-
         public ActionResult GetPropertyList()
         {
-            var properties = _db.Properties.ToList();
+            var properties = _db.Properties.Where(p => p.LegalEntityId == _company).ToList();
             return Json(properties);
         }
 
@@ -416,7 +402,7 @@ namespace RegBor.Controllers
                     // Map other properties as needed
                     PropertyId = groupDto.PropertyId,
                     UnitId = groupDto.UnitId,
-					LegalEntityId = 4,
+					LegalEntityId = _company,
 					Guid = new Guid().ToString(),
 					PropertyExternalId = groupDto.PropertyId,
                 };
@@ -450,19 +436,6 @@ namespace RegBor.Controllers
 			return Json(new[] { _mapper.Map(m, vm) }.ToDataSourceResult(request, ModelState));
 		}
 
-        //public ActionResult Destroy([DataSourceRequest] DataSourceRequest request, rb_GrupaVM vm)
-        //{
-        //	var m = _db.Groups.SingleOrDefault(a => a.Id == vm.ID);
-
-        //	if (ModelState.IsValid)
-        //	{
-        //		_db.Groups.Remove(m);
-        //		_db.SaveChanges();
-        //	}
-
-        //	return Json(new[] { vm }.ToDataSourceResult(request, ModelState));
-        //}
-
         [HttpGet]
         public JsonResult DeleteGroup(int groupId)
         {
@@ -475,16 +448,16 @@ namespace RegBor.Controllers
                 {
                     _db.Groups.Remove(group);
                     _db.SaveChanges();
-                    return Json(new { info = "Group deleted successfully." });
+                    return Json(new { info = "Grupa uspješno obrisana." });
                 }
                 else
                 {
-                    return Json(new { error = "Group not found." });
+                    return Json(new { error = "Grupa nije pronađena." });
                 }
             }
             catch (Exception ex)
             {
-                return Json(new { error = "An error occurred while deleting the group." });
+                return Json(new { error = "Došlo je do greške prilikom brisanja grupe." });
             }
         }
 

@@ -55,21 +55,6 @@
         });
     });
 
-
-
-    //
-
-    $(document).on('dblclick', '#GrupeGrid tbody tr', function (e) {
-        // debugger;
-        var tr = $(this);
-        var grid = $('#GrupeGrid').data('kendoGrid');
-        var item = grid.dataItem(tr);
-
-        doShowGroup(item.ID);
-    });
-
-    //
-
     function saveNewGroup(groupDto) {
         // Show loading indicator if needed
         // kendo.ui.progress($("#wndNewGroup"), true);
@@ -113,7 +98,7 @@
                 console.error(error);
 
                 // Display an error message to the user, adjust as needed
-                alert("An error occurred while saving the new group.");
+                alert("Došlo je do greške.");
             },
             complete: function () {
                 // Hide loading indicator if needed
@@ -124,30 +109,26 @@
 
     //
 
-    function doShowGroup(g) {
-        window.location = '/rbgrp/ogrp?g=' + g;
-    }
+    // function newGroup(e) {
+    //     $.ajax({
+    //         url: '@Url.Content("~/rbgrp/newgrp")',
+    //         type: 'GET',
+    //         success: function (data, status, xhr) {
 
-    function newGroup(e) {
-        $.ajax({
-            url: '@Url.Content("~/rbgrp/newgrp")',
-            type: 'GET',
-            success: function (data, status, xhr) {
+    //             var ct = xhr.getResponseHeader("content-type") || "";
+    //             if (ct.indexOf('html') > -1) {
+    //                 $('#wndNewGroup').data('kendoWindow').content(data);
+    //                 $('#wndNewGroup').data('kendoWindow').center();
+    //                 $('#wndNewGroup').data('kendoWindow').open();
+    //             }
+    //             if (ct.indexOf('json') > -1) {
+    //                 doShowGroup(data.Grupa);
+    //                 //window.location = '/rbgrp/ogrp?grupa=' + data.Grupa;
+    //             }
 
-                var ct = xhr.getResponseHeader("content-type") || "";
-                if (ct.indexOf('html') > -1) {
-                    $('#wndNewGroup').data('kendoWindow').content(data);
-                    $('#wndNewGroup').data('kendoWindow').center();
-                    $('#wndNewGroup').data('kendoWindow').open();
-                }
-                if (ct.indexOf('json') > -1) {
-                    doShowGroup(data.Grupa);
-                    //window.location = '/rbgrp/ogrp?grupa=' + data.Grupa;
-                }
-
-            }
-        });
-    }
+    //         }
+    //     });
+    // }
 
     function sendLink(e) {
         $.ajax({
@@ -206,16 +187,18 @@
 
 
     function showGroup(event) {
-
         event.preventDefault();
         event.stopImmediatePropagation();
         event.stopPropagation();
 
-        var grid = $('#GrupeGrid').data('kendoGrid');
+        var grid = $('#groupGrid').data('kendoGrid');
         var item = grid.dataItem(grid.select());
 
-        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati prijavu', confirmButtonText: `U redu` });
-        else doShowGroup(item.ID);
+        if (item == null) {
+            Swal.fire({ icon: 'error', title: 'Morate odabrati prijavu', confirmButtonText: `U redu` });
+        } else {
+            window.location = '/persons?groupId=' + item.Id;
+        }
     }
 
 </script>
@@ -255,7 +238,7 @@
 </div>
 
 <div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
-    @(Html.Kendo().Grid<GroupDto>() // Use GroupDto here
+    @(Html.Kendo().Grid<GroupEnrichedDto>() // Use GroupDto here
         .Name("groupGrid")
         .Columns(columns =>
         {
@@ -295,61 +278,63 @@
     .Visible(false)
     .Modal(true)
     .Draggable(false)
-    .Width(400)
-    .Height(550)
+    .Width(450)
+    .Height(600)
     .HtmlAttributes(new { style = "padding:20px;" })
     .Content(@<text>
         <div id="newGroupForm">
 
             <label for="propertyDropdown">Izaberite smještajni objekat:</label>
             @(Html.Kendo().DropDownList()
-        .Name("propertyDropdown")
-        .DataTextField("Name")
-        .DataValueField("Id")
-        .OptionLabel("Izaberite smještajni objekat:")
-        .DataSource(source => source.Read(read => read.Action("GetPropertyList", "Group")))
-        .HtmlAttributes(new { style = "width:100%" })
-        )
+            .Name("propertyDropdown")
+            .DataTextField("Name")
+            .DataValueField("Id")
+            .OptionLabel("Izaberite smještajni objekat:")
+            .DataSource(source => source.Read(read => read.Action("GetPropertyList", "Group")))
+            .HtmlAttributes(new { style = "width:100%" })
+            )
 
-                <label for="propertyUnitDropdown">Izaberite smještajnu jedinicu/apartman:</label>
-                @(Html.Kendo().DropDownList()
-        .Name("propertyUnitDropdown")
-        .DataTextField("Name")
-        .DataValueField("Id")
-        .OptionLabel("Izaberite smještajnu jedinicu/apartman:")
-        .Enable(false)
-        .HtmlAttributes(new { style = "width:100%" })
-        )
+            <label for="propertyUnitDropdown">Izaberite smještajnu jedinicu/apartman:</label>
+            @(Html.Kendo().DropDownList()
+            .Name("propertyUnitDropdown")
+            .DataTextField("Name")
+            .DataValueField("Id")
+            .OptionLabel("Izaberite smještajnu jedinicu/apartman:")
+            .Enable(false)
+            .HtmlAttributes(new { style = "width:100%" })
+            )
 
             <label for="checkInDate">Očekivani datum dolaska:</label>
             @(Html.Kendo().DatePicker()
-        .Name("checkInDate")
-        .HtmlAttributes(new { style = "width:100%" })
-        .Value(DateTime.Now) // Set a default value, or use any other default logic
-        )
+            .Name("checkInDate")
+            .HtmlAttributes(new { style = "width:100%" })
+            .Value(DateTime.Now) // Set a default value, or use any other default logic
+            )
 
-                <label for="checkOutDate">Očekivani datum odlaska:</label>
-                @(Html.Kendo().DatePicker()
-        .Name("checkOutDate")
-        .HtmlAttributes(new { style = "width:100%" })
-        .Value(DateTime.Now.AddDays(1)) // Set a default value, or use any other default logic
-        )
+            <label for="checkOutDate">Očekivani datum odlaska:</label>
+            @(Html.Kendo().DatePicker()
+            .Name("checkOutDate")
+            .HtmlAttributes(new { style = "width:100%" })
+            .Value(DateTime.Now.AddDays(1)) // Set a default value, or use any other default logic
+            )
 
-                <label for="email">E-mail:</label>
-                @(Html.Kendo().TextBox()
-        .Name("email")
-        .HtmlAttributes(new { style = "width:100%" })
-        )
-        <br /><br />
+            <label for="email">E-mail:</label>
+            @(Html.Kendo().TextBox()
+            .Name("email")
+            .HtmlAttributes(new { style = "width:100%" })
+            )
+            <br /><br />
 
-                <div style="display: flex; flex-direction: column; align-items: center;">
-                    @(Html.Kendo().Button().Name("btnSubmitNewGroup")
-                        .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/user_group_new.png'></img>")
-                        .HtmlAttributes(new { style = "width:80px; height:80px; border-radius:50%; margin-top: 10px;" })
-                        )
-                    <div style="margin-top:3px;"><b>Nova prijava</b></div>
-                </div>
-        </text>)
+            <div style="display: flex; flex-direction: column; align-items: center;">
+                @(Html.Kendo().Button().Name("btnSubmitNewGroup")
+                    .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/user_group_new.png'></img>")
+                    .HtmlAttributes(new { style = "width:80px; height:80px; border-radius:50%; margin-top: 10px;" })
+                    )
+                <div style="margin-top:3px;"><b>Nova prijava</b></div>
+            </div>
+
+        </div>
+    </text>)
 )
 
 @Html.Kendo().Window().Name("wndSendLink").Title("Slanje linka").Visible(false).Modal(true).Draggable(false).Width(400).Height(450).HtmlAttributes(new { style = "padding:20px;" })

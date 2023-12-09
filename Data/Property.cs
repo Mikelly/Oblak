@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Oblak.Data
 {
@@ -13,6 +14,7 @@ namespace Oblak.Data
         
         public int LegalEntityId { get; set; }
 
+        [JsonIgnore]
         public LegalEntity LegalEntity { get; set; }
 
         [StringLength(450)]
@@ -52,6 +54,7 @@ namespace Oblak.Data
         
         public decimal? ResidenceTax { get; set; }
         
+        // samo za MNE klijenta
         public bool? ResidenceTaxYN { get; set; }
         
         public int? Capacity { get; set; }
@@ -59,9 +62,11 @@ namespace Oblak.Data
         [StringLength(450)]
         public string Status { get; set; } = "A";
 
+        // samo za MNE klijenta
         [StringLength(450)]
         public string? BusinessUnitCode { get; set; }
 
+        // samo za MNE klijenta
         [StringLength(450)]
         public string? FiscalEnuCode { get; set; }
 
@@ -82,8 +87,9 @@ namespace Oblak.Data
         
         public DateTime? UserModifiedDate { get; set; }
 
-
+        [JsonIgnore]
         public List<Group> Groups { get; set; }
+        [JsonIgnore]
         public List<Person> Persons { get; set; }
         public List<SelfRegisterToken> GuestTokens { get; set; }
         public List<ResTax> ResTaxes { get; set; }

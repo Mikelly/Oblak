@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Oblak.Data
 {
@@ -56,7 +57,7 @@ namespace Oblak.Data
         public DateTime? UserModifiedDate { get; set; }
 
 
-
+        [JsonIgnore]
         public LegalEntity LegalEntity { get; set; }
         
         public Property Property { get; set; }

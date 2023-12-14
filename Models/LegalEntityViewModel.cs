@@ -1,7 +1,4 @@
 ﻿using Oblak.Data.Enums;
-using Oblak.Data;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
 
 namespace Oblak.Models
 {

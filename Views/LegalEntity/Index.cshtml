@@ -1,26 +1,229 @@
-﻿@{
-    Layout = "~/Views/Shared/_Layout.cshtml";
+﻿@using Oblak.Models.Api;
+@using Oblak.Models.rb90;
+@{
+    ViewBag.Title = "Prijave gostiju";
+    Layout = "~/Views/Shared/_LayoutINV.cshtml";
+
 }
 
-@(Html.Kendo().Grid<LegalEntity>()
-    .Name("grid")
-    .Columns(columns =>
-    {        
-        columns.Bound(p => p.Id).Filterable(false).Width(100);
-        columns.Bound(p => p.Name).Width(100);
-        columns.Bound(p => p.UserCreatedDate).Format("{0:MM/dd/yyyy}").Width(140);
-        columns.Bound(p => p.Country);
-        columns.Bound(p => p.TIN).Width(150);
-    })
-    
-    .Pageable()
-    .Sortable()
-    .Scrollable()
-    .Filterable()
-    .HtmlAttributes(new { style = "height:430px;" })
-    .DataSource(dataSource => dataSource
+<script type="text/javascript">
+    $(document).ready(function () {
+        
+    });
+
+    function saveNewGroup(groupDto) {
+        var checkInDate = $("#checkInDate").data("kendoDatePicker").value();
+        var checkOutDate = $("#checkOutDate").data("kendoDatePicker").value();
+
+        var formattedCheckInDate = kendo.toString(checkInDate, "yyyy-MM-ddTHH:mm:ss");
+        var formattedCheckOutDate = kendo.toString(checkOutDate, "yyyy-MM-ddTHH:mm:ss");
+
+        var propertyId = $("#propertyDropdown").data("kendoDropDownList").value();
+        var propertyUnitId = $("#propertyUnitDropdown").data("kendoDropDownList").value();
+
+        groupDto.CheckIn = formattedCheckInDate;
+        groupDto.CheckOut = formattedCheckOutDate;
+        groupDto.PropertyId = propertyId;
+        groupDto.UnitId = propertyUnitId;
+
+        $.ajax({
+            url: '@Url.Action("Create", "Group")',
+            type: 'POST',
+            data: {
+                groupDto: groupDto
+            },
+            success: function (data) {
+                console.log(data);
+                $("#wndNewGroup").data("kendoWindow").close();
+                $('#groupGrid').data('kendoGrid').dataSource.read();
+            },
+            error: function (error) {
+                console.error(error);
+                alert("Došlo je do greške.");
+            },
+            complete: function () {
+            }
+        });
+    }
+
+    function deleteGroup(e) {
+        var grid = $('#groupGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) {
+            Swal.fire({ icon: 'error', title: 'Morate odabrati prijavu', confirmButtonText: `U redu` });
+        } else {
+            Swal.fire({
+                title: 'Da li ste sigurni?',
+                text: 'Ova radnja je nepovratna!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Da, obriši!',
+                cancelButtonText: 'Odustani'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '@Url.Content("~/Group/DeleteGroup/")',
+                        data: { groupId: item.Id },
+                        type: 'GET',
+                        success: function (data, status, xhr) {
+                            if (data.error != "") {
+                                Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                            }
+                            if (data.info != "") {
+                                grid.dataSource.read();
+                                Swal.fire({ icon: 'info', title: data.info, confirmButtonText: `U redu` });
+                            }
+                        },
+                        error: function () {
+                            Swal.fire({ icon: 'error', title: 'Došlo je do greške prilikom brisanja grupe.', confirmButtonText: `U redu` });
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    function srbCred() 
+    {
+        var grid = $('#legalEntitiesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati klijenta', confirmButtonText: `U redu` });
+
+        var le = item.Id;        
+
+        $.ajax({
+            url: `srb-cred?legalentity=${le}`,
+            type: 'GET',            
+            success: function (data) {
+                console.log(data);
+                $("#wndSrbCred").data("kendoWindow").content(data).center().open();
+            },
+            error: function (error) {
+                console.error(error);
+                alert("Došlo je do greške.");
+            },
+            complete: function () {
+            }
+        });
+    }
+
+    function onCancel(e) {
+        var grid = e.sender;
+        grid.dataSource.cancelChanges(); // Cancel changes in the data source
+        grid.dataSource.read(); // Refresh the data source
+    }
+
+    function onUpdateButtonClick(e) {
+        // Get a reference to the Kendo Grid
+        var grid = $("#legalEntitiesGrid").data("kendoGrid");
+
+        // Save changes (update the record)
+        grid.saveRow();
+
+        // Close the editor popup
+        grid.closeCell();
+
+        // Refresh the grid
+        grid.dataSource.read();
+    }
+
+</script>
+
+<style type="text/css">
+</style>
+
+<div>
+    <div style="display: inline-block; margin-right: 35px; margin-left:20px; margin-top:10px; text-align:center;">
+        @(Html.Kendo().Button().Name("btnNewGroup")
+            .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/user_group_new.png'></img>")
+            .HtmlAttributes(new { onclick = "srbCred()", style = "width:80px; height:80px; border-radius:50%;" })
+            )
+        <div style="margin-top:3px;"><b>Korisničko ime i lozinka</b></div>
+    </div>
+    <div style="display: inline-block; margin-right: 35px; text-align:center;">
+        @(Html.Kendo().Button().Name("btnOpenGroup")
+            .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-2px; left:2px;' src='/Content/Icons/view_glass.png'></img>")
+            .HtmlAttributes(new { onclick = "showGroup(event)", style = "width:80px; height:80px; border-radius:50%;" })
+            )
+        <div style="margin-top:3px;"><b>Dodaj logo</b></div>
+    </div>
+    <div style="display: inline-block; margin-right: 35px; text-align:center;">
+        @(Html.Kendo().Button().Name("btnDeleteGroup")
+            .Content("<img style='width:58px;height:58px;text-align:center; position:relative; top:-1px;' src='/Content/Icons/remove.png'></img>")
+            .HtmlAttributes(new { onclick = "deleteGroup(event)", style = "width:80px; height:80px; border-radius:50%;" })
+            )
+        <div style="margin-top:3px;"><b>Dodaj zaglavlje racuna</b></div>
+    </div>
+</div>
+
+<div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
+    @(Html.Kendo().Grid<LegalEntityViewModel>()
+        .Name("legalEntitiesGrid")
+        .Columns(columns =>
+        {
+            columns.Command(command =>
+            {
+                command.Edit().Text(" ");
+                command.Destroy().Text(" ");
+            }).Width(50);
+            columns.Bound(g => g.Id).Title("Id").Width(100);
+            columns.Bound(g => g.Name).Title("Naziv").Width(200);
+            columns.Bound(g => g.TIN).Title("Poreski identifikacioni broj").Width(200);
+            columns.Bound(g => g.Address).Title("Adresa").Width(200);
+            columns.Bound(g => g.Country).Title("Država").Width(100);
+            columns.Bound(g => g.InVat).Title("U PDV-u").Width(100).ClientTemplate("#= InVat ? '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' #");
+        })
+        .Pageable(p => p.Refresh(true))
+        .Editable(e => e.Mode(GridEditMode.PopUp)
+            .TemplateName("_LegalEntityEditor")
+            .Window(w => w
+            .Title("Ažuriraj klijenta")
+            .Width(450)
+            .Height(620)
+            )
+        )
+        .Sortable()
+        .Selectable()
+        .Scrollable()
+        .Filterable()
+        .HtmlAttributes(new { style = "height:100%;" })
+        .Events(e => e.Cancel("onCancel"))
+        .DataSource(ds => ds
         .Ajax()
         .PageSize(20)
+        .Model(m =>
+        {
+            m.Field(g => g.Id);
+            m.Field(g => g.Type);
+            m.Field(g => g.Name);
+            m.Field(g => g.TIN);
+            m.Field(g => g.Address);
+            m.Field(g => g.Country);
+            m.Field(g => g.InVat);
+            m.Field(g => g.UserCreated);
+            m.Field(g => g.UserCreatedDate);
+            m.Field(g => g.UserModified);
+            m.Field(g => g.UserModifiedDate);
+        })
         .Read(read => read.Action("Read", "LegalEntity"))
-     )
+        .Update(update => update.Action("Update", "LegalEntity"))
+        .Destroy(destroy => destroy.Action("Destroy", "LegalEntity"))
+        ))
+</div>
+
+
+@(Html.Kendo().Window().Name("wndSrbCred")
+    .Title("Kredencijali")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(450)
+    .Height(600)
+    .HtmlAttributes(new { style = "padding:20px;" })
 )
+
+@Html.Kendo().Window().Name("wndSendLink").Title("Slanje linka").Visible(false).Modal(true).Draggable(false).Width(400).Height(450).HtmlAttributes(new { style = "padding:20px;" })

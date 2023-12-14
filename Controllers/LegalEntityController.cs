@@ -2,9 +2,12 @@
 using Kendo.Mvc.UI;
 using Microsoft.AspNetCore.Mvc;
 using Oblak.Data;
-using Oblak.Models;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography;
+using Oblak.Models.Api;
+using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using Oblak.Models;
 
 namespace Oblak.Controllers
 {
@@ -12,13 +15,16 @@ namespace Oblak.Controllers
     {
         ApplicationDbContext _db;
         ILogger<LegalEntityController> _logger;
+        private readonly IMapper _mapper;
 
         public LegalEntityController(
             ApplicationDbContext db, 
-            ILogger<LegalEntityController> logger)
+            ILogger<LegalEntityController> logger,
+            IMapper mapper)
         {
             _db = db;
             _logger = logger;
+            _mapper = mapper;
         }
 
         [HttpGet("clients")]
@@ -27,13 +33,89 @@ namespace Oblak.Controllers
             return View();
         }
 
-        public IActionResult Read([DataSourceRequest] DataSourceRequest request)
+        public async Task<IActionResult> Read([DataSourceRequest] DataSourceRequest request)
         {
-            var data = _db.LegalEntities.ToList();
-            return Json(data.ToDataSourceResult(request));
+            var data = await _db.LegalEntities.OrderByDescending(x => x.Id).ToListAsync();
+
+            var legalEntities = _mapper.Map<List<LegalEntityViewModel>>(data);
+
+            return Json(await legalEntities.ToDataSourceResultAsync(request));
         }
 
-		[HttpGet]
+        [HttpPost]
+        public async Task<ActionResult> Create(LegalEntityViewModel input, [DataSourceRequest] DataSourceRequest request)
+        {
+            try
+            {
+                var legalEntity = _mapper.Map<LegalEntityViewModel, LegalEntity>(input);
+
+                //var validation = _registerClient.Validate(newGuest, newGuest.CheckIn, newGuest.CheckOut);
+
+                //if (validation.ValidationErrors.Any())
+                //{
+                //    return Json(new { success = false, errors = validation.ValidationErrors });
+                //}
+
+                await _db.LegalEntities.AddAsync(legalEntity);
+                await _db.SaveChangesAsync();
+
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new DataSourceResult { Errors = ex.Message });
+            }
+        }
+
+        [HttpPost("clients")]
+        public async Task<ActionResult> Update(LegalEntityViewModel input, [DataSourceRequest] DataSourceRequest request)
+        {
+            try
+            {
+                var existingEntity = await _db.LegalEntities.FindAsync(input.Id);
+
+                if (existingEntity == null)
+                {
+                    return Json(new DataSourceResult { Errors = "Entity not found." });
+                }
+
+                _mapper.Map(input, existingEntity);
+
+                // validation
+
+                await _db.SaveChangesAsync();
+
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new DataSourceResult { Errors = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        [Route("srb-cred", Name = "SrbCred")]
+        public IActionResult SrbCred(int legalEntity)
+        {
+            var firma = _db.LegalEntities.FirstOrDefault(a => a.Id == legalEntity);
+            ViewBag.LegalEntity = legalEntity;
+            ViewBag.Password = firma.SrbRbPassword;
+            ViewBag.UserName = firma.SrbRbUserName;
+            return PartialView();
+        }
+
+        [HttpPost]
+        [Route("srb-cred", Name = "SrbCred")]
+        public IActionResult SrbCred(int legalEntity, string username, string password)
+        {
+            var firma = _db.LegalEntities.FirstOrDefault(a => a.Id == legalEntity);
+            firma.SrbRbPassword = password;
+            firma.SrbRbUserName = username;
+            _db.SaveChanges();
+            return View();
+        }
+
+        [HttpGet]
 		[Route("upload-cert", Name = "UploadCertGet")]
 		public IActionResult UploadCert(string type, int legalEntity)
         {

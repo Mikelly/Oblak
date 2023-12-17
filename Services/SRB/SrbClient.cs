@@ -239,7 +239,7 @@ public class SrbClient : Register
                 }
             }
 
-            await Persons(group);
+            //await Persons(group);
 
             await _messageHub.Clients.User(_context.User.Identity!.Name!).SendAsync("status", 100, $"Prijavljivanje završeno");
 
@@ -424,7 +424,7 @@ public class SrbClient : Register
         {
             try
             {
-                if (p.ExternalId != null)
+                if (p.ExternalId2 != null)
                 {
                     ids.Add(p.ExternalId2!.Value);
                 }

@@ -13,41 +13,41 @@ namespace Oblak.Data
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IHttpContextAccessor accessor) : base(options)
         {
-
-        }
+			if (accessor != null) _user = accessor.HttpContext?.User.Identity?.Name ?? "unknown";
+		}
 
         public ApplicationDbContext(IHttpContextAccessor accessor)
         {
             if (accessor != null) _user = accessor.HttpContext?.User.Identity?.Name ?? "unknown";
         }
 
-		public override int SaveChanges()
-		{
-			if (_user != null)
-			{
-				foreach (var e in this.ChangeTracker.Entries().Where(a => a.State == EntityState.Modified || a.State == EntityState.Added))
-				{
-					DateTime now = DateTime.Now;
-					Type T = e.Entity.GetType();
+		//public override int SaveChanges()
+		//{
+		//	if (_user != null)
+		//	{
+		//		foreach (var e in this.ChangeTracker.Entries().Where(a => a.State == EntityState.Modified || a.State == EntityState.Added))
+		//		{
+		//			DateTime now = DateTime.Now;
+		//			Type T = e.Entity.GetType();
 
-					PropertyInfo? ucd = T.GetProperty("UserCreatedDate") ?? null;
-					PropertyInfo? umd = T.GetProperty("UserModifiedDate") ?? null;
-					PropertyInfo? uc = T.GetProperty("UserCreated") ?? null;
-					PropertyInfo? um = T.GetProperty("UserModified") ?? null;
+		//			PropertyInfo? ucd = T.GetProperty("UserCreatedDate") ?? null;
+		//			PropertyInfo? umd = T.GetProperty("UserModifiedDate") ?? null;
+		//			PropertyInfo? uc = T.GetProperty("UserCreated") ?? null;
+		//			PropertyInfo? um = T.GetProperty("UserModified") ?? null;
 
-					if (uc != null && e.State == EntityState.Added)
-						uc.SetValue(e.Entity, _user);
-					if (um != null && (e.State == EntityState.Modified || e.State == EntityState.Added))
-						um.SetValue(e.Entity, _user);
-					if (ucd != null && e.State == EntityState.Added) 
-                        ucd.SetValue(e.Entity, now);
-					if (umd != null && (e.State == EntityState.Modified || e.State == EntityState.Added))
-						umd.SetValue(e.Entity, now);
-				}
-			}
+		//			if (uc != null && e.State == EntityState.Added)
+		//				uc.SetValue(e.Entity, _user);
+		//			if (um != null && (e.State == EntityState.Modified || e.State == EntityState.Added))
+		//				um.SetValue(e.Entity, _user);
+		//			if (ucd != null && e.State == EntityState.Added) 
+  //                      ucd.SetValue(e.Entity, now);
+		//			if (umd != null && (e.State == EntityState.Modified || e.State == EntityState.Added))
+		//				umd.SetValue(e.Entity, now);
+		//		}
+		//	}
 
-			return base.SaveChanges();
-		}
+		//	return base.SaveChanges();
+		//}
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

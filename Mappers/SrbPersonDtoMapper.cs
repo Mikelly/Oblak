@@ -9,8 +9,6 @@ namespace Oblak.Mappers
     {
         public SrbPersonDtoMapper() {
             CreateMap<SrbPerson, SrbPersonDto>()
-                .ForMember(a => a.CheckedIn, o => o.Ignore())
-                .ForMember(a => a.CheckedOut, o => o.Ignore())
                 .ReverseMap();
         }
     }

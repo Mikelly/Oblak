@@ -1,6 +1,7 @@
 ﻿using Oblak.Data.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Oblak.Data
 {
@@ -85,7 +86,8 @@ namespace Oblak.Data
 
         #region Navigation Properties
 
-        public List<Property> Properties { get; set; }        
+        public List<Property> Properties { get; set; }
+        [JsonIgnore]
         public List<Group> Groups { get; set; }
         public List<Document> Documents { get; set; }
         public List<ResTax> ResTaxes { get; set; }

@@ -1,0 +1,77 @@
+﻿@model LegalEntityViewModel
+
+
+<div id="legalEntityEditor" style="box-sizing: border-box; padding: 20px; width: 100%; max-width: 450px;">
+
+    <label for="name">Naziv:</label>
+    <div>
+        @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "k-textbox", style = "width: 100%;" } })
+        @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+    </div>
+
+    <label for="tin">Poreski identifikacioni broj:</label>
+    <div>
+        @Html.EditorFor(model => model.TIN, new { htmlAttributes = new { @class = "k-textbox", style = "width: 100%;" } })
+        @Html.ValidationMessageFor(model => model.TIN, "", new { @class = "text-danger" })
+    </div>
+
+    <label for="address">Adresa:</label>
+    <div>
+        @Html.EditorFor(model => model.Address, new { htmlAttributes = new { @class = "k-textbox", style = "width: 100%;" } })
+        @Html.ValidationMessageFor(model => model.Address, "", new { @class = "text-danger" })
+    </div>
+
+    <label for="country">Država:</label>
+    <div>
+        @Html.EditorFor(model => model.Country, new { htmlAttributes = new { @class = "k-textbox", style = "width: 100%;" } })
+        @Html.ValidationMessageFor(model => model.Country, "", new { @class = "text-danger" })
+    </div>
+
+    <label for="inVat">U PDV-u:</label>
+    <div>
+        @Html.EditorFor(model => model.InVat, new { htmlAttributes = new { @class = "k-checkbox", style = "width: 100%;" } })
+        @Html.ValidationMessageFor(model => model.InVat, "", new { @class = "text-danger" })
+    </div>
+
+    <div style="display: flex; flex-direction: column; align-items: center;">
+        @(Html.Kendo().Button().Name("btnUpdateClient")
+            .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/user_group_new.png'></img>")
+            .HtmlAttributes(new { style = "width:80px; height:80px; border-radius:50%; margin-top: 10px;" })
+            .Events(e => e.Click("onUpdateButtonClick"))
+            )
+        <div style="margin-top:3px;"><b>Sačuvaj</b></div>
+    </div>
+
+</div>
+
+<style>
+    #legalEntityEditor {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .k-textbox,
+    .k-checkbox {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+    }
+
+    .text-danger {
+        color: #ff0000;
+    }
+
+    .k-edit-buttons {
+        display: none !important;
+    }
+
+    .k-edit-form-container {
+        overflow-x: hidden; /* Hide horizontal scrollbar */
+        max-width: 100%; /* Ensure the container does not exceed the viewport width */
+    }
+</style>

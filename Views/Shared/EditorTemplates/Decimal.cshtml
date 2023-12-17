@@ -1,0 +1,5 @@
+@model decimal?
+
+@(Html.Kendo().NumericTextBoxFor(m => m).Decimals(4).Format("{0:n2}")
+      .HtmlAttributes(new { style = "width:100%; font-family: 'Roboto Mono'; font-size: 11px;", onfocus = "var input = $(this); setTimeout(function() { input.select(); });" })
+)

@@ -1,4 +1,5 @@
-﻿@using Oblak.Models.rb90;
+﻿@using Oblak.Models.Api;
+@using Oblak.Models.rb90;
 @{
     ViewBag.Title = "Prijave gostiju";
     Layout = "~/Views/Shared/_LayoutINV.cshtml";
@@ -6,40 +7,128 @@
 }
 
 <script type="text/javascript">
+    $(document).ready(function () {
+        $("#btnNewGroup").click(function () {
+            $("#wndNewGroup").data("kendoWindow").center().open();
+        });
 
-    $(document).on('dblclick', '#GrupeGrid tbody tr', function (e) {
-        debugger;
-        var tr = $(this);
-        var grid = $('#GrupeGrid').data('kendoGrid');
-        var item = grid.dataItem(tr);
+        $("#btnSubmitNewGroup").click(function () {
+            // Gather input values
+            var checkInDate = $("#checkInDate").data("kendoDatePicker").value();
+            var checkOutDate = $("#checkOutDate").data("kendoDatePicker").value();
+            var email = $("#email").val();
 
-        doShowGroup(item.ID);
+            // Create GroupDto object
+            var groupDto = {
+                CheckIn: checkInDate,
+                CheckOut: checkOutDate,
+                Email: email
+            };
+
+            // Call the controller method to save the new group
+            saveNewGroup(groupDto);
+        });
+
+        $(document).ready(function () {
+            var propertyDropdown = $("#propertyDropdown").data("kendoDropDownList");
+            var propertyUnitDropdown = $("#propertyUnitDropdown").data("kendoDropDownList");
+
+            propertyDropdown.bind("change", function () {
+                var propertyId = this.value();
+                if (propertyId) {
+                    // Fetch PropertyUnits based on the selected Property
+                    $.ajax({
+                        url: '@Url.Action("GetPropertyUnits", "Group")',
+                        type: 'GET',
+                        data: { propertyId: propertyId },
+                        success: function (data) {
+                            propertyUnitDropdown.setDataSource(new kendo.data.DataSource({ data: data }));
+                            propertyUnitDropdown.enable(true);
+                        }
+                    });
+                } else {
+                    // Reset and disable PropertyUnit dropdown if no Property is selected
+                    propertyUnitDropdown.value("");
+                    propertyUnitDropdown.enable(false);
+                }
+            });
+        });
     });
 
-    function doShowGroup(g) {
-        window.location = '/rbgrp/ogrp?g=' + g;
-    }
+    function saveNewGroup(groupDto) {
+        // Show loading indicator if needed
+        // kendo.ui.progress($("#wndNewGroup"), true);
 
-    function newGroup(e) {
+        // Get selected dates from datepicker inputs
+        var checkInDate = $("#checkInDate").data("kendoDatePicker").value();
+        var checkOutDate = $("#checkOutDate").data("kendoDatePicker").value();
+
+        // Convert the dates to a format that can be safely sent to the server
+        var formattedCheckInDate = kendo.toString(checkInDate, "yyyy-MM-ddTHH:mm:ss");
+        var formattedCheckOutDate = kendo.toString(checkOutDate, "yyyy-MM-ddTHH:mm:ss");
+
+        // Get selected Property and PropertyUnit values from dropdowns
+        var propertyId = $("#propertyDropdown").data("kendoDropDownList").value();
+        var propertyUnitId = $("#propertyUnitDropdown").data("kendoDropDownList").value();
+
+        // Add dates, PropertyId, and PropertyUnitId to the groupDto
+        groupDto.CheckIn = formattedCheckInDate;
+        groupDto.CheckOut = formattedCheckOutDate;
+        groupDto.PropertyId = propertyId;
+        groupDto.UnitId = propertyUnitId;
+
         $.ajax({
-            url: '@Url.Content("~/rbgrp/newgrp")',
-            type: 'GET',
-            success: function (data, status, xhr) {
+            url: '@Url.Action("Create", "Group")',
+            type: 'POST',
+            data: {
+                groupDto: groupDto
+            },
+            success: function (data) {
+                // Handle success if needed
+                console.log(data);
 
-                var ct = xhr.getResponseHeader("content-type") || "";
-                if (ct.indexOf('html') > -1) {
-                    $('#wndNewGroup').data('kendoWindow').content(data);
-                    $('#wndNewGroup').data('kendoWindow').center();
-                    $('#wndNewGroup').data('kendoWindow').open();
-                }
-                if (ct.indexOf('json') > -1) {
-                    doShowGroup(data.Grupa);
-                    //window.location = '/rbgrp/ogrp?grupa=' + data.Grupa;
-                }
+                // Close the window or perform any other actions
+                $("#wndNewGroup").data("kendoWindow").close();
 
+                // Refresh the grid after creating a new group (if needed)
+                $('#groupGrid').data('kendoGrid').dataSource.read();
+            },
+            error: function (error) {
+                // Handle error if needed
+                console.error(error);
+
+                // Display an error message to the user, adjust as needed
+                alert("Došlo je do greške.");
+            },
+            complete: function () {
+                // Hide loading indicator if needed
+                // kendo.ui.progress($("#wndNewGroup"), false);
             }
         });
     }
+
+    //
+
+    // function newGroup(e) {
+    //     $.ajax({
+    //         url: '@Url.Content("~/rbgrp/newgrp")',
+    //         type: 'GET',
+    //         success: function (data, status, xhr) {
+
+    //             var ct = xhr.getResponseHeader("content-type") || "";
+    //             if (ct.indexOf('html') > -1) {
+    //                 $('#wndNewGroup').data('kendoWindow').content(data);
+    //                 $('#wndNewGroup').data('kendoWindow').center();
+    //                 $('#wndNewGroup').data('kendoWindow').open();
+    //             }
+    //             if (ct.indexOf('json') > -1) {
+    //                 doShowGroup(data.Grupa);
+    //                 //window.location = '/rbgrp/ogrp?grupa=' + data.Grupa;
+    //             }
+
+    //         }
+    //     });
+    // }
 
     function sendLink(e) {
         $.ajax({
@@ -54,39 +143,62 @@
     }
 
     function deleteGroup(e) {
-
-        var grid = $('#GrupeGrid').data('kendoGrid');
+        var grid = $('#groupGrid').data('kendoGrid');
         var item = grid.dataItem(grid.select());
 
         if (item == null) {
             Swal.fire({ icon: 'error', title: 'Morate odabrati prijavu', confirmButtonText: `U redu` });
-        }
-
-        $.ajax({
-            url: '@Url.Content("~/rbgrp/delgrp/")' + item.ID,
-            type: 'GET',
-            success: function (data, status, xhr) {
-                if (data.error != "") Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
-                if (data.info != "") {
-                    grid.dataSource.read();
-                    Swal.fire({ icon: 'info', title: data.info, confirmButtonText: `U redu` });
+        } else {
+            // Confirm the delete action
+            Swal.fire({
+                title: 'Da li ste sigurni?',
+                text: 'Ova radnja je nepovratna!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Da, obriši!',
+                cancelButtonText: 'Odustani'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Proceed with the delete action
+                    $.ajax({
+                        url: '@Url.Content("~/Group/DeleteGroup/")',
+                        data: { groupId: item.Id },
+                        type: 'GET',
+                        success: function (data, status, xhr) {
+                            if (data.error != "") {
+                                Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                            }
+                            if (data.info != "") {
+                                // Refresh the grid after deleting the group
+                                grid.dataSource.read();
+                                Swal.fire({ icon: 'info', title: data.info, confirmButtonText: `U redu` });
+                            }
+                        },
+                        error: function () {
+                            Swal.fire({ icon: 'error', title: 'Došlo je do greške prilikom brisanja grupe.', confirmButtonText: `U redu` });
+                        }
+                    });
                 }
-            }
-        });
+            });
+        }
     }
 
 
     function showGroup(event) {
-
         event.preventDefault();
         event.stopImmediatePropagation();
         event.stopPropagation();
 
-        var grid = $('#GrupeGrid').data('kendoGrid');
+        var grid = $('#groupGrid').data('kendoGrid');
         var item = grid.dataItem(grid.select());
 
-        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati prijavu', confirmButtonText: `U redu` });
-        else doShowGroup(item.ID);
+        if (item == null) {
+            Swal.fire({ icon: 'error', title: 'Morate odabrati prijavu', confirmButtonText: `U redu` });
+        } else {
+            window.location = '/persons?groupId=' + item.Id;
+        }
     }
 
 </script>
@@ -98,7 +210,7 @@
     <div style="display: inline-block; margin-right: 35px; margin-left:20px; margin-top:10px; text-align:center;">
         @(Html.Kendo().Button().Name("btnNewGroup")
             .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/user_group_new.png'></img>")
-            .HtmlAttributes(new { onclick = "newGroup(event)", style = "width:80px; height:80px; border-radius:50%;" })
+            .HtmlAttributes(new { style = "width:80px; height:80px; border-radius:50%;" })
             )
         <div style="margin-top:3px;"><b>Nova prijava gostiju</b></div>
     </div>
@@ -126,14 +238,16 @@
 </div>
 
 <div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
-    @(Html.Kendo().Grid<rb_GrupaVM>()
+    @(Html.Kendo().Grid<GroupEnrichedDto>() // Use GroupDto here
         .Name("groupGrid")
         .Columns(columns =>
         {
-            columns.Bound(p => p.ID).Filterable(false).Width(100);
-            columns.Bound(p => p.Dolazak).Width(200);
-            columns.Bound(p => p.Odlazak).Width(100);
-            columns.Bound(p => p.Email).Width(150);
+            columns.Bound(g => g.Date).Title("Datum").Format("{0:dd.MM.yyyy}").Width(150);
+            columns.Bound(g => g.PropertyName).Title("Smještajni objekat").Width(300);
+            columns.Bound(g => g.CheckIn).Title("Dolazak").Format("{0:dd.MM.yyyy}").Width(150);
+            columns.Bound(g => g.CheckOut).Title("Odlazak").Format("{0:dd.MM.yyyy}").Width(150);
+            columns.Bound(g => g.Email).Title("E-mail").Width(200);
+            columns.Bound(e => e.Guests).Title("Gosti");
         })
         .Pageable(p => p.Refresh(true))
         .Sortable()
@@ -146,16 +260,81 @@
         .PageSize(20)
         .Model(m =>
         {
-            m.Id(a => a.ID);
-            m.Field(a => a.ID);
-            m.Field(a => a.Dolazak);
-            m.Field(a => a.Odlazak);
-            m.Field(a => a.Email);            
+            m.Field(g => g.Id);
+            m.Field(g => g.Date);
+            m.Field(g => g.PropertyName);
+            m.Field(g => g.CheckIn);
+            m.Field(g => g.CheckOut);
+            m.Field(g => g.Email);
+            m.Field(g => g.Guests);
         })
         .Read(read => read.Action("Read", "Group"))
-    ))
+        ))
 </div>
 
 
-@Html.Kendo().Window().Name("wndNewGroup").Title("Nova prijava").Visible(false).Modal(true).Draggable(false).Width(400).Height(550).HtmlAttributes(new { style = "padding:20px;" })
+@(Html.Kendo().Window().Name("wndNewGroup")
+    .Title("Nova prijava")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(450)
+    .Height(600)
+    .HtmlAttributes(new { style = "padding:20px;" })
+    .Content(@<text>
+        <div id="newGroupForm">
+
+            <label for="propertyDropdown">Izaberite smještajni objekat:</label>
+            @(Html.Kendo().DropDownList()
+            .Name("propertyDropdown")
+            .DataTextField("Name")
+            .DataValueField("Id")
+            .OptionLabel("Izaberite smještajni objekat:")
+            .DataSource(source => source.Read(read => read.Action("GetPropertyList", "Group")))
+            .HtmlAttributes(new { style = "width:100%" })
+            )
+
+            <label for="propertyUnitDropdown">Izaberite smještajnu jedinicu/apartman:</label>
+            @(Html.Kendo().DropDownList()
+            .Name("propertyUnitDropdown")
+            .DataTextField("Name")
+            .DataValueField("Id")
+            .OptionLabel("Izaberite smještajnu jedinicu/apartman:")
+            .Enable(false)
+            .HtmlAttributes(new { style = "width:100%" })
+            )
+
+            <label for="checkInDate">Očekivani datum dolaska:</label>
+            @(Html.Kendo().DatePicker()
+            .Name("checkInDate")
+            .HtmlAttributes(new { style = "width:100%" })
+            .Value(DateTime.Now) // Set a default value, or use any other default logic
+            )
+
+            <label for="checkOutDate">Očekivani datum odlaska:</label>
+            @(Html.Kendo().DatePicker()
+            .Name("checkOutDate")
+            .HtmlAttributes(new { style = "width:100%" })
+            .Value(DateTime.Now.AddDays(1)) // Set a default value, or use any other default logic
+            )
+
+            <label for="email">E-mail:</label>
+            @(Html.Kendo().TextBox()
+            .Name("email")
+            .HtmlAttributes(new { style = "width:100%" })
+            )
+            <br /><br />
+
+            <div style="display: flex; flex-direction: column; align-items: center;">
+                @(Html.Kendo().Button().Name("btnSubmitNewGroup")
+                    .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/user_group_new.png'></img>")
+                    .HtmlAttributes(new { style = "width:80px; height:80px; border-radius:50%; margin-top: 10px;" })
+                    )
+                <div style="margin-top:3px;"><b>Nova prijava</b></div>
+            </div>
+
+        </div>
+    </text>)
+)
+
 @Html.Kendo().Window().Name("wndSendLink").Title("Slanje linka").Visible(false).Modal(true).Draggable(false).Width(400).Height(450).HtmlAttributes(new { style = "padding:20px;" })

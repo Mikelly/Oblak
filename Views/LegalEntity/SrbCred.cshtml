@@ -1,0 +1,37 @@
+﻿
+<script type="text/javascript">
+	function SetCred(e) {
+		e.preventDefault();
+		$.ajax({
+			url: '/srb-cred',
+			type: 'POST',
+			data: $('#frmSrbCred').serialize(),
+			success: function (data) {
+				$('#wndSrbCred').data('kendoWindow').close();
+			},
+			error: function () {
+
+			}
+		});
+	}
+</script>
+
+
+
+<form id="frmSrbCred">
+	<div>
+		<label for="username">Unesite korisničko ime</label>
+		@Html.Kendo().TextBox().Name("txtSrbUsername").HtmlAttributes(new { name = "username", style = "width:100%" }).Value(ViewBag.UserName)
+
+		<label for="password">Unesite lozinku</label>
+		@Html.Kendo().TextBox().Name("txtSrbPassword").HtmlAttributes(new { name = "password", style = "width:100%" }).Value(ViewBag.Password)
+
+		<input type="hidden" id="legalEntity" name="legalEntity" value="@ViewBag.LegalEntity" />
+
+		<br /><br />
+
+		@Html.Kendo().Button().Name("btnSrbCred").HtmlAttributes(new { onclick = "SetCred(event)" }).Content("Podesi kredencijale")
+		
+	</div>
+</form>
+

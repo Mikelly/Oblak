@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Oblak.Data;
+using Oblak.Schedulers;
 using Oblak.Interfaces;
 using Oblak.Models;
 using Oblak.Models.Srb;
@@ -13,13 +14,13 @@ using System.Diagnostics;
 
 namespace Oblak.Controllers
 {
-    //[ApiController]
     [Route("Test")]
     public class TestController : Controller
     {
         private readonly ILogger<HomeController> _logger;
         private readonly MneClient _client;
         private readonly SrbClient _srbClient;
+        private readonly SrbScheduler _srbScheduler;
         private readonly ApplicationDbContext _db;
         private readonly IMapper _mapper;
         private readonly IServiceScopeFactory _scopeFactory;
@@ -31,6 +32,7 @@ namespace Oblak.Controllers
             MneClient client,
             SrbClient srbClient,
             ApplicationDbContext db,
+            SrbScheduler srbScheduler,
             IMapper mapper,
             IHttpContextAccessor httpContextAccessor,
             IServiceProvider serviceProvider,
@@ -42,6 +44,7 @@ namespace Oblak.Controllers
             _db = db;
             _mapper = mapper;
             _scopeFactory = scopeFactory;
+            _srbScheduler = srbScheduler;
 
             var username = httpContextAccessor.HttpContext?.User?.Identity?.Name;
             if (username != null)
@@ -61,20 +64,31 @@ namespace Oblak.Controllers
             return Ok();
         }
 
-        [HttpGet]
-        public IActionResult CheckRb90(int property)
+        [HttpPost]
+        [Route("testServiceAuthLe")]
+        public async Task<ActionResult> TestServiceAuth(int legalEntity)
         {
-            //using (var scope = _scopeFactory.CreateScope())
-            //{
-            //	var rb90Client = ActivatorUtilities.CreateInstance<rb90Client>(scope.ServiceProvider, user);
+            var le = _db.LegalEntities.FirstOrDefault(a => a.Id == legalEntity);
 
-            //  var result = rb90Client.Auth();
+            await _registerClient.Authenticate(le);
 
-            //  return Ok(result.Item2);
-            //}
+            return Ok();
+        }
 
-            var p = _db.Properties.FirstOrDefault(a => a.Id == property);
-            var result = _client.Auth(p!);
+        [HttpPost]
+        [Route("testSrbScheduler")]
+        public async Task<ActionResult> TestSrbScheduler()
+        {
+            await _srbScheduler.DailyCheckOut();
+
+            return Ok();
+        }
+
+        [HttpGet]
+        public IActionResult CheckRb90(int legalEntity)
+        {
+            var le = _db.LegalEntities.FirstOrDefault(a => a.Id == legalEntity);
+            var result = _client.Auth(le!);
             return Ok(result.Item2);
         }
 
@@ -82,17 +96,6 @@ namespace Oblak.Controllers
         [Route("Rb90Test")]
         public async Task<IActionResult> CheckSrb()
         {
-            //using (var scope = _scopeFactory.CreateScope())
-            //{
-            //	var rb90Client = ActivatorUtilities.CreateInstance<rb90Client>(scope.ServiceProvider, user);
-
-            //  var result = rb90Client.Auth();
-
-            //  return Ok(result.Item2);
-            //}
-
-
-            //var result = await _srbClient.Login(new Services.SRB.Models.LoginRequest() { korisnickoIme = "todor888@gmail.com", lozinka = "1P-r3_@K" });
             var result1 = await _srbClient.RefreshToken();
             return Ok();
         }

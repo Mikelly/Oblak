@@ -48,11 +48,14 @@ public class SrbClient : Register
         _logger = logger;
         _mapper = mapper;
 
-        var username = _context.User.Identity.Name;
+        var username = _context?.User?.Identity?.Name;
         if (username != null)
         {
-            _user = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username)!;            
-            var test = _user.Type == Data.Enums.UserType.Test;
+            _user = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username)!;
+            _legalEntity = _user.LegalEntity;
+            SetUp(_user, _legalEntity);
+
+            /*var test = _user.Type == Data.Enums.UserType.Test;
             var url = _configuration[$"SRB:{(test ? "TEST" : "PROD")}:URL"]!;
             var options = new RestClientOptions(url);
             var jsonOptions = new JsonSerializerOptions();
@@ -60,7 +63,21 @@ public class SrbClient : Register
             _client = new RestClient(options, configureSerialization: s => s.UseSystemTextJson(jsonOptions));
             _token = _user?.LegalEntity.SrbRbToken!;
             _refreshToken = _user?.LegalEntity.SrbRbRefreshToken!;
+            */
         }
+    }
+
+    private void SetUp(ApplicationUser user, LegalEntity legalEntity)
+    {   
+        user = _db.Users.Where(a => a.LegalEntityId == legalEntity.Id).FirstOrDefault()!;
+        var test = user.Type == Data.Enums.UserType.Test;
+        var url = _configuration[$"SRB:{(test ? "TEST" : "PROD")}:URL"]!;
+        var options = new RestClientOptions(url);
+        var jsonOptions = new JsonSerializerOptions();
+        jsonOptions.Converters.Add(new CustomDateTimeConverter("yyyy-MM-ddThh:mm:ss.000Z"));
+        _client = new RestClient(options, configureSerialization: s => s.UseSystemTextJson(jsonOptions));
+        _token = legalEntity.SrbRbToken!;
+        _refreshToken = legalEntity.SrbRbRefreshToken!;        
     }
 
     public async Task<LoginResponse> Login(LoginRequest loginRequest)
@@ -157,9 +174,9 @@ public class SrbClient : Register
             request.AddHeader("RefreshToken", $"{_refreshToken}");
             var json = JsonSerializer.Serialize(checkOutRequest);
             request.AddJsonBody(json);            
-            var response = await _client.ExecuteGetAsync(request);
-            var jsonstring = JsonSerializer.Deserialize<string>(response.Content!);
-            var result = JsonSerializer.Deserialize<CheckInOutResponse>(jsonstring!)!;
+            var response = await _client.ExecutePostAsync(request);
+            //var jsonstring = JsonSerializer.Deserialize<string>(response.Content!);
+            var result = JsonSerializer.Deserialize<CheckInOutResponse>(response.Content!)!;
             return result;
         }        
         catch (Exception e)
@@ -335,10 +352,10 @@ public class SrbClient : Register
         CheckOutRequest request = new CheckOutRequest()
         {
             Izmena = person.CheckedOut ? true : false,
-            DatumICasOdjave = person.CheckOut.Value,
-            ExternalId = person.Id.ToString(),
-            UgostiteljskiObjekatJedinstveniIdentifikator = person.PropertyExternalId,
-            BrojPruzenihUslugaSmestaja = person.NumberOfServices.Value            
+            DatumICasOdjave = (person.CheckOut ?? DateTime.Now).ToString("yyyy-MM-dd HH:mm"),
+            ExternalId = person.Guid,
+            UgostiteljskiObjekatJedinstveniIdentifikator = person.Group.Property.ExternalId,
+            BrojPruzenihUslugaSmestaja = person.NumberOfServices ?? 1            
         };
 
         return request;
@@ -349,8 +366,15 @@ public class SrbClient : Register
         return _db.CodeLists.Where(a => a.Country == Data.Enums.Country.SRB.ToString()).ToListAsync();
     }
 
-    public override async Task<object> Authenticate()
+    public override async Task<object> Authenticate(LegalEntity? legalEntity = null)
     {
+        if (legalEntity != null)
+        { 
+            _legalEntity = legalEntity;
+            _user = _db.Users.Include(a => a.LegalEntity).Where(a => a.LegalEntityId == _legalEntity.Id).FirstOrDefault()!;
+             SetUp(_user, _legalEntity);
+        }
+         
         try
         {
             if (_token != null)
@@ -358,12 +382,12 @@ public class SrbClient : Register
                 var jwt = new JwtSecurityTokenHandler().ReadJwtToken(_token);
                 if (jwt.ValidTo < DateTime.Now)
                 {
-                    await Login(new LoginRequest() { korisnickoIme = _user.LegalEntity.SrbRbUserName, lozinka = _user.LegalEntity.SrbRbPassword });
+                    await Login(new LoginRequest() { korisnickoIme = _legalEntity.SrbRbUserName!, lozinka = _legalEntity.SrbRbPassword! });
                 }
             }
             else
             {
-                await Login(new LoginRequest() { korisnickoIme = _user.LegalEntity.SrbRbUserName, lozinka = _user.LegalEntity.SrbRbPassword });
+                await Login(new LoginRequest() {korisnickoIme = _legalEntity.SrbRbUserName!, lozinka = _legalEntity.SrbRbPassword! });
             }
             var refreshTokenEndpoint = _configuration["SRB:Endpoints:RefreshToken"]!.Trim('/');
             var request = new RestRequest(refreshTokenEndpoint, Method.Get);

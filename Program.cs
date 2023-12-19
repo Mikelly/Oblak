@@ -1,14 +1,17 @@
 using Coravel;
+using Hangfire;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Oblak.Data;
-using Oblak.HostedServices;
+using Oblak.Filters;
+using Oblak.Schedulers;
 using Oblak.Interfaces;
 using Oblak.Services;
 using Oblak.Services.MNE;
@@ -147,6 +150,14 @@ builder.Services.AddSendGrid(options =>
     options.ApiKey = builder.Configuration["SendGrid:ApiKey"];
 });
 
+builder.Services.AddHangfire(configuration => configuration
+        .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+        .UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings()
+        .UseSqlServerStorage(builder.Configuration.GetConnectionString("HangfireConnection")));
+
+builder.Services.AddHangfireServer();
+
 builder.Services.AddScheduler();
 //builder.Services.AddTransient<RB90Scheduler>();
 builder.Services.AddTransient<SelfRegisterService>();
@@ -160,6 +171,8 @@ builder.Services.AddScoped<MneClient>();
 builder.Services.AddScoped<SrbClient>();
 builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<EfiClient>();
+
+builder.Services.AddTransient<SrbScheduler>();
 
 /*
 builder.Services.AddScoped(provider => new rb90Client(
@@ -215,6 +228,13 @@ app.Services.UseScheduler(scheduler =>
     //scheduler.Schedule<RB90Scheduler>().EveryThirtyMinutes();    
 });
 
+app.UseHangfireDashboard("/dashboard", new DashboardOptions
+{
+    Authorization = new[] { new DashboardAuthFilter() }
+});
+
+RecurringJob.AddOrUpdate<SrbScheduler>("DailyCheckOutSrb", a => a.DailyCheckOut(), builder.Configuration["SRB:Schedulers:DailyCheckOut"]);
+
 app.UseCors("CORSPolicy");
 
 app.UseHttpsRedirection();
@@ -229,6 +249,8 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapHangfireDashboard();
 
 app.MapHub<MessageHub>("/messageHub");
 

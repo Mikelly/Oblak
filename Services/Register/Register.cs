@@ -19,7 +19,8 @@ namespace Oblak.Services
         protected eMailService _eMailService;
         protected SelfRegisterService _selfRegisterService;
         protected IWebHostEnvironment _webHostEnvironment;
-        protected IHubContext<MessageHub> _messageHub;        
+        protected IHubContext<MessageHub> _messageHub;
+        protected LegalEntity _legalEntity;
 
         public Register(            
             IConfiguration configuration,
@@ -38,10 +39,11 @@ namespace Oblak.Services
             _webHostEnvironment = webHostEnvironment;
             _messageHub = messageHub;
 
-            var username = _context.User.Identity.Name;
+            var username = _context?.User?.Identity?.Name;
             if (username != null)
             {
                 _user = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username)!;
+                _legalEntity = _user.LegalEntity;
             }
         }
 
@@ -60,7 +62,7 @@ namespace Oblak.Services
 
         public abstract Task<List<CodeList>> CodeLists();
 
-        public abstract Task<object> Authenticate();
+        public abstract Task<object> Authenticate(LegalEntity? legalEntity = null);
 
         public abstract Task<object> Properties();
 

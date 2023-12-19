@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oblak.Data.Enums;
-using System.Reflection;
 
 namespace Oblak.Data
 {
@@ -67,6 +66,7 @@ namespace Oblak.Data
             modelBuilder.Entity<LegalEntity>().HasMany(a => a.Groups).WithOne(a => a.LegalEntity).OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<LegalEntity>().HasMany(a => a.Documents).WithOne(a => a.LegalEntity).OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<LegalEntity>().HasMany(a => a.ResTaxes).WithOne(a => a.LegalEntity).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<LegalEntity>().HasOne(a => a.Partner).WithMany(a => a.LegalEntities);
             modelBuilder.Entity<LegalEntity>().Property(a => a.Type).HasConversion(new EnumToStringConverter<LegalEntityType>());
             modelBuilder.Entity<LegalEntity>().Property(a => a.Country).HasConversion(new EnumToStringConverter<Country>());
 
@@ -77,6 +77,8 @@ namespace Oblak.Data
             modelBuilder.Entity<Property>().Property(a => a.ResidenceTax).HasPrecision(18, 2);
             modelBuilder.Entity<Property>().Property(a => a.GeoLon).HasPrecision(12, 8);
             modelBuilder.Entity<Property>().Property(a => a.GeoLat).HasPrecision(12, 8);
+
+            modelBuilder.Entity<PropertyUnit>().Property(a => a.Price).HasPrecision(12, 8);
 
             modelBuilder.Entity<Group>().HasOne(a => a.LegalEntity);
             modelBuilder.Entity<Group>().HasMany(a => a.Persons);
@@ -89,6 +91,7 @@ namespace Oblak.Data
             modelBuilder.Entity<MnePerson>().ToTable("MnePersons");
             modelBuilder.Entity<MnePerson>().HasOne(a => a.Group);
             modelBuilder.Entity<MnePerson>().HasOne(a => a.Property);
+            modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxAmount).HasPrecision(18, 2);
 
             modelBuilder.Entity<SrbPerson>().ToTable("SrbPersons");
             modelBuilder.Entity<SrbPerson>().HasOne(a => a.Group);
@@ -111,6 +114,7 @@ namespace Oblak.Data
             modelBuilder.Entity<Document>().HasOne(a => a.LegalEntity);
             modelBuilder.Entity<Document>().HasOne(a => a.Group);
             modelBuilder.Entity<Document>().Property(a => a.Amount).HasPrecision(18, 2);
+            modelBuilder.Entity<Document>().Property(a => a.ExchangeRate).HasPrecision(18, 6);
             modelBuilder.Entity<Document>().Property(a => a.DocumentType).HasConversion(new EnumToStringConverter<DocumentType>());
             modelBuilder.Entity<Document>().Property(a => a.TypeOfInvoce).HasConversion(new EnumToStringConverter<TypeOfInvoice>());
             modelBuilder.Entity<Document>().Property(a => a.InvoiceType).HasConversion(new EnumToStringConverter<InvoiceType>());
@@ -118,14 +122,32 @@ namespace Oblak.Data
             modelBuilder.Entity<Document>().Property(a => a.PartnerType).HasConversion(new EnumToStringConverter<BuyerType>());
             modelBuilder.Entity<Document>().Property(a => a.PartnerIdType).HasConversion(new EnumToStringConverter<BuyerIdType>());
 
-            modelBuilder.Entity<DocumentPayment>().HasOne(a => a.Document);
-            modelBuilder.Entity<DocumentPayment>().Property(a => a.PaymentType).HasConversion(new EnumToStringConverter<PaymentType>());
-
-            modelBuilder.Entity<Item>().Property(a => a.VatExempt).HasConversion(new EnumToStringConverter<MneVatExempt>());
-            
+            modelBuilder.Entity<DocumentItem>().HasOne(a => a.Document);
+            modelBuilder.Entity<DocumentItem>().Property(a => a.Quantity).HasPrecision(18, 4);
+            modelBuilder.Entity<DocumentItem>().Property(a => a.UnitPrice).HasPrecision(18, 4);
+            modelBuilder.Entity<DocumentItem>().Property(a => a.UnitPriceWoVat).HasPrecision(18, 4);
+            modelBuilder.Entity<DocumentItem>().Property(a => a.VatAmount).HasPrecision(18, 4);
+            modelBuilder.Entity<DocumentItem>().Property(a => a.VatRate).HasPrecision(18, 4);
+            modelBuilder.Entity<DocumentItem>().Property(a => a.Discount).HasPrecision(18, 4);
+            modelBuilder.Entity<DocumentItem>().Property(a => a.DiscountAmount).HasPrecision(18, 4);
+            modelBuilder.Entity<DocumentItem>().Property(a => a.FinalPrice).HasPrecision(18, 4);
+            modelBuilder.Entity<DocumentItem>().Property(a => a.LineAmount).HasPrecision(18, 4);
+            modelBuilder.Entity<DocumentItem>().Property(a => a.LineTotal).HasPrecision(18, 4);
+            modelBuilder.Entity<DocumentItem>().Property(a => a.LineTotalWoVat).HasPrecision(18, 4);
             modelBuilder.Entity<DocumentItem>().Property(a => a.VatExempt).HasConversion(new EnumToStringConverter<MneVatExempt>());
 
+            modelBuilder.Entity<DocumentPayment>().HasOne(a => a.Document);
+            modelBuilder.Entity<DocumentPayment>().Property(a => a.PaymentType).HasConversion(new EnumToStringConverter<PaymentType>());
+            modelBuilder.Entity<DocumentPayment>().Property(a => a.Amount).HasPrecision(18, 4);
+
+            modelBuilder.Entity<FiscalEnu>().Property(a => a.AutoDeposit).HasPrecision(18, 4);
+
+            modelBuilder.Entity<Item>().Property(a => a.VatExempt).HasConversion(new EnumToStringConverter<MneVatExempt>());
+            modelBuilder.Entity<Item>().Property(a => a.Price).HasPrecision(18, 4);
+            modelBuilder.Entity<Item>().Property(a => a.VatRate).HasPrecision(18, 4);
+
             modelBuilder.Entity<FiscalRequest>().HasOne(a => a.LegalEntity);
+            modelBuilder.Entity<FiscalRequest>().Property(a => a.Amount).HasPrecision(18, 4);
 
 
             modelBuilder
@@ -147,6 +169,7 @@ namespace Oblak.Data
         }
 
         public DbSet<LegalEntity> LegalEntities { get; set; }
+        public DbSet<Partner> Partners { get; set; }
         public DbSet<ApplicationUser> Users { get; set; }
         public DbSet<Document> Documents { get; set; }
         public DbSet<DocumentItem> DocumentItems { get; set; }

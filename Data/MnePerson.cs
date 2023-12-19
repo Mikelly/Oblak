@@ -63,5 +63,9 @@ namespace Oblak.Data
 
         [StringLength(450)]
         public string? Other { get; set; }
+
+        public string? ResTaxType { get; set; }
+
+        public decimal? ResTaxAmount { get; set; }
     }
 }

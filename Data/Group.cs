@@ -11,6 +11,8 @@ namespace Oblak.Data
 
         public int LegalEntityId { get; set; }
 
+        public int CheckInPointId { get; set; }
+
         public int PropertyExternalId { get; set; }
         
         public int PropertyId { get; set; }                

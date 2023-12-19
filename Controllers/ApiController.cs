@@ -17,6 +17,8 @@ using SendGrid.Helpers.Mail;
 using Oblak.Interfaces;
 using System.Net;
 using Oblak.Data.Enums;
+using RB90;
+using Oblak.Filters;
 
 namespace Oblak.Controllers
 {
@@ -25,6 +27,7 @@ namespace Oblak.Controllers
     public class ApiController : Controller
     {        
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<ApiController> _logger;        
         private readonly ApplicationDbContext db;
         private readonly IWebHostEnvironment _env;
@@ -41,6 +44,7 @@ namespace Oblak.Controllers
             IServiceProvider serviceProvider,
             IHttpContextAccessor httpContextAccessor,
             SignInManager<ApplicationUser> signInManager,
+            UserManager<ApplicationUser> userManager,
             ILogger<ApiController> logger,            
             ApplicationDbContext db,
             IWebHostEnvironment env,
@@ -53,6 +57,7 @@ namespace Oblak.Controllers
             )
         {             
             _signInManager = signInManager;
+            _userManager = userManager;
             _logger = logger;            
             this.db = db;
             _env = env;
@@ -71,11 +76,22 @@ namespace Oblak.Controllers
             }
         }
 
+        [LoginResultFilter]
+        [HttpPost]
+        [Route("logout")]
+        public async Task<ActionResult> Logout()
+        {
+            await _signInManager.SignOutAsync();
 
+            var cookie = Request.Cookies[".AspNetCore.Identity.Application"];
 
+            return Ok(new LoginDto() { info = "OK", error = "", auth = cookie, sess = "", oper = "", lang = "", cntr = "" });
+        }
+
+        [LoginResultFilter]
         [HttpPost]
         [Route("login")]
-        public async Task<LoginDto> Login(string username, string password)
+        public async Task<ActionResult> Login(string username, string password)
         {
             var user = db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username);
             if (user != null)
@@ -84,25 +100,38 @@ namespace Oblak.Controllers
 
                 if (checkPassword.Succeeded)
                 {
+                    var u = await _userManager.FindByNameAsync(username);
                     await _signInManager.SignInAsync(user, true);
                 }
                 else
                 {
-                    return new LoginDto() { info = "", error = "Neispravan username i/ili lozinka.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString() };
-                }
-
-                var cookie = Request.Cookies[".AspNetCore.Identity.Application"];
+                    return Ok(new LoginDto() { info = "", error = "Neispravan username i/ili lozinka.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString() });
+                }                
 
                 if (checkPassword.IsLockedOut)
                 {
                     _logger.LogWarning(2, "User account locked out.");                    
-                    return new LoginDto() { info = "", error = "User je zaključan.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString() };
+                    return Ok(new LoginDto() { info = "", error = "User je zaključan.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString() });
                 }
 
-                return new LoginDto() { info = "OK", error = "", auth = cookie, sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString() };
+                //return RedirectToAction("AfterLogin");
+
+                var cookie = Request.Cookies[".AspNetCore.Identity.Application"];
+
+                return Ok(new LoginDto() { info = "OK", error = "", auth = cookie, sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString() });
             }
 
-            return new LoginDto() { info = "", error = "", auth = "", sess = "", oper = "", lang = "", cntr = "" };
+            return Ok(new LoginDto() { info = "", error = "", auth = "", sess = "", oper = "", lang = "", cntr = "" });
+        }
+
+        [HttpPost]
+        public async Task<LoginDto> AfterLogin(string username)
+        {
+            var user = await _userManager.FindByNameAsync(username);
+
+            var cookie = Request.Cookies[".AspNetCore.Identity.Application"];
+
+            return new LoginDto() { info = "OK", error = "", auth = cookie, sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString() };
         }
 
         [HttpPost]

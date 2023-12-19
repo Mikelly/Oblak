@@ -17,6 +17,8 @@ namespace Oblak.Data
         [StringLength(450)]
         public string? EfiOperator { get; set; }
 
+        public int? CheckInPointId { get; set; }
+
 
         #region Audit Properties
 

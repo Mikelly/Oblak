@@ -62,14 +62,17 @@ namespace Oblak.Services.MNE
             }
         }
 
-        public (user, smjestajniObjekat[], X509Certificate2) Auth(Property property)
+        public (user, smjestajniObjekat[], X509Certificate2) Auth(LegalEntity legalEntity)
         {   
-			var cert = new X509Certificate2(property.LegalEntity.Rb90CertData, property.LegalEntity.Rb90Password);
+			var cert = new X509Certificate2(legalEntity.Rb90CertData, legalEntity.Rb90Password);
 			var issuer = cert.Issuer.Split(new char[] { ',' });
             var cn = issuer.Where(a => a.Trim().StartsWith("CN")).FirstOrDefault();
             cn = cn!.Split(new char[] { '=' })[1].Trim();
             var CertUser = cert.GetSerialNumberString() + "@" + cn;
-            var authResponse = _rb90client.authenticate(new authenticateRequest(CertUser));         
+            var authResponse = _rb90client.authenticate(new authenticateRequest(CertUser));
+            
+            _cert = cert;
+            _rb90User = authResponse.user;
 
             return (authResponse.user, authResponse.listaSmjestajnihObjekata, cert);
         }        
@@ -133,7 +136,7 @@ namespace Oblak.Services.MNE
                         $"Prijavljivanje gostiju {c}/{total}", $"{pr.FirstName} {pr.LastName}"
                         );
 
-                    var error = sendOne2Mup(pr, user, cert, false);
+                    var error = sendOne2Mup(pr, false);
                     if (error != null) pr.Error = error;
                     Thread.Sleep(100);
                 }
@@ -154,9 +157,9 @@ namespace Oblak.Services.MNE
         }
 
 
-        public string sendOne2Mup(MnePerson p, user user, X509Certificate2 cert, bool obrisan)
+        public string sendOne2Mup(MnePerson p, bool obrisan)
         {
-            _logger.LogDebug("PRIJAVA NULL: " + (p == null).ToString() + ", RB NULL: " + (_rb90client == null).ToString() + ", USER NULL: " + (user == null).ToString());
+            _logger.LogDebug("PRIJAVA NULL: " + (p == null).ToString() + ", RB NULL: " + (_rb90client == null).ToString() + ", USER NULL: " + (_rb90User == null).ToString());
             var s = Stranac(p);
             var data = GetString(s);
             try
@@ -457,7 +460,7 @@ namespace Oblak.Services.MNE
             return _db.CodeLists.Where(a => a.Country == "MNE").ToList();
         }
 
-        public override async Task<object> Authenticate()
+        public override async Task<object> Authenticate(LegalEntity? legalEntity = null)
         {
             try
             {

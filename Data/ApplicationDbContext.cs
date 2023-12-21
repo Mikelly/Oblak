@@ -80,6 +80,8 @@ namespace Oblak.Data
 
             modelBuilder.Entity<PropertyUnit>().Property(a => a.Price).HasPrecision(12, 8);
 
+            modelBuilder.Entity<Partner>().Property(a => a.Country).HasConversion(new EnumToStringConverter<Country>());
+
             modelBuilder.Entity<Group>().HasOne(a => a.LegalEntity);
             modelBuilder.Entity<Group>().HasMany(a => a.Persons);
             modelBuilder.Entity<Group>().HasOne(a => a.Property);

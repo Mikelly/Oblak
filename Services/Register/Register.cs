@@ -43,7 +43,7 @@ namespace Oblak.Services
             if (username != null)
             {
                 _user = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username)!;
-                _legalEntity = _user.LegalEntity;
+                _legalEntity = _user?.LegalEntity!;
             }
         }
 

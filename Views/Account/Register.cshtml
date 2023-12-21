@@ -37,8 +37,8 @@
                 {
                     i.Add().Field(f => f.Email).Label(l => l.Text("e-Mail:"));
                     i.Add().Field(f => f.PhoneNumber).Label(l => l.Text("Broj telefona:"));
-                i.Add().Field(f => f.Country).Editor(e => e.DropDownList().BindTo(countries.ToList()).DataValueField("Item1").DataTextField("Item2")).Label(l => l.Text("Država:"));
-                i.Add().Field(f => f.UserName).Label(l => l.Text("Korisničko ime:"));
+                    i.Add().Field(f => f.Country).Editor(e => e.DropDownList().BindTo(countries.ToList()).DataValueField("Item1").DataTextField("Item2")).Label(l => l.Text("Država:"));
+                    i.Add().Field(f => f.UserName).Label(l => l.Text("Korisničko ime:"));
                     i.Add().Field(f => f.Password).Label(l => l.Text("Lozinka:"));
                     i.Add().Field(f => f.ConfirmPassword).Label(l => l.Text("Potvrdite lozinku:"));  
                 });
@@ -54,6 +54,7 @@
                     i.Add().Field(f => f.LegalEntityTIN).Label(l => l.Text("Poreski broj:"));
                     i.Add().Field(f => f.LegalEntityInVat).Editor(e => e.Switch()).Label(l => l.Text("Poreski obveznik:"));
                     i.Add().Field(f => f.LegalEntityAddress).Editor(a => a.TextArea().Placeholder("Unesite adresu").Rows(5)).ColSpan(2).Label(l => l.Text("Adresa:"));
+                    i.Add().Field(f => f.Reference).Label(l => l.Text("Unesite referencu za partnera:"));
                 });
             })            
         )

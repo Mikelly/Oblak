@@ -2,60 +2,70 @@
 @using Kendo.Mvc.TagHelpers;
 
 @{
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = "~/Views/Shared/_LayoutINV.cshtml";
 
     var legalTypes = new[] { ("Company", "Pravno lice"), ("Person", "Fizičko lice") };
     var countries = new[] { ("MNE", "Crna gora"), ("SRB", "Srbija") };
 }
 
 <style>
-    .k-form-field
-    {
-        margin:0px!important;
+    .k-form-field {
+        margin: 0 !important;
+    }
+
+    .form-wrapper {
+        max-width: 800px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        max-height: 100vh; /* Set maximum height to viewport height */
+        /*overflow: hidden; /* Hide any content that overflows the wrapper */
     }
 </style>
 
-<div class="demo-section">
+<div class="form-wrapper">
     <div id="validation-success"></div>
     @(
         Html.Kendo().Form<RegisterViewModel>()
-            .Name("formExample")            
-            .HtmlAttributes(new { Route = "register", action = "Register", method = "POST" })
+        .Name("formExample")
+        .HtmlAttributes(new { Route = "register", action = "Register", method = "POST" })
+        .Layout("grid")
+        .Validatable(v =>
+        {
+            v.ValidateOnBlur(true);
+            v.ValidationSummary(vs => vs.Enable(false));
+        })
+        .Items(items =>
+        {
+            items.AddGroup()
+            .Label("Korisnik")
             .Layout("grid")
-            .Validatable(v =>
+            .Grid(a => a.Cols(2).Gutter(30))
+            .Items(i =>
             {
-                v.ValidateOnBlur(true);
-                v.ValidationSummary(vs => vs.Enable(false));
-            })
-            .Items(items =>
-            {
-                items.AddGroup()
-                .Label("Korisnik")
-                .Layout("grid")
-                .Grid(a => a.Cols(2).Gutter(30))
-                .Items(i =>
-                {
-                    i.Add().Field(f => f.Email).Label(l => l.Text("e-Mail:"));
-                    i.Add().Field(f => f.PhoneNumber).Label(l => l.Text("Broj telefona:"));
+                i.Add().Field(f => f.Email).Label(l => l.Text("e-Mail:"));
+                i.Add().Field(f => f.PhoneNumber).Label(l => l.Text("Broj telefona:"));
                 i.Add().Field(f => f.Country).Editor(e => e.DropDownList().BindTo(countries.ToList()).DataValueField("Item1").DataTextField("Item2")).Label(l => l.Text("Država:"));
                 i.Add().Field(f => f.UserName).Label(l => l.Text("Korisničko ime:"));
-                    i.Add().Field(f => f.Password).Label(l => l.Text("Lozinka:"));
-                    i.Add().Field(f => f.ConfirmPassword).Label(l => l.Text("Potvrdite lozinku:"));  
-                });
+                i.Add().Field(f => f.Password).Label(l => l.Text("Lozinka:"));
+                i.Add().Field(f => f.ConfirmPassword).Label(l => l.Text("Potvrdite lozinku:"));
+            });
 
-                items.AddGroup()
-                .Label("Pravni subjekat")
-                .Layout("grid")
-                .Grid(a => a.Cols(2).Gutter(30))
-                .Items(i =>
-                {
-                    i.Add().Field(f => f.LegalEntityName).Label(l => l.Text("Naziv:"));
-                    i.Add().Field(f => f.LegalEntityType).Editor(e => e.DropDownList().BindTo(legalTypes.ToList()).DataValueField("Item1").DataTextField("Item2")).Label(l => l.Text("Vrsta:"));
-                    i.Add().Field(f => f.LegalEntityTIN).Label(l => l.Text("Poreski broj:"));
-                    i.Add().Field(f => f.LegalEntityInVat).Editor(e => e.Switch()).Label(l => l.Text("Poreski obveznik:"));
-                    i.Add().Field(f => f.LegalEntityAddress).Editor(a => a.TextArea().Placeholder("Unesite adresu").Rows(5)).ColSpan(2).Label(l => l.Text("Adresa:"));
-                });
-            })            
+            items.AddGroup()
+            .Label("Pravni subjekat")
+            .Layout("grid")
+            .Grid(a => a.Cols(2).Gutter(30))
+            .Items(i =>
+            {
+                i.Add().Field(f => f.LegalEntityName).Label(l => l.Text("Naziv:"));
+                i.Add().Field(f => f.LegalEntityType).Editor(e => e.DropDownList().BindTo(legalTypes.ToList()).DataValueField("Item1").DataTextField("Item2")).Label(l => l.Text("Vrsta:"));
+                i.Add().Field(f => f.LegalEntityTIN).Label(l => l.Text("Poreski broj:"));
+                i.Add().Field(f => f.LegalEntityInVat).Editor(e => e.Switch()).Label(l => l.Text("Poreski obveznik:"));
+                i.Add().Field(f => f.LegalEntityAddress).Editor(a => a.TextArea().Placeholder("Unesite adresu").Rows(5)).ColSpan(2).Label(l => l.Text("Adresa:"));
+            });
+        })
         )
 </div>
 

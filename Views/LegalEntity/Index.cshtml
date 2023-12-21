@@ -139,21 +139,21 @@
 <div>
     <div style="display: inline-block; margin-right: 35px; margin-left:20px; margin-top:10px; text-align:center;">
         @(Html.Kendo().Button().Name("btnNewGroup")
-            .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/user_group_new.png'></img>")
+            .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/unlock.png'></img>")
             .HtmlAttributes(new { onclick = "srbCred()", style = "width:80px; height:80px; border-radius:50%;" })
             )
-        <div style="margin-top:3px;"><b>Korisničko ime i lozinka</b></div>
+        <div style="margin-top:3px;"><b>Eturista kredencijali</b></div>
     </div>
     <div style="display: inline-block; margin-right: 35px; text-align:center;">
         @(Html.Kendo().Button().Name("btnOpenGroup")
-            .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-2px; left:2px;' src='/Content/Icons/view_glass.png'></img>")
+            .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-2px; left:2px;' src='/Content/Icons/logo.png'></img>")
             .HtmlAttributes(new { onclick = "showGroup(event)", style = "width:80px; height:80px; border-radius:50%;" })
             )
         <div style="margin-top:3px;"><b>Dodaj logo</b></div>
     </div>
     <div style="display: inline-block; margin-right: 35px; text-align:center;">
         @(Html.Kendo().Button().Name("btnDeleteGroup")
-            .Content("<img style='width:58px;height:58px;text-align:center; position:relative; top:-1px;' src='/Content/Icons/remove.png'></img>")
+            .Content("<img style='width:58px;height:58px;text-align:center; position:relative; top:-1px;' src='/Content/Icons/check_file_color.png'></img>")
             .HtmlAttributes(new { onclick = "deleteGroup(event)", style = "width:80px; height:80px; border-radius:50%;" })
             )
         <div style="margin-top:3px;"><b>Dodaj zaglavlje racuna</b></div>
@@ -183,7 +183,7 @@
             .Window(w => w
             .Title("Ažuriraj klijenta")
             .Width(450)
-            .Height(620)
+            .Height(610)
             )
         )
         .Sortable()
@@ -217,12 +217,12 @@
 
 
 @(Html.Kendo().Window().Name("wndSrbCred")
-    .Title("Kredencijali")
+    .Title("Eturista kredencijali")
     .Visible(false)
     .Modal(true)
     .Draggable(false)
     .Width(450)
-    .Height(600)
+    .Height(410)
     .HtmlAttributes(new { style = "padding:20px;" })
 )
 

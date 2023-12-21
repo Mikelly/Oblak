@@ -85,7 +85,7 @@ namespace Oblak.Controllers
 
                 await _db.SaveChangesAsync();
 
-                return Json(new { success = true });
+                return Json(new[] { _mapper.Map(existingEntity, input) }.ToDataSourceResult(request, ModelState));
             }
             catch (Exception ex)
             {

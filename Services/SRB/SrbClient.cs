@@ -52,8 +52,8 @@ public class SrbClient : Register
         if (username != null)
         {
             _user = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username)!;
-            _legalEntity = _user.LegalEntity;
-            SetUp(_user, _legalEntity);
+            _legalEntity = _user?.LegalEntity!;
+            if(_user != null && _legalEntity != null) SetUp(_user, _legalEntity);
 
             /*var test = _user.Type == Data.Enums.UserType.Test;
             var url = _configuration[$"SRB:{(test ? "TEST" : "PROD")}:URL"]!;
@@ -256,7 +256,7 @@ public class SrbClient : Register
                 }
             }
 
-            //await Persons(group);
+            await Persons(group);
 
             await _messageHub.Clients.User(_context.User.Identity!.Name!).SendAsync("status", 100, $"Prijavljivanje završeno");
 

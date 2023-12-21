@@ -1,12 +1,11 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Oblak.Migrations
 {
     /// <inheritdoc />
-    public partial class foosold : Migration
+    public partial class foos : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -107,7 +106,13 @@ namespace Oblak.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            
+            migrationBuilder.Sql(@"DROP FUNCTION [dbo].[GroupDesc]");
+
+            migrationBuilder.Sql(@"DROP FUNCTION [dbo].[GuestList]");
+
+            migrationBuilder.Sql(@"DROP FUNCTION [dbo].[Nights]");
+
+            migrationBuilder.Sql(@"DROP FUNCTION [dbo].[PropertyDesc]");
         }
     }
 }

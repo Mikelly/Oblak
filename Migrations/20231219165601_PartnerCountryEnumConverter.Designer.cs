@@ -12,8 +12,8 @@ using Oblak.Data;
 namespace Oblak.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20231219132425_22th")]
-    partial class _22th
+    [Migration("20231219165601_PartnerCountryEnumConverter")]
+    partial class PartnerCountryEnumConverter
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -937,9 +937,10 @@ namespace Oblak.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
-                    b.Property<int>("Country")
+                    b.Property<string>("Country")
+                        .IsRequired()
                         .HasMaxLength(450)
-                        .HasColumnType("int");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Name")
                         .IsRequired()

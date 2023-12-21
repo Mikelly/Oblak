@@ -39,5 +39,7 @@ namespace Oblak.Models.Account
 
         [Required(ErrorMessage = "Morate unijeti naziv pravnog subjekta korisnika")]
         public bool LegalEntityInVat { get; set; }
+
+        public string? Reference { get; set; }
     }
 }

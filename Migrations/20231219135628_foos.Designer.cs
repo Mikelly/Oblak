@@ -12,15 +12,15 @@ using Oblak.Data;
 namespace Oblak.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20231016205951_Fifth")]
-    partial class Fifth
+    [Migration("20231219135628_foos")]
+    partial class foos
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.11")
+                .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -93,7 +93,8 @@ namespace Oblak.Migrations
 
                     b.Property<string>("Discriminator")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(21)
+                        .HasColumnType("nvarchar(21)");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -242,7 +243,6 @@ namespace Oblak.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Base64Data")
-                        .IsRequired()
                         .HasMaxLength(8000)
                         .HasColumnType("nvarchar(max)");
 
@@ -262,17 +262,14 @@ namespace Oblak.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Param1")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Param2")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Param3")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
@@ -295,15 +292,13 @@ namespace Oblak.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("BusinessUnitCode")
                         .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("BusinessUnitId")
-                        .HasColumnType("int");
 
                     b.Property<string>("CurrencyCode")
                         .IsRequired()
@@ -315,10 +310,12 @@ namespace Oblak.Migrations
 
                     b.Property<string>("DocumentType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal>("ExchangeRate")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(18, 6)
+                        .HasColumnType("decimal(18,6)");
 
                     b.Property<string>("ExternalNo")
                         .IsRequired()
@@ -326,7 +323,6 @@ namespace Oblak.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("FIC")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
@@ -336,7 +332,6 @@ namespace Oblak.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("FiscalNo")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
@@ -347,7 +342,6 @@ namespace Oblak.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("IIC")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
@@ -379,7 +373,6 @@ namespace Oblak.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("PartnerAddress")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
@@ -410,13 +403,12 @@ namespace Oblak.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Qr")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("QrPath")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -448,58 +440,72 @@ namespace Oblak.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Discount")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal>("DiscountAmount")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<int>("DocumentId")
                         .HasColumnType("int");
 
                     b.Property<decimal>("FinalPrice")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<string>("ItemCode")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("ItemId")
                         .HasColumnType("int");
 
                     b.Property<string>("ItemName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ItemUnit")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal>("LineAmount")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal>("LineTotal")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal>("LineTotalWoVat")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal>("UnitPriceWoVat")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal>("VatAmount")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<string>("VatExempt")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("VatRate")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.HasKey("Id");
 
@@ -519,13 +525,15 @@ namespace Oblak.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<int>("DocumentId")
                         .HasColumnType("int");
 
-                    b.Property<int>("PaymentType")
-                        .HasColumnType("int");
+                    b.Property<string>("PaymentType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -543,7 +551,8 @@ namespace Oblak.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal?>("AutoDeposit")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -606,7 +615,8 @@ namespace Oblak.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<string>("BusinessUnitCode")
                         .IsRequired()
@@ -614,17 +624,14 @@ namespace Oblak.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Error")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
 
                     b.Property<string>("FCDC")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("FIC")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
@@ -637,7 +644,6 @@ namespace Oblak.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("IIC")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
@@ -647,8 +653,10 @@ namespace Oblak.Migrations
                     b.Property<int>("InvoiceNo")
                         .HasColumnType("int");
 
+                    b.Property<int>("LegalEntityId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Request")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("RequestType")
@@ -656,32 +664,23 @@ namespace Oblak.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Response")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("TCR")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("UserCreated")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UserCreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<string>("UserModified")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UserModifiedDate")
@@ -689,7 +688,7 @@ namespace Oblak.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("LegalEntityId");
 
                     b.ToTable("FiscalRequests");
                 });
@@ -705,6 +704,9 @@ namespace Oblak.Migrations
                     b.Property<DateTime?>("CheckIn")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("CheckInPointId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("CheckOut")
                         .HasColumnType("datetime2");
 
@@ -719,7 +721,7 @@ namespace Oblak.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("GUID")
+                    b.Property<string>("Guid")
                         .IsRequired()
                         .HasMaxLength(36)
                         .HasColumnType("nvarchar(36)");
@@ -749,6 +751,20 @@ namespace Oblak.Migrations
                     b.Property<int?>("UnitId")
                         .HasColumnType("int");
 
+                    b.Property<string>("UserCreated")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserCreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserModified")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserModifiedDate")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
 
                     b.HasIndex("LegalEntityId");
@@ -756,66 +772,6 @@ namespace Oblak.Migrations
                     b.HasIndex("PropertyId");
 
                     b.ToTable("Groups");
-                });
-
-            modelBuilder.Entity("Oblak.Data.GuestToken", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("Expires")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("GUID")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<int>("LegalEntityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PhoneNo")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int?>("PropertyId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("PropertyUnitId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("Sent")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("UserCreated")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("UserCreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LegalEntityId");
-
-                    b.HasIndex("PropertyId");
-
-                    b.ToTable("GuestTokens");
                 });
 
             modelBuilder.Entity("Oblak.Data.Item", b =>
@@ -845,7 +801,8 @@ namespace Oblak.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<bool>("PriceInclVat")
                         .HasColumnType("bit");
@@ -856,12 +813,12 @@ namespace Oblak.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("VatExempt")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal>("VatRate")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.HasKey("Id");
 
@@ -898,10 +855,21 @@ namespace Oblak.Migrations
                     b.Property<bool>("InVat")
                         .HasColumnType("bit");
 
+                    b.Property<string>("InvoiceHeader")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<byte[]>("Logo")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("PartnerId")
+                        .HasColumnType("int");
 
                     b.Property<byte[]>("Rb90CertData")
                         .HasColumnType("varbinary(max)");
@@ -931,9 +899,10 @@ namespace Oblak.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("Type")
+                    b.Property<string>("Type")
+                        .IsRequired()
                         .HasMaxLength(450)
-                        .HasColumnType("int");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("UserCreated")
                         .HasMaxLength(450)
@@ -951,7 +920,57 @@ namespace Oblak.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("PartnerId");
+
                     b.ToTable("LegalEntities");
+                });
+
+            modelBuilder.Entity("Oblak.Data.Partner", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("Country")
+                        .HasMaxLength(450)
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("TIN")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserCreated")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserCreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserModified")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Partners");
                 });
 
             modelBuilder.Entity("Oblak.Data.Person", b =>
@@ -970,9 +989,8 @@ namespace Oblak.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
-                    b.Property<string>("ExternalId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int?>("ExternalId")
+                        .HasColumnType("int");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -986,6 +1004,10 @@ namespace Oblak.Migrations
 
                     b.Property<int>("GroupId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Guid")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -1013,15 +1035,18 @@ namespace Oblak.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("UserCreated")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("UserCreatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("UserModified")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("UserModifiedDate")
+                        .HasMaxLength(450)
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
@@ -1046,14 +1071,13 @@ namespace Oblak.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Address")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<bool>("AutoCheckOut")
                         .HasColumnType("bit");
 
-                    b.Property<TimeSpan>("AutoCheckOutTime")
+                    b.Property<TimeSpan?>("AutoCheckOutTime")
                         .HasColumnType("time");
 
                     b.Property<string>("BusinessUnitCode")
@@ -1064,7 +1088,6 @@ namespace Oblak.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Code")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
@@ -1075,34 +1098,22 @@ namespace Oblak.Migrations
                     b.Property<int>("ExternalId")
                         .HasColumnType("int");
 
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("FiscalEnuCode")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal?>("GeoLat")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(12, 8)
+                        .HasColumnType("decimal(12,8)");
 
                     b.Property<decimal?>("GeoLon")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("JMBG")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasPrecision(12, 8)
+                        .HasColumnType("decimal(12,8)");
 
                     b.Property<int>("LegalEntityId")
                         .HasColumnType("int");
 
                     b.Property<string>("Municipality")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
@@ -1112,15 +1123,15 @@ namespace Oblak.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("PaymentType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Place")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal?>("Price")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("PropertyName")
@@ -1132,11 +1143,11 @@ namespace Oblak.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("RegNumber")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal?>("ResidenceTax")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<bool?>("ResidenceTaxYN")
@@ -1148,18 +1159,19 @@ namespace Oblak.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Type")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("UserCreated")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("UserCreatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("UserModified")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("UserModifiedDate")
                         .HasColumnType("datetime2");
@@ -1179,11 +1191,9 @@ namespace Oblak.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("BorTax")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<bool>("BorTaxYN")
-                        .HasColumnType("bit");
+                    b.Property<string>("FloorNo")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int?>("ItemId")
                         .HasColumnType("int");
@@ -1193,17 +1203,23 @@ namespace Oblak.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Naplata")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(12, 8)
+                        .HasColumnType("decimal(12,8)");
 
                     b.Property<int>("PropertyId")
                         .HasColumnType("int");
+
+                    b.Property<string>("RoomNo")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
@@ -1298,32 +1314,82 @@ namespace Oblak.Migrations
                     b.ToTable("ResTaxItems");
                 });
 
+            modelBuilder.Entity("Oblak.Data.SelfRegisterToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("Expires")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Guid")
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .HasColumnType("nvarchar(36)");
+
+                    b.Property<int>("LegalEntityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PhoneNo")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("PropertyId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PropertyUnitId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("Sent")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserCreated")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserCreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LegalEntityId");
+
+                    b.HasIndex("PropertyId");
+
+                    b.ToTable("SelfRegisterTokens");
+                });
+
             modelBuilder.Entity("Oblak.Data.ApplicationUser", b =>
                 {
                     b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUser");
+
+                    b.Property<int?>("CheckInPointId")
+                        .HasColumnType("int");
 
                     b.Property<string>("EfiOperator")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("Language")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<int>("LegalEntityId")
                         .HasColumnType("int");
-
-                    b.Property<string>("SrbRbPassword")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("SrbRbRefreshToken")
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
-
-                    b.Property<string>("SrbRbToken")
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
-
-                    b.Property<string>("SrbRbUserName")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -1353,11 +1419,12 @@ namespace Oblak.Migrations
 
                     b.Property<string>("BirthCountry")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("BirthPlace")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CheckIn")
                         .HasColumnType("datetime2");
@@ -1367,97 +1434,78 @@ namespace Oblak.Migrations
 
                     b.Property<string>("DocumentCountry")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("DocumentIssuer")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("DocumentNumber")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("DocumentType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("DocumentValidTo")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("EntryPoint")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("EntryPointDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Nationality")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Other")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("PermanentResidenceAddress")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("PermanentResidenceCountry")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("PermanentResidencePlace")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("PersonType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("PropertyAddress")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<decimal?>("ResTaxAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("PropertyName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PropertyNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ProviderFirstName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ProviderJMBG")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ProviderLastName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ResidenceAddress")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ResidencePlace")
-                        .IsRequired()
+                    b.Property<string>("ResTaxType")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("VisaIssuePlace")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("VisaNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("VisaType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("VisaValidFrom")
                         .HasColumnType("datetime2");
@@ -1522,6 +1570,9 @@ namespace Oblak.Migrations
                     b.Property<string>("EntryPlaceCode")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("ExternalId2")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsDomestic")
                         .HasColumnType("bit");
@@ -1730,13 +1781,13 @@ namespace Oblak.Migrations
 
             modelBuilder.Entity("Oblak.Data.FiscalRequest", b =>
                 {
-                    b.HasOne("Oblak.Data.ApplicationUser", "User")
+                    b.HasOne("Oblak.Data.LegalEntity", "LegalEntity")
                         .WithMany()
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("LegalEntityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("User");
+                    b.Navigation("LegalEntity");
                 });
 
             modelBuilder.Entity("Oblak.Data.Group", b =>
@@ -1758,23 +1809,6 @@ namespace Oblak.Migrations
                     b.Navigation("Property");
                 });
 
-            modelBuilder.Entity("Oblak.Data.GuestToken", b =>
-                {
-                    b.HasOne("Oblak.Data.LegalEntity", "LegalEntity")
-                        .WithMany()
-                        .HasForeignKey("LegalEntityId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Oblak.Data.Property", "Property")
-                        .WithMany("GuestTokens")
-                        .HasForeignKey("PropertyId");
-
-                    b.Navigation("LegalEntity");
-
-                    b.Navigation("Property");
-                });
-
             modelBuilder.Entity("Oblak.Data.Item", b =>
                 {
                     b.HasOne("Oblak.Data.LegalEntity", "LegalEntity")
@@ -1784,6 +1818,15 @@ namespace Oblak.Migrations
                         .IsRequired();
 
                     b.Navigation("LegalEntity");
+                });
+
+            modelBuilder.Entity("Oblak.Data.LegalEntity", b =>
+                {
+                    b.HasOne("Oblak.Data.Partner", "Partner")
+                        .WithMany("LegalEntities")
+                        .HasForeignKey("PartnerId");
+
+                    b.Navigation("Partner");
                 });
 
             modelBuilder.Entity("Oblak.Data.Person", b =>
@@ -1865,6 +1908,23 @@ namespace Oblak.Migrations
                     b.Navigation("ResTax");
                 });
 
+            modelBuilder.Entity("Oblak.Data.SelfRegisterToken", b =>
+                {
+                    b.HasOne("Oblak.Data.LegalEntity", "LegalEntity")
+                        .WithMany()
+                        .HasForeignKey("LegalEntityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Oblak.Data.Property", "Property")
+                        .WithMany("GuestTokens")
+                        .HasForeignKey("PropertyId");
+
+                    b.Navigation("LegalEntity");
+
+                    b.Navigation("Property");
+                });
+
             modelBuilder.Entity("Oblak.Data.ApplicationUser", b =>
                 {
                     b.HasOne("Oblak.Data.LegalEntity", "LegalEntity")
@@ -1897,6 +1957,11 @@ namespace Oblak.Migrations
                     b.Navigation("Properties");
 
                     b.Navigation("ResTaxes");
+                });
+
+            modelBuilder.Entity("Oblak.Data.Partner", b =>
+                {
+                    b.Navigation("LegalEntities");
                 });
 
             modelBuilder.Entity("Oblak.Data.Property", b =>

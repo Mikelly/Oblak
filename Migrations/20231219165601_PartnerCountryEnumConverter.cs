@@ -5,14 +5,14 @@
 namespace Oblak.Migrations
 {
     /// <inheritdoc />
-    public partial class _14th : Migration
+    public partial class PartnerCountryEnumConverter : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterColumn<string>(
-                name: "Status",
-                table: "Documents",
+                name: "Country",
+                table: "Partners",
                 type: "nvarchar(450)",
                 maxLength: 450,
                 nullable: false,
@@ -25,8 +25,8 @@ namespace Oblak.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterColumn<int>(
-                name: "Status",
-                table: "Documents",
+                name: "Country",
+                table: "Partners",
                 type: "int",
                 maxLength: 450,
                 nullable: false,

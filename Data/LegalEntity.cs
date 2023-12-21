@@ -31,7 +31,7 @@ namespace Oblak.Data
         [StringLength(2000)]
         public string? InvoiceHeader { get; set; }
 
-        public byte[] Logo { get; set; }    
+        public byte[]? Logo { get; set; }    
         
         public bool InVat { get; set; }
 

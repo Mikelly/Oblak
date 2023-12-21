@@ -94,7 +94,7 @@ namespace Oblak.Controllers
             if (ModelState.IsValid)
             {
                 var user = await _userManager.FindByEmailAsync(model.UserName);
-                if(user == null) await _userManager.FindByNameAsync(model.UserName);
+                if(user == null) user = await _userManager.FindByNameAsync(model.UserName.ToUpper());
 
                 if (user != null)
                 {
@@ -172,12 +172,29 @@ namespace Oblak.Controllers
                 _db.LegalEntities.Add(le);
                 _db.SaveChanges();
 
+                if (model.Reference != null)
+                { 
+                    var prtn = _db.Partners.Where(a => a.Reference == model.Reference).FirstOrDefault();
+                    if (prtn != null)
+                    {
+                        le.PartnerId = prtn.Id;
+                        _db.SaveChanges();
+                    }
+                }
+
                 var result = await _userManager.CreateAsync(new ApplicationUser() { 
                         UserName = model.UserName,
                         Email = model.Email,
                         PhoneNumber = model.PhoneNumber,
                         LegalEntityId = le.Id
                     }, model.Password);
+
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user != null)
+                {
+                    user.EmailConfirmed = true;
+                    await _userManager.UpdateAsync(user);
+                }
 
                 if (result.Succeeded)
                 {

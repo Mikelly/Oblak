@@ -2,20 +2,30 @@
 @using Kendo.Mvc.TagHelpers;
 
 @{
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = "~/Views/Shared/_LayoutINV.cshtml";
 
     var legalTypes = new[] { ("Company", "Pravno lice"), ("Person", "Fizičko lice") };
     var countries = new[] { ("MNE", "Crna gora"), ("SRB", "Srbija") };
 }
 
 <style>
-    .k-form-field
-    {
-        margin:0px!important;
+    .k-form-field {
+        margin: 0 !important;
+    }
+
+    .form-wrapper {
+        max-width: 800px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        max-height: 100vh; /* Set maximum height to viewport height */
+        /*overflow: hidden; /* Hide any content that overflows the wrapper */
     }
 </style>
 
-<div class="demo-section">
+<div class="form-wrapper">
     <div id="validation-success"></div>
     @(
         Html.Kendo().Form<RegisterViewModel>()

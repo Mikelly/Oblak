@@ -20,17 +20,23 @@
 
 <form id="frmSrbCred">
 	<div>
-		<label for="username">Unesite korisničko ime</label>
+		<label for="username">Eturista korisničko ime</label>
 		@Html.Kendo().TextBox().Name("txtSrbUsername").HtmlAttributes(new { name = "username", style = "width:100%" }).Value(ViewBag.UserName)
 
-		<label for="password">Unesite lozinku</label>
+		<label for="password">Eturista lozinka</label>
 		@Html.Kendo().TextBox().Name("txtSrbPassword").HtmlAttributes(new { name = "password", style = "width:100%" }).Value(ViewBag.Password)
 
 		<input type="hidden" id="legalEntity" name="legalEntity" value="@ViewBag.LegalEntity" />
 
 		<br /><br />
 
-		@Html.Kendo().Button().Name("btnSrbCred").HtmlAttributes(new { onclick = "SetCred(event)" }).Content("Podesi kredencijale")
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			@(Html.Kendo().Button().Name("btnSrbCred")
+						.Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/validated_color.png'></img>")
+						.HtmlAttributes(new { onclick = "SetCred(event)", style = "width:80px; height:80px; border-radius:50%; margin-top: 10px;" })
+						)
+			<div style="margin-top:3px;"><b>Podesi kredencijale</b></div>
+		</div>
 		
 	</div>
 </form>

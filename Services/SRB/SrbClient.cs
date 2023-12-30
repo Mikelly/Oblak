@@ -520,14 +520,8 @@ public class SrbClient : Register
         return srbPerson;
     }
 
-	public override async Task<Person> PersonFromMrz(MrzDto mrz)
-	{
-		SrbPerson srbPerson = null;
-		return srbPerson;
-	}
 
-
-	public override List<PersonErrorDto> Validate(Group group, DateTime? checkInDate, DateTime? checkOutDate)
+    public override List<PersonErrorDto> Validate(Group group, DateTime? checkInDate, DateTime? checkOutDate)
     {
         var result = new List<PersonErrorDto>();
         _db.Entry(group).Collection(a => a.Persons).Load();
@@ -572,7 +566,7 @@ public class SrbClient : Register
             if (p.ServiceType == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ServiceType), Error = "Morate uneti podatak 'Vrsta pruženih usluga'." });
             if (p.ArrivalType == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ArrivalType), Error = "Morate uneti podatak 'Način dolaska'." });
             if (p.ReasonForStay == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ReasonForStay), Error = "Morate uneti podatak 'Razlog boravka'." });
-            if (p.LegalEntity.Type == Data.Enums.LegalEntityType.Person && p.ResidenceTaxDiscountReason != null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ResidenceTaxDiscountReason), Error = "Kada je izdavaoc smeštaja fizičko lice, ne treba unositi podatak 'Uslov za umanjenje boravišne takse'." });
+            if (p.LegalEntity?.Type == Data.Enums.LegalEntityType.Company && p.ResidenceTaxDiscountReason == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ResidenceTaxDiscountReason), Error = "Morate uneti podatak 'Uslov za umanjenje boravišne takse'." });
             // Naziv agencije
             // Smeštajne jedinice
             if (p.CheckIn == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.CheckIn), Error = "Morate uneti podatak 'Datum i čas dolaska'." });
@@ -653,7 +647,7 @@ public class SrbClient : Register
 
     public async override Task<object> Properties()
     {
-        var pr = new ObjektiRequest();        
+        var pr = new ObjektiRequest();
         await RefreshToken();
         var token_decoded = new JwtSecurityTokenHandler().ReadToken(_token) as JwtSecurityToken;
         var id = token_decoded.Claims.Where(a => a.Type == "DodatnoPolje1").FirstOrDefault().Value;
@@ -663,8 +657,8 @@ public class SrbClient : Register
         pr.ugostiteljId = id;
         try
         {
-            var propertiesEndpoint = _configuration["SRB:Endpoints:Properties"]!.Trim('/');
-            var request = new RestRequest(propertiesEndpoint, Method.Post);
+            var checkOutEndpoint = _configuration["SRB:Endpoints:Properties"]!.Trim('/');
+            var request = new RestRequest(checkOutEndpoint, Method.Post);
             request.AddHeader("Authorization", $"Bearer {_token}");
             request.AddHeader("RefreshToken", $"{_refreshToken}");
             var json = JsonSerializer.Serialize(pr);

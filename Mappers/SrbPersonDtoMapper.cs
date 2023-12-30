@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using Oblak.Data;
 using Oblak.Models.Api;
-using Oblak.Models.rb90;
 
 namespace Oblak.Mappers
 {
@@ -9,6 +8,15 @@ namespace Oblak.Mappers
     {
         public SrbPersonDtoMapper() {
             CreateMap<SrbPerson, SrbPersonDto>()
+                .ReverseMap();
+        }
+    }
+
+    public class SrbPersonEnrichedDtoMapper : Profile
+    {
+        public SrbPersonEnrichedDtoMapper()
+        {
+            CreateMap<SrbPerson, SrbPersonEnrichedDto>()
                 .ReverseMap();
         }
     }

@@ -11,37 +11,71 @@
 
     });
 
+    function onCancel(e) {
+        var grid = e.sender;
+        grid.dataSource.cancelChanges();
+        grid.dataSource.read();
+    }
+
+    function onBtnLoadObjectsClick() {
+        $.ajax({
+            url: '/Property/FetchPropertiesExternal',
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                if (data.success) {
+                    var grid = $("#propertiesGrid").data("kendoGrid");
+                    if (grid) {
+                        grid.dataSource.read();
+                        grid.refresh();
+                    }
+                } else {
+                    console.error('Failed to fetch properties:', data);
+                }
+            },
+            error: function (error) {
+                console.error('Error fetching properties:', error);
+            }
+        });
+    }
+
+
 </script>
 
 <div>
     <div style="display: inline-block; margin-right: 35px; margin-left:20px; margin-top:10px; text-align:center;">
-        @(Html.Kendo().Button().Name("btnLoadObjects")
+        @(Html.Kendo().Button()
+            .Name("btnLoadObjects")
             .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/real_estate.png'></img>")
             .HtmlAttributes(new { style = "width:80px; height:80px; border-radius:50%;" })
+            .Events(events => events
+            .Click("onBtnLoadObjectsClick")
+            )
             )
         <div style="display:inline-block; text-align: left; margin-left:10px;"><b>Preuzmi prijavljene smještajne<br />objekte iz MUP-a</b></div>
     </div>
 </div>
 
 <div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
-    @(Html.Kendo().Grid<MnePersonEnrichedDto>()
-        .Name("mnePersonGrid")
+    @(Html.Kendo().Grid<PropertyEnrichedDto>()
+        .Name("propertiesGrid")
         .Columns(columns =>
         {
-            columns.Command(command =>
-            {
-                command.Edit().Text(" ");
-                command.Destroy().Text(" ");
-            }).Width(50);
+            columns.Command(command => { 
+                command.Edit().Text(" ").UpdateText(" ").CancelText(" "); 
+                command.Destroy().Text(" "); 
+            })
+            .Width(70);
+
             columns.Group(group => group
             .Title("MUP")
             .HeaderHtmlAttributes(new { style = "text-align: center;" })
             .Columns(col =>
             {
-                col.Bound(g => g.FullName).Title("ID").Width(100);
-                col.Bound(g => g.FullName).Title("Reg. broj").Width(100);
-                col.Bound(g => g.PropertyName).Title("Rješenje ističe").Width(100);
-                col.Bound(g => g.PersonType).Title("Naziv").Width(100);
+                col.Bound(g => g.Id).Title("ID").Width(100).ClientTemplate("#= Id #").HtmlAttributes(new { style = "pointer-events:none;" });
+                col.Bound(g => g.RegNumber).Title("Reg. broj").Width(100);
+                col.Bound(g => g.RegDate).Title("Rješenje ističe").Width(100);
+                col.Bound(g => g.Name).Title("Naziv").Width(100);
             })
             );
 
@@ -50,11 +84,11 @@
             .HeaderHtmlAttributes(new { style = "text-align: center;" })
             .Columns(col =>
             {
-                col.Bound(g => g.VisaType).Title("Naziv objekta").Width(100);
-                col.Bound(g => g.VisaNumber).Title("Adresa").Width(100);
-                col.Bound(g => g.VisaValidTo).Title("Vrsta").Width(100);
-                col.Bound(g => g.VisaNumber).Title("Šifra").Width(100);
-                col.Bound(g => g.VisaNumber).Title("Opština").Width(100);
+                @* col.Bound(g => g.PropertyName).Title("Naziv objekta").Width(100); *@
+                col.Bound(g => g.Address).Title("Adresa").Width(100);
+                col.Bound(g => g.Type).Title("Vrsta").Width(100);
+                col.Bound(g => g.ExternalId).Title("Šifra").Width(100);
+                col.Bound(g => g.Municipality).Title("Opština").Width(100);
             })
             );
 
@@ -63,9 +97,9 @@
             .HeaderHtmlAttributes(new { style = "text-align: center;" })
             .Columns(col =>
             {
-                col.Bound(g => g.PersonType).Title("Naplata").Width(100);
-                col.Bound(g => g.PersonType).Title("Cijena").Width(100);
-                col.Bound(g => g.PersonType).Title("Kapacitet").Width(100);
+                @* col.Bound(g => g.PaymentType).Title("Naplata").Width(100); *@
+                col.Bound(g => g.Price).Title("Cijena").Width(100);
+                col.Bound(g => g.Capacity).Title("Kapacitet").Width(100);
             })
             );
 
@@ -74,8 +108,8 @@
             .HeaderHtmlAttributes(new { style = "text-align: center;" })
             .Columns(col =>
             {
-                col.Bound(g => g.PersonType).Title("Iznos").Width(100);
-                col.Bound(g => g.PersonType).Title("Naplata BT?").Width(100);
+                col.Bound(g => g.ResidenceTax).Title("Iznos").Width(100);
+                col.Bound(g => g.ResidenceTaxYN).Title("Naplata BT?").Width(100).ClientTemplate("#= ResidenceTaxYN ? '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' #"); ;
             })
             );
         })
@@ -84,15 +118,27 @@
         .Selectable()
         .Scrollable()
         .Filterable()
-        .HtmlAttributes(new { style = "height:40%;" })
+        .HtmlAttributes(new { style = "height:50%;" })
+        .Editable(editable => editable.Mode(GridEditMode.InLine))
+        .Events(e => e.Cancel("onCancel"))
         .DataSource(ds => ds
         .Ajax()
         .PageSize(20)
         .Model(m =>
         {
+            m.Id(g => g.Id);
             m.Field(g => g.Id);
-            m.Field(g => g.FullName);
-            // Add other model fields
+            m.Field(g => g.RegNumber);
+            m.Field(g => g.RegDate);
+            m.Field(g => g.Name);
+            m.Field(g => g.PropertyName);
+            m.Field(g => g.Address);
+            m.Field(g => g.Municipality);
+            m.Field(g => g.PaymentType);
+            m.Field(g => g.Price);
+            m.Field(g => g.Capacity);
+            m.Field(g => g.ResidenceTax);
+            m.Field(g => g.ResidenceTaxYN);
         })
         .Read(read => read.Action("Read", "Property"))
         .Update(update => update.Action("Update", "Property"))

@@ -566,7 +566,7 @@ public class SrbClient : Register
             if (p.ServiceType == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ServiceType), Error = "Morate uneti podatak 'Vrsta pruženih usluga'." });
             if (p.ArrivalType == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ArrivalType), Error = "Morate uneti podatak 'Način dolaska'." });
             if (p.ReasonForStay == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ReasonForStay), Error = "Morate uneti podatak 'Razlog boravka'." });
-            if (p.LegalEntity.Type == Data.Enums.LegalEntityType.Company && p.ResidenceTaxDiscountReason == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ResidenceTaxDiscountReason), Error = "Morate uneti podatak 'Uslov za umanjenje boravišne takse'." });
+            if (p.LegalEntity?.Type == Data.Enums.LegalEntityType.Company && p.ResidenceTaxDiscountReason == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ResidenceTaxDiscountReason), Error = "Morate uneti podatak 'Uslov za umanjenje boravišne takse'." });
             // Naziv agencije
             // Smeštajne jedinice
             if (p.CheckIn == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.CheckIn), Error = "Morate uneti podatak 'Datum i čas dolaska'." });

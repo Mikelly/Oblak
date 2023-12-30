@@ -21,7 +21,7 @@ namespace RegBor.Controllers
 		private readonly ILogger<GroupController> _logger;
 		private readonly IMapper _mapper;
 		private readonly ApplicationUser _appUser;
-		private readonly int _company;
+		private readonly int _legalEntityId;
 		
 
 		public PersonController(
@@ -42,7 +42,7 @@ namespace RegBor.Controllers
             if (username != null)
             {
                 _appUser = _db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.Properties).FirstOrDefault(a => a.UserName == username)!;
-                _company = _appUser.LegalEntityId;
+                _legalEntityId = _appUser.LegalEntityId;
                 if (_appUser.LegalEntity.Country == Country.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>();
                 if (_appUser.LegalEntity.Country == Country.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>();
             }
@@ -62,6 +62,25 @@ namespace RegBor.Controllers
                 .Where(a => a.Country == _appUser.LegalEntity.Country.ToString())
                 .ToListAsync();
 
+            if (_appUser.LegalEntity.Country == Country.SRB)
+            {
+                var srbViewModel = new PersonViewModel
+                {
+                    CountryCodeList = codeLists.Where(x => x.Type == "Country").ToList(),
+                    DocumentTypeCodeList = codeLists.Where(x => x.Type == "DocumentType").ToList(),
+                    MunicipalityCodeList = codeLists.Where(x => x.Type == "ResidenceMunicipality").ToList(),
+                    PlaceCodeList = codeLists.Where(x => x.Type == "Place").ToList(),
+                    VisaTypeCodeList = codeLists.Where(x => x.Type == "VisaType").ToList(),
+                    ServiceTypeCodeList = codeLists.Where(x => x.Type == "ServiceType").ToList(),
+                    ArrivalTypeCodeList = codeLists.Where(x => x.Type == "ArrivalType").ToList(),
+                    ReasonForStayCodeList = codeLists.Where(x => x.Type == "ReasonForStay").ToList(),
+                    EntryPointCodeList = codeLists.Where(x => x.Type == "EntryPlace").ToList(),
+                    DiscountReasonCodeList = codeLists.Where(x => x.Type == "ResidenceTaxDiscountReason").ToList(),
+                };
+
+                return View("SrbPersons", srbViewModel);
+            }
+
             var model = new PersonViewModel
             {
                 CountryCodeList = codeLists.Where(x => x.Type == "drzava").ToList(),
@@ -71,10 +90,6 @@ namespace RegBor.Controllers
                 VisaTypeCodeList = codeLists.Where(x => x.Type == "viza").ToList(),
             };
 
-            if (_appUser.LegalEntity.Country == Country.SRB)
-            {
-                return View("SrbPersons", model);
-            }
             return View("MnePersons", model);
         }
 
@@ -94,10 +109,10 @@ namespace RegBor.Controllers
                 .ToDictionary(x => x.ExternalId, x => x.Name);
 
             var data = _db.MnePersons
-                .Where(a => a.LegalEntityId == _company)
+                .Where(a => a.LegalEntityId == _legalEntityId)
                 .Where(x => x.GroupId == groupId)
                 .Include(a => a.Property)
-                .OrderByDescending(x => x.UserCreatedDate)
+                .OrderByDescending(x => x.Id)
                 .Select(a => new MnePersonEnrichedDto
                 {
                     Id = a.Id,
@@ -105,6 +120,7 @@ namespace RegBor.Controllers
                     FirstName = a.FirstName,
                     LastName = a.LastName,
                     FullName = a.FirstName + ' ' + a.LastName,
+                    Gender = a.Gender,
                     PropertyName = a.Property.PropertyName,
                     PersonType = personTypeDictionary.GetValueOrNull(a.PersonType),
                     PersonalNumber = a.PersonalNumber,
@@ -139,7 +155,7 @@ namespace RegBor.Controllers
             try
             {
                 var newGuest = _mapper.Map<MnePersonDto, MnePerson>(newGuestDto);
-                newGuest.LegalEntityId = _company;
+                newGuest.LegalEntityId = _legalEntityId;
 
                 var validation = _registerClient.Validate(newGuest, newGuest.CheckIn, newGuest.CheckOut);
 
@@ -183,25 +199,172 @@ namespace RegBor.Controllers
             }
         }
 
-
-        public virtual ActionResult ReadSrbPersons([DataSourceRequest] DataSourceRequest request)
+        public async Task<ActionResult> ReadSrbPersons([DataSourceRequest] DataSourceRequest request, int groupId)
         {
-            var data = _db.Groups
-                .Where(a => a.LegalEntityId == _company)
+            var reqCodeLists = new List<string>()
+            {
+                "DocumentType",
+            };
+
+            var codeLists = await _db.CodeLists
+                .Where(a => a.Country == _appUser.LegalEntity.Country.ToString())
+                .Where(a => reqCodeLists.Contains(a.Type))
+                .ToListAsync();
+
+            var countryDictionary = codeLists
+                .Where(x => x.Type == "Country")
+                .ToDictionary(x => x.Param2.ToString(), x => x.ExternalId);
+            var documentTypeDictionary = codeLists
+                .Where(x => x.Type == "DocumentType")
+                .ToDictionary(x => x.ExternalId, x => x.Name);
+            var entryPlaceDictionary = codeLists
+                .Where(x => x.Type == "EntryPlace")
+                .ToDictionary(x => x.ExternalId, x => x.Name);
+            var visaTypeDictionary = codeLists
+                .Where(x => x.Type == "VisaType")
+                .ToDictionary(x => x.ExternalId, x => x.Name);
+            var serviceTypeDictionary = codeLists
+                .Where(x => x.Type == "ServiceType")
+                .ToDictionary(x => x.ExternalId, x => x.Name);
+            var arrivalTypeDictionary = codeLists
+                .Where(x => x.Type == "ArrivalType")
+                .ToDictionary(x => x.ExternalId, x => x.Name);
+            var reasonForStayDictionary = codeLists
+                .Where(x => x.Type == "ReasonForStay")
+                .ToDictionary(x => x.ExternalId, x => x.Name);
+            var discountReasonDictionary = codeLists
+                .Where(x => x.Type == "ResidenceTaxDiscountReason")
+                .ToDictionary(x => x.ExternalId, x => x.Name);
+
+            var data = _db.SrbPersons
+                .Where(a => a.LegalEntityId == _legalEntityId)
+                .Where(x => x.GroupId == groupId)
                 .Include(a => a.Property)
-                .OrderByDescending(x => x.Date)
-                .Select(a => new GroupEnrichedDto
+                .OrderByDescending(x => x.Id)
+                .Select(a => new SrbPersonEnrichedDto
                 {
                     Id = a.Id,
-                    //Date = a.Date,
-                    //PropertyName = a.Property.PropertyName,
-                    //CheckIn = a.CheckIn,
-                    //CheckOut = a.CheckOut,
-                    //Email = a.Email,
-                    //Guests = a.Persons.Any() ? $"{a.Persons.Count}: {string.Join(", ", a.Persons.Select(p => $"{p.FirstName} {p.LastName}"))}" : ""
+                    PropertyId = a.PropertyId,
+                    IsDomestic = a.IsDomestic,
+                    FirstName = a.FirstName,
+                    LastName = a.LastName,
+                    FullName = a.FirstName + ' ' + a.LastName,
+                    Gender = a.Gender,
+                    PropertyName = a.Property.PropertyName,
+                    BirthDate = a.BirthDate,
+                    PersonalNumber = a.PersonalNumber,
+                    BirthPlaceName = a.BirthPlaceName,
+                    BirthCountryIso2 = a.BirthCountryIso2,
+                    BirthCountryIso3 = a.BirthCountryIso3,
+                    BirthCountryExternalId = a.BirthCountryIso3 != null ? countryDictionary.GetValueOrNull(a.BirthCountryIso3) : null,
+                    NationalityIso2 = a.NationalityIso2,
+                    NationalityIso3 = a.NationalityIso3,
+                    NationalityExternalId = a.NationalityIso3 != null ? countryDictionary.GetValueOrNull(a.NationalityIso3) : null,
+                    ResidenceCountryIso2 = a.ResidenceCountryIso2,
+                    ResidenceCountryIso3 = a.ResidenceCountryIso3,
+                    ResidenceCountryExternalId = a.ResidenceCountryIso3 != null ? countryDictionary.GetValueOrNull(a.ResidenceCountryIso3) : null,
+                    ResidenceMunicipalityCode = a.ResidenceMunicipalityCode,
+                    ResidenceMunicipalityName = a.ResidenceMunicipalityName,
+                    ResidencePlaceCode = a.ResidencePlaceCode,
+                    ResidencePlaceName = a.ResidencePlaceName,
+                    CheckIn = a.CheckIn,
+                    DocumentType = a.DocumentType != null ? documentTypeDictionary.GetValueOrNull(a.DocumentType) : null,
+                    DocumentNumber = a.DocumentNumber,
+                    DocumentIssueDate = a.DocumentIssueDate,
+                    EntryDate = a.EntryDate,
+                    EntryPlace = a.EntryPlace,
+                    EntryPlaceCode = a.EntryPlaceCode,
+                    VisaType = a.VisaType != null ? visaTypeDictionary.GetValueOrNull(a.VisaType) : null,
+                    VisaNumber = a.VisaNumber,
+                    VisaIssuingPlace = a.VisaIssuingPlace,
+                    StayValidTo = a.StayValidTo,
+                    Note = a.Note,
+                    ServiceType = a.ServiceType != null ? serviceTypeDictionary.GetValueOrNull(a.ServiceType) : null,
+                    ArrivalType = a.ArrivalType != null ? serviceTypeDictionary.GetValueOrNull(a.ArrivalType) : null,
+                    ReasonForStay = a.ReasonForStay != null ? reasonForStayDictionary.GetValueOrNull(a.ReasonForStay) : null,
+                    PlannedCheckOut = a.PlannedCheckOut,
+                    ResidenceTaxDiscountReason = a.ResidenceTaxDiscountReason != null ? discountReasonDictionary.GetValueOrNull(a.ResidenceTaxDiscountReason) : null
                 });
 
-            return Json(data.ToDataSourceResult(request));
+            return Json(await data.ToDataSourceResultAsync(request));
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> CreateSrbPerson(SrbPersonDto newGuestDto, [DataSourceRequest] DataSourceRequest request)
+        {
+            try
+            {
+                var newGuest = _mapper.Map<SrbPersonDto, SrbPerson>(newGuestDto);
+                newGuest.LegalEntityId = _legalEntityId;
+
+                var validation = _registerClient.Validate(newGuest, newGuest.CheckIn, null);
+
+                if (validation.ValidationErrors.Any())
+                {
+                    return Json(new { success = false, errors = validation.ValidationErrors });
+                }
+
+                await _db.SrbPersons.AddAsync(newGuest);
+                await _db.SaveChangesAsync();
+
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new DataSourceResult { Errors = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public JsonResult DeleteSrbPerson(int guestId)
+        {
+            try
+            {
+                var guest = _db.SrbPersons.Find(guestId);
+
+                if (guest != null)
+                {
+                    _db.SrbPersons.Remove(guest);
+                    _db.SaveChanges();
+                    return Json(new { info = "Gost uspješno obrisan." });
+                }
+                else
+                {
+                    return Json(new { error = "Gost nije pronađen." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { error = "Došlo je do greške prilikom brisanja gosta." });
+            }
+        }
+
+        public async Task<ActionResult> GetSrbMunicipalityList()
+        {
+            var codeLists = await _db.CodeLists
+                .Where(a => a.Country == _appUser.LegalEntity.Country.ToString())
+                .Where(x => x.Type == "ResidenceMunicipality")
+                .ToListAsync();
+
+            return Json(codeLists);
+        }
+
+        public async Task<ActionResult> GetSrbPlaceList(string municipalityId)
+        {
+            var municipality = await _db.CodeLists
+                .Where(a => a.Country == _appUser.LegalEntity.Country.ToString())
+                .Where(x => x.Type == "ResidenceMunicipality")
+                .Where(a => a.ExternalId == municipalityId)
+                .Select(x => x.Param1)
+                .FirstOrDefaultAsync();
+
+            var codeLists = await _db.CodeLists
+                .Where(a => a.Country == _appUser.LegalEntity.Country.ToString())
+                .Where(x => x.Type == "Place")
+                .Where(x => x.Param1 == municipality)
+                .ToListAsync();
+
+            return Json(codeLists);
         }
     }
 }

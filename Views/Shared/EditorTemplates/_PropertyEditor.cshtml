@@ -1,0 +1,13 @@
+﻿@using Oblak.Models.Api
+@model PropertyDto
+@(Html.Kendo().DropDownListFor(m => m.Municipality)
+    .DataTextField("Name")
+    .DataValueField("ExternalId")
+    .DataSource(source =>
+    {
+        source.Read(read =>
+        {
+            read.Action("GetMunicipalityList", "Property");
+        });
+    })
+)

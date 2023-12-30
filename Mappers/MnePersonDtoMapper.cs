@@ -17,7 +17,8 @@ namespace Oblak.Mappers
     {
         public MnePersonEnrichedDtoMapper()
         {
-            CreateMap<MnePerson, MnePersonEnrichedDto>();
+            CreateMap<MnePerson, MnePersonEnrichedDto>()
+                .ReverseMap();
         }
     }
 }

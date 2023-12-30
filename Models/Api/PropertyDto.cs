@@ -22,4 +22,10 @@
         public string? RegNumber { get; set; }
         public DateTime? RegDate { get; set; }
     }
+
+    public class PropertyEnrichedDto : PropertyDto
+    {
+        public string? PaymentType { get; set; }
+        public string? PropertyName { get; set; }
+    }
 }

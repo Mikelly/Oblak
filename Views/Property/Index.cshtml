@@ -3,7 +3,8 @@
 @{
     ViewBag.Title = "Smještajni objekti";
     Layout = "~/Views/Shared/_LayoutINV.cshtml";
-
+    var sl = ViewBag.MunicipalityCodeList as SelectList;
+    var tl = ViewBag.TypeCodeList as SelectList;
 }
 
 <script type="text/javascript">
@@ -24,22 +25,52 @@
             dataType: 'json',
             success: function (data) {
                 if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Smještajni objekti su uspješno preuzeti.',
+                        confirmButtonText: 'U redu'
+                    });
                     var grid = $("#propertiesGrid").data("kendoGrid");
                     if (grid) {
                         grid.dataSource.read();
                         grid.refresh();
                     }
                 } else {
-                    console.error('Failed to fetch properties:', data);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Došlo je do greške prilikom preuzimanja smještajnih objekata.',
+                        confirmButtonText: 'U redu'
+                    });
                 }
             },
             error: function (error) {
-                console.error('Error fetching properties:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Došlo je do greške prilikom preuzimanja smještajnih objekata.',
+                    confirmButtonText: 'U redu'
+                });
             }
         });
     }
 
-
+    function grid_error(e) {
+        if (e.errors) {
+            var message = "There are some errors:\n";
+            // Create a message containing all errors.
+            $.each(e.errors, function (key, value) {
+                if ('errors' in value) {
+                    $.each(value.errors, function () {
+                        message += this + "\n";
+                    });
+                }
+            });
+            // Display the message.
+            alert(message);
+            // Cancel the changes.
+            var grid = $("#grid").data("kendoGrid");
+            grid.cancelChanges();
+        }
+    }
 </script>
 
 <div>
@@ -86,9 +117,9 @@
             {
                 @* col.Bound(g => g.PropertyName).Title("Naziv objekta").Width(100); *@
                 col.Bound(g => g.Address).Title("Adresa").Width(100);
-                col.Bound(g => g.Type).Title("Vrsta").Width(100);
+                col.ForeignKey(g => g.Type, tl).Title("Vrsta").Width(100);
                 col.Bound(g => g.ExternalId).Title("Šifra").Width(100);
-                col.Bound(g => g.Municipality).Title("Opština").Width(100);
+                col.ForeignKey(g => g.Municipality, sl).Title("Opština").Width(100);
             })
             );
 
@@ -118,30 +149,31 @@
         .Selectable()
         .Scrollable()
         .Filterable()
-        .HtmlAttributes(new { style = "height:50%;" })
+        .HtmlAttributes(new { style = "height:70%;" })
         .Editable(editable => editable.Mode(GridEditMode.InLine))
         .Events(e => e.Cancel("onCancel"))
         .DataSource(ds => ds
-        .Ajax()
-        .PageSize(20)
-        .Model(m =>
-        {
-            m.Id(g => g.Id);
-            m.Field(g => g.Id);
-            m.Field(g => g.RegNumber);
-            m.Field(g => g.RegDate);
-            m.Field(g => g.Name);
-            m.Field(g => g.PropertyName);
-            m.Field(g => g.Address);
-            m.Field(g => g.Municipality);
-            m.Field(g => g.PaymentType);
-            m.Field(g => g.Price);
-            m.Field(g => g.Capacity);
-            m.Field(g => g.ResidenceTax);
-            m.Field(g => g.ResidenceTaxYN);
-        })
-        .Read(read => read.Action("Read", "Property"))
-        .Update(update => update.Action("Update", "Property"))
-        .Destroy(destroy => destroy.Action("Destroy", "Property"))
+            .Ajax()
+            .Events(events => events.Error("grid_error"))
+            .PageSize(20)
+            .Model(m =>
+            {
+                m.Id(g => g.Id);
+                m.Field(g => g.Id);
+                m.Field(g => g.RegNumber);
+                m.Field(g => g.RegDate);
+                m.Field(g => g.Name);
+                m.Field(g => g.PropertyName);
+                m.Field(g => g.Address);
+                m.Field(g => g.Municipality);
+                m.Field(g => g.PaymentType);
+                m.Field(g => g.Price);
+                m.Field(g => g.Capacity);
+                m.Field(g => g.ResidenceTax);
+                m.Field(g => g.ResidenceTaxYN);
+            })
+            .Read(read => read.Action("Read", "Property"))
+            .Update(update => update.Action("Update", "Property"))
+            .Destroy(destroy => destroy.Action("Destroy", "Property"))
         ))
 </div>

@@ -53,50 +53,33 @@ namespace Oblak.Controllers
                 .Where(a => a.Country == _appUser.LegalEntity.Country.ToString())
                 .ToListAsync();
 
-            var viewModel = new PropertiesViewModel();
+            var municipalityList = new List<CodeList>();
+            var typeList = new List<CodeList>();
             if (_appUser.LegalEntity.Country == Country.MNE)
             {
-                viewModel.MunicipalityCodeList = codeLists.Where(x => x.Type == "opstina").ToList();
+                municipalityList = codeLists.Where(x => x.Type == "opstina").ToList();
+                typeList = codeLists.Where(x => x.Type == "vrstaobjekta").ToList();               
             }
             else if (_appUser.LegalEntity.Country == Country.SRB)
             {
-                var municipalityCodeListTypes = new List<string> { "ResidenceMunicipality" };
-                viewModel.MunicipalityCodeList = codeLists.Where(x => municipalityCodeListTypes.Contains(x.Type)).ToList();
+                municipalityList = codeLists.Where(x => x.Type == "ResidenceMunicipality").ToList();
+                typeList = codeLists.Where(x => x.Type == "Property_Type").ToList();
             }
 
-            var municipalistySelectList = new SelectList(viewModel.MunicipalityCodeList, "ExternalId", "Name");
-            ViewData["MunicipalityCodeList"] = municipalistySelectList;
+            var municipalistySelectList = new SelectList(municipalityList, "ExternalId", "Name");
+            var typeSelectList = new SelectList(typeList, "ExternalId", "Name");
+            
+            ViewBag.MunicipalityCodeList = municipalistySelectList;
+            ViewBag.TypeCodeList = typeSelectList;
 
             return View();
         }
 
         public async Task<IActionResult> Read([DataSourceRequest] DataSourceRequest request)
         {
-            var reqCodeLists = new List<string>();
-            if (_appUser.LegalEntity.Country == Country.MNE)
-            {
-                reqCodeLists = ["opstina"];
-            }
-            else if (_appUser.LegalEntity.Country == Country.SRB)
-            {
-                reqCodeLists = ["ResidenceMunicipality"];
-            }
-
-            var codeLists = await _db.CodeLists
-                .Where(a => a.Country == _appUser.LegalEntity.Country.ToString())
-                .Where(a => reqCodeLists.Contains(a.Type))
-                .ToListAsync();
-
-            var codeListsDict = codeLists.ToDictionary(x => x.ExternalId, x => x.Name);
-
             var properties = _db.Properties.Where(a => a.LegalEntityId == _legalEntityId);
 
             var data = _mapper.Map<List<PropertyEnrichedDto>>(properties);
-
-            data.ForEach(x =>
-            {
-                x.Municipality = x.Municipality != null ? codeListsDict.GetValueOrNull(x.Municipality) : "";
-            });
 
             return Json(await data.ToDataSourceResultAsync(request));
         }
@@ -114,7 +97,6 @@ namespace Oblak.Controllers
                 }
 
                 _mapper.Map(input, existingEntity);
-                existingEntity.Status = "A";
 
                 // validation
 
@@ -129,14 +111,17 @@ namespace Oblak.Controllers
         }
 
         [HttpPost]
-        public ActionResult Destroy([DataSourceRequest] DataSourceRequest request, PropertyEnrichedDto model)
+        public async Task<ActionResult> Destroy([DataSourceRequest] DataSourceRequest request, PropertyEnrichedDto model)
         {
             try
             {
-                var property = _db.Properties.Find(model.Id);
+                var property = await _db.Properties.Include(x => x.Groups)
+                    .Where(x => x.Id == model.Id)
+                    .FirstOrDefaultAsync();
 
                 if (property != null)
                 {
+                    _db.Groups.RemoveRange(property.Groups);
                     _db.Properties.Remove(property);
                     _db.SaveChanges();
                     return Json(new { info = "Objekat uspješno obrisan." });
@@ -150,26 +135,6 @@ namespace Oblak.Controllers
             {
                 return Json(new { error = "Došlo je do greške prilikom brisanja objekta." });
             }
-        }
-
-
-        public async Task<ActionResult> GetMunicipalityList()
-        {
-            var codeLists = await _db.CodeLists
-                .Where(a => a.Country == _appUser.LegalEntity.Country.ToString())
-                .ToListAsync();
-
-            if (_appUser.LegalEntity.Country == Country.MNE)
-            {
-                codeLists = codeLists.Where(x => x.Type == "opstina").ToList();
-            }
-            else if (_appUser.LegalEntity.Country == Country.SRB)
-            {
-                var municipalityCodeListTypes = new List<string> { "ResidenceMunicipality" };
-                codeLists = codeLists.Where(x => municipalityCodeListTypes.Contains(x.Type)).ToList();
-            }
-
-            return Json(codeLists);
         }
 
         public async Task<ActionResult> FetchPropertiesExternal()

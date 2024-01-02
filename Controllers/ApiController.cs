@@ -19,6 +19,7 @@ using System.Net;
 using Oblak.Data.Enums;
 using RB90;
 using Oblak.Filters;
+using Oblak.Services.FCM;
 
 namespace Oblak.Controllers
 {
@@ -38,7 +39,8 @@ namespace Oblak.Controllers
         private readonly EfiClient _efiClient;
         private readonly IMapper _mapper;
         private readonly Register _registerClient;
-        private ApplicationUser _appUser;        
+        private ApplicationUser _appUser;   
+        private readonly FcmService _fcmService;
 
         public ApiController(   
             IServiceProvider serviceProvider,
@@ -53,6 +55,7 @@ namespace Oblak.Controllers
             SrbClient srbClient,            
             EfiClient efiClient,
             DocumentService documentService,
+            FcmService fcmService,
             IMapper mapper
             )
         {             
@@ -67,6 +70,7 @@ namespace Oblak.Controllers
             _mapper = mapper;
             _efiClient = efiClient;
             _documentService = documentService;
+            _fcmService = fcmService;
             var username = httpContextAccessor.HttpContext?.User?.Identity?.Name;
             if (username != null)
             {
@@ -128,16 +132,6 @@ namespace Oblak.Controllers
         }
 
         [HttpPost]
-        public async Task<LoginDto> AfterLogin(string username)
-        {
-            var user = await _userManager.FindByNameAsync(username);
-
-            var cookie = Request.Cookies[".AspNetCore.Identity.Application"];
-
-            return new LoginDto() { info = "OK", error = "", auth = cookie, sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString() };
-        }
-
-        [HttpPost]
         [Route("checkAuth")]
         public ActionResult CheckAuth()
         {
@@ -196,10 +190,24 @@ namespace Oblak.Controllers
         [HttpGet]
         [Route("propertiesGet")]
         public async Task<ActionResult<List<PropertyDto>>> PropertiesGet()
-        {      
-            var data = db.Properties.Where(a => a.LegalEntityId == _appUser!.LegalEntityId).ToList()
-                .Select(a => _mapper.Map<Property, PropertyDto>(a)).ToList();
-            
+        {
+            var isPropertyAdmin = User.IsInRole("PropertyAdmin");
+            var legalEntityId = _appUser!.LegalEntityId;
+
+            List<PropertyDto> data = null;
+
+            if (isPropertyAdmin)
+            {
+                var ids = db.LegalEntities.Where(a => a.AdministratorId == legalEntityId).Select(a => a.Id).ToList();
+                data = db.Properties.Where(a => ids.Contains(a.LegalEntityId)).ToList()
+					.Select(a => _mapper.Map<Property, PropertyDto>(a)).ToList();
+			}
+            else
+            {
+                data = db.Properties.Where(a => a.LegalEntityId == legalEntityId).ToList()
+                    .Select(a => _mapper.Map<Property, PropertyDto>(a)).ToList();
+            }
+
             return Json(data);
         }
 
@@ -876,6 +884,30 @@ namespace Oblak.Controllers
                 end = end.AddDays(1).AddMinutes(-1);
             }
 
+            return Ok();
+        }
+
+        [HttpPost]
+        [Route("registerFcmToken")]
+        public async Task<ActionResult> RegisterFcmToken(UserDeviceDto dto)
+        {
+            var userId = _userManager.GetUserId(HttpContext.User) ?? "";
+            var userDevice = new UserDevice() 
+            { 
+                DeviceId = dto.DeviceId,
+                FcmToken = dto.FcmToken,
+                LastUpdated = DateTime.Now,
+                UserId = userId
+            };
+            await _fcmService.RegisterFcmToken(userDevice);
+            return Ok();
+        }
+
+        [HttpPost]
+        [Route("sendFcmMessage")]
+        public async Task<ActionResult> SendFcmMessage(FcmMessage message)
+        {
+            await _fcmService.SendFcmMessage(message);
             return Ok();
         }
     }

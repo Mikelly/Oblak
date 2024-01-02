@@ -67,7 +67,8 @@ namespace Oblak.Data
             modelBuilder.Entity<LegalEntity>().HasMany(a => a.Documents).WithOne(a => a.LegalEntity).OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<LegalEntity>().HasMany(a => a.ResTaxes).WithOne(a => a.LegalEntity).OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<LegalEntity>().HasOne(a => a.Partner).WithMany(a => a.LegalEntities);
-            modelBuilder.Entity<LegalEntity>().Property(a => a.Type).HasConversion(new EnumToStringConverter<LegalEntityType>());
+			modelBuilder.Entity<LegalEntity>().HasOne(a => a.Administrator).WithMany(a => a.Clients);
+			modelBuilder.Entity<LegalEntity>().Property(a => a.Type).HasConversion(new EnumToStringConverter<LegalEntityType>());
             modelBuilder.Entity<LegalEntity>().Property(a => a.Country).HasConversion(new EnumToStringConverter<Country>());
 
             modelBuilder.Entity<Property>().HasOne(a => a.LegalEntity);
@@ -188,6 +189,7 @@ namespace Oblak.Data
         public DbSet<SelfRegisterToken> SelfRegisterTokens { get; set; }
         public DbSet<ResTax> ResTaxes { get; set; }
         public DbSet<ResTaxItem> ResTaxItems { get; set; }
+        public DbSet<UserDevice> UserDevices { get; set; }
 
         public string GuestList(int id) => throw new NotImplementedException();
         public string GroupDesc(int id) => throw new NotImplementedException();

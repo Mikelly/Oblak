@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oblak.Data;
 
@@ -11,9 +12,11 @@ using Oblak.Data;
 namespace Oblak.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231224093159_UserDevices")]
+    partial class UserDevices
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -837,9 +840,6 @@ namespace Oblak.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
-                    b.Property<int?>("AdministratorId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Country")
                         .IsRequired()
                         .HasMaxLength(450)
@@ -918,8 +918,6 @@ namespace Oblak.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AdministratorId");
 
                     b.HasIndex("PartnerId");
 
@@ -1004,7 +1002,7 @@ namespace Oblak.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int?>("GroupId")
+                    b.Property<int>("GroupId")
                         .HasColumnType("int");
 
                     b.Property<string>("Guid")
@@ -1855,15 +1853,9 @@ namespace Oblak.Migrations
 
             modelBuilder.Entity("Oblak.Data.LegalEntity", b =>
                 {
-                    b.HasOne("Oblak.Data.LegalEntity", "Administrator")
-                        .WithMany("Clients")
-                        .HasForeignKey("AdministratorId");
-
                     b.HasOne("Oblak.Data.Partner", "Partner")
                         .WithMany("LegalEntities")
                         .HasForeignKey("PartnerId");
-
-                    b.Navigation("Administrator");
 
                     b.Navigation("Partner");
                 });
@@ -1872,7 +1864,9 @@ namespace Oblak.Migrations
                 {
                     b.HasOne("Oblak.Data.Group", "Group")
                         .WithMany("Persons")
-                        .HasForeignKey("GroupId");
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Oblak.Data.LegalEntity", "LegalEntity")
                         .WithMany()
@@ -1987,8 +1981,6 @@ namespace Oblak.Migrations
 
             modelBuilder.Entity("Oblak.Data.LegalEntity", b =>
                 {
-                    b.Navigation("Clients");
-
                     b.Navigation("Documents");
 
                     b.Navigation("Groups");

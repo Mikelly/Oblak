@@ -21,7 +21,7 @@ namespace Oblak.Schedulers
             _scopeFactory = scopeFactory;            
         }
 
-        public async Task DailyCheckOut()
+        public async Task HourlyCheckOut()
         {
             var now = DateTime.Now;
 

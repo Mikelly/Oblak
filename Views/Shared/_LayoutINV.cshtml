@@ -38,11 +38,9 @@
     <script src="@Url.Content("~/Scripts/kendo.messages.sr-Latn-ME.min.js")"></script>
 
     <link href="@Url.Content("~/Content/SiteSAP.css")" rel="stylesheet" type="text/css" />
-
-
-    @*<link href="@Url.Content("~/Content/nav.less")" rel="stylesheet/less" type="text/css" />*@
     <link href="@Url.Content("~/Content/menu.css")" rel="stylesheet/less" type="text/css" />
-    @*<script src="//cdn.jsdelivr.net/npm/less"></script>*@
+    <link href="@Url.Content("~/Content/kendo.oblak.css")" rel="stylesheet" type="text/css" />
+    
 
     <link href="https://fonts.googleapis.com/css?family=Asap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
@@ -196,33 +194,6 @@
 </html>
 
 <script type="text/javascript">
-
-    //$('#Meni').last('li').removeClass('k-last');
-    //$('#Meni').append('</li style="float:left;" class="k-item k-state-default k-last"><input id="DashInput" type="text" style="float:right; margin-top:7px; margin-left:10px; width:200px; background-position: right center; background-image:url(\'/Content/searchBox.png\'); background-repeat:no-repeat; padding-right:25px;" onclick="ToggleDash()" onchange="GetDocs()" autocomplete="off"></li>')
-    //$('#menucool').append('<div style="float:right; margin-top:5px; margin-right:5px; margin-left:15px;">Dobrodošli <span id="LoggedUser"><strong>milos</strong></span>! [ <a href="/Account/LogOff">Odjava</a> ]</div>');
-    //$('#menucool').append('<input id="DashInput" type="text" style="float:right; margin-top:7px; margin-left:10px; width:200px; background-position: right center; background-image:url(\'/Content/searchBox.png\'); background-repeat:no-repeat; padding-right:25px;" onclick="ToggleDash()" onchange="GetDocs()" autocomplete="off">')
-
-    function ul() {
-        var v = document.getElementById("latefisc").value;
-        var p = document.getElementById("paragonNo").value;
-        if (v != "") {
-            if (v == "PARAGON" && p != "") $('#swal2-validation-message').hide();
-            if (v != "PARAGON") $('#swal2-validation-message').hide();
-        }
-
-        if (v == "PARAGON") {
-            document.getElementById("PW").style.display = 'block';
-        }
-        else {
-            document.getElementById("PW").style.display = 'none';
-        }
-    }
-
-    function up() {
-        var v = document.getElementById("latefisc").value;
-        var p = document.getElementById("paragonNo").value;
-        if (v != "" && p != "") $('#swal2-validation-message').hide();
-    }
 
     function reports() {
         $.ajax({

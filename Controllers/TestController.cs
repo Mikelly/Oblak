@@ -79,7 +79,7 @@ namespace Oblak.Controllers
         [Route("testSrbScheduler")]
         public async Task<ActionResult> TestSrbScheduler()
         {
-            await _srbScheduler.DailyCheckOut();
+            await _srbScheduler.HourlyCheckOut();
 
             return Ok();
         }

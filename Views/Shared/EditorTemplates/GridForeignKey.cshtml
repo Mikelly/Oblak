@@ -1,0 +1,5 @@
+﻿
+@(Html.Kendo().DropDownListFor(m => m)
+        .ValuePrimitive(true)
+        .BindTo((SelectList)ViewData[ViewData.TemplateInfo.GetFullHtmlFieldName("") + "_Data"])
+)

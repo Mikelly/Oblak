@@ -24,7 +24,7 @@ namespace RegBor.Controllers
 		private readonly ILogger<GroupController> _logger;
 		private readonly IMapper _mapper;
 		private readonly ApplicationUser _appUser;
-		private readonly int _company;
+		private readonly int _legalEntityId;
 		
 
 		public GroupController(
@@ -45,7 +45,7 @@ namespace RegBor.Controllers
             if (username != null)
             {
                 _appUser = _db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.Properties).FirstOrDefault(a => a.UserName == username)!;
-				_company = _appUser.LegalEntityId;
+				_legalEntityId = _appUser.LegalEntityId;
                 if (_appUser.LegalEntity.Country == Country.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>();
                 if (_appUser.LegalEntity.Country == Country.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>();
             }
@@ -111,7 +111,7 @@ namespace RegBor.Controllers
 			}
 			catch { }
 
-			g.LegalEntityId = _company;
+			g.LegalEntityId = _legalEntityId;
 			g.PropertyId = objekat;
 			g.UnitId = jedinica;
 			g.Email = email;
@@ -134,7 +134,7 @@ namespace RegBor.Controllers
 		[Route("units", Name = "Units")]
 		public JsonResult rbjedinice(int? objekat)
 		{
-			var jedinice = _db.PropertyUnits.Where(a => a.LegalEntityId == _company).ToList();
+			var jedinice = _db.PropertyUnits.Where(a => a.LegalEntityId == _legalEntityId).ToList();
 
 			if (objekat != null)
 			{
@@ -355,7 +355,7 @@ namespace RegBor.Controllers
         public virtual ActionResult Read([DataSourceRequest] DataSourceRequest request)
         {
             var data = _db.Groups
-                .Where(a => a.LegalEntityId == _company)
+                .Where(a => a.LegalEntityId == _legalEntityId)
                 .Include(a => a.Property)
 				.OrderByDescending(x => x.Date)
                 .Select(a => new GroupEnrichedDto
@@ -374,7 +374,7 @@ namespace RegBor.Controllers
 
         public ActionResult GetPropertyList()
         {
-            var properties = _db.Properties.Where(p => p.LegalEntityId == _company).ToList();
+            var properties = _db.Properties.Where(p => p.LegalEntityId == _legalEntityId).ToList();
             return Json(properties);
         }
 
@@ -402,7 +402,7 @@ namespace RegBor.Controllers
                     // Map other properties as needed
                     PropertyId = groupDto.PropertyId,
                     UnitId = groupDto.UnitId,
-					LegalEntityId = _company,
+					LegalEntityId = _legalEntityId,
 					Guid = new Guid().ToString(),
 					PropertyExternalId = groupDto.PropertyId,
                 };

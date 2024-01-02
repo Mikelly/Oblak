@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using Oblak.Data;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography;
-using Oblak.Models.Api;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Oblak.Models;

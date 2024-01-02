@@ -169,12 +169,12 @@
             {
                 command.Edit().Text(" ");
                 command.Destroy().Text(" ");
-            }).Width(50);
+            }).Width(70);
             columns.Bound(g => g.Id).Title("Id").Width(100);
-            columns.Bound(g => g.Name).Title("Naziv").Width(200);
+            columns.Bound(g => g.Name).Title("Naziv").Width("100%");
             columns.Bound(g => g.TIN).Title("Poreski identifikacioni broj").Width(200);
-            columns.Bound(g => g.Address).Title("Adresa").Width(200);
-            columns.Bound(g => g.Country).Title("Država").Width(100);
+            columns.Bound(g => g.Address).Title("Adresa").Width(300);
+            columns.Bound(g => g.Country).Title("Država").Width(150);
             columns.Bound(g => g.InVat).Title("U PDV-u").Width(100).ClientTemplate("#= InVat ? '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' #");
         })
         .Pageable(p => p.Refresh(true))

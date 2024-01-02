@@ -52,7 +52,9 @@ namespace Oblak.Services
 
         public abstract Task<Person> Person(object person);
 
-        public abstract Task<List<PersonErrorDto>> RegisterGroup(Group group, DateTime? checkInDate, DateTime? checkOutDate);
+		public abstract Task<Person> PersonFromMrz(MrzDto mrz);
+
+		public abstract Task<List<PersonErrorDto>> RegisterGroup(Group group, DateTime? checkInDate, DateTime? checkOutDate);
 
         public abstract Task<PersonErrorDto> RegisterPerson(Person person, DateTime? checkInDate, DateTime? checkOutDate);
 

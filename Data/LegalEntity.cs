@@ -19,6 +19,8 @@ namespace Oblak.Data
 
         public int? PartnerId { get; set; }
 
+        public int? AdministratorId { get; set; }
+
         [StringLength(450)]
         public string Name { get; set; }
 
@@ -99,6 +101,10 @@ namespace Oblak.Data
 
         public Partner Partner { get; set; }
 
-        #endregion
-    }
+		public LegalEntity Administrator { get; set; }
+
+		public List<LegalEntity> Clients { get; set; }
+
+		#endregion
+	}
 }

@@ -141,7 +141,7 @@ public class Objekti
     public string adresa { get; set; }
     public string sifraOpstine { get; set; }
     public int tipLica { get; set; }
-    public int tipPravnogLica { get; set; }
+    public int? tipPravnogLica { get; set; }
     public bool zahtevanPrekidResenja { get; set; }
     public string sifraStatusa { get; set; }
     public bool privremeniPrekidRada { get; set; }

@@ -21,6 +21,10 @@ using RB90;
 using SendGrid.Extensions.DependencyInjection;
 using System.Text;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Builder.Extensions;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
+using Oblak.Services.FCM;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -173,6 +177,7 @@ builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<EfiClient>();
 
 builder.Services.AddTransient<SrbScheduler>();
+builder.Services.AddTransient<FcmService>();
 
 /*
 builder.Services.AddScoped(provider => new rb90Client(
@@ -222,18 +227,10 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-
 app.Services.UseScheduler(scheduler =>
 {
     //scheduler.Schedule<RB90Scheduler>().EveryThirtyMinutes();    
 });
-
-app.UseHangfireDashboard("/dashboard", new DashboardOptions
-{
-    Authorization = new[] { new DashboardAuthFilter() }
-});
-
-RecurringJob.AddOrUpdate<SrbScheduler>("DailyCheckOutSrb", a => a.DailyCheckOut(), builder.Configuration["SRB:Schedulers:DailyCheckOut"]);
 
 app.UseCors("CORSPolicy");
 
@@ -250,11 +247,23 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
+app.UseHangfireDashboard("/dashboard", new DashboardOptions
+{
+	Authorization = new[] { new DashboardAuthFilter() }
+});
+
 app.MapHangfireDashboard();
+
+RecurringJob.AddOrUpdate<SrbScheduler>("HourlyCheckOutSrb", a => a.HourlyCheckOut(), builder.Configuration["SRB:Schedulers:HourlyCheckOut"]);
 
 app.MapHub<MessageHub>("/messageHub");
 
 Telerik.Windows.Documents.Extensibility.FixedExtensibilityManager.FontsProvider = new Oblak.Helpers.TelerikFontsProvider();
 Telerik.Windows.Documents.Extensibility.FixedExtensibilityManager.JpegImageConverter = new Telerik.Documents.ImageUtils.JpegImageConverter();
+
+FirebaseApp.Create(new AppOptions()
+{
+    Credential = GoogleCredential.FromFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FCM.json")),
+});
 
 app.Run();

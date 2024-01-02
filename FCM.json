@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "registracijaboravka",
+  "private_key_id": "637dd0ff1f3892eca2e73a804d50e516800a0141",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCrVDBqSAiUQ1BX\nB4QZ5tyqI/B0nYGLOf0RFQuAsE7LPK7RaKJQ47g3PIoWEuLvmS8boKHG1tUC1O5a\nxNxwjV1R33VVtHVrUvmT9Jb+sRiS70l3KgnynwbbmNgyChDr+SwmybaDe9BwA+CI\ngM9GRIKNCw4cXuY7OloiviIa7YciGkMBphULgjrtURQYL+x2ZAylLEEwUP+L163c\nj+bNTeT9aMdmZHrAEeSq6iVRw19UUlMTIZB1LeQu0mViwtLgjI9B33rTSrd9cQNZ\nICrpf3WIBzcJhPjkHHGxl2JyG8SKweQAq7g8lNIQ7limLvXPO8sCxJiV5Wgs+BMS\nU0Snmg3bAgMBAAECggEAGcALjs3IzE/ZsVrl1ebG36OLLlvF7qEGkhyxn+Pf09gJ\nBlxNmQ7AzzyAHJU2GoDRfbuE1RfQ6B4MvQO9hgUZM4b8Yac/xqOv8zbdwuXnJZ5l\nUk21NQwFwdeVFuBAbtcCdcn3boebalqK0rlZbdw6KuywcD8rJ1e72GDvS1DL8Kn2\nSbqlAL6TimeVlFr8MolvJyPl8ZcRB5j2nTk2wwX600yWo93drdfGdoZXRbpSU+Xj\nN2vRV+y7IMZcT/bme180iz0fm4hLah7OiTQU+TyTiw2k/nqU+AuFqlb5STimJT2S\nHnyfbYaHabx+lk40tITkxBG8Lgi4SQK4Wgvsb17/QQKBgQDvLCreKjemO3UsB9BP\nMVDNl6HedrEyR4x7zm4QlhL+yG2UtMC4dMk9W5VEqi3NP+udSO3743C5FPZ8tI7L\nxy6Aubv9HoJcqRD1npBayoREoCW/aUqk/EjkOwUsP9GIzyaQvf1AL08dTCfBg+W+\nwPp4SQuVlwEK2jxjdDyGHS0j6wKBgQC3Yg/oxTu1DXhQVjgzCSb0ZSapESG8JfAR\n0qv/yxfRHzeMS4nVOOWtH7J/jgVTVaFQcoluUaVi41h52fBJXbqVMxvGqys/X5+A\n96yATERpAGJgLgoa3hfp1a1oJNQ0MtsEWpKpew31oeZXcCGHPdO3b+YFB2SxsXdM\nG8TCgm9x0QKBgQDtBtORCzvNZX1w3mmGIjSXG6ASrYRcdOX3yJPxohk/IPjgd+XK\nqArL4RhkTVdI4wEpBh68FCIhenHxEqu1rjca4Xc5mePN2stw7+zV3YAJ1sCyGrIc\nId5HOWqd+L06nTj2FyOFWZ1JRrDbqlCko/FWBeYSIO2qiK9yTL6ylvWmcwKBgHrt\nDhMPmz17YQohMZzsZqNu5qJwLHftymZ4HPnjjvyMe3Tc8fDvKe6KD+I3NlStUuwV\nSxCbREzsbtOHhu33GWqIDvd2qA/cLpSJ8aUy+qyUKF2mnvlxpQAHTy0/esvexze8\n6xEWvr3IIBq+vIrmo/QT21HFqfb/KiPnfVaRjtjxAoGBANE8Y6G6qbyL7h3x5fBC\nkUNzNESIFqxoJmOlAGHnjj3XqAs5E24YcsPP3q9WDcCnXgaIEejNqhKhZT7hi2F/\nXCD5hkW35yFKBXDazORA67I50DKuUnkavXd0ob41xt8H/IMDAQNlZmNo86Na8uw0\ngCYwUmxP0+/F0yMMgbdDZRqU\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-eileb@registracijaboravka.iam.gserviceaccount.com",
+  "client_id": "100221263740122812298",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-eileb%40registracijaboravka.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

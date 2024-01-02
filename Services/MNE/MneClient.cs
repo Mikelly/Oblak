@@ -527,7 +527,36 @@ namespace Oblak.Services.MNE
             return mnePerson;
         }
 
-        public override List<PersonErrorDto> Validate(Group group, DateTime? checkInDate, DateTime? checkOutDate)
+		public override async Task<Person> PersonFromMrz(MrzDto mrz)
+		{
+			var mnePerson = new MnePerson();
+			mnePerson.Guid = Guid.NewGuid().ToString();
+            mnePerson.PropertyId = 0;
+            mnePerson.CheckIn = DateTime.Now;
+            mnePerson.LegalEntityId = this._legalEntity.Id;
+            mnePerson.FirstName = mrz.HolderNamePrimary;
+            mnePerson.LastName = mrz.HolderNameSecondary;
+            mnePerson.Gender = mrz.HolderSex;
+            mnePerson.BirthDate = mrz.HolderDateOfBirth == null ? DateTime.Now : DateTime.ParseExact(mrz.HolderDateOfBirth, "yyyyMMdd", null);
+            mnePerson.Nationality = mrz.HolderNationality;
+            mnePerson.DocumentCountry = mrz.DocIssuer;
+            mnePerson.DocumentNumber = mrz.DocNumber;
+            mnePerson.DocumentValidTo = DateTime.ParseExact(mrz.DocExpiry, "yyyyMMdd", null);
+            mnePerson.DocumentIssuer = mrz.DocIssuer ?? "Nepoznato";
+            mnePerson.DocumentType = "";
+            mnePerson.BirthCountry = mrz.HolderNationality;
+            mnePerson.PersonalNumber = mrz.HolderNumber ?? "Nepoznato";
+            mnePerson.PermanentResidenceCountry = mrz.DocIssuer;
+            mnePerson.PermanentResidenceAddress = "Nepoznato";
+			mnePerson.PermanentResidencePlace = "Nepoznato";
+			_db.MnePersons.Add(mnePerson);
+			
+			_db.SaveChanges();
+
+			return mnePerson;
+		}
+
+		public override List<PersonErrorDto> Validate(Group group, DateTime? checkInDate, DateTime? checkOutDate)
         {
             var result = new List<PersonErrorDto>();
             _db.Entry(group).Collection(a => a.Persons).Load();

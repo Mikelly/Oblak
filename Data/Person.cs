@@ -21,7 +21,7 @@ namespace Oblak.Data
         
         public int PropertyId { get; set; }
         
-        public int GroupId { get; set; }
+        public int? GroupId { get; set; }
 
         [StringLength(450)]
         public string LastName { get; set; }

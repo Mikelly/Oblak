@@ -14,8 +14,7 @@ namespace Oblak.Services
     {         
         protected IConfiguration _configuration;
         protected HttpContext _context;
-        protected ApplicationDbContext _db;
-        protected ApplicationUser _user;
+        protected ApplicationDbContext _db;        
         protected eMailService _eMailService;
         protected SelfRegisterService _selfRegisterService;
         protected IWebHostEnvironment _webHostEnvironment;
@@ -23,8 +22,7 @@ namespace Oblak.Services
         protected LegalEntity _legalEntity;
 
         public Register(            
-            IConfiguration configuration,
-            IHttpContextAccessor contextAccessor,
+            IConfiguration configuration,            
             eMailService eMailService,
             SelfRegisterService selfRegisterService,
             IWebHostEnvironment webHostEnvironment,
@@ -32,19 +30,11 @@ namespace Oblak.Services
             ApplicationDbContext db)
         {            
             _configuration = configuration;
-            _db = db;
-            _context = contextAccessor.HttpContext;
+            _db = db;            
             _eMailService = eMailService;
             _selfRegisterService = selfRegisterService;
             _webHostEnvironment = webHostEnvironment;
             _messageHub = messageHub;
-
-            var username = _context?.User?.Identity?.Name;
-            if (username != null)
-            {
-                _user = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username)!;
-                _legalEntity = _user?.LegalEntity!;
-            }
         }
 
         
@@ -66,11 +56,11 @@ namespace Oblak.Services
 
         public abstract Task<object> Authenticate(LegalEntity? legalEntity = null);
 
-        public abstract Task<object> Properties();
+        public abstract Task<object> Properties(LegalEntity legalEntity);
 
-        public abstract Task CertificateMail(Group group, string email);
+		public abstract Task CertificateMail(Group group, string email);
 
-        public abstract Task<Stream> CertificatePdf(Group group);
+        public abstract Task<Stream> CertificatePdf(Group group);        
 
         public abstract Task SendGuestToken(int propertyId, int? unitId, string email, string phoneNo, string lang);
 
@@ -78,7 +68,33 @@ namespace Oblak.Services
 
         #region COMMON METHODS
 
-        public async Task<Group> Group(GroupDto group)
+        public async Task Initialize(LegalEntity legalEntity)
+        { 
+            this._legalEntity = legalEntity;
+        }
+
+        public async Task<List<Property>> GetProperties()
+		{
+			var data = _db.Properties.Where(a => a.LegalEntityId == _legalEntity.Id).ToList();
+			var ids = _db.LegalEntities.Where(a => a.AdministratorId == _legalEntity.Id).Select(a => a.Id).ToList();
+			var data1 = _db.Properties.Include(a => a.LegalEntity).Where(a => ids.Contains(a.LegalEntityId)).ToList();
+
+			data.AddRange(data1);
+
+			return data;
+		}
+
+		public async Task<List<LegalEntity>> GetLegalEntities()
+		{			
+			var ids = _db.LegalEntities.Where(a => a.AdministratorId == _legalEntity.Id).Select(a => a.Id).ToList();
+			var data = _db.LegalEntities.Where(a => ids.Contains(a.Id)).ToList();
+
+			data.Add(_legalEntity);
+
+			return data;
+		}
+
+		public async Task<Group> Group(GroupDto group)
         {
             Group m = null;
             if (group.Id == 0)
@@ -92,7 +108,7 @@ namespace Oblak.Services
             }
 
             var property = _db.Properties.FirstOrDefault(p => p.Id == group.PropertyId);
-            m.LegalEntityId = _user.LegalEntity.Id;
+            m.LegalEntityId = property.LegalEntityId;
             m.PropertyId = group.PropertyId;
             m.PropertyExternalId = property.ExternalId;
             m.Email = group.Email;

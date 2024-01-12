@@ -15,21 +15,24 @@ namespace Oblak.Controllers
         private readonly ILogger<AccountController> _logger;
         private readonly IConfiguration _configuration;
         private readonly ApplicationDbContext _db;
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly UserManager<IdentityUser> _userManager;
+		private readonly RoleManager<IdentityRole> _roleManager;
+		private readonly SignInManager<IdentityUser> _signInManager;
 
         public AccountController(
             ILogger<AccountController> logger,
             IConfiguration configuration, 
             ApplicationDbContext db,
-            UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager)
+            UserManager<IdentityUser> userManager,
+			RoleManager<IdentityRole> roleManager,
+			SignInManager<IdentityUser> signInManager)
         {
             _logger = logger;
             _configuration = configuration;
             _db = db;
             _userManager = userManager;
             _signInManager = signInManager;
+            _roleManager = roleManager;
         }
 
         private void AddPasswordErrors(IdentityResult result)
@@ -108,7 +111,7 @@ namespace Oblak.Controllers
                     if (checkPassword.Succeeded)
                     {
                         await _signInManager.SignInAsync(user, true);
-                        return RedirectToAction("Auth");
+                        return RedirectToRoute("Home");
                     }
 
                     if (checkPassword.IsLockedOut)
@@ -132,7 +135,7 @@ namespace Oblak.Controllers
         public async Task<IActionResult> SignOut()
         {
             await _signInManager.SignOutAsync();           
-            return RedirectToAction("Auth");
+            return RedirectToAction("SignIn");
         }
 
 
@@ -163,11 +166,21 @@ namespace Oblak.Controllers
             }
             else
             {
+                var passwordValidator = new PasswordValidator<IdentityUser>();
+                var passwordValidationResult = await passwordValidator.ValidateAsync(_userManager, null, model.Password);
+
+                if (passwordValidationResult.Succeeded == false)
+                {
+                    AddPasswordErrors(passwordValidationResult);
+                    return View();
+                }
+
                 var le = new LegalEntity();
                 le.TIN = model.LegalEntityTIN;
                 le.InVat = model.LegalEntityInVat;
                 le.Address = model.LegalEntityAddress;
                 le.Country = model.Country;
+                le.Type = model.LegalEntityType == "Person" ? Data.Enums.LegalEntityType.Person : Data.Enums.LegalEntityType.Company; 
                 le.Name = model.LegalEntityName;
                 _db.LegalEntities.Add(le);
                 _db.SaveChanges();
@@ -189,19 +202,21 @@ namespace Oblak.Controllers
                         LegalEntityId = le.Id
                     }, model.Password);
 
-                var user = await _userManager.FindByEmailAsync(model.Email);
-                if (user != null)
-                {
-                    user.EmailConfirmed = true;
-                    await _userManager.UpdateAsync(user);
-                }
-
                 if (result.Succeeded)
                 {
+                    var user = await _userManager.FindByEmailAsync(model.Email);
+                    if (user != null)
+                    {
+                        user.EmailConfirmed = true;
+                        await _userManager.UpdateAsync(user);
+                    }
+
                     return Ok("Sve okej");
                 }
                 else
                 {
+                    _db.LegalEntities.Remove(le);
+                    _db.SaveChanges();
                     AddPasswordErrors(result);
                 }
             }
@@ -232,5 +247,35 @@ namespace Oblak.Controllers
         {
             return Ok(HttpContext.User.Identity!.IsAuthenticated);
         }
-    }
+
+		[HttpPost("create-role")]
+		public async Task<IActionResult> CreateRole(string name)
+		{
+            var newRole = new IdentityRole() { Name = name };
+            await _roleManager.CreateAsync(newRole);
+            //await _roleManager.UpdateAsync(newRole);
+
+			return Ok();
+		}
+
+		[HttpPost("add-role-to-user")]
+		public async Task<IActionResult> AddRoleToUser(string roleName, string userName)
+		{
+			var user = await _userManager.FindByNameAsync(userName);
+
+			await _userManager.AddToRoleAsync(user, roleName);
+
+			return Ok();
+		}
+
+		[HttpPost("remove-role-from-user")]
+		public async Task<IActionResult> RemoveRoleFromUser(string roleName, string userName)
+		{
+			var user = await _userManager.FindByNameAsync(userName);
+
+			await _userManager.RemoveFromRoleAsync(user, roleName);
+
+			return Ok();
+		}
+	}
 }

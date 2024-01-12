@@ -37,10 +37,12 @@ namespace Oblak.Data
         
         public bool InVat { get; set; }
 
-        
-        #region MNE EFI
+		public bool Test { get; set; }
 
-        public byte[]? EfiCertData { get; set; }
+
+		#region MNE EFI
+
+		public byte[]? EfiCertData { get; set; }
 
         [StringLength(450)]
         public string? EfiPassword { get; set; }

@@ -110,3 +110,57 @@ th.k-header .k-link {
 .k-grid {
     font-size:0.9rem;
 }
+
+/*
+    -----------------------------------------------------
+    Window header da se smanji visina
+    -----------------------------------------------------
+*/
+
+.k-window-titlebar {
+    padding: 0px 16px; 
+}
+
+
+/*
+    -----------------------------------------------------
+    Ikonice na date-time pickeru da budu centrirane
+    -----------------------------------------------------
+*/
+
+.k-link-date, .k-link-time {
+    padding: 0px!important;
+}
+
+
+
+/*
+    -----------------------------------------------------
+    SearchBox na dropdown listi
+    -----------------------------------------------------
+*/
+
+.k-list-filter {
+    padding: 5px;
+}
+
+.k-list-filter .k-textbox {
+    padding: 0px;
+}
+
+
+label, input {
+    font-size:1rem;
+}
+
+
+/*
+    -----------------------------------------------------
+    DropDown selected value
+    -----------------------------------------------------
+*/
+
+span[role="option"].k-input 
+{
+    width:calc(100% - 30px);
+}

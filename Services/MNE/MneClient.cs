@@ -42,28 +42,29 @@ namespace Oblak.Services.MNE
 
         public MneClient(
             IConfiguration configuration,
-            ILogger<MneClient> logger,
-            IHttpContextAccessor contextAccesor,
+            ILogger<MneClient> logger,            
             mup rb90client,
             ApplicationDbContext db,
             SelfRegisterService selfRegisterService,
             eMailService eMailService,
             IHubContext<MessageHub> messageHub,
-            IWebHostEnvironment webHostEnvironment) : base(configuration, contextAccesor, eMailService, selfRegisterService, webHostEnvironment, messageHub, db)
+            IWebHostEnvironment webHostEnvironment) : base(configuration, eMailService, selfRegisterService, webHostEnvironment, messageHub, db)
         {
             _logger = logger;            
             _rb90client = rb90client;
             
-            var username = _context.User.Identity!.Name;
-            if (username != null)
-            {
-                _user = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username)!;
-                if(_user != null) _legalEntity = _user.LegalEntity;
-            }
+            //var username = _context.User.Identity!.Name;
+            //if (username != null)
+            //{
+            //    _user = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username)!;
+            //    if(_user != null) _legalEntity = _user.LegalEntity;
+            //}
         }
 
         public (user, smjestajniObjekat[], X509Certificate2) Auth(LegalEntity legalEntity)
         {   
+            _legalEntity = legalEntity;
+
 			var cert = new X509Certificate2(legalEntity.Rb90CertData, legalEntity.Rb90Password);
 			var issuer = cert.Issuer.Split(new char[] { ',' });
             var cn = issuer.Where(a => a.Trim().StartsWith("CN")).FirstOrDefault();
@@ -597,7 +598,7 @@ namespace Oblak.Services.MNE
             return err;
         }
 
-        public async override Task<object> Properties()
+        public async override Task<object> Properties(LegalEntity legalEntity)
         {
             (user user, smjestajniObjekat[] so, X509Certificate2 cert) = ((user, smjestajniObjekat[], X509Certificate2)) await Authenticate();
             try

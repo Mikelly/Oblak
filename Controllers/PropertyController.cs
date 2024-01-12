@@ -22,6 +22,7 @@ namespace Oblak.Controllers
         private readonly ApplicationUser _appUser;
         private readonly int _legalEntityId;
         private readonly Register _registerClient;
+        private readonly LegalEntity _legalEntity;
 
         public PropertyController(
             ILogger<PropertyController> logger, 
@@ -40,6 +41,7 @@ namespace Oblak.Controllers
             {
                 _appUser = _db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.Properties).FirstOrDefault(a => a.UserName == username)!;
                 _legalEntityId = _appUser.LegalEntityId;
+                _legalEntity = _appUser.LegalEntity;
                 if (_appUser.LegalEntity.Country == Country.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>();
                 if (_appUser.LegalEntity.Country == Country.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>();
             }
@@ -77,7 +79,8 @@ namespace Oblak.Controllers
 
         public async Task<IActionResult> Read([DataSourceRequest] DataSourceRequest request)
         {
-            var properties = _db.Properties.Where(a => a.LegalEntityId == _legalEntityId);
+            await _registerClient.Initialize(_legalEntity);
+            var properties = await _registerClient.GetProperties();
 
             var data = _mapper.Map<List<PropertyEnrichedDto>>(properties);
 
@@ -141,7 +144,7 @@ namespace Oblak.Controllers
         {
             try
             {
-                var result = await _registerClient.Properties();
+                var result = await _registerClient.Properties(_legalEntity);
 
                 return Json(new { success = true });
             }
@@ -149,6 +152,24 @@ namespace Oblak.Controllers
             {
                 return Json(new DataSourceResult { Errors = ex.Message });
             }
+        }
+
+
+        public async Task<IActionResult> ReadAdmin()
+        {
+            await _registerClient.Initialize(_legalEntity);
+            var properties = await _registerClient.GetProperties();
+
+            List<PropertyEnrichedDto> data = properties
+                .Select(a => {
+                    var mapped = _mapper.Map<Property, PropertyEnrichedDto>(a);
+                    mapped.PropertyName = a.Name;
+                    mapped.LegalEntity = a.LegalEntity.Name; 
+                    return mapped;
+                    })
+                .ToList();
+
+            return Json(data);            
         }
     }
 }

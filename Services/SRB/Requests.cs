@@ -12,7 +12,7 @@ public class CheckOutRequest
 {
     public bool Izmena { get; set; }
     public string DatumICasOdjave { get; set; }
-    public int BrojPruzenihUslugaSmestaja { get; set; }
+    public int? BrojPruzenihUslugaSmestaja { get; set; }
     public int UgostiteljskiObjekatJedinstveniIdentifikator { get; set; }
     public string ExternalId { get; set; }
 }

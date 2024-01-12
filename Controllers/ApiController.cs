@@ -33,12 +33,11 @@ namespace Oblak.Controllers
         private readonly ApplicationDbContext db;
         private readonly IWebHostEnvironment _env;
         private readonly eMailService _eMailService;
-        private readonly DocumentService _documentService;
-        private readonly MneClient _rb90Client;
-        private readonly SrbClient _srbClient;        
+        private readonly DocumentService _documentService;   
         private readonly EfiClient _efiClient;
         private readonly IMapper _mapper;
         private readonly Register _registerClient;
+        private readonly LegalEntity _legalEntity;
         private ApplicationUser _appUser;   
         private readonly FcmService _fcmService;
 
@@ -65,8 +64,7 @@ namespace Oblak.Controllers
             this.db = db;
             _env = env;
             _eMailService = eMailService;
-            _rb90Client = rb90Client;
-            _srbClient = srbClient;            
+       
             _mapper = mapper;
             _efiClient = efiClient;
             _documentService = documentService;
@@ -77,8 +75,9 @@ namespace Oblak.Controllers
                 _appUser = db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.Properties).FirstOrDefault(a => a.UserName == username)!;
                 if (_appUser != null)
                 {
-                    if (_appUser.LegalEntity.Country == Country.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>();
-                    if (_appUser.LegalEntity.Country == Country.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>();
+                    _legalEntity = _appUser.LegalEntity;
+                    if (_appUser.LegalEntity.Country == Country.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>()!;
+                    if (_appUser.LegalEntity.Country == Country.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>()!;
                 }
             }
         }
@@ -101,6 +100,7 @@ namespace Oblak.Controllers
         public async Task<ActionResult> Login(string username, string password)
         {
             var user = db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username);
+            var roles = new List<string>();
             if (user != null)
             {
                 var checkPassword = await _signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure: true);
@@ -108,27 +108,28 @@ namespace Oblak.Controllers
                 if (checkPassword.Succeeded)
                 {
                     var u = await _userManager.FindByNameAsync(username);
+                    roles = (await _userManager.GetRolesAsync(u)).ToList();
                     await _signInManager.SignInAsync(user, true);
                 }
                 else
-                {
-                    return Ok(new LoginDto() { info = "", error = "Neispravan username i/ili lozinka.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString() });
+                {                    
+                    return Ok(new LoginDto() { info = "", error = "Neispravan username i/ili lozinka.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), roles = roles });
                 }                
 
                 if (checkPassword.IsLockedOut)
                 {
                     _logger.LogWarning(2, "User account locked out.");                    
-                    return Ok(new LoginDto() { info = "", error = "User je zaključan.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString() });
+                    return Ok(new LoginDto() { info = "", error = "User je zaključan.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), roles = roles });
                 }
 
                 //return RedirectToAction("AfterLogin");
 
                 var cookie = Request.Cookies[".AspNetCore.Identity.Application"];
 
-                return Ok(new LoginDto() { info = "OK", error = "", auth = cookie, sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString() });
+                return Ok(new LoginDto() { info = "OK", error = "", auth = cookie, sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), roles = roles });
             }
 
-            return Ok(new LoginDto() { info = "", error = "", auth = "", sess = "", oper = "", lang = "", cntr = "" });
+            return Ok(new LoginDto() { info = "", error = "", auth = "", sess = "", oper = "", lang = "", cntr = "", roles = roles });
         }
 
         [HttpPost]
@@ -186,27 +187,16 @@ namespace Oblak.Controllers
             else return Content("0");
         }
         */
+                
 
         [HttpGet]
         [Route("propertiesGet")]
         public async Task<ActionResult<List<PropertyDto>>> PropertiesGet()
         {
-            var isPropertyAdmin = User.IsInRole("PropertyAdmin");
-            var legalEntityId = _appUser!.LegalEntityId;
+            await _registerClient.Initialize(_legalEntity);
+            var properties = await _registerClient.GetProperties();
 
-            List<PropertyDto> data = null;
-
-            if (isPropertyAdmin)
-            {
-                var ids = db.LegalEntities.Where(a => a.AdministratorId == legalEntityId).Select(a => a.Id).ToList();
-                data = db.Properties.Where(a => ids.Contains(a.LegalEntityId)).ToList()
-					.Select(a => _mapper.Map<Property, PropertyDto>(a)).ToList();
-			}
-            else
-            {
-                data = db.Properties.Where(a => a.LegalEntityId == legalEntityId).ToList()
-                    .Select(a => _mapper.Map<Property, PropertyDto>(a)).ToList();
-            }
+            List<PropertyDto> data = properties.Select(a => { var b = _mapper.Map<Property, PropertyDto>(a); b.LegalEntityName = a.LegalEntity.Name; return b; }).ToList();
 
             return Json(data);
         }
@@ -214,11 +204,11 @@ namespace Oblak.Controllers
         [HttpGet]
         [Route("propertiesExternal")]
         public async Task<ActionResult<List<PropertyDto>>> PropertiesExternal()
-        {
-            var result = await _registerClient.Properties();
+        {            
+            var result = await _registerClient.Properties(_legalEntity);
 
             var data = db.Properties.Where(a => a.LegalEntityId == _appUser!.LegalEntityId).ToList()
-                .Select(a => _mapper.Map<Property, PropertyDto>(a)).ToList();
+                .Select(a => { var b = _mapper.Map<Property, PropertyDto>(a); b.LegalEntityName = a.LegalEntity.Name; return b; }).ToList();
 
             return Json(data);
         }
@@ -248,9 +238,11 @@ namespace Oblak.Controllers
         [Route("groupList")]
         public async Task<ActionResult<List<GroupEnrichedDto>>> Groups(int page = 1)
         {
-            var user = _appUser;
+            await _registerClient.Authenticate(_legalEntity);
+            var legalEntities = await _registerClient.GetLegalEntities();
+            var ids = legalEntities.Select(a => a.Id).ToArray();
 
-            var grupe = db.Groups.Where(a => a.LegalEntityId == user.LegalEntityId).OrderByDescending(a => a.Date).Skip((page - 1) * 50).Take(50);//.Select(a => new { a.Id, a.Date, a.PropertyId, a.UnitId, BrojGostiju = db.rb90Persons.Where(b => b.GroupId == a.Id).Count(), Gosti = db.rb90GuestList(a.Id), a.Status }).ToList();
+            var grupe = db.Groups.Where(a => ids.Contains(a.LegalEntityId)).OrderByDescending(a => a.Date).Skip((page - 1) * 50).Take(50);//.Select(a => new { a.Id, a.Date, a.PropertyId, a.UnitId, BrojGostiju = db.rb90Persons.Where(b => b.GroupId == a.Id).Count(), Gosti = db.rb90GuestList(a.Id), a.Status }).ToList();
 
             var data = grupe.Select(a => new GroupEnrichedDto {
                 Id = a.Id,
@@ -328,7 +320,7 @@ namespace Oblak.Controllers
             var legalEntity = group.LegalEntity;
 
             try
-            {
+            {                
                 var result = await _registerClient.RegisterGroup(group, checkInDate, checkOutDate);
                 if (result != null) Response.StatusCode = 400;
                 return Json(result);
@@ -353,6 +345,13 @@ namespace Oblak.Controllers
         [Route("personSrbList")]
         public ActionResult<List<SrbPersonDto>> PersonSrb0List(int id)
         {
+            var data = db.SrbPersons.Include(a => a.Property).Include(a => a.LegalEntity).Where(a => a.GroupId == id).ToList().Select(a => 
+            {
+                var mapped = _mapper.Map<SrbPersonDto>(a);
+                mapped.LegalEntityName = a.Property.LegalEntity.Name;
+                return mapped;
+            }).ToList();
+
             return Json(_mapper.Map<List<SrbPersonDto>>(db.SrbPersons.Where(a => a.GroupId == id).ToList()));
         }
 
@@ -416,61 +415,12 @@ namespace Oblak.Controllers
         {
             _logger.LogDebug("START GOST");
 
-            var g = db.Groups.Where(a => a.Id == gost.GroupId).FirstOrDefault();
-            var o = db.Properties.Where(a => a.Id == g.PropertyId).FirstOrDefault();
-            MnePerson m = null;
-
+            //var g = db.Groups.Where(a => a.Id == gost.GroupId).FirstOrDefault();
+            var o = db.Properties.Where(a => a.Id == gost.PropertyId).Include(a => a.LegalEntity).FirstOrDefault();            
+            await _registerClient.Authenticate(o.LegalEntity);
             var result = await _registerClient.Person(gost);
 
             return Json(_mapper.Map<SrbPersonDto>(result));
-            /*
-            _logger.LogDebug("AFTER START GOST");
-
-            if (gost.Id == 0)
-            {
-                _logger.LogDebug("NOVI GOST");
-                try
-                {
-                    m = new MnePerson();
-                    _mapper.Map(gost, m);
-                    m.PropertyAddress = "";
-                    m.PropertyName = "";
-                    m.PropertyNumber = "";
-                    m.PropertyId = o.Id;
-                    m.PropertyExternalId = o.ExternalId;
-                    m.LegalEntityId = _appUser.LegalEntity.Id;
-                    db.MnePersons.Add(m);
-                    db.SaveChanges();
-                }
-                catch (Exception e)
-                {
-                    _logger.LogDebug(Exceptions.StringException(e));
-                }
-            }
-            else
-            {
-                _logger.LogDebug("STARI GOST");
-                try
-                {
-                    m = db.MnePersons.SingleOrDefault(a => a.Id == gost.Id)!;
-                    _mapper.Map(gost, m);
-                    m.PropertyAddress = "";
-                    m.PropertyName = "";
-                    m.PropertyNumber = "";
-                    m.PropertyId = o.Id;
-                    m.PropertyExternalId = o.ExternalId;
-                    m.LegalEntityId = _appUser.LegalEntity.Id;
-                    db.MnePersons.Add(m);
-                    db.SaveChanges();
-                }
-                catch (Exception e)
-                {
-                    _logger.LogDebug(Exceptions.StringException(e));
-                }
-            }
-
-            return Json(_mapper.Map<SrbPersonDto>(m));
-            */
         }
 
 
@@ -811,7 +761,7 @@ namespace Oblak.Controllers
 
             try
             {
-                var stream = await _rb90Client.ResTaxPdf(id);
+                var stream = await (_registerClient as MneClient).ResTaxPdf(id);
 
                 var fsr = new FileStreamResult(stream, "application/pdf");
                 fsr.FileDownloadName = $"Boravišna taksa za period od {tax.DateFrom.ToString("dd.MM.yyyy")} od {tax.DateTo.ToString("dd.MM.yyyy")} za smještajni objekat {obj!.Name}.pdf";
@@ -845,11 +795,11 @@ namespace Oblak.Controllers
 
             var obj = db.Properties.Where(a => a.Id == tax.PropertyId).FirstOrDefault();
 
-            var stream = _rb90Client.ResTaxPdf(id);
+            var stream = (_registerClient as MneClient).ResTaxPdf(id);
 
             var frm = _appUser.LegalEntity.Name;
 
-            await _rb90Client.ResTaxEmail(id, _appUser.Email, email);
+            await (_registerClient as MneClient).ResTaxEmail(id, _appUser.Email, email);
 
             return Json(new { info = "Uspješno poslata prijava boravišne takse putem maila!", error = "" });
         }

@@ -102,7 +102,7 @@ namespace Oblak.Controllers
 
         [HttpPost]
         [Route("SrbTest")]
-        public async Task<ActionResult> SrbPersonTest(SrbPersonViewModel person)
+        public async Task<ActionResult> SrbPersonTest(Models.Srb.SrbPersonViewModel person)
         {
             var p = _mapper.Map<SrbPerson>(person);
 

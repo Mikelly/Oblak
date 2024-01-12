@@ -33,6 +33,10 @@
     <script src="https://cdn.kendostatic.com/2021.3.1207/js/kendo.aspnetmvc.min.js"></script>
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@10"></script>
 
+    <link href="/fontawesome6/css/fontawesome.css" rel="stylesheet">
+    <link href="/fontawesome6/css/brands.css" rel="stylesheet">
+    <link href="/fontawesome6/css/solid.css" rel="stylesheet">
+
 
     <script src="@Url.Content("~/Scripts/kendo.culture.sr-Latn-ME.min.js")"></script>
     <script src="@Url.Content("~/Scripts/kendo.messages.sr-Latn-ME.min.js")"></script>
@@ -79,99 +83,9 @@
     </style>
 </head>
 <body>
-    <ul id="menucool" style="display:@d">
-        <li class="li-home">
-            <img onclick="window.location='/inv/dash'" style='width:36px;height:36px;position:relative;top:3px;left:3px;right:0px;cursor:pointer;margin-right:20px; margin-left:20px;' src='/Content/Icons/home_page_black.png' />
-        </li>
-        <li>
-            <a style="position:relative; top:0px;" href="#0"><img style="position:relative; top:4px; width:22px; height:22px;" src="~/Content/Icons/invoice_white.png"><span style="position:relative;top:-1px;margin-left:3px;">E-Fakture</span></a>
-            <ul>
-                <li><a onclick="newdoc('r','')" href="#">Nova faktura</a></li>
-                <li><a onclick="newdoc('f','')" href="#">Nova faktura usluga</a></li>
-                <li><a onclick="newdoc('c','')" href="#">Novo knjižno odobrenje</a></li>
-                <li><a href="/inv/l/f">Lista faktura</a></li>
-                <li><a onclick="newdoc('r','p')" href="#">Nova profaktura</a></li>
-                <li><a onclick="newdoc('f','p')" href="#">Nova profaktura usluga</a></li>
-                <li><a href="/inv/l/p">Lista profaktura</a></li>
-                <li><a href="#" onclick="reports2()">Izvještaji</a></li>
-            </ul>
-        </li>
-        <li>
-            <a style="position:relative; top:0px;" href="#0"><img style="position:relative; top:2px; width:24px; height:24px;" src="~/Content/Icons/cash_register_white.png"><span style="position:relative;top:-3px;margin-left:3px;">E-KASA</span></a>
-            <ul>
-                <li><a href="/pos/pos">Novi račun</a></li>
-                <li><a href="#" onclick="status()">Pregled prometa</a></li>
-                <li><a href="/pos/pos?vrsta=p">Novi predračun</a></li>
-                <li><a href="/pos/listv">Pregled računa<br />i predračuna</a></li>
-                <li><a href="/inv/pzr">Dnevni pazari</a></li>
-                <li><a href="/inv/tk?v=m">Trgovačka knjiga</a></li>
-                <li><a href="#" onclick="reports()">Izvještaji</a></li>
-            </ul>
-        </li>
-        <li>
-            <a style="position:relative; top:0px;" href="#0"><img style="position:relative; top:2px; width:24px; height:24px;" src="~/Content/Icons/box_white.png"><span style="position:relative;top:-3px;margin-left:3px;">MAGACIN</span></a>
-            <ul style="width:150px;">
-                <li style="width:150px;"><a href="/inv/ml?tr=in">Ulazi robe</a></li>
-                <li style="width:150px;"><a href="/inv/ml?tr=out">Izlazi robe</a></li>
-                <li style="width:150px;"><a href="/inv/ml?tr=level">Nivelacije</a></li>
-                <li style="width:150px;"><a href="/inv/ml?tr=invnt">Popisi</a></li>
-                <li style="width:150px;"><a href="/inv/stck">Stanje zaliha</a></li>
-            </ul>
-        </li>
-        @if (rbAdmin)
-        {
-            <li>
-                <a style="position:relative; top:0px;" href="#0"><img style="position:relative; top:2px; width:24px; height:24px; opacity:0.85" src="~/Content/Icons/occupied_bed_white.png"><span style="position:relative;top:-3px;margin-left:3px;">PRIJAVA GOSTIJU</span></a>
-                <ul>
-                    <li><a href="/rbobj/rbobj">Smještajni objekti</a></li>
-                    <li><a href="/prijava/prijava">Individualne prijave</a></li>
-                    <li><a href="/rbgrp/rbgrp">Grupne prijave</a></li>
-                    <li><a href="/rbrzrv/sch">Rezervacije</a></li>
-                </ul>
-            </li>
-        }
-        <li>
-            <a style="position:relative; top:0px;" href="#0"><img style="position:relative; top:3px; width:22px; height:22px;" src="~/Content/Icons/settings_white.png"><span style="position:relative;top:-1px;margin-left:3px;">Podešavanja</span></a>
-            <ul>
-                <li><a href="/invs/item">Lista artikala</a></li>
-                <li><a href="/invs/prtn">Lista partnera</a></li>
-                @if (admin)
-                {
-                    <li><a href="/invs/set">Sistemska<br />podešavanja</a></li>
-                    <li><a href="/invs/rset">Podešavanje<br />štampe</a></li>
-                    <li><a href="/invs/exp">Export<br />podataka</a></li>
-                    if (fiscPartner || Administrator)
-                    {
-                        <li><a href="/invs/frm">Lista firmi<br />podataka</a></li>
-                    }
-                }
-            </ul>
-        </li>
-        <li>
-            <a style="position:relative; top:0px;" href="#0"><img style="position:relative; top:3px; width:22px; height:22px;" src="~/Content/Icons/extras_white.png"><span style="position:relative;top:-1px;margin-left:3px;">EXTRAS</span></a>
-            <ul>
-                <li><a href="/kredit/calculator">Kreditni kalkulator</a></li>
-                <li><a href="/inv/pyrll">Obračun zarade</a></li>
-            </ul>
-        </li>
+    
+    @Html.Partial("_Menu");
 
-        @if (User.Identity.IsAuthenticated == true)
-        {
-            <li style="float:right;" class="li-acc">
-                <img onclick="window.location='/inv/prfl'" style='width:36px;height:36px;position:relative;top:3px;left:-3px;right:10px;cursor:pointer;margin-left:15px;margin-right:20px;' src='/Content/Icons/account_settings_black.png' />
-            </li>
-            <li style="float:right; position:relative; top:0px; font-family: 'Lexend Exa', sans-serif; color:#c5c3c3; margin-right:10px;">
-                <input id="DashInput" type="text" style="border-radius:4px; display:inline-block; margin-top:8px; margin-left:10px; margin-right:15px; width:200px; background-position: right center; background-image:url('/Content/searchBox.png'); background-repeat:no-repeat; padding-right:25px;" onclick="ToggleDash()" onchange="GetDocs()" autocomplete="off">
-                <span style="display:inline-block;">Dobrodošli </span><span style="margin-left:5px; margin-right:5px;"><b>@User.Identity.Name!</b></span>[<span onclick="window.location='/account/logoff'" onmouseout="this.style.textDecoration='none'" onmouseover="this.style.textDecoration='underline'" style="cursor:pointer;">odjava</span>]
-            </li>
-        }
-        else
-        {
-            <li style="float:right; position:relative; top:20px; font-family: 'Lexend Exa', sans-serif; color:#c5c3c3; margin-right:10px;">
-                [<span onclick="window.location='/inv/login'" onmouseout="this.style.textDecoration='none'" onmouseover="this.style.textDecoration='underline'" style="cursor:pointer;">prijava</span>]
-            </li>
-        }
-    </ul>
     <div class="grid-wrapper" id="body">
         @RenderBody()
     </div>

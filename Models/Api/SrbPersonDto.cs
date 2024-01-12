@@ -8,6 +8,7 @@ public class SrbPersonDto
     public int? ExternalId { get; set; }
     public string? Guid { get; set; }
     public int? LegalEntityId { get; set; }
+    public string? LegalEntityName { get; set; }
     public int? PropertyId { get; set; }
     public int? GroupId { get; set; }
     public string? LastName { get; set; }

@@ -18,8 +18,7 @@ namespace RegBor.Controllers
 {
 	public class GroupController : Controller
 	{
-        private readonly Register _registerClient;
-        private readonly MneClient _rb90client;
+        private readonly Register _registerClient;        
 		private readonly ApplicationDbContext _db;
 		private readonly ILogger<GroupController> _logger;
 		private readonly IMapper _mapper;
@@ -29,15 +28,13 @@ namespace RegBor.Controllers
 
 		public GroupController(
 			IServiceProvider serviceProvider,
-            IHttpContextAccessor httpContextAccessor,
-            MneClient rb90Client,
+            IHttpContextAccessor httpContextAccessor,            
 			ApplicationDbContext db,
 			IMapper mapper,
 			ILogger<GroupController> logger
 			)
 		{
-			_db = db;
-			_rb90client = rb90Client;
+			_db = db;			
 			_logger = logger;
 			_mapper = mapper;
 
@@ -111,7 +108,9 @@ namespace RegBor.Controllers
 			}
 			catch { }
 
-			g.LegalEntityId = _legalEntityId;
+			var property = _db.Properties.FirstOrDefault(a => a.Id == objekat);
+
+			g.LegalEntityId = property.LegalEntityId;
 			g.PropertyId = objekat;
 			g.UnitId = jedinica;
 			g.Email = email;
@@ -344,18 +343,41 @@ namespace RegBor.Controllers
 			return Json(new { error = "", js = "" });
 		}
 
-        //public virtual ActionResult Read([DataSourceRequest] DataSourceRequest request)
-        //{
-        //	var data = _db.Groups.Where(a => a.LegalEntityId == _company).Select(a => new rb_GrupaVM { });
+		//public virtual ActionResult Read([DataSourceRequest] DataSourceRequest request)
+		//{
+		//	var data = _db.Groups.Where(a => a.LegalEntityId == _company).Select(a => new rb_GrupaVM { });
 
-        //	return Json(data.ToDataSourceResult(request));
+		//	return Json(data.ToDataSourceResult(request));
 
-        //}
+		//}
 
-        public virtual ActionResult Read([DataSourceRequest] DataSourceRequest request)
+		private async Task<List<Property>> GetProperties()
+		{
+			var isPropertyAdmin = User.IsInRole("PropertyAdmin");
+			var legalEntityId = _appUser!.LegalEntityId;
+
+			List<Property> properties = null;
+
+			if (isPropertyAdmin)
+			{
+				var ids = _db.LegalEntities.Where(a => a.AdministratorId == legalEntityId).Select(a => a.Id).ToList();
+				properties = _db.Properties.Where(a => ids.Contains(a.LegalEntityId)).ToList();
+			}
+			else
+			{
+				properties = _db.Properties.Where(a => a.LegalEntityId == legalEntityId).ToList();
+					
+			}
+
+			return properties;
+		}
+
+		public virtual async Task<ActionResult> Read([DataSourceRequest] DataSourceRequest request)
         {
-            var data = _db.Groups
-                .Where(a => a.LegalEntityId == _legalEntityId)
+			var propertyIds = (await GetProperties()).Select(a => a.Id).ToArray();
+
+			var data = _db.Groups
+                .Where(a => propertyIds.Contains(a.PropertyId))
                 .Include(a => a.Property)
 				.OrderByDescending(x => x.Date)
                 .Select(a => new GroupEnrichedDto
@@ -372,9 +394,9 @@ namespace RegBor.Controllers
             return Json(data.ToDataSourceResult(request));
         }
 
-        public ActionResult GetPropertyList()
+        public async Task<ActionResult> GetPropertyList()
         {
-            var properties = _db.Properties.Where(p => p.LegalEntityId == _legalEntityId).ToList();
+            var properties = await GetProperties();
             return Json(properties);
         }
 
@@ -482,6 +504,14 @@ namespace RegBor.Controllers
 		{
 			ViewBag.Grupa = g;
 			ViewBag.What = w;
+			return PartialView();
+		}
+
+
+		public async Task<ActionResult> RegisterGroup(int groupId)
+		{
+			var group = _db.Groups.Include(a => a.Property).ThenInclude(a => a.LegalEntity).SingleOrDefault(a => a.Id == groupId);			
+			await _registerClient.RegisterGroup(group, null, null);
 			return PartialView();
 		}
 

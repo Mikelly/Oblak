@@ -1,0 +1,279 @@
+﻿@using Oblak.Models.Api
+
+@{
+    var dto = (MnePersonEnrichedDto)ViewBag.Dto;    
+}
+
+<script type="text/javascript">
+
+    function guestTypeChanged() { 
+        alert();
+    }
+
+</script>
+
+<style>
+
+    div.one
+    {
+        display: inline-block;
+        padding: 0px 5px;
+        margin-bottom:10px;
+        min-width: 0;
+    }
+
+</style>
+
+
+<div style="position:absolute; left:10px; right:10px; top:10px; height:calc(100% - 100px); overflow:auto;">
+
+<form id="srbPersonForm">
+    <fieldset style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px;">
+        <div class="one" style="width:700px;">
+            <label for="firstname">Izaberite objekat<span style="color: red;">*</span></label>        
+            @(Html.Kendo().MultiColumnComboBox()
+                .Name("PropertyId")
+                .Placeholder("Izaberite objekat")
+                .DataTextField("Name")
+                .DataValueField("Id")
+                .Enable(true)
+                .Columns(columns =>
+                {   
+                    columns.Add().Field("Name").Title("Naziv").Width("200px");
+                    columns.Add().Field("Address").Title("Adresa").Width("250px");
+                    columns.Add().Field("LegalEntity").Title("Vlasnik").Width("200px");
+                })
+                .HtmlAttributes(new { id = "PropertyId", style = "width:calc(100% - 30px);", autocomplete = "off", autocorrect = "off", autocapitalize = "off", spellcheck = "false" })
+                .DropDownWidth("400px")
+                .Messages(m => m.NoData("Nema podataka").Clear("Poništi"))
+                .Filter("contains").FilterFields(new string[] { "Name" })
+                .AutoBind(false)
+                .MinLength(1)
+                .ValuePrimitive(true)
+                .Value(dto.PropertyId.ToString())
+                .Text(dto.PropertyName)
+                .DataSource(source => { source.Read(read => { read.Action("ReadAdmin", "Property"); }).ServerFiltering(true); })            
+                )        
+        </div>
+        <div class="one" style="width:200px;">
+            <label for="isdomestic">Vrsta gosta<span style="color: red;">*</span></label>
+            @(Html.Kendo().DropDownList()
+                .Name("PersonType")
+                .DataTextField("Name")
+                .DataValueField("ExternalId")
+                .OptionLabel("Izaberite vrstu gosta")
+                .BindTo(Model.PersonTypeCodeList)
+                .Value(dto.Gender)
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+    </fieldset>
+
+    <fieldset style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; display:flex; flex-wrap:wrap;">
+        <div class="one" style="flex:0 1 15%">
+            <label for="firstname">Ime <span style="color: red;">*</span></label>
+            @(Html.Kendo().TextBox().Value(dto.FirstName)
+                .Name("FirstName")
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+            <div class="one" style="flex:0 1 15%">
+            <label for="lastname">Prezime <span style="color: red;">*</span></label>
+            @(Html.Kendo().TextBox().Value(dto.LastName)
+                .Name("LastName")
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+            <div class="one" style="flex: 0 1 15%">
+            <label for="birthdate">Datum rođenja</label>
+            @(Html.Kendo().DatePicker().Value(dto.BirthDate)
+                .Name("BirthDate")
+                .Format("dd.MM.yyyy")
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+            <div class="one" style="flex: 0 1 15%">
+            <label for="gender">Pol <span style="color: red;">*</span></label>
+            @(Html.Kendo().DropDownList()
+                .Name("gender")
+                .DataTextField("Name")
+                .DataValueField("ExternalId")
+                .OptionLabel("Izaberite pol")
+                .BindTo(Model.GenderCodeList)
+                .Value(dto.Gender)
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+            <div class="one" style="flex: 0 1 15%" id="personalnumber-container">
+            <label for="personalnumber">JMBG <span style="color: red;">*</span></label>
+            @(Html.Kendo().TextBox().Value(dto.PersonalNumber)
+                .Name("personalnumber")
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+        <div class="one" style="flex: 0 1 15%">
+            <label for="birthCountry">Država rođenja <span style="color: red;">*</span></label>
+            @(Html.Kendo().DropDownList().Value(dto.Nationality)
+                .Name("Nationality")
+                .AutoWidth(true)
+                .Height(300)
+                .DataTextField("Name")
+                .DataValueField("ExternalId")
+                .OptionLabel("Izaberite nacionalnost")
+                .BindTo(Model.CountryCodeList)                    
+                .Filter("contains")
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+        <div class="one" style="flex: 0 1 15%" id="residenceCountry-container">
+            <label for="residenceCountry">Država prebivališta <span style="color: red;">*</span></label>
+            @(Html.Kendo().DropDownList().Value(dto.BirthCountry)
+                .Name("BirthCountry")
+                .AutoWidth(true)
+                .Height(300)
+                .DataTextField("Name")
+                .DataValueField("ExternalId")
+                .OptionLabel("Izaberite državu rođenja")
+                .BindTo(Model.CountryCodeList)
+                .Filter("contains")
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+        <div class="one" style="flex: 0 1 15%" id="residencePlace-container">
+            <label for="residencePlace">Mjesto rođenja </label>
+            @(Html.Kendo().TextBox().Value(dto.BirthPlace)
+                .Name("BirthPlace")
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+        <div class="one" style="flex: 0 1 15%" id="residenceMunicipality-container">
+            <label for="residenceMunicipality">Država prebivališta</label>
+            @(Html.Kendo().DropDownList().Value(dto.PermanentResidenceCountry)
+                .Name("PermanentResidenceCountry")
+                .AutoWidth(true)
+                .Height(300)
+                .DataTextField("Name")
+                .DataValueField("ExternalId")
+                .OptionLabel("Izaberite državu prebivališta")
+                .Enable(false)
+                .Filter("contains")
+                .HtmlAttributes(new { style = "width:100%" })
+                .Value(null)
+                )
+        </div>
+        <div class="one" style="flex: 0 1 15%" id="residencePlace-container">
+            <label for="residencePlace">Mjesto prebivališta </label>
+            @(Html.Kendo().TextBox().Value(dto.PermanentResidencePlace)
+                .Name("PermanentResidencePlace")
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+        <div class="one" style="flex: 0 1 15%" id="birthPlace-container">
+            <label for="birthPlace">Adresa prebivališta</label>
+            @(Html.Kendo().TextBox().Value(dto.PermanentResidenceAddress)
+                .Name("PermanentResidenceAddress")
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>        
+    </fieldset>
+
+    <fieldset style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; display:flex; flex-wrap:wrap;" id="secondFieldset">        
+        <div class="one" style="width:15%">
+            <label for="DocumentType">Vrsta putne isprave<span style="color: red;">*</span></label>
+            @(Html.Kendo().DropDownList().Value(dto.DocumentType)
+                .Name("DocumentType")
+                .AutoWidth(true)
+                .Height(300)
+                .DataTextField("Name")
+                .DataValueField("ExternalId")
+                .OptionLabel("Izaberite vrstu putne isprave")
+                .BindTo(Model.DocumentTypeCodeList)
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+        <div class="one" style="width:15%">
+            <label for="DocumentNumber">Broj putne isprave <span style="color: red;">*</span></label>
+            @(Html.Kendo().TextBox().Value(dto.DocumentNumber)
+                .Name("DocumentNumber")
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+        <div class="one" style="width:15%">
+            <label for="DocumentValidTo">Datum izdavanja<span style="color: red;">*</span></label>
+            @(Html.Kendo().DatePicker().Value(dto.DocumentValidTo)
+                .Name("DocumentValidTo")                
+                .Format("dd.MM.yyyy")
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+        <div class="one" style="width:15%">
+            <label for="DocumentCountry">Država izdavanja<span style="color: red;">*</span></label>
+            @(Html.Kendo().DropDownList().Value(dto.DocumentCountry)
+                .Name("DocumentCountry")
+                .AutoWidth(true)
+                .Height(300)
+                .DataTextField("Name")
+                .DataValueField("ExternalId")
+                .OptionLabel("Izaberite državu izdavanja")
+                .BindTo(Model.CountryCodeList)
+                .Filter("contains")
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+        <div class="one" style="width:15%">
+            <label for="DocumentIssuer">Izdavaoc dokumenta<span style="color: red;">*</span></label>
+            @(Html.Kendo().TextBox().Value(dto.DocumentIssuer)
+                .Name("DocumentIssuer")
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>      
+    </fieldset>
+
+    <fieldset style="border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; display:flex; flex-wrap:wrap;">        
+        <div class="one" style="width:15%">
+            <label for="CheckIn">Datum prijave<span style="color: red;">*</span></label>
+            @(Html.Kendo().DatePicker().Value(dto.CheckIn)
+                .Name("CheckIn")
+                .Format("dd.MM.yyyy")
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+        <div class="one" style="width:15%">
+            <label for="CheckOut">Datum odjave<span style="color: red;">*</span></label>
+            @(Html.Kendo().DatePicker().Value(dto.CheckOut)
+                .Name("CheckOut")
+                .Format("dd.MM.yyyy")
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+        <div class="one" style="flex:0 1 15%">
+            <label for="EntryPoint">Mjesto ulascka u CG boravka<span style="color: red;">*</span></label>
+            @(Html.Kendo().DropDownList().Value(dto.EntryPoint)
+                .Name("EntryPoint")
+                .DataTextField("Name")
+                .DataValueField("ExternalId")
+                .OptionLabel("Izaberite mjesto ulaska")
+                .BindTo(Model.EntryPointCodeList)
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+        <div class="one" style="width:15%">
+            <label for="EntryPointDate">Datum ulaska u CG<span style="color: red;">*</span></label>
+            @(Html.Kendo().DatePicker().Value(dto.EntryPointDate)
+                .Name("EntryPointDate")
+                .Format("dd.MM.yyyy")
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>     
+    </fieldset>
+
+
+</form>
+
+
+</div>
+
+
+<div style="position:absolute;left:10px; right:10px; bottom:10px; height:80px; background-color:antiquewhite;">
+
+</div>

@@ -3,7 +3,8 @@
 namespace Oblak.Models
 {
     public class PersonViewModel
-    {        
+    {
+        public List<CodeList> GenderCodeList { get; set; } = new List<CodeList>();
         public List<CodeList> PersonTypeCodeList { get; set; } = new List<CodeList>();
         public List<CodeList> CountryCodeList { get; set; } = new List<CodeList>();
         public List<CodeList> MunicipalityCodeList { get; set; } = new List<CodeList>();

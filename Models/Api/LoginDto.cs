@@ -7,5 +7,6 @@
         public string oper { get; set; }
         public string lang { get; set; }
         public string cntr { get; set; }
+        public List<string> roles { get; set; }
     }
 }

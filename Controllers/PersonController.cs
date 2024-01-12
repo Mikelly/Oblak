@@ -47,8 +47,8 @@ namespace RegBor.Controllers
 		
 
 		[HttpGet]
-        [Route("persons", Name = "Persons")]
-        public async Task<ActionResult> Persons(int groupId)
+        [Route("groupPersons", Name = "GroupPersons")]
+        public async Task<ActionResult> GroupPersons(int groupId)
         {
             var group = await _db.Groups.Where(x => x.Id == groupId).FirstOrDefaultAsync();
             ViewBag.GroupId = groupId;
@@ -62,8 +62,11 @@ namespace RegBor.Controllers
 
             if (_appUser.LegalEntity.Country == Country.SRB)
             {
+                codeLists = codeLists.Where(a => a.Country == "SRB").ToList();
+
                 var srbViewModel = new PersonViewModel
                 {
+                    GenderCodeList = codeLists.Where(x => x.Type == "Gender").ToList(),
                     CountryCodeList = codeLists.Where(x => x.Type == "Country").ToList(),
                     DocumentTypeCodeList = codeLists.Where(x => x.Type == "DocumentType").ToList(),
                     MunicipalityCodeList = codeLists.Where(x => x.Type == "ResidenceMunicipality").ToList(),
@@ -79,56 +82,115 @@ namespace RegBor.Controllers
                 return View("SrbPersons", srbViewModel);
             }
 
-            var model = new PersonViewModel
+            if (_appUser.LegalEntity.Country == Country.MNE)
             {
-                CountryCodeList = codeLists.Where(x => x.Type == "drzava").ToList(),
-                DocumentTypeCodeList = codeLists.Where(x => x.Type == "isprava").ToList(),
-                EntryPointCodeList = codeLists.Where(x => x.Type == "prelaz").ToList(),
-                PersonTypeCodeList = codeLists.Where(x => x.Type == "gost").ToList(),
-                VisaTypeCodeList = codeLists.Where(x => x.Type == "viza").ToList(),
-            };
+                codeLists = codeLists.Where(a => a.Country == "SRB").ToList();
 
-            return View("MnePersons", model);
+                var model = new PersonViewModel
+                {
+                    GenderCodeList = codeLists.Where(x => x.Type == "pol").ToList(),
+                    CountryCodeList = codeLists.Where(x => x.Type == "drzava").ToList(),
+                    DocumentTypeCodeList = codeLists.Where(x => x.Type == "isprava").ToList(),
+                    EntryPointCodeList = codeLists.Where(x => x.Type == "prelaz").ToList(),
+                    PersonTypeCodeList = codeLists.Where(x => x.Type == "gost").ToList(),
+                    VisaTypeCodeList = codeLists.Where(x => x.Type == "viza").ToList(),
+                };
+
+                return View("MnePersons", model);
+            }
+
+            return View();
         }
 
 		[HttpGet]
 		[Route("persons", Name = "Persons")]
 		public async Task<ActionResult> Persons()
 		{
-			var codeLists = await _db.CodeLists
-				.Where(a => a.Country == _appUser.LegalEntity.Country.ToString())
-				.ToListAsync();
+			var isPropertyAdmin = User.IsInRole("PropertyAdmin");
+			var legalEntityId = _appUser!.LegalEntityId;
 
-			if (_appUser.LegalEntity.Country == Country.SRB)
+			List<PropertyDto> properties = null;
+
+			if (isPropertyAdmin)
 			{
-				var srbViewModel = new PersonViewModel
-				{
-					CountryCodeList = codeLists.Where(x => x.Type == "Country").ToList(),
-					DocumentTypeCodeList = codeLists.Where(x => x.Type == "DocumentType").ToList(),
-					MunicipalityCodeList = codeLists.Where(x => x.Type == "ResidenceMunicipality").ToList(),
-					PlaceCodeList = codeLists.Where(x => x.Type == "Place").ToList(),
-					VisaTypeCodeList = codeLists.Where(x => x.Type == "VisaType").ToList(),
-					ServiceTypeCodeList = codeLists.Where(x => x.Type == "ServiceType").ToList(),
-					ArrivalTypeCodeList = codeLists.Where(x => x.Type == "ArrivalType").ToList(),
-					ReasonForStayCodeList = codeLists.Where(x => x.Type == "ReasonForStay").ToList(),
-					EntryPointCodeList = codeLists.Where(x => x.Type == "EntryPlace").ToList(),
-					DiscountReasonCodeList = codeLists.Where(x => x.Type == "ResidenceTaxDiscountReason").ToList(),
-				};
-
-				return View("SrbPersons", srbViewModel);
+				var ids = _db.LegalEntities.Where(a => a.AdministratorId == legalEntityId).Select(a => a.Id).ToList();
+				properties = _db.Properties.Where(a => ids.Contains(a.LegalEntityId)).ToList()
+					.Select(a => _mapper.Map<Property, PropertyDto>(a)).ToList();
+			}
+			else
+			{
+				properties = _db.Properties.Where(a => a.LegalEntityId == legalEntityId).ToList()
+					.Select(a => _mapper.Map<Property, PropertyDto>(a)).ToList();
 			}
 
-			var model = new PersonViewModel
-			{
-				CountryCodeList = codeLists.Where(x => x.Type == "drzava").ToList(),
-				DocumentTypeCodeList = codeLists.Where(x => x.Type == "isprava").ToList(),
-				EntryPointCodeList = codeLists.Where(x => x.Type == "prelaz").ToList(),
-				PersonTypeCodeList = codeLists.Where(x => x.Type == "gost").ToList(),
-				VisaTypeCodeList = codeLists.Where(x => x.Type == "viza").ToList(),
-			};
+            ViewBag.Properties = properties;
 
-			return View("MnePersons", model);
+            if (_appUser.LegalEntity.Country == Country.SRB)
+            {
+                return View("SrbPersons");
+            }
+            else if(_appUser.LegalEntity.Country == Country.MNE)
+            {
+                return View("MnePersons");
+            }
+            return View("");
 		}
+
+        public async Task<ActionResult> Get(int? person)
+        {
+            var codeLists = await _db.CodeLists
+                .Where(a => a.Country == _appUser.LegalEntity.Country.ToString())
+                .ToListAsync();
+
+            if (_appUser.LegalEntity.Country == Country.SRB)
+            {
+                SrbPersonEnrichedDto dto = null;
+                if (person == null) dto = new SrbPersonEnrichedDto();
+                else dto = dto;
+
+                var srbViewModel = new PersonViewModel
+                {
+                    GenderCodeList = codeLists.Where(x => x.Type == "Gender").ToList(),
+                    CountryCodeList = codeLists.Where(x => x.Type == "Country").ToList(),
+                    DocumentTypeCodeList = codeLists.Where(x => x.Type == "DocumentType").ToList(),
+                    MunicipalityCodeList = codeLists.Where(x => x.Type == "ResidenceMunicipality").ToList(),
+                    PlaceCodeList = codeLists.Where(x => x.Type == "Place").ToList(),
+                    VisaTypeCodeList = codeLists.Where(x => x.Type == "VisaType").ToList(),
+                    ServiceTypeCodeList = codeLists.Where(x => x.Type == "ServiceType").ToList(),
+                    ArrivalTypeCodeList = codeLists.Where(x => x.Type == "ArrivalType").ToList(),
+                    ReasonForStayCodeList = codeLists.Where(x => x.Type == "ReasonForStay").ToList(),
+                    EntryPointCodeList = codeLists.Where(x => x.Type == "EntryPlace").ToList(),
+                    DiscountReasonCodeList = codeLists.Where(x => x.Type == "ResidenceTaxDiscountReason").ToList(),
+                };
+
+                ViewBag.Dto = dto;
+                return PartialView("SrbPerson", srbViewModel);
+            }
+
+            if (_appUser.LegalEntity.Country == Country.MNE)
+            {
+                MnePersonEnrichedDto dto = null;
+                if (person == null) dto = new MnePersonEnrichedDto();
+                else dto = dto;
+
+                codeLists = codeLists.Where(a => a.Country == "MNE").ToList();
+
+                var model = new PersonViewModel
+                {
+                    GenderCodeList = codeLists.Where(x => x.Type == "pol").ToList(),
+                    CountryCodeList = codeLists.Where(x => x.Type == "drzava").ToList(),
+                    DocumentTypeCodeList = codeLists.Where(x => x.Type == "isprava").ToList(),
+                    EntryPointCodeList = codeLists.Where(x => x.Type == "prelaz").ToList(),
+                    PersonTypeCodeList = codeLists.Where(x => x.Type == "gost").ToList(),
+                    VisaTypeCodeList = codeLists.Where(x => x.Type == "viza").ToList(),
+                };
+
+                ViewBag.Dto = dto;
+                return PartialView("MnePerson", model);
+            }
+
+            return PartialView();
+        }
 
 		public async Task<ActionResult> ReadMnePersons([DataSourceRequest] DataSourceRequest request, int groupId)
         {
@@ -192,7 +254,8 @@ namespace RegBor.Controllers
             try
             {
                 var newGuest = _mapper.Map<MnePersonDto, MnePerson>(newGuestDto);
-                newGuest.LegalEntityId = _legalEntityId;
+                var property = _db.Properties.FirstOrDefault(a => a.Id == newGuestDto.PropertyId);
+                newGuest.LegalEntityId = property.LegalEntityId;
 
                 var validation = _registerClient.Validate(newGuest, newGuest.CheckIn, newGuest.CheckOut);
 
@@ -275,7 +338,7 @@ namespace RegBor.Controllers
 
             var data = _db.SrbPersons
                 .Where(a => a.LegalEntityId == _legalEntityId)
-                .Where(x => x.GroupId == groupId)
+                .Where(x => x.GroupId == groupId || groupId == 0)
                 .Include(a => a.Property)
                 .OrderByDescending(x => x.Id)
                 .Select(a => new SrbPersonEnrichedDto

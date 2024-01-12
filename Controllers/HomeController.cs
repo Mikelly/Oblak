@@ -16,6 +16,8 @@ namespace Oblak.Controllers
             _client = client;
         }
 
+        [Route("home", Name = "Home")]
+        [Route("/", Name = "Root")]
         public IActionResult Index()
         {
             return View();

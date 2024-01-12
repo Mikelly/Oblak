@@ -38,9 +38,9 @@ builder.Services.AddAuthentication(x =>
 //.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
 .AddCookie(IdentityConstants.ApplicationScheme);
 
-builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+builder.Services.AddIdentityCore<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddRoles<IdentityRole>()
-    .AddSignInManager<Oblak.Identity.SignInManager<ApplicationUser>>()
+    .AddSignInManager<Oblak.Identity.SignInManager<IdentityUser>>()
     .AddRoleManager<RoleManager<IdentityRole>>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();

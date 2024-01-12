@@ -5,7 +5,8 @@
         public int Id { get; set; }
         public int? ExternalId { get; set; }
         public string? Guid { get; set; }
-        public int LegalEntityId { get; set; }
+        public int? LegalEntityId { get; set; }
+        public string? LegalEntityName { get; set; }
         public int PropertyExternalId { get; set; }
         public int PropertyId { get; set; }
         public int GroupId { get; set; }
@@ -48,6 +49,7 @@
     {
         public string? FullName { get; set; } //
         public string? PropertyName { get; set; } //
+        public string? LegalEntity { get; set; } //
         public bool? Registered { get; set; } = true;
         public bool? Locked { get; set; } = true;
         public bool? Deleted { get; set; } = false;

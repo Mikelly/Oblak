@@ -1,0 +1,106 @@
+﻿<link rel="stylesheet" href="css/demo.css">
+<link rel="stylesheet" href="css/sky-mega-menu.css">
+
+<div class="body">
+			
+	<!-- mega menu -->
+	<ul class="sky-mega-menu sky-mega-menu-fixed sky-mega-menu-response-to-icons sky-mega-menu-anim-scale">
+		
+		<!-- home -->
+		<li>
+			<a href="/home"><i class="fa fa-single fa-home"></i></a>
+		</li>
+		<!--/ home -->
+				
+		<!-- prijava gostiju -->
+		<li aria-haspopup="true">
+			<a href="#"><i class="fa fa-bed"></i>Prijava gostiju</a>
+			<div class="grid-container3">
+				<ul>
+					<li><a href="/properties"><i class="fa fa-hotel"></i>Smještajni objekti</a></li>					
+					<li><a href="/groups"><i class="fa fa-user-group"></i>Grupne prijave</a></li>
+					<li><a href="/persons"><i class="fa fa-user"></i>Individualne prijave</a></li>
+					<li><a href="#"><i class="fa fa-file-lines"></i>Knjiga gostiju</a></li>
+					<li><a href="#"><i class="fa fa-percent"></i>Boravišna taksa</a></li>
+				</ul>
+			</div>
+		</li>
+		<!--/ about -->
+				
+		<!-- news -->
+		<li aria-haspopup="true">
+			<a href="#"><i class="fa fa-file-invoice fa-10x"></i>Računi</a>
+			<div class="grid-container3">
+				<ul>
+					<li><a href="#"><i class="fa fa-check"></i>Novi račun</a></li>
+					<li><a href="#"><i class="fa fa-check"></i>Pregled računa</a></li>
+					<li><a href="#"><i class="fa fa-check"></i>Izvještaji</a></li>
+				</ul>
+			</div>
+		</li>
+		<!--/ news -->
+				
+		<!-- podešavanja -->
+		<li aria-haspopup="true">
+			<a href="#"><i class="fa fa-cog"></i>Podešavanja</a>
+			<div class="grid-container3">
+				<ul>
+					<li><a href="#"><i class="fa fa-briefcase"></i>Klijenti</a></li>
+					<li><a href="#"><i class="fa fa-print"></i>Podešavanje računa</a></li>
+					<li><a href="#"><i class="fa fa-credit-card"></i>Kreditne kartice</a></li>
+					<li><a href="#"><i class="fa fa-calculator"></i>Moj POS</a></li>
+				</ul>
+			</div>
+		</li class="right">
+		<!--/ podešavanja -->
+				
+	
+		@if (User.Identity.IsAuthenticated)
+		{
+			<!-- login info -->
+		
+			<li aria-haspopup="true" class="right">
+			<a href="#"><i class="fa fa-user"></i>Dobrodošli <b>@User.Identity.Name.ToLower()</b></a>
+			<div class="grid-container3">
+				<ul>
+					<li><a href="/change-password"><i class="fa fa-key"></i>Promjena lozinke</a></li>
+					<li><a href="/sign-out"><i class="fa fa-right-from-bracket"></i>Odjava</a></li>					
+				</ul>
+			</div>
+		</li class="right">
+
+			<!-- login info -->
+		}
+		else
+		{
+			<!-- login form -->
+			<li aria-haspopup="true" class="right">
+				<a href="/sign-in"><i class="fa fa-sign-in"></i>Prijava</a>
+				<div class="grid-container4">
+					<form action="#">
+						<fieldset>								
+							<section>
+								<label class="input">
+									<i class="fa fa-append fa-user"></i>
+									<input type="text" placeholder="Korisničko ime ili e-mail">
+								</label>
+							</section>
+								
+							<section>
+								<label class="input">
+									<i class="fa fa-append fa-lock"></i>
+									<input type="password" placeholder="Lozinka">
+								</label>
+							</section>
+								
+							<button type="submit" class="button">Prijava</button>
+						</fieldset>						
+					</form>
+				</div>
+			</li>
+			<!--/ login form -->
+		}
+	</ul>
+	<!--/ mega menu -->
+			
+</div>

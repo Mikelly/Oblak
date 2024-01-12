@@ -9,7 +9,7 @@ namespace Oblak.Mappers
     public class SrbPersonViewModelMapper : Profile
     {
         public SrbPersonViewModelMapper() {
-            CreateMap<SrbPerson, SrbPersonViewModel>();
+            CreateMap<SrbPerson, Models.Srb.SrbPersonViewModel>();
         }
     }
 }

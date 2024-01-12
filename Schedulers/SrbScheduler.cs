@@ -25,11 +25,11 @@ namespace Oblak.Schedulers
         {
             var now = DateTime.Now;
 
-            var notSent = _db.SrbPersons
-                .Include(a => a.Group).ThenInclude(a => a.Property).ThenInclude(a => a.LegalEntity)
+            var notSent = _db.SrbPersons                
+                .Include(a => a.Property).ThenInclude(a => a.LegalEntity)                
                 .Where(a => a.CheckedIn == true && a.CheckedOut == false && a.ExternalId != 0)
                 .Where(a => a.PlannedCheckOut != null && a.PlannedCheckOut <= now)
-                .GroupBy(a => a.Group.Property.LegalEntity).ToList();
+                .GroupBy(a => a.Property.LegalEntity).ToList();
 
             foreach (var g in notSent)
             {
@@ -44,9 +44,13 @@ namespace Oblak.Schedulers
                         try
                         {
                             p.CheckOut = DateTime.Now;
-                            var result = await (_registerClient as SrbClient).CheckOut(p);                            
-                            p.CheckedOut = true;
-                            _db.SaveChanges();
+                            var result = await (_registerClient as SrbClient).CheckOut(p);
+                            if (result.errors.Any() == false)
+                            {                                
+                                p.CheckedOut = true;
+                                _db.SaveChanges();
+                            }
+
                             await Task.Delay(100);
                         }
                         catch(Exception ex)

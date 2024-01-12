@@ -5,6 +5,7 @@
         public int Id { get; set; }
         public int? ExternalId { get; set; }
         public int LegalEntityId { get; set; }
+        public string LegalEntityName { get; set; }
         public string Name { get; set; }
         public string? Type { get; set; }
         public string? Address { get; set; }
@@ -27,5 +28,6 @@
     {
         public string? PaymentType { get; set; }
         public string? PropertyName { get; set; }
+        public string? LegalEntity { get; set; }
     }
 }

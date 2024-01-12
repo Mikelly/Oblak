@@ -71,6 +71,7 @@
   <ItemGroup>
     <Folder Include="Connected Services\EFI\" />
     <Folder Include="Middleware\" />
+    <Folder Include="Reports\" />
     <Folder Include="wwwroot\temp\" />
     <Folder Include="wwwroot\templates\" />
   </ItemGroup>

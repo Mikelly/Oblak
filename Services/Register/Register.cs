@@ -18,7 +18,11 @@ namespace Oblak.Services
         protected ApplicationDbContext _db;        
         protected eMailService _eMailService;
         protected SelfRegisterService _selfRegisterService;
+<<<<<<< HEAD
         protected IWebHostEnvironment _env;
+=======
+        protected IWebHostEnvironment _webHostEnvironment;
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         protected IHubContext<MessageHub> _messageHub;
         protected LegalEntity _legalEntity;
 
@@ -34,8 +38,13 @@ namespace Oblak.Services
             _db = db;            
             _eMailService = eMailService;
             _selfRegisterService = selfRegisterService;
+<<<<<<< HEAD
             _env = webHostEnvironment;
             _messageHub = messageHub;            
+=======
+            _webHostEnvironment = webHostEnvironment;
+            _messageHub = messageHub;
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         }
 
         
@@ -59,6 +68,7 @@ namespace Oblak.Services
 
         public abstract Task<object> Properties(LegalEntity legalEntity);
 
+<<<<<<< HEAD
 		public abstract Task ConfirmationGroupMail(Group group, string email);
 
         public abstract Task<Stream> ConfirmationGroupPdf(Group group);
@@ -66,6 +76,11 @@ namespace Oblak.Services
         public abstract Task ConfirmationPersonMail(Person person, string email);
 
         public abstract Task<Stream> ConfirmationPersonPdf(Person person);
+=======
+		public abstract Task CertificateMail(Group group, string email);
+
+        public abstract Task<Stream> CertificatePdf(Group group);        
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
         public abstract Task SendGuestToken(int propertyId, int? unitId, string email, string phoneNo, string lang);
 

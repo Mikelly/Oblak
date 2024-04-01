@@ -1,8 +1,12 @@
+<<<<<<< HEAD
 ﻿using Humanizer;
 using Oblak.Data;
 using System.ComponentModel.DataAnnotations;
 
 namespace Oblak.Models.Api
+=======
+﻿namespace Oblak.Models.Api
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 {
     public class MnePersonDto
     {
@@ -13,7 +17,11 @@ namespace Oblak.Models.Api
         public string? LegalEntityName { get; set; }
         public int PropertyExternalId { get; set; }
         public int PropertyId { get; set; }
+<<<<<<< HEAD
         public int? GroupId { get; set; }
+=======
+        public int GroupId { get; set; }
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         public int? UnitId { get; set; }
         public string LastName { get; set; } // 
         public string FirstName { get; set; } //
@@ -47,6 +55,7 @@ namespace Oblak.Models.Api
         public string? EntryPoint { get; set; }
         public DateTime? EntryPointDate { get; set; }
         public string? Other { get; set; }
+<<<<<<< HEAD
         public int? ResTaxTypeId { get; set; }        
         public int? ResTaxPaymentTypeId { get; set; }
         public decimal? ResTaxAmount { get; set; }
@@ -161,6 +170,8 @@ namespace Oblak.Models.Api
 
             return enriched;
         }
+=======
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
     }
 
     public class MnePersonEnrichedDto : MnePersonDto

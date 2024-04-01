@@ -1,7 +1,12 @@
 ﻿namespace Oblak.Models.Api
 {
+<<<<<<< HEAD
 	public class MrzDto
 	{
+=======
+    public class MrzDto
+    {
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 		public string? DocType { get; set; }
 		public string? DocNumber { get; set; }
 		public string? DocExpiry { get; set; }
@@ -14,6 +19,7 @@
 		public string? HolderDateOfBirth { get; set; }
 		public string? HolderSex { get; set; }
 		public string? HolderNumber { get; set; }
+<<<<<<< HEAD
 
 		public DateTime DocExpiryDate()
 		{
@@ -61,4 +67,7 @@
         }
 
     }
+=======
+	}
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 }

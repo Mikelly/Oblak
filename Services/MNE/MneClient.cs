@@ -27,7 +27,10 @@ using AutoMapper;
 using Oblak.Data.Enums;
 using Telerik.Documents.Common.Model;
 using Telerik.Windows.Documents.Flow.Model.Styles;
+<<<<<<< HEAD
 using Humanizer;
+=======
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
 namespace Oblak.Services.MNE
 {
@@ -43,7 +46,10 @@ namespace Oblak.Services.MNE
 
         public MneClient(
             IConfiguration configuration,
+<<<<<<< HEAD
             IHttpContextAccessor httpContextAccessor,
+=======
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             ILogger<MneClient> logger,            
             mup rb90client,
             ApplicationDbContext db,
@@ -54,6 +60,7 @@ namespace Oblak.Services.MNE
         {
             _logger = logger;            
             _rb90client = rb90client;
+<<<<<<< HEAD
             _context = httpContextAccessor.HttpContext;
 
             var username = _context.User.Identity!.Name;
@@ -62,6 +69,15 @@ namespace Oblak.Services.MNE
                 _user = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username)!;
                 if (_user != null) _legalEntity = _user.LegalEntity;
             }
+=======
+            
+            //var username = _context.User.Identity!.Name;
+            //if (username != null)
+            //{
+            //    _user = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username)!;
+            //    if(_user != null) _legalEntity = _user.LegalEntity;
+            //}
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         }
 
         public (user, smjestajniObjekat[], X509Certificate2) Auth(LegalEntity legalEntity)
@@ -151,6 +167,7 @@ namespace Oblak.Services.MNE
 						});
 					}
 
+<<<<<<< HEAD
 					var error = sendOne2Mup(pr, false);
                     if (error != null)
                     {
@@ -159,6 +176,11 @@ namespace Oblak.Services.MNE
                     }
                     _db.SaveChanges();
                     await Task.Delay(100);                    
+=======
+                    var error = sendOne2Mup(pr, false);
+                    if (error != null) pr.Error = error;
+                    Thread.Sleep(100);
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
                 }
 
                 if (_context != null)
@@ -778,8 +800,12 @@ namespace Oblak.Services.MNE
 			_db.SaveChanges();
 
 			return mnePerson;
+<<<<<<< HEAD
 		}        
 
+=======
+		}
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
 		public override List<PersonErrorDto> Validate(Group group, DateTime? checkInDate, DateTime? checkOutDate)
         {
@@ -854,7 +880,10 @@ namespace Oblak.Services.MNE
             }
         }
 
+<<<<<<< HEAD
         /*
+=======
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         public async Task<Document> CreateInvoice(Group g, PaymentType? pay)
         { 
             var doc = new Document();
@@ -864,7 +893,11 @@ namespace Oblak.Services.MNE
             doc.InvoiceDate = DateTime.Now;
             doc.BusinessUnitCode = g.Property.BusinessUnitCode;
             doc.FiscalEnuCode = g.Property.FiscalEnuCode;
+<<<<<<< HEAD
             doc.OperatorCode = _user.EfiOperator;
+=======
+            doc.OperatorCode = _user.EfiOperator;            
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
             var person = g.Persons.First() as MnePerson;
 
@@ -888,14 +921,22 @@ namespace Oblak.Services.MNE
             var boravak = g.Persons.Select(a => a as MnePerson).ToList().Select(a => new
             {
                 Item = bor,
+<<<<<<< HEAD
                 Quant = Math.Round(((a.CheckOut ?? DateTime.Now) - a.CheckIn).TotalDays, 0),
+=======
+                Quant = ((a.CheckOut ?? DateTime.Now) - a.CheckIn).TotalDays,
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
                 Price = a.Property.Price ?? 1m
             }).ToList();
 
             var taxes = g.Persons.Select(a => a as MnePerson).ToList().Select(a => new
             {
                 Item = btax,
+<<<<<<< HEAD
                 Quant = Math.Round(((a.CheckOut ?? DateTime.Now) - a.CheckIn).TotalDays, 0),
+=======
+                Quant = ((a.CheckOut ?? DateTime.Now) - a.CheckIn).TotalDays,
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
                 Price = (a.Property.ResidenceTax ?? 1) * (new DateTime(1, 1, 1) + (DateTime.Now - a.BirthDate)).Year - 1 switch { >= 18 => 1m, >= 12 => 0.5m, _ => 0m }
             }).ToList();
 
@@ -918,9 +959,12 @@ namespace Oblak.Services.MNE
                 _db.SaveChanges();
             }
 
+<<<<<<< HEAD
             doc.Amount = doc.DocumentItems.Select(a => a.LineTotal).Sum();
             _db.SaveChanges();
 
+=======
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             Payment(doc, pay ?? PaymentType.Cash);
 
             return doc;
@@ -993,7 +1037,10 @@ namespace Oblak.Services.MNE
                 _db.SaveChanges();
             }
         }
+<<<<<<< HEAD
         */
+=======
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
         public async Task<Stream> InvoicePdf(Document doc, string output = "pdf")
         {

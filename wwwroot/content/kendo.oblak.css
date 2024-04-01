@@ -29,6 +29,7 @@
     left: 2px !important;
 }
 
+<<<<<<< HEAD
 .k-command-cell.k-table-td
 {
     padding: 3px 6px 3px 8px!important;
@@ -71,6 +72,44 @@
     margin: 0px !important;
     padding: 2px !important;
     margin-left: 5px !important;
+=======
+.k-button.k-button-icontext.k-grid-edit {
+    min-width: 0px !important;
+    min-height: 0px !important;
+    width: 25px !important;
+    height: 23px !important;
+    margin: 0px !important;
+    padding: 0px !important;
+}
+
+.k-button.k-button-icontext.k-grid-update {
+    min-width: 0px !important;
+    min-height: 0px !important;
+    width: 25px !important;
+    height: 23px !important;
+    margin: 0px !important;
+    padding: 0px !important;
+}
+
+/* css za delete dugme */
+.k-button.k-button-icontext.k-grid-delete {
+    min-width: 0px !important;
+    min-height: 0px !important;
+    width: 25px !important;
+    height: 23px !important;
+    margin: 0px !important;
+    padding: 0px !important;
+    margin-left: 4px !important;
+}
+
+.k-button.k-button-icontext.k-grid-cancel {
+    min-width: 0px !important;
+    min-height: 0px !important;
+    width: 25px !important;
+    height: 23px !important;
+    margin: 0px !important;
+    padding: 0px !important;
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 }
 
 .k-grid-cancel {
@@ -123,9 +162,15 @@ th.k-header .k-link {
     -----------------------------------------------------
 */
 
+<<<<<<< HEAD
 /*.k-window-titlebar {
     padding: 0px 16px; 
 }*/
+=======
+.k-window-titlebar {
+    padding: 0px 16px; 
+}
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
 
 /*
@@ -169,6 +214,7 @@ label, input {
 span[role="option"].k-input 
 {
     width:calc(100% - 30px);
+<<<<<<< HEAD
 }
 
 
@@ -217,4 +263,6 @@ span.k-column-title {
 
 th[colspan] span.k-link {
     justify-content:center!important;
+=======
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 }

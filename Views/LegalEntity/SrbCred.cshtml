@@ -1,7 +1,12 @@
 ﻿
 <script type="text/javascript">
+<<<<<<< HEAD
 	function setCred(e) {
 		//e.preventDefault();
+=======
+	function SetCred(e) {
+		e.preventDefault();
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 		$.ajax({
 			url: '/srb-cred',
 			type: 'POST',
@@ -20,6 +25,7 @@
 
 <form id="frmSrbCred">
 	<div>
+<<<<<<< HEAD
 		<input type="hidden" id="legalEntity" name="legalEntity" value="@ViewBag.LegalEntity" />
 
 		<div style="margin-bottom:20px; margin-top:10px">
@@ -46,6 +52,24 @@
 				.Content("<div style='display:flex;align-items:center; justify-content:space-between;'><img style='width:35px;height:35px;text-align:center; position:relative; top:0px;' src='/Content/Icons/key-security.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>Podesi kredencijale</div></div>")
 				.HtmlAttributes(new { onclick = "setCred()", type = "button", style = "width:200px; height:50px;" })
 				)
+=======
+		<label for="username">Eturista korisničko ime</label>
+		@Html.Kendo().TextBox().Name("txtSrbUsername").HtmlAttributes(new { name = "username", style = "width:100%" }).Value(ViewBag.UserName)
+
+		<label for="password">Eturista lozinka</label>
+		@Html.Kendo().TextBox().Name("txtSrbPassword").HtmlAttributes(new { name = "password", style = "width:100%" }).Value(ViewBag.Password)
+
+		<input type="hidden" id="legalEntity" name="legalEntity" value="@ViewBag.LegalEntity" />
+
+		<br /><br />
+
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			@(Html.Kendo().Button().Name("btnSrbCred")
+						.Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/validated_color.png'></img>")
+						.HtmlAttributes(new { onclick = "SetCred(event)", style = "width:80px; height:80px; border-radius:50%; margin-top: 10px;" })
+						)
+			<div style="margin-top:3px;"><b>Podesi kredencijale</b></div>
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 		</div>
 		
 	</div>

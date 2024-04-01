@@ -16,7 +16,10 @@ namespace Oblak.Controllers
             _client = client;
         }
 
+<<<<<<< HEAD
         [HttpGet]
+=======
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         [Route("home", Name = "Home")]
         [Route("/", Name = "Root")]
         public IActionResult Index()

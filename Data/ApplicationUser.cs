@@ -19,9 +19,12 @@ namespace Oblak.Data
         [StringLength(450)]
         public string? EfiOperator { get; set; }
 
+<<<<<<< HEAD
         [StringLength(450)]
         public string? PersonName { get; set; }
 
+=======
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         public int? CheckInPointId { get; set; }
 
 

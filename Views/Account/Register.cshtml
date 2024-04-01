@@ -29,11 +29,23 @@
     <div id="validation-success"></div>
     @(
         Html.Kendo().Form<RegisterViewModel>()
-            .Name("formExample")            
-            .HtmlAttributes(new { Route = "register", action = "Register", method = "POST" })
+        .Name("formExample")
+        .HtmlAttributes(new { Route = "register", action = "Register", method = "POST" })
+        .Layout("grid")
+        .Validatable(v =>
+        {
+            v.ValidateOnBlur(true);
+            v.ValidationSummary(vs => vs.Enable(false));
+        })
+        .Items(items =>
+        {
+            items.AddGroup()
+            .Label("Korisnik")
             .Layout("grid")
-            .Validatable(v =>
+            .Grid(a => a.Cols(2).Gutter(30))
+            .Items(i =>
             {
+<<<<<<< HEAD
                 v.ValidateOnBlur(true);
                 v.ValidationSummary(vs => vs.Enable(false));
             })
@@ -52,6 +64,15 @@
                     i.Add().Field(f => f.Password).Label(l => l.Text("Lozinka:"));
                     i.Add().Field(f => f.ConfirmPassword).Label(l => l.Text("Potvrdite lozinku:"));  
                 });
+=======
+                i.Add().Field(f => f.Email).Label(l => l.Text("e-Mail:"));
+                i.Add().Field(f => f.PhoneNumber).Label(l => l.Text("Broj telefona:"));
+                i.Add().Field(f => f.Country).Editor(e => e.DropDownList().BindTo(countries.ToList()).DataValueField("Item1").DataTextField("Item2")).Label(l => l.Text("Država:"));
+                i.Add().Field(f => f.UserName).Label(l => l.Text("Korisničko ime:"));
+                i.Add().Field(f => f.Password).Label(l => l.Text("Lozinka:"));
+                i.Add().Field(f => f.ConfirmPassword).Label(l => l.Text("Potvrdite lozinku:"));
+            });
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
                 items.AddGroup()
                 .Label("Pravni subjekat")

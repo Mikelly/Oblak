@@ -284,7 +284,10 @@ namespace Oblak.Controllers
 			return Ok();
 		}
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 		[HttpPost("remove-role-from-user")]
 		public async Task<IActionResult> RemoveRoleFromUser(string roleName, string userName)
 		{
@@ -294,6 +297,7 @@ namespace Oblak.Controllers
 
 			return Ok();
 		}
+<<<<<<< HEAD
 
 
         [HttpGet("roles-admin")]
@@ -507,4 +511,7 @@ namespace Oblak.Controllers
             return Ok();
         }
     }
+=======
+	}
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 }

@@ -69,8 +69,11 @@ public class EfiClient
 
         var enu = _db.FiscalEnu.FirstOrDefault(a => a.FiscalEnuCode == doc.FiscalEnuCode)!;
 
+<<<<<<< HEAD
         if(doc.InvoiceDate.Date != DateTime.Now.Date) doc.InvoiceDate = DateTime.Now.Date;
 
+=======
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         if (doc.TypeOfInvoce == TypeOfInvoice.Cash && enu.AutoDeposit.HasValue)
         {
             var deposit = _db.FiscalRequests.Any(a => a.FiscalEnuCode == doc.FiscalEnuCode && a.FicalizationDate.Date == doc.InvoiceDate.Date && a.RequestType == Data.Enums.FiscalRequestType.RegisterCashDeposit && a.FCDC != null);
@@ -123,16 +126,21 @@ public class EfiClient
             fr.FicalizationDate = request.Header.SendDateTime;
             fr.Status = "A";
             doc.Status = DocumentStatus.Active;            
+<<<<<<< HEAD
             doc.IIC = request.Invoice.IIC;
             doc.Amount = request.Invoice.TotPrice;
             doc.FiscalNo = request.Invoice.InvNum;
             doc.FiscalizationDate = request.Header.SendDateTime;
+=======
+            doc.IIC = request.Invoice.IIC;     
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             fr.Request = xml;            
             fr.IIC = request.Invoice.IIC;
 
             var inv = request.Invoice;
             var d = inv.IssueDateTime;
             var dtm = $"{d.ToString("yyyy")}-{d.ToString("MM")}-{d.ToString("dd")}T{d.ToString("HH")}:{d.ToString("mm")}:{d.ToString("ss")}{d.ToString("zzz")}";
+<<<<<<< HEAD
             var qrurl = GetFiscalParameter("QR", _appUser!.LegalEntity.Test);
             doc.Qr = $@"{qrurl}/ic/#/verify?iic={inv.IIC}&tin={inv.Seller.IDNum}&crtd={dtm}&ord={inv.InvOrdNum}&bu={inv.BusinUnitCode}&cr={inv.TCRCode}&sw={inv.SoftCode}&prc={inv.TotPrice.ToString("n2", System.Globalization.CultureInfo.GetCultureInfo("en-US")).Replace(",", "")}";
             _db.SaveChanges();
@@ -141,6 +149,16 @@ public class EfiClient
             //var path = Path.Combine(_env.WebRootPath, $"QR/{doc.Id}.png");
             //qr.SaveAsPng(path, 10, 3);
             //_db.SaveChanges();
+=======
+            var qrurl = GetFiscalParameter("QR");
+            doc.Qr = $@"{qrurl}/ic/#/verify?iic={inv.IIC}&tin={inv.Seller.IDNum}&crtd={dtm}&ord={inv.InvOrdNum}&bu={inv.BusinUnitCode}&cr={inv.TCRCode}&sw={inv.SoftCode}&prc={inv.TotPrice.ToString("n2", System.Globalization.CultureInfo.GetCultureInfo("en-US")).Replace(",", "")}";
+            _db.SaveChanges();
+
+            var qr = QrCode.EncodeText(doc.Qr, QrCode.Ecc.Medium);
+            var path = Path.Combine(_env.WebRootPath, $"QR/{doc.Id}.png");
+            qr.SaveAsPng(path, 10, 3);
+            _db.SaveChanges();
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             
             response = client.registerInvoice(request);
                         
@@ -148,7 +166,12 @@ public class EfiClient
             fr.FIC = response.FIC.ToUpper().Replace("-", "");
             fr.Status = "F";
             doc.FIC = fr.FIC;
+<<<<<<< HEAD
             doc.Status = DocumentStatus.Fiscalized;              
+=======
+            doc.Status = DocumentStatus.Fiscalized;
+            doc.FIC = fr.FIC;                
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             _db.SaveChanges();
         }
         catch (Exception excp)
@@ -314,7 +337,11 @@ public class EfiClient
         inv.Invoice.Seller.Address = _appUser.LegalEntity.Address;
         
         inv.Invoice.Buyer = new EfiService.BuyerType();
+<<<<<<< HEAD
         if ((doc.PartnerIdNumber ?? "") != "" && (doc.PartnerIdType.ToString() ?? "") != "" && (doc.PartnerName ?? "") != "")
+=======
+        if (doc.PartnerIdNumber != null && doc.PartnerIdType != null && doc.PartnerName != null)
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         {
             inv.Invoice.Buyer.IDType = doc.PartnerIdType switch
             { 

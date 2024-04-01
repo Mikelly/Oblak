@@ -17,7 +17,11 @@ namespace Oblak.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
+<<<<<<< HEAD
                 .HasAnnotation("ProductVersion", "8.0.1")
+=======
+                .HasAnnotation("ProductVersion", "8.0.0")
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -972,9 +976,12 @@ namespace Oblak.Migrations
                     b.Property<int?>("PartnerId")
                         .HasColumnType("int");
 
+<<<<<<< HEAD
                     b.Property<int?>("PassThroughId")
                         .HasColumnType("int");
 
+=======
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
                     b.Property<byte[]>("Rb90CertData")
                         .HasColumnType("varbinary(max)");
 
@@ -1031,6 +1038,7 @@ namespace Oblak.Migrations
 
                     b.HasIndex("PartnerId");
 
+<<<<<<< HEAD
                     b.HasIndex("PassThroughId");
 
                     b.ToTable("LegalEntities");
@@ -1076,6 +1084,11 @@ namespace Oblak.Migrations
                     b.ToTable("Municipality");
                 });
 
+=======
+                    b.ToTable("LegalEntities");
+                });
+
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             modelBuilder.Entity("Oblak.Data.Partner", b =>
                 {
                     b.Property<int>("Id")
@@ -1093,14 +1106,18 @@ namespace Oblak.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+<<<<<<< HEAD
                     b.Property<byte[]>("Logo")
                         .HasColumnType("varbinary(max)");
 
+=======
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+<<<<<<< HEAD
                     b.Property<string>("PartnerType")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
@@ -1120,6 +1137,11 @@ namespace Oblak.Migrations
                     b.Property<string>("ResidenceTaxName")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
+=======
+                    b.Property<string>("Reference")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
                     b.Property<string>("TIN")
                         .HasMaxLength(450)
@@ -1924,6 +1946,7 @@ namespace Oblak.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+<<<<<<< HEAD
                     b.Property<decimal?>("ResTaxFee")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -1933,6 +1956,10 @@ namespace Oblak.Migrations
 
                     b.Property<int?>("ResTaxTypeId")
                         .HasColumnType("int");
+=======
+                    b.Property<string>("ResTaxType")
+                        .HasColumnType("nvarchar(max)");
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
                     b.Property<string>("VisaIssuePlace")
                         .HasMaxLength(450)
@@ -2304,6 +2331,7 @@ namespace Oblak.Migrations
                         .WithMany("LegalEntities")
                         .HasForeignKey("PartnerId");
 
+<<<<<<< HEAD
                     b.HasOne("Oblak.Data.LegalEntity", "PassThrough")
                         .WithMany()
                         .HasForeignKey("PassThroughId");
@@ -2313,6 +2341,11 @@ namespace Oblak.Migrations
                     b.Navigation("Partner");
 
                     b.Navigation("PassThrough");
+=======
+                    b.Navigation("Administrator");
+
+                    b.Navigation("Partner");
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
                 });
 
             modelBuilder.Entity("Oblak.Data.Person", b =>
@@ -2514,11 +2547,14 @@ namespace Oblak.Migrations
                     b.Navigation("ResTaxes");
                 });
 
+<<<<<<< HEAD
             modelBuilder.Entity("Oblak.Data.Municipality", b =>
                 {
                     b.Navigation("Properties");
                 });
 
+=======
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             modelBuilder.Entity("Oblak.Data.Partner", b =>
                 {
                     b.Navigation("LegalEntities");

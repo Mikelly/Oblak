@@ -41,6 +41,7 @@ namespace Oblak.Models.Account
         public bool LegalEntityInVat { get; set; }
 
         public string? Reference { get; set; }
+<<<<<<< HEAD
     }
 
     public class AccountViewModel
@@ -64,5 +65,7 @@ namespace Oblak.Models.Account
         public string? Type { get; set; }
 
         public int? CheckInPointId { get; set; }
+=======
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
     }
 }

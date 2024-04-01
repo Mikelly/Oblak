@@ -21,8 +21,11 @@ namespace Oblak.Data
 
         public int? AdministratorId { get; set; }
 
+<<<<<<< HEAD
         public int? PassThroughId { get; set; }
 
+=======
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         [StringLength(450)]
         public string Name { get; set; }
 
@@ -101,15 +104,23 @@ namespace Oblak.Data
         
         public List<Document> Documents { get; set; }
         
+<<<<<<< HEAD
         public List<ResTaxCalc> ResTaxes { get; set; }
+=======
+        public List<ResTax> ResTaxes { get; set; }
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
         public Partner Partner { get; set; }
 
 		public LegalEntity Administrator { get; set; }
 
+<<<<<<< HEAD
         public LegalEntity PassThrough { get; set; }
 
         public List<LegalEntity> Clients { get; set; }
+=======
+		public List<LegalEntity> Clients { get; set; }
+>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
 		#endregion
 	}

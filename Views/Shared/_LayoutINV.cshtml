@@ -20,28 +20,60 @@
 }
 
 <!DOCTYPE html>
-<html>
+<html style="font-size:14px;">
 <head>
     <title>@ViewBag.Title</title>
 
-    <link href="@Url.Content("~/Content/menu.css")" rel="stylesheet" type="text/css" />
-    <link href="https://cdn.kendostatic.com/2021.3.1207/styles/kendo.common-bootstrap.min.css" rel="stylesheet" type="text/css" />
-    <link href="https://cdn.kendostatic.com/2021.3.1207/styles/kendo.bootstrap-main.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.kendostatic.com/2021.3.1207/js/jquery.min.js"></script>
-    <script src="https://cdn.kendostatic.com/2021.3.1207/js/jszip.min.js"></script>
-    <script src="https://cdn.kendostatic.com/2021.3.1207/js/kendo.all.min.js"></script>
-    <script src="https://cdn.kendostatic.com/2021.3.1207/js/kendo.aspnetmvc.min.js"></script>
+    <link href="https://kendo.cdn.telerik.com/themes/7.0.2/default/default-ocean-blue.css" rel="stylesheet" type="text/css" />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://unpkg.com/jszip/dist/jszip.min.js"></script>
+    <script src="https://cdn.kendostatic.com/2024.1.130/js/kendo.all.min.js"></script>
+    <script src="https://cdn.kendostatic.com/2024.1.130/js/kendo.aspnetmvc.min.js"></script>
+    <script src="./kendo-ui-license.js"></script>
+
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@10"></script>
 
     <link href="/fontawesome6/css/fontawesome.css" rel="stylesheet">
     <link href="/fontawesome6/css/brands.css" rel="stylesheet">
     <link href="/fontawesome6/css/solid.css" rel="stylesheet">
 
-
     <script src="@Url.Content("~/Scripts/kendo.culture.sr-Latn-ME.min.js")"></script>
     <script src="@Url.Content("~/Scripts/kendo.messages.sr-Latn-ME.min.js")"></script>
 
-    <link href="@Url.Content("~/Content/SiteSAP.css")" rel="stylesheet" type="text/css" />
+@*     <link href="@Url.Content("~/Content/SiteSAP.css")" rel="stylesheet" type="text/css" />
+    <link href="@Url.Content("~/Content/menu.css")" rel="stylesheet/less" type="text/css" /> *@
+    <link href="@Url.Content("~/Content/kendo.oblak.css")" rel="stylesheet" type="text/css" />
+    
+
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans&display=swap" rel="stylesheet">    
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Display:ital,wght@0,100..900;1,100..900&family=Noto+Sans+Mono:wght@100..900&display=swap" rel="stylesheet">
+@* 
+    <link href="@Url.Content("~/Content/menu.css")" rel="stylesheet" type="text/css" />
+
+    <link href="https://kendo.cdn.telerik.com/themes/7.0.2/default/default-ocean-blue.css" rel="stylesheet" type="text/css" />
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://unpkg.com/jszip/dist/jszip.min.js"></script>
+    <script src="https://cdn.kendostatic.com/2024.1.130/js/kendo.all.min.js"></script> *@
+
+@*     <link href="https://cdn.kendostatic.com/2021.3.1207/styles/kendo.common-bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.kendostatic.com/2021.3.1207/styles/kendo.bootstrap-main.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.kendostatic.com/2021.3.1207/js/jquery.min.js"></script>
+    <script src="https://cdn.kendostatic.com/2021.3.1207/js/jszip.min.js"></script>
+    <script src="https://cdn.kendostatic.com/2021.3.1207/js/kendo.all.min.js"></script>
+    <script src="https://cdn.kendostatic.com/2021.3.1207/js/kendo.aspnetmvc.min.js"></script> *@
+    
+@*     <script src="//cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+
+    <link href="/fontawesome6/css/fontawesome.css" rel="stylesheet">
+    <link href="/fontawesome6/css/brands.css" rel="stylesheet">
+    <link href="/fontawesome6/css/solid.css" rel="stylesheet"> *@
+
+
+@*     <script src="@Url.Content("~/Scripts/kendo.culture.sr-Latn-ME.min.js")"></script>
+    <script src="@Url.Content("~/Scripts/kendo.messages.sr-Latn-ME.min.js")"></script> *@
+
+@*     <link href="@Url.Content("~/Content/SiteSAP.css")" rel="stylesheet" type="text/css" />
     <link href="@Url.Content("~/Content/menu.css")" rel="stylesheet/less" type="text/css" />
     <link href="@Url.Content("~/Content/kendo.oblak.css")" rel="stylesheet" type="text/css" />
     
@@ -54,6 +86,7 @@
     <link href="https://fonts.googleapis.com/css?family=Mada" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Rubik&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Lexend+Exa&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans&display=swap" rel="stylesheet"> *@
 
     <script type="text/kendo-template" id="kendo_error_message">
         <div class="k-widget k-tooltip k-tooltip-validation field-validation-error" onclick="$(this).hide()" style="margin: 0.5em; display:block; cursor:pointer;" data-for="#=field#" data-valmsg-for="#=field#" id="#=field#_validationMessage">
@@ -82,11 +115,11 @@
 
     </style>
 </head>
-<body>
+<body style="font-family: 'Noto Sans Display', sans-serif; font-size:0.875rem!important; position: fixed; top: 0px; left: 0px; right: 0px; bottom: 0px;">
     
-    @Html.Partial("_Menu");
+    @Html.Partial("_Menu")
 
-    <div class="grid-wrapper" id="body">
+    <div class="grid-wrapper" id="body" style="position: fixed; top: 45px; left: 0px; right: 0px; bottom: 0px;">
         @RenderBody()
     </div>
 

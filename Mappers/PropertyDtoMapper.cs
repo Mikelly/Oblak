@@ -16,8 +16,11 @@ namespace Oblak.Mappers
     {
         public PropertyEnrichedDtoMapper()
         {
-            CreateMap<Property, PropertyEnrichedDto>()
-                .ReverseMap();
+            CreateMap<PropertyEnrichedDto, Property>()
+                .ReverseMap()
+                .ForMember(a => a.PropertyName, opt => opt.Ignore())
+                .ForMember(a => a.PaymentType, opt => opt.Ignore())
+                .ForMember(a => a.LegalEntity, opt => opt.Ignore());
         }
     }
 }

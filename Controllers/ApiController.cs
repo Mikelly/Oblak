@@ -4,7 +4,7 @@ using Oblak.Data;
 using Microsoft.AspNetCore.Identity;
 using Oblak.Services;
 using Oblak.Services.MNE;
-using Oblak.Models.rb90;
+using Oblak.Models.EFI;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using Oblak.Helpers;
@@ -20,6 +20,8 @@ using Oblak.Data.Enums;
 using RB90;
 using Oblak.Filters;
 using Oblak.Services.FCM;
+using System;
+using static SQLite.SQLite3;
 
 namespace Oblak.Controllers
 {
@@ -27,8 +29,8 @@ namespace Oblak.Controllers
     [Route("api")]
     public class ApiController : Controller
     {        
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly UserManager<IdentityUser> _userManager;
         private readonly ILogger<ApiController> _logger;        
         private readonly ApplicationDbContext db;
         private readonly IWebHostEnvironment _env;
@@ -36,6 +38,7 @@ namespace Oblak.Controllers
         private readonly DocumentService _documentService;   
         private readonly EfiClient _efiClient;
         private readonly IMapper _mapper;
+        private readonly IConfiguration _config;
         private readonly Register _registerClient;
         private readonly LegalEntity _legalEntity;
         private ApplicationUser _appUser;   
@@ -44,11 +47,12 @@ namespace Oblak.Controllers
         public ApiController(   
             IServiceProvider serviceProvider,
             IHttpContextAccessor httpContextAccessor,
-            SignInManager<ApplicationUser> signInManager,
-            UserManager<ApplicationUser> userManager,
+            SignInManager<IdentityUser> signInManager,
+            UserManager<IdentityUser> userManager,
             ILogger<ApiController> logger,            
             ApplicationDbContext db,
             IWebHostEnvironment env,
+            IConfiguration config,
             eMailService eMailService,
             MneClient rb90Client,
             SrbClient srbClient,            
@@ -64,7 +68,7 @@ namespace Oblak.Controllers
             this.db = db;
             _env = env;
             _eMailService = eMailService;
-       
+            _config = config;       
             _mapper = mapper;
             _efiClient = efiClient;
             _documentService = documentService;
@@ -72,7 +76,7 @@ namespace Oblak.Controllers
             var username = httpContextAccessor.HttpContext?.User?.Identity?.Name;
             if (username != null)
             {
-                _appUser = db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.Properties).FirstOrDefault(a => a.UserName == username)!;
+                _appUser = db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.Properties).AsNoTracking().FirstOrDefault(a => a.UserName == username)!;
                 if (_appUser != null)
                 {
                     _legalEntity = _appUser.LegalEntity;
@@ -110,6 +114,7 @@ namespace Oblak.Controllers
                     var u = await _userManager.FindByNameAsync(username);
                     roles = (await _userManager.GetRolesAsync(u)).ToList();
                     await _signInManager.SignInAsync(user, true);
+                    _logger.LogInformation($"User Logged In: {username}");
                 }
                 else
                 {                    
@@ -222,9 +227,9 @@ namespace Oblak.Controllers
 
         [HttpGet]
         [Route("items")]
-        public async Task<ActionResult> Itmes()
+        public async Task<ActionResult<List<ItemDto>>> Itmes()
         {            
-            return Json(db.Items.Where(a => a.LegalEntityId == _appUser.LegalEntityId).Select(a => new { ID = a.Id, Naziv = a.Name, JedinicaMjere = a.Unit, Sifra = a.Code, Porez = a.VatRate, Cijena = a.Price }));
+            return Json(db.Items.Where(a => a.LegalEntityId == _appUser.LegalEntityId).Select(a => new ItemDto { Id = a.Id, Name = a.Name, Unit = a.Unit, Code = a.Code, VatRate = a.VatRate, Price = a.Price, PriceInclVat = a.PriceInclVat, Description = a.Description, LegalEntityId = a.LegalEntityId, VatExempt = a.VatExempt.ToString() }));
         }
 
         [HttpGet]
@@ -238,7 +243,8 @@ namespace Oblak.Controllers
         [Route("groupList")]
         public async Task<ActionResult<List<GroupEnrichedDto>>> Groups(int page = 1)
         {
-            await _registerClient.Authenticate(_legalEntity);
+            //await _registerClient.Authenticate(_legalEntity);
+            await _registerClient.Initialize(_legalEntity);
             var legalEntities = await _registerClient.GetLegalEntities();
             var ids = legalEntities.Select(a => a.Id).ToArray();
 
@@ -277,9 +283,23 @@ namespace Oblak.Controllers
         [Route("groupGet")]
         public async Task<ActionResult<GroupEnrichedDto>> GroupGet(int id)
         {
-            var m = db.Groups.SingleOrDefault(a => a.Id == id);
+            var m = db.Groups.Include(a => a.Persons).Select(a => new GroupEnrichedDto() { 
+                Id = a.Id,
+                CheckIn = a.CheckIn,
+                CheckOut = a.CheckOut,
+                Status = a.Status,
+                LegalEntityId = a.LegalEntityId,
+                UnitId = a.UnitId,
+                GUID = a.Guid,
+                Guests = db.GuestList(a.Id),
+                PropertyName = a.Property.Name,
+                Email = a.Email,
+                Date = a.Date,
+                PropertyId = a.Property.Id,
+                NoOfGuests = a.Persons.Count()
+            }).SingleOrDefault(a => a.Id == id);            
 
-            return _mapper.Map<GroupEnrichedDto>(m);
+            return m;
         }
 
 
@@ -287,7 +307,7 @@ namespace Oblak.Controllers
         [Route("groupDelete")]
         public ActionResult<BasicDto> GroupDelete(int id)
         {
-            var group = db.Groups.SingleOrDefault(a => a.Id == id)!;
+            var group = db.Groups.Include(a => a.Persons).SingleOrDefault(a => a.Id == id)!;
 
             if (group.Persons.Any())
             {
@@ -300,6 +320,49 @@ namespace Oblak.Controllers
                 db.SaveChanges();
                 return new BasicDto() { error = "", info = "Uspješno obrisana prijava" };
             }
+        }
+
+        [HttpGet]
+        [Route("personDelete")]
+        public async Task<ActionResult<BasicDto>> PersonDelete(int id)
+        {
+            Person person = null;
+
+            if (_registerClient is SrbClient)
+            {
+                person = db.SrbPersons.FirstOrDefault(p => p.Id == id);                
+            }
+
+            if (_registerClient is MneClient)
+            {
+                person = db.MnePersons.FirstOrDefault(p => p.Id == id);                
+            }
+
+            var dto = await _registerClient.PersonDelete(person);
+
+            return dto;
+        }
+
+        [HttpGet]
+        [Route("personExternalDelete")]
+        public async Task<ActionResult> PersonExternalDelete(int id)
+        {
+            Person person = null;
+
+            if (_registerClient is SrbClient)
+            {
+                person = db.SrbPersons.FirstOrDefault(p => p.Id == id);
+            }
+
+            if (_registerClient is MneClient)
+            {
+                person = db.MnePersons.Include(a => a.Property).Include(a => a.LegalEntity).FirstOrDefault(p => p.Id == id);
+                person.IsDeleted = true;
+            }
+
+            var result = await _registerClient.RegisterPerson(person, null, null);
+
+            return Json(result);
         }
 
         [HttpGet]
@@ -316,13 +379,14 @@ namespace Oblak.Controllers
         [Route("groupRegister")]
         public async Task<ActionResult> GroupRegister(int id, DateTime? checkInDate, DateTime? checkOutDate)
         {
-            var group = db.Groups.Include(a => a.LegalEntity).Where(a => a.Id == id).First();
+            var group = db.Groups.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Where(a => a.Id == id).First();
             var legalEntity = group.LegalEntity;
 
             try
-            {                
+            {
+                await _registerClient.Initialize(legalEntity);
                 var result = await _registerClient.RegisterGroup(group, checkInDate, checkOutDate);
-                if (result != null) Response.StatusCode = 400;
+                //if (result != null) Response.StatusCode = 400;
                 return Json(result);
             }
             catch (Exception e)
@@ -332,8 +396,78 @@ namespace Oblak.Controllers
             }
         }
 
-
         [HttpGet]
+        [Route("personRegister")]
+        public async Task<ActionResult> PersonRegister(int id)
+        {
+            try
+            {
+                Person person = null;
+                if (_registerClient is SrbClient)
+                {
+                    person = db.SrbPersons.Include(a => a.Property).Include(a => a.LegalEntity).FirstOrDefault(p => p.Id == id)!;                    
+                }
+                if (_registerClient is MneClient)
+                {
+                    person = db.MnePersons.Include(a => a.Property).Include(a => a.LegalEntity).FirstOrDefault(p => p.Id == id)!;
+                }
+
+                if (User.IsInRole("TouristOrgOperator"))
+                {                    
+                    if (person != null && (person.ExternalId ?? 0) != 0)
+                    {
+                        return Json(new BasicDto() { info = "", error = "Nemate prava da vršite izmjene na već prijavljenom gostu" });
+                    }
+                }
+
+                var result = await _registerClient.RegisterPerson(person, null, null);
+                //if (result.ExternalErrors.Any()) Response.StatusCode = 400;
+                return Json(result);
+            }
+            catch (Exception e)
+            {
+                Response.StatusCode = 500;
+                return Json(Exceptions.StringException(e));
+            }
+        }
+
+		[HttpGet]
+		[Route("checkOurSrb")]
+		public async Task<ActionResult> CheckOutSrb(int id)
+		{
+			try
+			{
+				var person = db.SrbPersons.Include(a => a.Property).Include(a => a.LegalEntity).FirstOrDefault(p => p.Id == id)!;
+				await _registerClient.Authenticate(person.Property.LegalEntity);
+
+				person.CheckOut = person.PlannedCheckOut ?? DateTime.Now;
+				person.NumberOfServices = (int)(person.CheckOut.Value.Date - person.CheckIn.Value.Date).TotalDays;
+				var result = await (_registerClient as SrbClient).CheckOut(person);
+				if (result.errors.Any() == false)
+				{
+					person.CheckedOut = true;
+					db.SaveChanges();
+				}
+				else
+				{
+					person.CheckOut = null;
+					person.CheckedOut = false;
+					person.Error = string.Join(", ", result.errors);
+					db.SaveChanges();
+					_logger.LogError($"SRB Scheduler CheckOut Errors: {person.FirstName} {person.LastName} - {string.Join(", ", result.errors)}");
+				}
+
+				return Json(result);
+			}
+			catch (Exception e)
+			{
+				Response.StatusCode = 500;
+				return Json(Exceptions.StringException(e));
+			}
+		}
+
+
+		[HttpGet]
         [Route("personMneList")]
         public ActionResult<List<MnePersonDto>> PersonMneList(int id)
         {
@@ -343,9 +477,9 @@ namespace Oblak.Controllers
 
         [HttpGet]
         [Route("personSrbList")]
-        public ActionResult<List<SrbPersonDto>> PersonSrb0List(int id)
+        public ActionResult<List<SrbPersonDto>> PersonSrbList(int id)
         {
-            var data = db.SrbPersons.Include(a => a.Property).Include(a => a.LegalEntity).Where(a => a.GroupId == id).ToList().Select(a => 
+            var data = db.SrbPersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.LegalEntity).Where(a => a.GroupId == id).ToList().Select(a => 
             {
                 var mapped = _mapper.Map<SrbPersonDto>(a);
                 mapped.LegalEntityName = a.Property.LegalEntity.Name;
@@ -358,54 +492,26 @@ namespace Oblak.Controllers
 
         [HttpPost]
         [Route("personMneSave")]
-        public ActionResult<MnePersonDto> PersonMne(MnePersonDto gost)
+        public async Task<ActionResult<MnePersonDto>> PersonMne(MnePersonDto gost)
         {
             _logger.LogDebug("START GOST");
 
-            var g = db.Groups.Where(a => a.Id == gost.GroupId).FirstOrDefault();
-            var o = db.Properties.Where(a => a.Id == g.PropertyId).FirstOrDefault();
-            MnePerson m = null;
-
             _logger.LogDebug("AFTER START GOST");
 
-            if (gost.Id == 0)
+            try
             {
-                _logger.LogDebug("NOVI GOST");
-                try
-                {
-                    m = new MnePerson();
-                    _mapper.Map(gost, m);                    
-                    m.PropertyId = o.Id;
-                    m.PropertyExternalId = o.ExternalId;
-                    m.LegalEntityId = _appUser.LegalEntity.Id;
-                    db.MnePersons.Add(m);
-                    db.SaveChanges();
-                }
-                catch (Exception e)
-                {
-                    _logger.LogDebug(Exceptions.StringException(e));
-                }
-            }
-            else
-            {
-                _logger.LogDebug("STARI GOST");
-                try
-                {
-                    m = db.MnePersons.SingleOrDefault(a => a.Id == gost.Id)!;
-                    _mapper.Map(gost, m);                    
-                    m.PropertyId = o.Id;
-                    m.PropertyExternalId = o.ExternalId;
-                    m.LegalEntityId = _appUser.LegalEntity.Id;
-                    db.MnePersons.Add(m);
-                    db.SaveChanges();
-                }
-                catch (Exception e)
-                {
-                    _logger.LogDebug(Exceptions.StringException(e));
-                }
-            }
+                var g = db.Groups.Where(a => a.Id == gost.GroupId).FirstOrDefault();
+                var o = db.Properties.Where(a => a.Id == gost.PropertyId).Include(a => a.LegalEntity).FirstOrDefault();
+                await _registerClient.Initialize(_legalEntity);
+                var result = await _registerClient.Person(gost);
 
-            return Json(_mapper.Map<MnePersonDto>(m));
+                return Json(_mapper.Map<MnePersonDto>(result));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("PersonMneError: " + ex.Message);
+                return Json(new BasicDto() { error = ex.Message, info = "" });
+            }
         }
 
 
@@ -413,48 +519,101 @@ namespace Oblak.Controllers
         [Route("personSrbSave")]
         public async Task<ActionResult<SrbPersonDto>> PersonSrb(SrbPersonDto gost)
         {
-            _logger.LogDebug("START GOST");
+            try
+            {
+                _logger.LogDebug("START GOST");
+                _logger.LogInformation("GOST JSON: " + JsonSerializer.Serialize(gost));
 
-            //var g = db.Groups.Where(a => a.Id == gost.GroupId).FirstOrDefault();
-            var o = db.Properties.Where(a => a.Id == gost.PropertyId).Include(a => a.LegalEntity).FirstOrDefault();            
-            await _registerClient.Authenticate(o.LegalEntity);
-            var result = await _registerClient.Person(gost);
+                //var g = db.Groups.Where(a => a.Id == gost.GroupId).FirstOrDefault();
+                var o = db.Properties.Where(a => a.Id == gost.PropertyId).Include(a => a.LegalEntity).FirstOrDefault();
+                await _registerClient.Initialize(_legalEntity);
+                var result = await _registerClient.Person(gost);
 
-            return Json(_mapper.Map<SrbPersonDto>(result));
+                return Json(_mapper.Map<SrbPersonDto>(result));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("PersonSrbError: " + ex.Message);
+                return Json(new BasicDto() { error = ex.Message, info = "" });
+            }
         }
 
 
         [HttpGet]
-        [Route("certificateMail")]
-        public async Task<ActionResult<BasicDto>> CertificateMail(int id, string email)
+        [Route("confirmationGroupMail")]
+        public async Task<ActionResult<BasicDto>> ConfirmationGroupMail(int id, string email)
         {
             if (email == null)
             {
                 Response.StatusCode = 400;
                 return Json(new { info = "", error = "Nije unesena e-mail adresa!" });
             }
-            var group = db.Groups.FirstOrDefault(a => a.Id == id);
-            await _registerClient.CertificateMail(group, email);
+            var group = db.Groups.Include(a => a.Property).Include(a => a.LegalEntity).Include(a => a.Persons).FirstOrDefault(a => a.Id == id);
+            await _registerClient.ConfirmationGroupMail(group, email);
 
             return Json(new { info = "Uspješno poslate potvrde putem e-maila!", error = "" });
         }
 
+		[HttpGet]
+		[Route("confirmationPersonMail")]
+		public async Task<ActionResult<BasicDto>> ConfirmationPersonMail(int id, string email)
+		{
+			if (email == null)
+			{
+				Response.StatusCode = 400;
+				return Json(new { info = "", error = "Nije unesena e-mail adresa!" });
+			}
 
-        [HttpGet]
+			Person person = null;
+			if (_registerClient is SrbClient)
+			{
+				person = db.SrbPersons.Include(a => a.Property).Include(a => a.LegalEntity).FirstOrDefault(p => p.Id == id)!;
+			}
+			if (_registerClient is MneClient)
+			{
+				person = db.MnePersons.Include(a => a.Property).Include(a => a.LegalEntity).FirstOrDefault(p => p.Id == id)!;
+			}
+
+			await _registerClient.ConfirmationPersonMail(person, email);
+
+			return Json(new { info = "Uspješno poslate potvrde putem e-maila!", error = "" });
+		}
+
+
+		[HttpGet]
         [Route("certificatePdf")]
-        public async Task<ActionResult> CertificatePdf(int id)
+        public async Task<ActionResult> CertificatePdf(int? group, int? person)
         {
-            var grp = db.Groups.Include(a => a.Persons).Where(a => a.Id == id).FirstOrDefault();
-
-            if (grp == null)
-            {
-                Response.StatusCode = 400;
-                return Json(new { info = "", error = "Nepostojeća prijava gostiju!" });
-            }
-
             try
-            {                
-                var stream = await _registerClient.CertificatePdf(grp);
+            {
+                Stream stream = null;
+                if (group.HasValue && group.Value != 0)
+                {
+                    var grp = db.Groups.Include(a => a.Property).Include(a => a.Persons).Include(a => a.Property).ThenInclude(a => a.LegalEntity).Where(a => a.Id == group).FirstOrDefault();
+                    if (grp == null)
+                    {
+                        Response.StatusCode = 400;
+                        return Json(new { info = "", error = "Nepostojeća prijava gostiju!" });
+                    }
+                    if (_registerClient is SrbClient) await _registerClient.Authenticate(grp.Property.LegalEntity);
+                    if (_registerClient is MneClient) await _registerClient.Initialize(grp.Property.LegalEntity);
+                    stream = await _registerClient.ConfirmationGroupPdf(grp);
+                }
+                else if (person.HasValue && person.Value != 0)
+                {
+                    Person prs = null;
+                    if (_registerClient is SrbClient)
+                    {
+                        prs = db.SrbPersons.Include(a => a.Property).FirstOrDefault(p => p.Id == person);
+                        await _registerClient.Authenticate(prs.Property.LegalEntity);
+                    }
+                    if (_registerClient is MneClient)
+                    {
+                        prs = db.MnePersons.Include(a => a.Property).FirstOrDefault(p => p.Id == person);
+                        await _registerClient.Initialize(prs.Property.LegalEntity);
+                    }                    
+                    stream = await _registerClient.ConfirmationPersonPdf(prs);
+                }
                 stream.Seek(0, SeekOrigin.Begin);
                 var fsr = new FileStreamResult(stream, "application/pdf");
                 fsr.FileDownloadName = $"Potvrde.pdf";
@@ -474,27 +633,32 @@ namespace Oblak.Controllers
 
         [HttpPost]
         [Route("invoiceCreate")]
-        public async Task<ActionResult> InvoiceCreate(int? property, int? group, Invoice? racun, PaymentType? pay)
+        public async Task<ActionResult<Invoice>> InvoiceCreate(int? property, int? group, Invoice? racun, PaymentType? pay)
         {
             try
             {
                 _logger.LogDebug("RACUN START:");
                 Property p;
-                if(property.HasValue) p = db.Properties.FirstOrDefault(a => a.Id == property)!;
+                if (property.HasValue) p = db.Properties.FirstOrDefault(a => a.Id == property)!;
                 else p = db.Properties.Where(a => a.LegalEntityId == _appUser.LegalEntityId).FirstOrDefault()!;
 
                 if (group.HasValue && _registerClient is MneClient)
                 {
-                    var g = db.Groups.Include(a => a.Persons).FirstOrDefault(a => a.Id == group);
-                    var rac = (_registerClient as MneClient).CreateInvoice(g, pay);
-                    return Json(rac);
+                    var g = db.Groups.Include(a => a.Persons).Include(a => a.Property).FirstOrDefault(a => a.Id == group);
+                    if (g.Persons.Any() == false) {
+                        return Json(new BasicDto() { info = "", error = "Grupa ne sadrži nijednog gosta, pa se račun ne može automatski napraviti!" });
+                    }
+                    var rac = await _documentService.CreateInvoice(g, pay);
+                    var dto = _documentService.Doc2Invoice(rac);
+                    return Json(dto);
                 }
                 else
                 {
-                    var rac = _documentService.CreateRacun(racun, p);
-                    return Json(rac);
-                }
-                
+					_logger.LogDebug("RACUN JSON: " + JsonSerializer.Serialize(racun));
+					var rac = _documentService.CreateInvoice(racun, p);
+                    var dto = _documentService.Doc2Invoice(rac);
+                    return Json(dto);
+                }                
             }
             catch (Exception e)
             {
@@ -504,13 +668,14 @@ namespace Oblak.Controllers
             }
         }
 
+
         [HttpGet]
         [Route("invoiceGet")]
-        public ActionResult InvoiceGet(int id)
+        public ActionResult<Invoice> InvoiceGet(int id)
         {
             Document doc = db.Documents.Where(a => a.Id == id).FirstOrDefault();
 
-            var rac = _documentService.Doc2Racun(doc);
+            var rac = _documentService.Doc2Invoice(doc);
 
             return Json(rac);
         }
@@ -518,7 +683,7 @@ namespace Oblak.Controllers
 
         [HttpGet]
         [Route("invoiceList")]
-        public ActionResult InvoiceList(int page = 1, string status = "A")
+        public ActionResult<Invoice> InvoiceList(int page = 1, string status = "A")
         {
             var docStatus = status switch
             {
@@ -529,13 +694,18 @@ namespace Oblak.Controllers
                 _ => DocumentStatus.None
             };
 
-            var data = db.Documents.Where(a => a.LegalEntityId == _appUser.LegalEntityId)
+            var data = db.Documents.Include(a => a.DocumentItems).Include(a => a.DocumentPayments)
+                .Where(a => a.LegalEntityId == _appUser.LegalEntityId)
                 .Where(a => a.Status == docStatus || status == null || docStatus == DocumentStatus.None)
                 .OrderByDescending(a => a.InvoiceDate).Skip((page - 1) * 50).Take(50).ToList();
 
             var result = new List<Invoice>();
 
-            foreach (var d in data) result.Add(_documentService.Doc2Racun(d));
+            foreach (var d in data)
+            {
+                var inv = _documentService.Doc2Invoice(d);
+				result.Add(inv);
+            }
 
             return Json (result);
         }
@@ -568,15 +738,16 @@ namespace Oblak.Controllers
 
         [HttpGet]
         [Route("invoiceDelete")]
-        public ActionResult InvoiceDelete(int racun)
+        public ActionResult InvoiceDelete(int id)
         {
-            var doc = db.Documents.Where(a => a.Id == racun).FirstOrDefault();
+            var doc = db.Documents.Where(a => a.Id == id).FirstOrDefault();
 
             if (doc.Status == DocumentStatus.Fiscalized || doc.Status == DocumentStatus.NotFiscalized) return Json(new { error = "Račun je fiskalizovan ili poslat na fiskalizaciju, pa se ne može brisati", info = "", id = doc.Id });
 
             try
             {
-                _documentService.DeleteRacun(doc);
+                db.Documents.Remove(doc);
+                db.SaveChanges();
                 return Json(new { info = "Uspješno obrisan dokument", error = "", id = doc.Id });
             }
             catch (Exception e)
@@ -590,7 +761,7 @@ namespace Oblak.Controllers
         [Route("invoiceStorno")]
         public async Task<ActionResult> InvoiceStorno(int id)
         {
-            var doc = db.Documents.Where(a => a.Id == id).FirstOrDefault();
+            var doc = db.Documents.Include(a => a.DocumentItems).Include(a => a.DocumentPayments).Where(a => a.Id == id).FirstOrDefault();
 
             if (doc!.Status != DocumentStatus.Fiscalized)
             {
@@ -605,7 +776,7 @@ namespace Oblak.Controllers
 
             try
             {                
-                var storno = _documentService.Storno(doc);
+                var storno = _documentService.StornoInvoice(doc);
                 await _efiClient.Fiscalize(storno, doc.IIC, null);
                 return Json(new { info = "Uspješno storniran dokument", error = "", id = doc.Id });
             }
@@ -637,7 +808,9 @@ namespace Oblak.Controllers
 
             try
             {
-                await _documentService.InvoiceEmail(doc.Id, email);
+                var reportName = _config["REPORTING:MNE:Invoice"];
+                var report = db.Reports.Where(a => a.Name == reportName).FirstOrDefault();
+                await _documentService.InvoiceEmail(doc.Id, report.Id, email);
                 return Json(new { info = "Uspješno poslat račun", error = "", id = doc.Id });
             }
             catch (Exception e)
@@ -649,23 +822,28 @@ namespace Oblak.Controllers
 
         [HttpGet]
         [Route("invoicePdf")]
-        public async Task<ActionResult> InvoicePdf(int id, string output)
+        public async Task<ActionResult> InvoicePdf(int id)
         {
-            var doc = db.Documents.Include(a => a.DocumentItems).ThenInclude(a => a.Item).Include(a => a.DocumentPayments).Where(a => a.Id == id).FirstOrDefault();
+            var doc = db.Documents.Include(a => a.LegalEntity).Include(a => a.DocumentItems).ThenInclude(a => a.Item).Include(a => a.DocumentPayments).Where(a => a.Id == id).FirstOrDefault();
 
-            if (doc.Status != DocumentStatus.Fiscalized)
-            {
-                Response.StatusCode = 400;
-                return Json(new { error = "Račun nije fiskalizovan pa se ne može slati na mail", info = "", id = doc.Id });
-            }
+            //if (doc.Status != DocumentStatus.Fiscalized)
+            //{
+            //    Response.StatusCode = 400;
+            //    return Json(new { error = "Račun nije fiskalizovan pa se ne može slati na mail", info = "", id = doc.Id });
+            //}
 
             try
             {
-                var stream = await (_registerClient as MneClient).InvoicePdf(doc, output);
-                stream.Seek(0, SeekOrigin.Begin);
-                var fsr = new FileStreamResult(stream, $"{(output == "pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document")}");
-                fsr.FileDownloadName = $"Faktura br. {doc.No.ToString("0")}.{output}";
-                return fsr;
+                var reportName = _config["REPORTING:MNE:Invoice"];
+                if(doc.LegalEntity.InVat == false) reportName = _config["REPORTING:MNE:InvoiceNoVat"];
+
+                var report = db.Reports.Where(a => a.Name == reportName).FirstOrDefault();
+                var bytes = await _documentService.InvoicePdf(doc.Id, report.Id);
+                return File(bytes, "application/pdf", "report");
+                //stream.Seek(0, SeekOrigin.Begin);
+                //var fsr = new FileStreamResult(stream, $"{(output == "pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document")}");
+                //fsr.FileDownloadName = $"Faktura br. {doc.No.ToString("0")}.{output}";
+                //return fsr;
             }
             catch (Exception e)
             {
@@ -684,21 +862,21 @@ namespace Oblak.Controllers
 
         [HttpPost]
         [Route("resTaxCalc")]
-        public ActionResult<ResTax> ResTaxCalc(int objekat, string datumod, string datumdo)
+        public ActionResult<ResTaxCalc> ResTaxCalc(int objekat, string datumod, string datumdo)
         {
             var obj = db.Properties.FirstOrDefault(a => a.Id == objekat);            
                         
             var OD = DateTime.ParseExact(datumod, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
             var DO = DateTime.ParseExact(datumdo, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
 
-            var tax = new ResTax();
+            var tax = new ResTaxCalc();
             tax.Status = "A";
             tax.PropertyId = objekat;
             tax.LegalEntityId = obj.LegalEntityId;
             tax.Date = DateTime.Now;
             tax.DateFrom = OD;
             tax.DateTo = DO;
-            db.ResTaxes.Add(tax);
+            db.ResTaxCalc.Add(tax);
             db.SaveChanges();
 
             var rb90Client = _registerClient as MneClient;
@@ -710,20 +888,24 @@ namespace Oblak.Controllers
             rb90Client.CalcResTax(tax, objekat, OD, DO, "NONE", "STRANI");
             rb90Client.CalcResTax(tax, objekat, OD, DO, "NONE", "DOMACI");
 
+            db.Entry(tax).Collection(a => a.Items).Load();
+
             tax.Amount = tax.Items.Select(a => a.TotalTax).Sum();
             db.SaveChanges();
             
-            return Json(tax);
+            return Json(ResTaxDto.FromEntity(tax));
         }
+
 
         [HttpGet]
         [Route("resTaxList")]
-        public ActionResult<List<ResTax>> ResTaxList(int page = 1)
+        public ActionResult<List<ResTaxCalc>> ResTaxList(int page = 1)
         {
-            var data = db.ResTaxes
+            var data = db.ResTaxCalc
                 .Where(a => a.LegalEntityId == _appUser.LegalEntityId)
                 .Include(a => a.Items)
-                .OrderByDescending(a => a.Date).Skip((page - 1) * 50).Take(50).ToList();
+                .OrderByDescending(a => a.Date).Skip((page - 1) * 50).Take(50).ToList()
+                .Select(a => ResTaxDto.FromEntity(a));
 
             return Json(data);
         }
@@ -732,7 +914,7 @@ namespace Oblak.Controllers
         [Route("resTaxDelete")]
         public ActionResult<BasicDto> ResTaxDelete(int id)
         {
-            var tax = db.ResTaxes.Where(a => a.Id == id).FirstOrDefault();
+            var tax = db.ResTaxCalc.Where(a => a.Id == id).FirstOrDefault();
 
             if (tax == null) return Json(new BasicDto { info = "", error = "Boravišna taksa ne postoji!" });
 
@@ -749,7 +931,7 @@ namespace Oblak.Controllers
         [Route("resTaxPdf")]
         public async Task<ActionResult> ResTaxPdf(int id)
         {
-            var tax = db.ResTaxes.Where(a => a.Id == id).FirstOrDefault();
+            var tax = db.ResTaxCalc.Where(a => a.Id == id).FirstOrDefault();
 
             if (tax == null)
             {
@@ -779,7 +961,7 @@ namespace Oblak.Controllers
         [Route("resTaxMail")]
         public async Task<ActionResult> ResTaxMail(int id, string email)
         {            
-            var tax = db.ResTaxes.Where(a => a.Id == id).FirstOrDefault();
+            var tax = db.ResTaxCalc.Where(a => a.Id == id).FirstOrDefault();
 
             if (tax == null)
             {

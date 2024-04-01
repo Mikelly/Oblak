@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Oblak.Data;
 using Oblak.Data.Enums;
 using Oblak.Models.Api;
-using Oblak.Models.rb90;
+using Oblak.Models.EFI;
 using Oblak.Services;
 using Oblak.Services.MNE;
 using Oblak.Services.SRB;
@@ -152,204 +152,9 @@ namespace RegBor.Controllers
 			return View();
 		}
 
-		public ActionResult fsetv([Bind(Prefix = "p")] rb_PrijavaVM vm, string name)
-		{
-			var m = _db.MnePersons.SingleOrDefault(a => a.Id == vm.ID);
+		
 
-			name = name.Replace("p.", "").ToLower();
-
-			if (name == "jmbg")
-			{
-				m.PersonalNumber = vm.JMBG;
-			}
-			else if (name == "objekatid")
-			{
-				m.PropertyId = vm.ObjekatID;
-				//m.Naziv = _db.rb_Objekti.Where(a => a.RefID == m.ObjekatID).Select(a => a.Naziv).DefaultIfEmpty("").FirstOrDefault();
-			}
-			else if (name == "tip")
-			{
-				m.PersonType = vm.Tip;
-			}
-			else if (name == "naziv")
-			{
-				//m.Naziv = vm.Naziv;
-			}
-			else if (name == "prezime")
-			{
-				m.LastName = vm.Prezime;
-			}
-			else if (name == "ime")
-			{
-				m.FirstName = vm.Ime;
-			}
-			else if (name == "pol")
-			{
-				m.Gender = vm.Pol;
-			}
-			else if (name == "drzava")
-			{
-				m.Nationality = vm.Drzava;
-				if (string.IsNullOrEmpty(m.DocumentCountry)) m.DocumentCountry = vm.Drzava;
-				if (string.IsNullOrEmpty(m.BirthCountry)) m.BirthCountry = vm.Drzava;
-				if (string.IsNullOrEmpty(m.PermanentResidenceCountry)) m.PermanentResidenceCountry = vm.Drzava;
-			}
-			else if (name == "rodj_datum")
-			{
-				m.BirthDate = vm.Rodj_Datum;
-			}
-			else if (name == "rodj_mjesto")
-			{
-				m.BirthPlace = vm.Rodj_Mjesto;
-			}
-			else if (name == "rodj_drzava")
-			{
-				m.BirthCountry = vm.Rodj_Drzava;				
-				if (string.IsNullOrEmpty(m.Nationality)) m.Nationality = vm.Drzava;
-				if (string.IsNullOrEmpty(m.DocumentCountry)) m.DocumentCountry = vm.Drzava;				
-				if (string.IsNullOrEmpty(m.PermanentResidenceCountry)) m.PermanentResidenceCountry = vm.Drzava;
-			}
-			else if (name == "preb_adresa")
-			{
-				m.PermanentResidenceAddress = vm.Preb_Adresa;
-			}
-			else if (name == "preb_mjesto")
-			{
-				m.PermanentResidencePlace = vm.Preb_Mjesto;
-			}
-			else if (name == "preb_drzava")
-			{
-				m.PermanentResidenceCountry = vm.Preb_Drzava;
-				if (string.IsNullOrEmpty(m.Nationality)) m.Nationality = vm.Drzava;
-				if (string.IsNullOrEmpty(m.DocumentCountry)) m.DocumentCountry = vm.Drzava;
-				if (string.IsNullOrEmpty(m.BirthCountry)) m.BirthCountry = vm.Drzava;
-			}
-			else if (name == "ld_vrsta")
-			{
-				m.DocumentType = vm.LD_Vrsta;
-			}
-			else if (name == "ld_broj")
-			{
-				m.DocumentNumber = vm.LD_Broj;
-			}
-			else if (name == "ld_rok")
-			{
-				m.DocumentValidTo = vm.LD_Rok;
-			}
-			else if (name == "ld_drzava")
-			{
-				m.DocumentCountry = vm.LD_Drzava;
-				if (string.IsNullOrEmpty(m.Nationality)) m.Nationality = vm.Drzava;
-				if (string.IsNullOrEmpty(m.PermanentResidenceCountry)) m.PermanentResidenceCountry = vm.Drzava;
-				if (string.IsNullOrEmpty(m.BirthCountry)) m.BirthCountry = vm.Drzava;
-			}
-			else if (name == "ld_organ")
-			{
-				m.DocumentIssuer = vm.LD_Organ;
-			}
-			else if (name == "borav_prijava")
-			{
-				m.CheckIn = vm.Borav_Prijava;
-			}
-			else if (name == "borav_odjava")
-			{
-				m.CheckOut = vm.Borav_Odjava;
-			}
-			else if (name == "ulaz_mjesto")
-			{
-				m.EntryPoint = vm.Ulaz_Mjesto;
-			}
-			else if (name == "ulaz_datum")
-			{
-				m.EntryPointDate = vm.Ulaz_Datum;
-			}
-			else if (name == "visa_vrsta")
-			{
-				m.VisaType = vm.Visa_Vrsta;
-			}
-			else if (name == "visa_broj")
-			{
-				m.VisaNumber = vm.Visa_Broj;
-			}
-			else if (name == "visa_mjesto")
-			{
-				m.VisaIssuePlace = vm.Visa_Mjesto;
-			}
-			else if (name == "visa_od")
-			{
-				m.VisaValidFrom = vm.Visa_Od;
-			}
-			else if (name == "visa_do")
-			{
-				m.VisaValidTo = vm.Visa_Do;
-			}
-
-			try
-			{
-				_db.SaveChanges();
-			}
-			catch (Exception e)
-			{
-
-			}
-
-			return Json(new { error = "", js = "" });
-		}
-
-		public ActionResult fsetall([Bind(Prefix = "p")] rb_PrijavaVM vm)
-		{
-			var m = _db.MnePersons.SingleOrDefault(a => a.Id == vm.ID);
-			var frm = m.LegalEntityId;
-			var grp = m.GroupId;
-
-			_mapper.Map(vm, m);
-
-			m.LegalEntityId = frm;
-			m.PropertyId = vm.ObjekatID;
-			m.GroupId = grp;
-			m.Status = "A";
-			
-			try
-			{
-				_db.SaveChanges();
-			}
-			catch (Exception e)
-			{
-				string errors = "";
-				var validationErrors = _db.ChangeTracker
-					.Entries<IValidatableObject>()
-					.SelectMany(e => e.Entity.Validate(null))
-					.Where(r => r != ValidationResult.Success);
-				/*
-				if (validationErrors.Any())
-				{
-					foreach (var eve in validationErrors)
-					{
-						errors += String.Format("Entity of type \"{0}\" in state \"{1}\" has the following validation errors:", eve.Entity.GetType().Name, eve.Entry.State);
-						foreach (var ve in eve.ValidationErrors)
-						{
-							errors += String.Format("- Property: \"{0}\", Error: \"{1}\"", ve.PropertyName, ve.ErrorMessage);
-						}
-					}
-					return Json(new { error = errors, js = "" });
-				}
-				else
-				{
-					return Json(new { error = Helpers.StringException(e), js = "" });
-				}
-				*/
-			}
-
-			return Json(new { error = "", js = "" });
-		}
-
-		//public virtual ActionResult Read([DataSourceRequest] DataSourceRequest request)
-		//{
-		//	var data = _db.Groups.Where(a => a.LegalEntityId == _company).Select(a => new rb_GrupaVM { });
-
-		//	return Json(data.ToDataSourceResult(request));
-
-		//}
+		
 
 		private async Task<List<Property>> GetProperties()
 		{
@@ -436,7 +241,7 @@ namespace RegBor.Controllers
 				//}
 
 				// Return success or any other relevant information
-				return Json(new[] { newGroup }.ToDataSourceResult(request));
+				return Json(new[] { newGroup.Id });
             }
             catch (Exception ex)
             {
@@ -445,18 +250,6 @@ namespace RegBor.Controllers
             }
         }
 
-        public ActionResult Update([DataSourceRequest] DataSourceRequest request, rb_GrupaVM vm)
-		{
-			var m = _db.Groups.SingleOrDefault(a => a.Id == vm.ID);
-			_mapper.Map(vm, m);
-
-			if (ModelState.IsValid)
-			{
-				_db.SaveChanges();
-			}
-
-			return Json(new[] { _mapper.Map(m, vm) }.ToDataSourceResult(request, ModelState));
-		}
 
         [HttpGet]
         public JsonResult DeleteGroup(int groupId)

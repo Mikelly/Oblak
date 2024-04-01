@@ -41,7 +41,7 @@ namespace Oblak.Data
         public string? Place { get; set; }
 
         [StringLength(450)]
-        public string? Municipality { get; set; }
+        public int? MunicipalityId { get; set; }
         
         public decimal? GeoLon { get; set; }
         
@@ -92,6 +92,8 @@ namespace Oblak.Data
         [JsonIgnore]
         public List<Person> Persons { get; set; }
         public List<SelfRegisterToken> GuestTokens { get; set; }
-        public List<ResTax> ResTaxes { get; set; }
+        public List<ResTaxCalc> ResTaxes { get; set; }
+
+        public Municipality Municipality { get; set; }
     }
 }

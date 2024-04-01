@@ -1,49 +1,234 @@
-﻿using Kendo.Mvc.Extensions;
+﻿using AutoMapper;
+using Kendo.Mvc.Extensions;
 using Kendo.Mvc.UI;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Oblak.Data;
+using Oblak.Data.Enums;
 using Oblak.Models;
+using Oblak.Models.Api;
+using Oblak.Services;
+using Oblak.Services.MNE;
+using Oblak.Services.SRB;
 
-namespace Oblak.Controllers
+namespace Oblak.Controllers;
+
+public class UserController : Controller
 {
-    public class UserController : Controller
+    private readonly ILogger<UserController> _logger;
+    private readonly ApplicationDbContext _db;
+    private readonly IMapper _mapper;
+    private readonly ApplicationUser _appUser;
+    private readonly int _legalEntityId;        
+    private LegalEntity _legalEntity;
+    private readonly UserManager<IdentityUser> _userManager;
+
+    public UserController(
+        ILogger<UserController> logger, 
+        ApplicationDbContext db, 
+        IMapper mapper,
+        IServiceProvider serviceProvider,
+        IHttpContextAccessor httpContextAccessor,
+        UserManager<IdentityUser> userManager
+        )
     {
-        ApplicationDbContext _db;
-        ILogger<UserController> _logger;
+        _logger = logger;            
+        _db = db;
+        _mapper = mapper;
+        _userManager = userManager;
 
-        public UserController(
-            ApplicationDbContext db, 
-            ILogger<UserController> logger)
+        var username = httpContextAccessor.HttpContext?.User?.Identity?.Name;
+        if (username != null)
         {
-            _db = db;
-            _logger = logger;
+            _appUser = _db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.Properties).FirstOrDefault(a => a.UserName == username)!;
+            _legalEntityId = _appUser.LegalEntityId;
+            _legalEntity = _appUser.LegalEntity;
+        }
+    }
+
+    [HttpGet]
+    [Route("users")]
+    public async Task<IActionResult> Users()
+    {
+        if (User.IsInRole("TouristOrgAdmin"))
+        {
+            ViewBag.CPS = new SelectList(_db.CheckInPoints.Where(a => a.PartnerId == _appUser.PartnerId), "Id", "Name");
+            ViewBag.TPS = new SelectList(Enum.GetNames(typeof(UserType)).ToArray().Where(a => a.StartsWith("Tourist")).Select(a => new { Id = a, Name = a }), "Id", "Name");
+            
+            return View("ToUsers");
+        }    
+
+        return View();
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Read([DataSourceRequest] DataSourceRequest request)
+    {
+        var partner = _legalEntity.PartnerId;
+        var users = _db.Users.Where(a => a.PartnerId == partner).Select(a => new UserDto { 
+            Id = a.Id,
+            UserName = a.UserName,
+            Email = a.Email,
+            PersonName = a.PersonName,
+            PartnerId = a.PartnerId,
+            LegalEntityId = a.LegalEntityId,
+            Type = a.Type.ToString(),
+            CheckInPointId = a.CheckInPointId
+        });
+
+        return Json(await users.ToDataSourceResultAsync(request));
+    }
+
+
+    [HttpPost]
+    public async Task<ActionResult> Update(UserDto dto, [DataSourceRequest] DataSourceRequest request)
+    {
+        try
+        {
+            var user = await _db.Users.FindAsync(dto.Id);
+
+            if (user == null)
+            {
+                return Json(new DataSourceResult { Errors = "Entity not found." });
+            }
+
+            user.UserName = dto.UserName;
+            user.Email = dto.Email;
+            user.PersonName = dto.PersonName;
+            user.Type = (UserType)Enum.Parse(typeof(UserType), dto.Type);
+            user.CheckInPointId = dto.CheckInPointId;   
+
+            await _db.SaveChangesAsync();
+                        
+            var users = _db.Users.Where(a => a.PartnerId == _legalEntity.PartnerId).Select(a => new UserDto
+            {
+                Id = a.Id,
+                UserName = a.UserName,
+                Email = a.Email,
+                PersonName = a.PersonName,
+                PartnerId = a.PartnerId,
+                LegalEntityId = a.LegalEntityId,
+                Type = a.Type.ToString(),
+                CheckInPointId = a.CheckInPointId
+            });
+
+            return Json(await users.ToDataSourceResultAsync(request));
+        }
+        catch (Exception ex)
+        {
+            return Json(new DataSourceResult { Errors = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<ActionResult> Create(CheckInPointDto dto, [DataSourceRequest] DataSourceRequest request)
+    {
+        try
+        {
+            var cp = new CheckInPoint();
+            _mapper.Map(dto, cp);
+            cp.PartnerId = _legalEntity.PartnerId ?? 1;                
+            _db.Add(cp);
+            await _db.SaveChangesAsync();
+
+            var users = _db.Users.Where(a => a.PartnerId == _legalEntity.PartnerId).Select(a => new UserDto
+            {
+                Id = a.Id,
+                UserName = a.UserName,
+                Email = a.Email,
+                PersonName = a.PersonName,
+                PartnerId = a.PartnerId,
+                LegalEntityId = a.LegalEntityId,
+                Type = a.Type.ToString(),
+                CheckInPointId = a.CheckInPointId
+            });
+
+            return Json(await users.ToDataSourceResultAsync(request));
+        }
+        catch (Exception ex)
+        {
+            return Json(new DataSourceResult { Errors = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<ActionResult> Destroy([DataSourceRequest] DataSourceRequest request, CheckInPointDto dto)
+    {
+        try
+        {
+            var cp = _db.CheckInPoints.Find(dto.Id);                    
+
+            if (cp != null)
+            {                    
+                _db.CheckInPoints.Remove(cp);
+                _db.SaveChanges();
+                var users = _db.Users.Where(a => a.PartnerId == _legalEntity.PartnerId).Select(a => new UserDto
+                {
+                    Id = a.Id,
+                    UserName = a.UserName,
+                    Email = a.Email,
+                    PersonName = a.PersonName,
+                    PartnerId = a.PartnerId,
+                    LegalEntityId = a.LegalEntityId,
+                    Type = a.Type.ToString(),
+                    CheckInPointId = a.CheckInPointId
+                });
+
+                return Json(await users.ToDataSourceResultAsync(request));
+            }
+            else
+            {
+                return Json(new { error = "Punkt nije pronađen." });
+            }
+        }
+        catch (Exception ex)
+        {
+            return Json(new { error = "Došlo je do greške prilikom brisanja punkta." });
+        }
+    }
+
+    [HttpGet]
+    [Route("tourist-org-reset-password")]
+    public async Task<ActionResult> ResetPassword(string userid)
+    {
+        var user = _db.Users.FirstOrDefault(a => a.Id == userid);
+
+        ViewBag.UserId = userid;
+
+        if (user != null)
+        {
+            var appUser = await _userManager.FindByNameAsync(user.UserName);
+            ViewBag.User = user;
+            ViewBag.Locked = await _userManager.IsLockedOutAsync(appUser);
+        }
+        else
+        {
+            ViewBag.Locked = false;
         }
 
-        [HttpGet("users")]
-        public IActionResult Index()
+        return PartialView();
+    }
+
+    [HttpPost]
+    [Route("tourist-org-reset-password")]
+    public async Task<ActionResult> ResetPassword(string userid, string password)
+    {
+        try
         {
-            return View();
+            var user = _db.Users.FirstOrDefault(a => a.Id == userid);
+            user.LockoutEnd = null;
+            _db.SaveChanges();
+
+            string code = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, code, password);
+
+            return Json(new BasicDto() { error = "", errors = null, info = "Uspješno resetovana lozinka!" });
         }
-
-        public IActionResult Read([DataSourceRequest] DataSourceRequest request)
+        catch (Exception ex)
         {
-            var data = _db.Users.Include(a => a.LegalEntity).Select(a =>
-                    new UserViewModel()
-                    {
-                        Id = a.Id,
-                        UserName = a.UserName,
-                        Email = a.Email,
-                        PhoneNumber = a.PhoneNumber,
-                        EfiOperator = a.EfiOperator,
-                        LegalEntity = a.LegalEntity.Name,
-                        UserCreated = a.UserCreated,
-                        UserCreatedDate = a.UserCreatedDate,
-                        UserModified = a.UserModified,
-                        UserModifiedDate = a.UserModifiedDate,
-                    });
-
-            return Json(data.ToDataSourceResult(request));
+            return Json(new BasicDto() { error = ex.Message, errors = null, info = "" });
         }
     }
 }

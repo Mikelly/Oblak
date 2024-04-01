@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Oblak.Data;
 using Oblak.Interfaces;
 using Oblak.Models.Api;
+using Oblak.Services.MNE;
 using Oblak.Services.SRB;
 using Oblak.SignalR;
 using RB90;
@@ -17,7 +18,7 @@ namespace Oblak.Services
         protected ApplicationDbContext _db;        
         protected eMailService _eMailService;
         protected SelfRegisterService _selfRegisterService;
-        protected IWebHostEnvironment _webHostEnvironment;
+        protected IWebHostEnvironment _env;
         protected IHubContext<MessageHub> _messageHub;
         protected LegalEntity _legalEntity;
 
@@ -33,8 +34,8 @@ namespace Oblak.Services
             _db = db;            
             _eMailService = eMailService;
             _selfRegisterService = selfRegisterService;
-            _webHostEnvironment = webHostEnvironment;
-            _messageHub = messageHub;
+            _env = webHostEnvironment;
+            _messageHub = messageHub;            
         }
 
         
@@ -58,9 +59,13 @@ namespace Oblak.Services
 
         public abstract Task<object> Properties(LegalEntity legalEntity);
 
-		public abstract Task CertificateMail(Group group, string email);
+		public abstract Task ConfirmationGroupMail(Group group, string email);
 
-        public abstract Task<Stream> CertificatePdf(Group group);        
+        public abstract Task<Stream> ConfirmationGroupPdf(Group group);
+
+        public abstract Task ConfirmationPersonMail(Person person, string email);
+
+        public abstract Task<Stream> ConfirmationPersonPdf(Person person);
 
         public abstract Task SendGuestToken(int propertyId, int? unitId, string email, string phoneNo, string lang);
 
@@ -112,8 +117,8 @@ namespace Oblak.Services
             m.PropertyId = group.PropertyId;
             m.PropertyExternalId = property.ExternalId;
             m.Email = group.Email;
-            if (m.CheckIn.HasValue) m.CheckIn = group.CheckIn.Value; else m.CheckIn = DateTime.Now;
-            if (m.CheckOut.HasValue) m.CheckOut = group.CheckOut.Value;
+            if (group.CheckIn.HasValue) m.CheckIn = group.CheckIn.Value; else m.CheckIn = DateTime.Now;
+            if (group.CheckOut.HasValue) m.CheckOut = group.CheckOut.Value;
             m.Date = DateTime.Now;
             m.Guid = Guid.NewGuid().ToString();
             m.Status = "A";
@@ -126,6 +131,30 @@ namespace Oblak.Services
         public Task<BasicDto> GroupDelete(int id)
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<BasicDto> PersonDelete(Person person)
+        {
+            try
+            {
+                if (person is SrbPerson)
+                {
+                    _db.SrbPersons.Remove(person as SrbPerson);
+                }
+
+                if (person is MnePerson)
+                {
+                    _db.MnePersons.Remove(person as MnePerson);
+                }
+                        
+                await _db.SaveChangesAsync();
+
+                return new BasicDto() { info = "Gost je obrisan!", error = "" };
+            }
+            catch(Exception ex)
+            {
+                return new BasicDto() { info = "", error = ex.Message };
+            }
         }
 
         #endregion

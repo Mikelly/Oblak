@@ -1,0 +1,171 @@
+﻿@using Oblak.Models.Api;
+@using Oblak.Models.EFI;
+@{
+
+        ViewBag.Title = "Korisnici";            
+        Layout = "~/Views/Shared/_LayoutINV.cshtml";
+    
+}
+
+<script type="text/javascript">
+    $(document).ready(function () {
+
+    });
+
+    function account() {
+
+        $.ajax({
+            url: `/tourist-org-account`,
+            type: 'GET',
+            success: function (data, status, xhr) {
+                var wnd = $("#wndAccount").data("kendoWindow");
+                wnd.content(data);
+                wnd.center().open();
+            }
+        });
+    }    
+
+    function accountCreate() {
+
+        $.ajax({
+            url: `/tourist-org-account`,
+            type: 'POST',
+            data: $('#accountForm').serialize(),
+            success: function (data, status, xhr) {
+                if (data.error != "") Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                else {
+                    $('#usersGrid').data('kendoGrid').dataSource.read();
+                    Swal.fire({ icon: 'success', title: data.info, confirmButtonText: `U redu` });
+                    var wnd = $("#wndAccount").data("kendoWindow").close();
+                }
+            }
+        });
+    }
+
+    function resetPass() {
+
+        var grid = $('#usersGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati korisnika', confirmButtonText: `U redu` });
+
+        $.ajax({
+            url: `/tourist-org-reset-password?userid=${item.Id}`,
+            type: 'GET',
+            success: function (data, status, xhr) {
+                var wnd = $("#wndResetPass").data("kendoWindow");
+                wnd.content(data);
+                wnd.center().open();
+            }
+        });
+    }
+
+    function resetPassword() {
+        $.ajax({
+            url: `/tourist-org-reset-password`,
+            type: 'POST',
+            data: {
+                userid: $('#userid').val(),
+                password: $('#password').val()
+            },
+            success: function (data, status, xhr) {
+                Swal.fire({ icon: 'success', title: data.info, confirmButtonText: `U redu` });
+                var wnd = $("#wndResetPass").data("kendoWindow").close();
+            }
+        });
+    }
+
+
+</script>
+
+<div style="position:absolute; top:25px; bottom: 15px; left: 15px; right:15px;">
+     @(Html.Kendo().Button().Name("btnAddUser")
+        .HtmlAttributes(new { type = "button", onclick = "account()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/add-user.png'/>
+    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>NOVI<br/>KORISNIK<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnNewProperty")
+        .HtmlAttributes(new { type = "button", onclick = "resetPass()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/access.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>RESET<br/>LOZINKE<div>
+                </div>"))
+
+@*     @(Html.Kendo().Button().Name("btnFiscal")
+        .HtmlAttributes(new { type = "button", onclick = "fiscal()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:48px;height:48px;text-align:center;display:block;margin-left:auto;margin-right:auto;margin-top:2px;' src='/Content/Icons/cash_register.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>FISKALNI<br/>PODACI<div>
+                </div>")) *@
+
+</div>
+
+<div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
+    @(Html.Kendo().Grid<UserDto>()
+        .Name("usersGrid")        
+        .Columns(columns =>
+        {
+            columns.Command(command => { 
+                command.Edit().Text(" ").UpdateText(" ").CancelText(" "); 
+                command.Destroy().Text(" "); 
+            })
+            .Width(70);
+
+            columns.Bound(g => g.Id).Title("ID").Width(280).HtmlAttributes(new { style = "text-align:center;" });
+            columns.Bound(g => g.UserName).Title("Korisničko ime").Width("30%");
+            columns.Bound(g => g.PersonName).Title("Ime i prezime").Width("30%");
+            columns.Bound(g => g.Email).Title("E-Mail").Width("30%");            
+            columns.ForeignKey(g => g.Type, ViewBag.TPS as SelectList).Title("Vrsta").Width("20%");
+            columns.ForeignKey(g => g.CheckInPointId, ViewBag.CPS as SelectList).Title("Check-In Point").Width("30%");
+            
+            })
+            .Pageable(p => p.Refresh(true))
+            .Sortable()
+            .Selectable()
+            .Scrollable()
+            .Filterable()
+            .HtmlAttributes(new { style = "height:100%;" })
+            .Editable(editable => editable.Mode(GridEditMode.InLine))
+            .DataSource(ds => ds
+                .Ajax()
+                .PageSize(20)
+                .Model(m =>
+                {
+                    m.Id(g => g.Id);
+                    m.Field(g => g.Id).Editable(false);
+                    m.Field(g => g.UserName);
+                    m.Field(g => g.Email);
+                    m.Field(g => g.PersonName);
+                    m.Field(g => g.CheckInPointId);
+                    m.Field(g => g.Type).DefaultValue("TO_Operator");
+                })
+        .Create(a => a.Action("Create", "User"))
+        .Read(a => a.Action("Read", "User"))
+        .Update(a => a.Action("Update", "User"))
+        .Destroy(a => a.Action("Destroy", "User"))
+        )
+    )
+</div>
+
+
+@(Html.Kendo().Window().Name("wndAccount")
+    .Title("Korisnički nalog")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(500)
+    .Height(740)
+    .HtmlAttributes(new { style = "padding:20px; padding-bottom:10px; font-size:14px;" })
+)
+
+@(Html.Kendo().Window().Name("wndResetPass")
+    .Title("Resetovanje lozinke")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(400)
+    .Height(275)
+    .HtmlAttributes(new { style = "padding:20px; padding-bottom:10px; font-size:14px;" })
+)

@@ -20,7 +20,9 @@ namespace Oblak.Data
         public int PropertyExternalId { get; set; }
         
         public int PropertyId { get; set; }
-        
+
+        public int? CheckInPointId { get; set; }
+
         public int? GroupId { get; set; }
 
         [StringLength(450)]
@@ -57,11 +59,13 @@ namespace Oblak.Data
         public DateTime? UserModifiedDate { get; set; }
 
 
-        [JsonIgnore]
+        
         public LegalEntity LegalEntity { get; set; }
         
         public Property Property { get; set; }
         
-        public Group Group { get; set; }
+        public Group? Group { get; set; }
+
+        public CheckInPoint? CheckInPoint { get; set; }
     }
 }

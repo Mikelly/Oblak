@@ -10,9 +10,8 @@ namespace Oblak.Data
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-
-        [StringLength(450)]
-        public int LegalEntityId { get; set; }
+                
+        public int PartnerId { get; set; }
 
         [StringLength(450)]
         public string Name { get; set; }
@@ -20,16 +19,28 @@ namespace Oblak.Data
         [StringLength(2000)]
         public string Address { get; set; }
 
-        public LegalEntity LegalEntity { get; set; }
+        public Partner Partner { get; set; }
+
+        [StringLength(450)]
+        public string? Location { get; set; }
+
+        [StringLength(450)]
+        public string? Type { get; set; }
+
+        [StringLength(450)]
+        public string? Status { get; set; }
 
 
         #region Audit Properties
 
         [StringLength(450)]
         public string? UserCreated { get; set; }
+        
         public DateTime? UserCreatedDate { get; set; }
         [StringLength(450)]
+        
         public string? UserModified { get; set; }
+        
         public DateTime? UserModifiedDate { get; set; }
 
         #endregion

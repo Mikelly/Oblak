@@ -1,11 +1,14 @@
-﻿namespace Oblak.Models.Api
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Oblak.Models.Api
 {
     public class PropertyDto
     {
         public int Id { get; set; }
+        [UIHint("Integer")]
         public int? ExternalId { get; set; }
         public int LegalEntityId { get; set; }
-        public string LegalEntityName { get; set; }
+        public string? LegalEntityName { get; set; }
         public string Name { get; set; }
         public string? Type { get; set; }
         public string? Address { get; set; }

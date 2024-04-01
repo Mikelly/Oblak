@@ -1,0 +1,162 @@
+﻿@{
+	Layout = "~/Views/Shared/_LayoutINV.cshtml";
+	var prtnid = (string)ViewBag.PartnerId;
+	var reports = new Dictionary<string, string>() { { $"{prtnid}CountryStats", "Statistika po državama" }, { $"{prtnid}GuestList", "Boravišne prijave za period" } };
+	var formats = new Dictionary<string, string>() { { $"PDF", "PDF dokument" }, { $"XLSX", "Excel fajl" } };
+	var admin = ViewBag.Admin;
+}
+
+<script type="text/javascript">
+	
+	var admin = '@admin';
+	
+	function setCred(e) {
+		//e.preventDefault();
+		$.ajax({
+			url: '/srb-cred',
+			type: 'POST',
+			data: $('#frmSrbCred').serialize(),
+			success: function (data) {
+				$('#wndSrbCred').data('kendoWindow').close();
+			},
+			error: function () {
+
+			}
+		});
+	}
+
+	function reportChanged() { 
+		$('.run').css('display','flex');		
+		$('.parameter').hide();
+		var report = $('#report').val();
+		if (report == "CountryStats") { 
+			$('#datum').show();
+		}		
+		else if (report == "GuestList") {
+			$('#datumOd').show();
+			$('#datumDo').show();
+			if (admin == 'True') {
+				$('#checkInPoint').show();
+				$('#user').show();
+			}
+		}
+	}
+
+	function runReport() {
+		$('#freport').val($('#report').val());
+		$('#fformat').val($('#reportFormat').val());
+
+		var rep = $('#report').val();
+		if (rep == "GuestList") {
+			$('#fdateFrom').val(kendo.toString($('#DateFrom').data('kendoDatePicker').value(), 'ddMMyyyy'));
+			$('#fdateTo').val(kendo.toString($('#DateTo').data('kendoDatePicker').value(), 'ddMMyyyy'));
+			if (admin == 'True') {
+				$('#fcheckInPointId').val($('#CheckInPointId').val());
+				$('#fuserName').val($('#UserName').val());
+			}
+		}
+
+		$('#reportForm').submit();
+	}
+</script>
+
+<style type="text/css">
+	.parameter
+	{
+		margin-bottom:20px;
+	}
+</style>
+
+<form target="_blank" action="/treport" method="post" id="reportForm">
+	<input type="hidden" id="freport" name="report" />
+	<input type="hidden" id="fformat" name="format" />
+	<input type="hidden" id="fdate" name="date" />
+	<input type="hidden" id="fdateFrom" name="dateFrom" />
+	<input type="hidden" id="fdateTo" name="dateTo" />
+	<input type="hidden" id="fcheckInPointId" name="checkInPointId" />
+	<input type="hidden" id="fuserName" name="userName" />
+</form>
+
+<div style="width:400px; margin-left:auto; margin-right:auto; margin-top:50px; font-size:larger;">
+
+	<div style="font-weight:bold;">
+		Izaberite izvještaj
+		@(Html.Kendo().DropDownList().Name("report")
+			.HtmlAttributes(new { style = "font-weight:bold;"})
+			.OptionLabel("Izaberite izvještaj")
+			.AutoWidth(true)
+			.BindTo(new SelectList(reports as Dictionary<string, string>, "Key", "Value"))
+			.Events(e => e.Change("reportChanged"))		
+		)
+	</div>
+
+	<br />
+	<br />
+	<br />
+
+	<div class="parameter" style="display:none" id="datum">
+		Unesite datum:
+		@Html.Kendo().DatePicker().Name("Date").Value(DateTime.Now.Date)
+		<br />
+	</div>
+
+	<div class="parameter" style="display:none" id="datumOd">
+		Unesite početni datum:
+		@Html.Kendo().DatePicker().Name("DateFrom").Value(DateTime.Now.Date)
+		<br />
+	</div>
+
+	<div class="parameter" style="display:none" id="datumDo">
+		Unesite krajnji datum:
+		@Html.Kendo().DatePicker().Name("DateTo").Value(DateTime.Now.Date)
+		<br />
+	</div>
+
+	<div class="parameter" style="display:none" id="checkInPoint">
+		Izaberite punkt
+		@(Html.Kendo().DropDownList().Name("CheckInPointId")
+				.AutoWidth(true)
+				.OptionLabel("Izaberite punkt")
+				.BindTo(ViewBag.CheckInPoints as List<CheckInPoint>)				
+				.DataValueField("Id")
+				.DataTextField("Name")
+				)
+		<br />
+	</div>
+
+	<div class="parameter" style="display:none" id="user">
+		Izaberite radnika
+		@(Html.Kendo().DropDownList().Name("UserName")
+				.OptionLabel("Izaberite radnika")
+				.AutoWidth(true)
+				.BindTo(ViewBag.Users as SelectList)				
+				)
+		<br />
+	</div>
+
+	<br />
+	<br />
+
+	<div class="run" style="display:none; align-items:center; align-content:center;">
+
+		<div style="flex-basis:60%">
+			Izaberite format
+			@(Html.Kendo().DropDownList().Name("reportFormat")
+						.AutoWidth(true)
+						.BindTo(new SelectList(formats as Dictionary<string, string>, "Key", "Value"))
+						)
+		</div>
+
+		<div style="flex-basis:40%; text-align:right;">
+			@(Html.Kendo().Button().Name("btnRunReport")
+				.HtmlAttributes(new { type = "button", onclick = "runReport()", style = "height:105px; width:105px; margin-right:0px; cursor:pointer;" })
+				.Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+					<img style='width:55px;height:55px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/print_invoice_color.png'/>
+					<div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>POKRENI<br/>IZVJEŠTAJ<div>
+				</div>"))
+		</div>
+
+	</div>
+
+</div>
+

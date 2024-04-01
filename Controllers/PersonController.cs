@@ -9,31 +9,42 @@ using Oblak.Models;
 using Oblak.Models.Api;
 using Oblak.Services;
 using Oblak.Services.MNE;
+using Oblak.Services.Reporting;
 using Oblak.Services.SRB;
+using System.Globalization;
+using System.Text;
+using System.Text.Json;
+using static SQLite.SQLite3;
 
 namespace RegBor.Controllers
 {
-	public class PersonController : Controller
-	{
-        private readonly Register _registerClient;        
-		private readonly ApplicationDbContext _db;
-		private readonly ILogger<PersonController> _logger;
-		private readonly IMapper _mapper;
-		private readonly ApplicationUser _appUser;
-		private readonly int _legalEntityId;
-		
+    public class PersonController : Controller
+    {
+        private readonly Register _registerClient;
+        private readonly ReportingService _reporting;
+        private readonly ApplicationDbContext _db;
+        private readonly ILogger<PersonController> _logger;
+        private readonly IMapper _mapper;
+        private readonly ApplicationUser _appUser;
+        private readonly IWebHostEnvironment _env;
+        private readonly int _legalEntityId;
 
-		public PersonController(
-			IServiceProvider serviceProvider,
-            IHttpContextAccessor httpContextAccessor,            
-			ApplicationDbContext db,
-			IMapper mapper,
-			ILogger<PersonController> logger
-			)
-		{
-			_db = db;			
-			_logger = logger;
-			_mapper = mapper;
+
+        public PersonController(
+            IServiceProvider serviceProvider,
+            IHttpContextAccessor httpContextAccessor,
+            ApplicationDbContext db,
+            IMapper mapper,
+            ILogger<PersonController> logger,
+            ReportingService reporting,
+            IWebHostEnvironment env
+            )
+        {
+            _db = db;
+            _logger = logger;
+            _mapper = mapper;
+            _reporting = reporting;
+            _env = env;
 
             var username = httpContextAccessor.HttpContext?.User?.Identity?.Name;
             if (username != null)
@@ -44,9 +55,9 @@ namespace RegBor.Controllers
                 if (_appUser.LegalEntity.Country == Country.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>();
             }
         }
-		
 
-		[HttpGet]
+
+        [HttpGet]
         [Route("groupPersons", Name = "GroupPersons")]
         public async Task<ActionResult> GroupPersons(int groupId)
         {
@@ -64,7 +75,7 @@ namespace RegBor.Controllers
             {
                 codeLists = codeLists.Where(a => a.Country == "SRB").ToList();
 
-                var srbViewModel = new PersonViewModel
+                var srbViewModel = new CodeListViewModel
                 {
                     GenderCodeList = codeLists.Where(x => x.Type == "Gender").ToList(),
                     CountryCodeList = codeLists.Where(x => x.Type == "Country").ToList(),
@@ -84,9 +95,9 @@ namespace RegBor.Controllers
 
             if (_appUser.LegalEntity.Country == Country.MNE)
             {
-                codeLists = codeLists.Where(a => a.Country == "SRB").ToList();
+                codeLists = codeLists.Where(a => a.Country == "MNE").ToList();
 
-                var model = new PersonViewModel
+                var model = new CodeListViewModel
                 {
                     GenderCodeList = codeLists.Where(x => x.Type == "pol").ToList(),
                     CountryCodeList = codeLists.Where(x => x.Type == "drzava").ToList(),
@@ -102,26 +113,29 @@ namespace RegBor.Controllers
             return View();
         }
 
-		[HttpGet]
-		[Route("persons", Name = "Persons")]
-		public async Task<ActionResult> Persons()
-		{
-			var isPropertyAdmin = User.IsInRole("PropertyAdmin");
-			var legalEntityId = _appUser!.LegalEntityId;
+        [HttpGet]
+        [Route("persons", Name = "Persons")]
+        public async Task<ActionResult> Persons(int? groupId)
+        {
+            var group = await _db.Groups.Where(x => x.Id == groupId).FirstOrDefaultAsync();
+            ViewBag.Group = groupId;
 
-			List<PropertyDto> properties = null;
+            var isPropertyAdmin = User.IsInRole("PropertyAdmin");
+            var legalEntityId = _appUser!.LegalEntityId;
 
-			if (isPropertyAdmin)
-			{
-				var ids = _db.LegalEntities.Where(a => a.AdministratorId == legalEntityId).Select(a => a.Id).ToList();
-				properties = _db.Properties.Where(a => ids.Contains(a.LegalEntityId)).ToList()
-					.Select(a => _mapper.Map<Property, PropertyDto>(a)).ToList();
-			}
-			else
-			{
-				properties = _db.Properties.Where(a => a.LegalEntityId == legalEntityId).ToList()
-					.Select(a => _mapper.Map<Property, PropertyDto>(a)).ToList();
-			}
+            List<PropertyDto> properties = null;
+
+            if (isPropertyAdmin)
+            {
+                var ids = _db.LegalEntities.Where(a => a.AdministratorId == legalEntityId).Select(a => a.Id).ToList();
+                properties = _db.Properties.Where(a => ids.Contains(a.LegalEntityId)).ToList()
+                    .Select(a => _mapper.Map<Property, PropertyDto>(a)).ToList();
+            }
+            else
+            {
+                properties = _db.Properties.Where(a => a.LegalEntityId == legalEntityId).ToList()
+                    .Select(a => _mapper.Map<Property, PropertyDto>(a)).ToList();
+            }
 
             ViewBag.Properties = properties;
 
@@ -129,18 +143,45 @@ namespace RegBor.Controllers
             {
                 return View("SrbPersons");
             }
-            else if(_appUser.LegalEntity.Country == Country.MNE)
+            else if (_appUser.LegalEntity.Country == Country.MNE)
             {
                 return View("MnePersons");
             }
-            return View("");
-		}
 
-        public async Task<ActionResult> Get(int? person)
+            return View("");
+        }
+
+        [HttpPost]
+        [Route("mrz")]
+        public async Task<ActionResult> Mrz(int? group, [FromBody] MrzDto mrz)
         {
+            if (_appUser.LegalEntity.Country == Country.SRB)
+            {
+
+            }
+            else if (_appUser.LegalEntity.Country == Country.MNE)
+            {
+
+            }
+
+            return Ok();
+        }
+
+        public async Task<ActionResult> Get(int? person, int? group)
+        {
+            MrzDto mrz = null;
+            try
+            {
+                var m = Request.Form["mrz"];
+                mrz = JsonSerializer.Deserialize<MrzDto>(m);
+            }
+            catch (Exception ex) { }
+
             var codeLists = await _db.CodeLists
                 .Where(a => a.Country == _appUser.LegalEntity.Country.ToString())
                 .ToListAsync();
+
+            ViewBag.Group = group;
 
             if (_appUser.LegalEntity.Country == Country.SRB)
             {
@@ -148,7 +189,7 @@ namespace RegBor.Controllers
                 if (person == null) dto = new SrbPersonEnrichedDto();
                 else dto = dto;
 
-                var srbViewModel = new PersonViewModel
+                var srbViewModel = new CodeListViewModel
                 {
                     GenderCodeList = codeLists.Where(x => x.Type == "Gender").ToList(),
                     CountryCodeList = codeLists.Where(x => x.Type == "Country").ToList(),
@@ -170,12 +211,71 @@ namespace RegBor.Controllers
             if (_appUser.LegalEntity.Country == Country.MNE)
             {
                 MnePersonEnrichedDto dto = null;
-                if (person == null) dto = new MnePersonEnrichedDto();
-                else dto = dto;
+                if (person == 0)
+                {
+                    dto = new MnePersonEnrichedDto();
+                    if (group.HasValue && group != 0)
+                    {
+                        var g = _db.Groups.Include(a => a.Property).FirstOrDefault(a => a.Id == group);
+                        if (g != null)
+                        {
+                            dto.PropertyId = g.Property.Id;
+                            dto.PropertyName = g.Property.Name;
+                            dto.CheckIn = g.CheckIn.Value;
+                            dto.CheckOut = g.CheckOut.Value;
+                        }
+                    }
+                    else
+                    {
+                        if (mrz != null)
+                        {
+                            dto.PersonType = mrz.DocIssuer == "MNE" ? "1" : "4";
+                            dto.LastName = mrz.HolderNamePrimary;
+                            dto.FirstName = mrz.HolderNameSecondary;
+                            dto.Nationality = mrz.HolderNationality;
+                            dto.BirthDate = mrz.HolderDateOfBirthDate();
+                            dto.Gender = mrz.HolderSex;
+                            dto.PersonalNumber = mrz.HolderNumber;
+                            dto.DocumentCountry = mrz.DocIssuer;
+                            dto.DocumentIssuer = mrz.DocAuthority;
+                            dto.DocumentNumber = mrz.DocNumber;
+                            dto.DocumentValidTo = mrz.DocExpiryDate();
+                            dto.DocumentType = mrz.DocType == "IcaoTd1" || mrz.DocType == "IcaoTd2" ? "2" : "1";
+                            dto.CheckIn = DateTime.Now;
+                            dto.CheckOut = DateTime.Now.AddDays(1);
+                            dto.BirthCountry = mrz.DocIssuer;
+                            dto.PermanentResidenceCountry = mrz.DocIssuer;
+                        }
+                        else
+                        {
+                            dto.CheckIn = DateTime.Now;
+                            dto.CheckOut = DateTime.Now.AddDays(1);
+                        }
+
+                        var legalEntityId = _appUser!.LegalEntityId;
+                        var isPropertyAdmin = User.IsInRole("PropertyAdmin");
+                        if (isPropertyAdmin == false)
+                        {
+                            var properties = _db.Properties.Where(a => a.LegalEntityId == legalEntityId).ToList();
+                            if (properties.Count == 1)
+                            {
+                                dto.PropertyId = properties[0].Id;
+                                dto.PropertyName = properties[0].Name;
+                            }
+                        }
+
+                    }
+                }
+                else
+                {
+                    var p = _db.MnePersons.Include(a => a.Property).Include(a => a.LegalEntity).Include(a => a.Group).FirstOrDefault(a => a.Id == person);
+                    dto = new MnePersonEnrichedDto();
+                    dto = dto.GetFromMnePerson(p);
+                }
 
                 codeLists = codeLists.Where(a => a.Country == "MNE").ToList();
 
-                var model = new PersonViewModel
+                var model = new CodeListViewModel
                 {
                     GenderCodeList = codeLists.Where(x => x.Type == "pol").ToList(),
                     CountryCodeList = codeLists.Where(x => x.Type == "drzava").ToList(),
@@ -183,16 +283,93 @@ namespace RegBor.Controllers
                     EntryPointCodeList = codeLists.Where(x => x.Type == "prelaz").ToList(),
                     PersonTypeCodeList = codeLists.Where(x => x.Type == "gost").ToList(),
                     VisaTypeCodeList = codeLists.Where(x => x.Type == "viza").ToList(),
+                    ResTaxPaymentTypes = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId).ToDictionary(a => a.Id.ToString(), b => b.Description),
+                    ResTaxTypes = _db.ResTaxTypes.Where(a => a.PartnerId == _appUser.PartnerId).ToDictionary(a => a.Id.ToString(), b => b.Description)
+
+                    //ResTaxStatuses = new Dictionary<string, string>() { { "Unpaid", "Nije plaćena" }, { "Cash", "Plaćena gotovinom" }, { "Card", "Plaćena karticom" }, { "BankAccount", "Plaćena virmanski" } },
+                    //ResTaxTypes = new Dictionary<string, string>() { { "Unpaid", "Nije plaćena" }, { "Cash", "Plaćena gotovinom" }, { "Card", "Plaćena karticom" }, { "BankAccount", "Plaćena virmanski" } },
                 };
 
                 ViewBag.Dto = dto;
+
+                ViewBag.Disabled = false;
+                ViewBag.TO = false;
+
+                if (User.IsInRole("TouristOrg"))
+                {
+                    ViewBag.TO = true;
+                    if (User.IsInRole("TouristOrgOperator"))
+                    {
+                        if (dto.ExternalId != null) ViewBag.Disabled = true;                        
+                    }
+                }
+
                 return PartialView("MnePerson", model);
             }
 
             return PartialView();
         }
 
-		public async Task<ActionResult> ReadMnePersons([DataSourceRequest] DataSourceRequest request, int groupId)
+        public ActionResult ResTax(int property, int? resType, int? payType, string birthDate, string checkIn, string checkOut)
+        {
+            var p = _db.Properties.Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == property);
+            var pid = p.LegalEntity.PartnerId;
+            var rt = _db.ResTaxTypes.FirstOrDefault(a => a.Id == resType);
+            var pt = _db.ResTaxPaymentTypes.FirstOrDefault(a => a.Id == payType);
+
+            DateTime? bd = null;
+            DateTime? ci = null;
+            DateTime? co = null;
+
+            if (birthDate != null)
+            {
+                bd = DateTime.ParseExact(birthDate, "dd.MM.yyyy", null);
+                if (rt != null && (rt.AgeFrom != null || rt.AgeTo != null))
+                {
+                    var zero = new DateTime(1, 1, 1);
+                    var span = (DateTime.Now.Date - bd.Value.Date);
+                    var age = (zero + span).Year - 1;
+
+                    rt = _db.ResTaxTypes.Where(a => a.PartnerId == pid).FirstOrDefault(a => a.AgeFrom <= age && age <= a.AgeTo);
+                }
+            }
+
+            int days = 0;
+            decimal tax = 0;
+            decimal fee = 0;
+
+            if (checkIn != null && checkOut != null)
+            {
+                ci = DateTime.ParseExact(checkIn, "dd.MM.yyyy", null);
+                co = DateTime.ParseExact(checkOut, "dd.MM.yyyy", null);
+
+                days = (int)(co.Value.Date - ci.Value.Date).TotalDays;
+                if (days < 0) days = 0;
+            }
+
+            if (rt != null)
+            {
+                tax = rt.Amount * days;
+            }
+
+            if (pt != null)
+            {
+                var resTaxFees = _db.ResTaxFees.Where(a => a.ResTaxPaymentTypeId == pt.Id).ToList();
+                if (resTaxFees.Any())
+                {
+                    var resTaxFee = resTaxFees.Where(a => a.LowerLimit <= tax && tax <= a.UpperLimit).FirstOrDefault();
+                    if (resTaxFee != null)
+                    {
+                        if (resTaxFee.FeeAmount.HasValue) fee = resTaxFee.FeeAmount.Value;
+                        if (resTaxFee.FeePercentage.HasValue) fee = resTaxFee.FeePercentage.Value / 100m * tax;
+                    }
+                }
+            }
+
+            return Json(new { tax, fee, resType = rt?.Id, payType = pt?.Id });
+        }
+
+        public async Task<ActionResult> ReadMnePersons([DataSourceRequest] DataSourceRequest request, int groupId)
         {
             var codeLists = await _db.CodeLists
                 .Where(a => a.Country == _appUser.LegalEntity.Country.ToString())
@@ -207,10 +384,19 @@ namespace RegBor.Controllers
                 .Where(x => x.Type == "isprava")
                 .ToDictionary(x => x.ExternalId, x => x.Name);
 
-            var data = _db.MnePersons
-                .Where(a => a.LegalEntityId == _legalEntityId)
-                .Where(x => x.GroupId == groupId)
-                .Include(a => a.Property)
+            var query = _db.MnePersons.Include(a => a.Property)
+                .Where(a => a.LegalEntityId == _legalEntityId);
+
+            if (groupId != 0)
+            {
+                query = query.Where(a => a.GroupId == groupId);
+            }
+            else
+            {
+                query = query.Where(a => a.GroupId == null);
+            }
+
+            var data = query
                 .OrderByDescending(x => x.Id)
                 .Select(a => new MnePersonEnrichedDto
                 {
@@ -242,32 +428,45 @@ namespace RegBor.Controllers
                     VisaNumber = a.VisaNumber,
                     VisaIssuePlace = a.VisaIssuePlace,
                     VisaValidFrom = a.VisaValidFrom,
-                    VisaValidTo = a.VisaValidTo
+                    VisaValidTo = a.VisaValidTo,
+                    Registered = a.ExternalId != null,
+                    Deleted = a.IsDeleted
                 });
 
             return Json(await data.ToDataSourceResultAsync(request));
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateMnePerson(MnePersonDto newGuestDto, [DataSourceRequest] DataSourceRequest request)
+        [Route("save-mne-person")]
+        public async Task<ActionResult> CreateMnePerson([FromForm] MnePersonDto guestDto, [DataSourceRequest] DataSourceRequest request)
         {
             try
             {
-                var newGuest = _mapper.Map<MnePersonDto, MnePerson>(newGuestDto);
-                var property = _db.Properties.FirstOrDefault(a => a.Id == newGuestDto.PropertyId);
-                newGuest.LegalEntityId = property.LegalEntityId;
+                if (User.IsInRole("TouristOrgOperator"))
+                {
+                    var g = _db.MnePersons.FirstOrDefault(a => a.Id == guestDto.Id);
+                    if (g != null && (g.ExternalId ?? 0) != 0)
+                    {
+                        return Json(new BasicDto() { info = "", error = "Nemate prava da vršite izmjene na već prijavljenom gostu!" });
+                    }
+                }
+
+                var newGuest = _mapper.Map<MnePersonDto, MnePerson>(guestDto);
+                var property = _db.Properties.Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == guestDto.PropertyId);
+                //newGuest.LegalEntityId = property.LegalEntityId;
 
                 var validation = _registerClient.Validate(newGuest, newGuest.CheckIn, newGuest.CheckOut);
 
                 if (validation.ValidationErrors.Any())
                 {
-                    return Json(new { success = false, errors = validation.ValidationErrors });
+                    return Json(new BasicDto() { info = "", error = "", errors = validation.ValidationErrors });
                 }
 
-                await _db.MnePersons.AddAsync(newGuest);
-                await _db.SaveChangesAsync();
+                await _registerClient.Initialize(property.LegalEntity);
 
-                return Json(new { success = true });
+                await _registerClient.Person(guestDto);
+
+                return Json(new BasicDto() { info = "Uspješno sačuvan gost", error = "" });
             }
             catch (Exception ex)
             {
@@ -465,6 +664,95 @@ namespace RegBor.Controllers
                 .ToListAsync();
 
             return Json(codeLists);
+        }
+
+        [HttpGet]
+        [Route("post-office")]
+        public IActionResult PostOffice()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        [Route("post-office-export")]
+        public FileResult PostOfficeExport(string datum)
+        {
+            var date = DateTime.ParseExact(datum, "dd.MM.yyyy", CultureInfo.InvariantCulture);
+
+            var partner = _db.Partners.Find(_appUser.PartnerId);
+
+            var guests = _db.MnePersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity)
+                .Where(a => (a.UserCreatedDate ?? (DateTime?)a.CheckIn ?? DateTime.MinValue).Date == date)
+                .Where(a => a.Property.LegalEntity.PartnerId == partner.Id)
+                .Select(a => new { a.Property.LegalEntity.Name, a.Property.LegalEntity.TIN, Date = a.UserCreatedDate ?? a.CheckIn, Tax = (a.ResTaxAmount ?? 0m) })
+                .ToList();
+
+            var lines = guests.OrderBy(a => a.Date)
+                .Select((a, b) =>
+                    $"0|{partner.TIN}|{(b + 1).ToString("00000")}|0|{a.Name}|Uplata boravišne takse|TO Bar||{a.TIN}|{a.Tax.ToString("##0.00", new CultureInfo("en-US"))}|330|510-8093205-10|{a.Date.ToString("yyyyMMdd HH:mm:ss")}|0"
+                    )
+                .ToList();
+
+            var txt = string.Join(Environment.NewLine, lines);
+
+            return File(Encoding.UTF8.GetBytes(txt), "text/plain", $"{partner.Name}_PostOfficeExport_{date.ToString("yyyyMMdd")}.txt");
+        }
+
+        [HttpGet]
+        [Route("post-office-report")]
+        public FileResult PostOfficeReport(string datum)
+        {
+            var date = DateTime.ParseExact(datum, "dd.MM.yyyy", CultureInfo.InvariantCulture);
+
+            var partner = _db.Partners.Find(_appUser.PartnerId);
+
+            var toReport = $"{partner.Id}PostOffice";            
+            var path = Path.Combine(_env.ContentRootPath, "Reports", toReport);
+
+            var bytes = _reporting.RenderReport(
+                path, 
+                new List<Telerik.Reporting.Parameter>() { 
+                    new Telerik.Reporting.Parameter(){ Name = "Date", Value = date },
+                    new Telerik.Reporting.Parameter(){ Name = "PartnerId", Value = partner.Id },
+                    new Telerik.Reporting.Parameter(){ Name = "CheckInPoint", Value = partner.Id },
+                },
+                "PDF");
+
+            return File(bytes, "application/pdf");
+        }
+
+        [HttpGet]
+        [Route("print-direct")]
+        public IActionResult PrintDirect(int id)
+        {
+            var person = _db.MnePersons.Include(a => a.Property).Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == id);
+
+            return Json(new
+            {
+                from = $"{person.Property.LegalEntity.Name}\n{person.Property.LegalEntity.TIN}",
+                to = "Opstina Bar",
+                fromacc = "-",
+                toacc = "510-8093205-10",
+                desc = "Uplata boravisne takse",
+                amount = ((person.ResTaxAmount).Value + (person.ResTaxFee ?? 0m)).ToString("#,###.00", new CultureInfo("de-DE"))
+            });
+        }
+
+        [HttpGet]
+        [Route("virman")]
+        public IActionResult Virman(int id)
+        {
+            ViewBag.Id = id;
+            return PartialView();
+        }
+
+        [HttpGet]
+        [Route("virman-print")]
+        public FileResult VirmanPrint(int id)
+        {
+            var result = _reporting.RenderReport("Virman", new List<Telerik.Reporting.Parameter>() { new Telerik.Reporting.Parameter("Id", id) }, "PDF");
+
+            return File(result, "application/pdf");
         }
     }
 }

@@ -2,7 +2,7 @@
 {
     public class PersonErrorDto
     { 
-        public int PersonId { get; set; }
+        public string PersonId { get; set; }
 
         public List<PersonValidationError> ValidationErrors { get; set; } = new List<PersonValidationError>();
 

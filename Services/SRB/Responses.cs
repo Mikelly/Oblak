@@ -114,8 +114,8 @@ public class SmestajnaJedinica
     public string SpratSmestajneJedinice { get; set; }
     public int JedinstveniIdentifikator { get; set; }
     public int JeObrisan { get; set; }
-    public DateTime? DatumBoravkaOd { get; set; }
-    public DateTime? DatumBoravkaDo { get; set; }
+    public string? DatumBoravkaOd { get; set; }
+    public string? DatumBoravkaDo { get; set; }
 }
 
 

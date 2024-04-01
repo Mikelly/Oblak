@@ -9,10 +9,15 @@ namespace Oblak.Data
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id  { get; set; }
 
-        [StringLength(450)]
-        public string Code { get; set; }
+        public int LegalEntityId { get; set; }
 
-        public int LegalEntityId { get; set; }        
+        public int PropertyId { get; set; }
+
+        [StringLength(450)]
+        public string FiscalEnuCode { get; set; }
+
+        [StringLength(450)]
+        public string OperatorCode { get; set; }
 
         public int No { get; set; }
 
@@ -21,15 +26,22 @@ namespace Oblak.Data
 
         public decimal? AutoDeposit { get; set; } = 0m;
 
+        [StringLength(450)]
         public string? Settings { get; set; } = string.Empty;
 
+        [StringLength(450)]
         public string Status { get; set; } = "A";
 
 
         #region Payteon
 
+        [StringLength(450)]
         public string? PayteonId { get; set; }
+
+        [StringLength(450)]
         public string? PayteonPassword { get; set; }
+
+        [StringLength(450)]
         public string? PayteonUser { get; set; }
 
         #endregion
@@ -50,6 +62,8 @@ namespace Oblak.Data
         #region Navigation Properties
 
         public LegalEntity LegalEntity { get; set; }
+
+        public Property Property { get; set; }
 
         #endregion
     }

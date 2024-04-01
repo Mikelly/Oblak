@@ -11,11 +11,16 @@ namespace Oblak.Data
 
         public int LegalEntityId { get; set; }
 
+        public int? PartnerId { get; set; }
+
         [StringLength(450)]
         public string? Language { get; set; }
 
         [StringLength(450)]
         public string? EfiOperator { get; set; }
+
+        [StringLength(450)]
+        public string? PersonName { get; set; }
 
         public int? CheckInPointId { get; set; }
 

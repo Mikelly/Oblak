@@ -1,6 +1,6 @@
 ﻿namespace Oblak.Interfaces;
 
-public interface IMessageHub
+public interface IMessageHubb
 {
     Task Notify();
     Task Status(int progress, string message);

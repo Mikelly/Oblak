@@ -29,42 +29,48 @@
     left: 2px !important;
 }
 
-.k-button.k-button-icontext.k-grid-edit {
-    min-width: 0px !important;
-    min-height: 0px !important;
-    width: 25px !important;
-    height: 23px !important;
-    margin: 0px !important;
-    padding: 0px !important;
+.k-command-cell.k-table-td
+{
+    padding: 3px 6px 3px 8px!important;
 }
 
-.k-button.k-button-icontext.k-grid-update {
+.k-button.k-grid-edit-command {
     min-width: 0px !important;
     min-height: 0px !important;
     width: 25px !important;
-    height: 23px !important;
+    height: 25px !important;
     margin: 0px !important;
-    padding: 0px !important;
+    padding: 2px !important;
+}
+
+.k-button.k-grid-save-command {
+    min-width: 0px !important;
+    min-height: 0px !important;
+    width: 25px !important;
+    height: 25px !important;
+    margin: 0px !important;
+    padding: 2px !important;
 }
 
 /* css za delete dugme */
-.k-button.k-button-icontext.k-grid-delete {
+.k-button.k-grid-remove-command {
     min-width: 0px !important;
     min-height: 0px !important;
     width: 25px !important;
-    height: 23px !important;
+    height: 25px !important;
     margin: 0px !important;
     padding: 0px !important;
-    margin-left: 4px !important;
+    margin-left: 5px !important;
 }
 
-.k-button.k-button-icontext.k-grid-cancel {
+.k-button.k-grid-cancel-command {
     min-width: 0px !important;
     min-height: 0px !important;
     width: 25px !important;
-    height: 23px !important;
+    height: 25px !important;
     margin: 0px !important;
-    padding: 0px !important;
+    padding: 2px !important;
+    margin-left: 5px !important;
 }
 
 .k-grid-cancel {
@@ -117,9 +123,9 @@ th.k-header .k-link {
     -----------------------------------------------------
 */
 
-.k-window-titlebar {
+/*.k-window-titlebar {
     padding: 0px 16px; 
-}
+}*/
 
 
 /*
@@ -163,4 +169,52 @@ label, input {
 span[role="option"].k-input 
 {
     width:calc(100% - 30px);
+}
+
+
+
+/*
+    -----------------------------------------------------
+    Fontovi
+    -----------------------------------------------------
+*/
+
+.k-grid, .k-window, .k-button {
+    font-family: 'Fira Sans', sans-serif;
+}
+
+
+/*
+    -----------------------------------------------------
+    Pager on footer
+    -----------------------------------------------------
+*/
+
+.k-pager.k-grid-pager {
+    padding: 4px 8px!important;
+}
+
+.k-pager-info.k-label {
+    padding-top: 4px !important;
+}
+
+
+/*
+    -----------------------------------------------------
+    Column title bold
+    -----------------------------------------------------
+*/
+
+span.k-column-title {
+    font-weight: bold;
+}
+
+/*
+    -----------------------------------------------------
+    Column group centered
+    -----------------------------------------------------
+*/
+
+th[colspan] span.k-link {
+    justify-content:center!important;
 }

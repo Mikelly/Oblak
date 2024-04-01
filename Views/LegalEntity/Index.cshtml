@@ -1,12 +1,20 @@
 ﻿@using Oblak.Models.Api;
-@using Oblak.Models.rb90;
-@{
-    ViewBag.Title = "Prijave gostiju";
-    Layout = "~/Views/Shared/_LayoutINV.cshtml";
+@using Oblak.Models.EFI;
 
+@{
+    ViewBag.Title = "Izdavaoci";
+    Layout = "~/Views/Shared/_LayoutINV.cshtml";
+    var property_admin = User.IsInRole("PropertyAdmin");
+    var legalEntityTypes = new SelectList(new List<SelectListItem> { new SelectListItem { Text = "Person", Value = "Fizičko lice" }, new SelectListItem { Text = "Company", Value = "Pravno lice" } }, "Text", "Value");
+    var ladmins = (ViewBag.Admins as List<LegalEntity>).Select(a => new SelectListItem { Text = a.Id.ToString(), Value = a.Name }).ToList();
+    ladmins.Insert(0, new SelectListItem() { Text = "", Value = "" });
+    var admins = new SelectList(ladmins, "Text", "Value");
 }
 
 <script type="text/javascript">
+    
+    var le = -1;
+
     $(document).ready(function () {
         
     });
@@ -93,7 +101,7 @@
 
         if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati klijenta', confirmButtonText: `U redu` });
 
-        var le = item.Id;        
+        le = item.Id;        
 
         $.ajax({
             url: `srb-cred?legalentity=${le}`,
@@ -111,24 +119,363 @@
         });
     }
 
-    function onCancel(e) {
-        var grid = e.sender;
-        grid.dataSource.cancelChanges(); // Cancel changes in the data source
-        grid.dataSource.read(); // Refresh the data source
+    function mneCert() {
+        var grid = $('#legalEntitiesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati klijenta', confirmButtonText: `U redu` });
+
+        le = item.Id;
+
+        $.ajax({
+            url: `upload-cert?certType=rb90&legalentity=${le}`,
+            type: 'GET',
+            success: function (data) {
+                console.log(data);
+                $("#wndMneCert").data("kendoWindow").title('RB90 digitalni certifikat');
+                $("#wndMneCert").data("kendoWindow").content(data).center().open();
+            },
+            error: function (error) {
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'Došlo je do greške', confirmButtonText: `U redu` });
+            },
+            complete: function () {
+            }
+        });
     }
 
-    function onUpdateButtonClick(e) {
-        // Get a reference to the Kendo Grid
-        var grid = $("#legalEntitiesGrid").data("kendoGrid");
+    function mneEfiCert() {
+        var grid = $('#legalEntitiesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
 
-        // Save changes (update the record)
-        grid.saveRow();
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati klijenta', confirmButtonText: `U redu` });
 
-        // Close the editor popup
-        grid.closeCell();
+        le = item.Id;
 
-        // Refresh the grid
-        grid.dataSource.read();
+        $.ajax({
+            url: `upload-cert?certType=efi&legalentity=${le}`,
+            type: 'GET',
+            success: function (data) {
+                console.log(data);
+                $("#wndMneCert").data("kendoWindow").title('EFI digitalni certifikat');
+                $("#wndMneCert").data("kendoWindow").content(data).center().open();
+            },
+            error: function (error) {
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'Došlo je do greške', confirmButtonText: `U redu` });
+            },
+            complete: function () {
+            }
+        });
+    }
+
+    function logo() {
+        var grid = $('#legalEntitiesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati klijenta', confirmButtonText: `U redu` });
+
+        le = item.Id;
+
+        $.ajax({
+            url: `upload-logo?legalentity=${le}`,
+            type: 'GET',
+            success: function (data) {                
+                $("#wndLogo").data("kendoWindow").content(data).center().open();
+            },
+            error: function (error) {
+                console.error(error);
+                alert("Došlo je do greške.");
+            },
+            complete: function () {
+            }
+        });
+    }
+
+    function header() {
+        var grid = $('#legalEntitiesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati klijenta', confirmButtonText: `U redu` });
+
+        le = item.Id;
+
+        $.ajax({
+            url: `upload-header?legalentity=${le}`,
+            type: 'GET',
+            success: function (data) {
+                $("#wndHeader").data("kendoWindow").content(data).center().open();
+            },
+            error: function (error) {
+                console.error(error);
+                alert("Došlo je do greške.");
+            },
+            complete: function () {
+            }
+        });
+    }
+
+    function setHeader() {
+
+        $.ajax({
+            url: `/upload-header`,
+            type: 'POST',
+            data: $('#headerForm').serialize(),
+            success: function (data, status, xhr) {
+                if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+                else {
+                    Swal.fire({ icon: 'success', title: data.info, confirmButtonText: `U redu` });
+                    var wnd = $("#wndHeader").data("kendoWindow").close();
+                }
+            }
+        });
+    }
+
+    function uploadSSL(e) {
+
+        var form = $('#certForm')[0];
+        var formData = new FormData(form);
+
+        $.each($("input[type='file']")[0].files, function (i, file) {
+            formData.append('certFile', file);
+        });
+
+        formData.append('certPassword', $('#certPassword').val());
+        formData.append('certType', $('#certType').val());
+        formData.append('legalEntity', $('#legalEntity').val());
+
+        $.ajax({
+            url: '/upload-cert',
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function (data) {
+                reloadSSL('rb90');
+            },
+            error: function () {
+
+            }
+        });
+    }
+
+
+    function uploadLogo(e) {
+
+        var form = $('#logoForm')[0];
+        var formData = new FormData(form);
+
+        $.each($("input[type='file']")[0].files, function (i, file) {
+            formData.append('logo', file);
+        });
+
+        formData.append('legalEntity', $('#legalEntity').val());
+
+        $.ajax({
+            url: '/upload-logo',
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function (data) {
+                if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+                if (data.info != "") {                    
+                    Swal.fire({ icon: 'info', title: data.info, confirmButtonText: `U redu` });
+                    reloadLogo();
+                }
+            },
+            error: function () {
+
+            }
+        });
+    }
+
+    function changeLogo() { 
+        reloadLogo("Y");
+    }
+
+
+    function deleteSSL(certType, legalEntity) {
+
+        $.ajax({
+            url: `/delete-cert?certType=${certType}&legalEntity=${legalEntity}`,
+            type: 'POST', 
+            data: { certType: certType, legalEntity: legalEntity },
+            success: function (data) {
+                if (data.error != "") 
+                {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+                if (data.info != "") 
+                {
+                    //Swal.fire({ icon: 'info', title: data.info, confirmButtonText: `U redu` });
+                    reloadSSL('rb90');
+                }
+            },
+            error: function () {
+
+            }
+        });
+    }
+
+    function reloadSSL(certType) 
+    {
+        $.ajax({
+            url: `upload-cert?certType=${certType}&legalentity=${le}`,
+            type: 'GET',
+            success: function (data) {                
+                $("#wndMneCert").data("kendoWindow").content(data).center().open();
+            },
+            error: function (error) {                
+                Swal.fire({ icon: 'error', title: 'Došlo je do greške', confirmButtonText: `U redu` });
+            },
+            complete: function () {
+            }
+        });
+    }
+
+    function reloadLogo(show) {
+        $.ajax({
+            url: `upload-logo?legalentity=${le}&hide=${show}`,
+            type: 'GET',
+            success: function (data) {
+                $("#wndLogo").data("kendoWindow").content(data).center().open();
+            },
+            error: function (error) {
+                Swal.fire({ icon: 'error', title: 'Došlo je do greške', confirmButtonText: `U redu` });
+            },
+            complete: function () {
+            }
+        });
+    }
+
+    function properties() {
+
+        var grid = $('#legalEntitiesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati izdavaoca', confirmButtonText: `U redu` });
+
+        le = item.Id;
+        
+        $.ajax({
+            url: `/properties?how=P&legalentity=${le}`,
+            type: 'GET',
+            success: function (data, status, xhr) {
+                var wnd = $("#wndProperties").data("kendoWindow");
+                wnd.content(data);
+                wnd.setOptions({
+                    width: $(window).width() * 0.95,
+                    height: $(window).height() * 0.95
+                });
+                wnd.center().open();
+            }
+        });
+    }
+
+    function register() {
+
+        $.ajax({
+            url: `/register-client`,
+            type: 'GET',
+            success: function (data, status, xhr) {
+                var wnd = $("#wndRegister").data("kendoWindow");
+                wnd.content(data);
+                // wnd.setOptions({
+                //     width: $(window).width() * 0.80,
+                //     height: $(window).height() * 0.80
+                // });
+                wnd.center().open();
+            }
+        });
+    }
+
+    function registerClient() {
+
+        $.ajax({
+            url: `/register-client`,
+            type: 'POST',
+            data: $('#clientForm').serialize(),
+            success: function (data, status, xhr) {
+                if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+                else {
+                    $("#wndRegister").data("kendoWindow").close();
+                    $('#legalEntitiesGrid').data('kendoGrid').dataSource.read();
+                }
+            }
+        });
+    }
+
+    function account() {
+
+        var grid = $('#legalEntitiesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati izdavaoca', confirmButtonText: `U redu` });
+
+        le = item.Id;
+
+        $.ajax({
+            url: `/legal-entity-account?legalentity=${le}`,
+            type: 'GET',
+            success: function (data, status, xhr) {
+                var wnd = $("#wndAccount").data("kendoWindow");
+                wnd.content(data);
+                wnd.center().open();
+            }
+        });
+    }
+
+    function roles() {
+
+        var grid = $('#legalEntitiesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati izdavaoca', confirmButtonText: `U redu` });
+
+        le = item.Id;
+
+        $.ajax({
+            url: `/roles-admin?legalentity=${le}`,
+            type: 'GET',
+            success: function (data, status, xhr) {
+                if (xhr.getResponseHeader('content-type').indexOf("html") > 0) {
+                    var wnd = $("#wndRoles").data("kendoWindow");
+                    wnd.content(data);
+                    wnd.center().open();
+                }
+                else if (xhr.getResponseHeader('content-type').indexOf("json") > 0) {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+            }
+        });
+    }
+
+    function accountCreate() {
+
+        var grid = $('#legalEntitiesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+        le = item.Id;
+
+        $.ajax({
+            url: `/legal-entity-account?legalentity=${le}`,
+            type: 'POST',
+            data: $('#accountForm').serialize(),
+            success: function (data, status, xhr) {
+                if (data.error != "") Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                else 
+                {
+                    Swal.fire({ icon: 'success', title: data.info, confirmButtonText: `U redu` });
+                    var wnd = $("#wndAccount").data("kendoWindow").close();
+                }
+            }
+        });
     }
 
 </script>
@@ -136,28 +483,74 @@
 <style type="text/css">
 </style>
 
-<div>
-    <div style="display: inline-block; margin-right: 35px; margin-left:20px; margin-top:10px; text-align:center;">
-        @(Html.Kendo().Button().Name("btnNewGroup")
-            .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/unlock.png'></img>")
-            .HtmlAttributes(new { onclick = "srbCred()", style = "width:80px; height:80px; border-radius:50%;" })
-            )
-        <div style="margin-top:3px;"><b>Eturista kredencijali</b></div>
-    </div>
-    <div style="display: inline-block; margin-right: 35px; text-align:center;">
-        @(Html.Kendo().Button().Name("btnOpenGroup")
-            .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-2px; left:2px;' src='/Content/Icons/logo.png'></img>")
-            .HtmlAttributes(new { onclick = "showGroup(event)", style = "width:80px; height:80px; border-radius:50%;" })
-            )
-        <div style="margin-top:3px;"><b>Dodaj logo</b></div>
-    </div>
-    <div style="display: inline-block; margin-right: 35px; text-align:center;">
-        @(Html.Kendo().Button().Name("btnDeleteGroup")
-            .Content("<img style='width:58px;height:58px;text-align:center; position:relative; top:-1px;' src='/Content/Icons/check_file_color.png'></img>")
-            .HtmlAttributes(new { onclick = "deleteGroup(event)", style = "width:80px; height:80px; border-radius:50%;" })
-            )
-        <div style="margin-top:3px;"><b>Dodaj zaglavlje racuna</b></div>
-    </div>
+<div style="display:flex; margin-left:15px; margin-top:25px; margin-right:15px;">
+    @(Html.Kendo().Button().Name("btnNewClient")
+        .HtmlAttributes(new { type = "button", onclick = "register()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/bed.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>NOVI<br/>IZDAVALAC<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnProperties")
+        .HtmlAttributes(new { type = "button", onclick = "properties()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/hotel.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>SMJEŠTAJNI<br/>OBJEKTI<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnAccount")
+        .HtmlAttributes(new { type = "button", onclick = "account()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:48px;height:48px;text-align:center;display:block;margin-left:auto;margin-right:auto;margin-top:2px;' src='/Content/Icons/access.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>KORISNIČKI<br/>NALOG<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnRoles")
+        .HtmlAttributes(new { type = "button", onclick = "roles()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:48px;height:48px;text-align:center;display:block;margin-left:auto;margin-right:auto;margin-top:2px;' src='/Content/Icons/user-account.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>KORISNIČKE<br/>ULOGE<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnSrbCred")
+        .HtmlAttributes(new { type = "button", onclick = "srbCred()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:48px;height:48px;text-align:center;display:block;margin-left:auto;margin-right:auto;margin-top:2px;' src='/Content/Icons/key-security.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>E-TURISTA<br/>KREDENCIJALI<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnMneCert")
+        .HtmlAttributes(new { type = "button", onclick = "mneCert()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:48px;height:48px;text-align:center;display:block;margin-left:auto;margin-right:auto;margin-top:2px;' src='/Content/Icons/licence_color.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>RB90<br/>CERTIFIKAT<div>
+                </div>"))
+
+    @if (User.IsInRole("Invoice") || true)
+    {
+        @(Html.Kendo().Button().Name("btnLogo")
+            .HtmlAttributes(new { type = "button", onclick = "logo()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                        <img style='width:48px;height:48px;text-align:center;display:block;margin-left:auto;margin-right:auto;margin-top:2px;' src='/Content/Icons/logo.png'/>
+                        <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>PODESI<br/>LOGO<div>
+                    </div>"))
+
+        @(Html.Kendo().Button().Name("btnHeader")
+            .HtmlAttributes(new { type = "button", onclick = "header()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                        <img style='width:48px;height:48px;text-align:center;display:block;margin-left:auto;margin-right:auto;margin-top:2px;' src='/Content/Icons/receipt.png'/>
+                        <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>ZAGLAVLJE<br/>RAČUNA<div>
+                    </div>"))
+
+        @(Html.Kendo().Button().Name("btnEfiCert")
+            .HtmlAttributes(new { type = "button", onclick = "mneEfiCert()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                        <img style='width:48px;height:48px;text-align:center;display:block;margin-left:auto;margin-right:auto;margin-top:2px;' src='/Content/Icons/licence_color.png'/>
+                        <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>EFI<br/>CERTIFIKAT<div>
+                    </div>"))
+
+    }    
+
 </div>
 
 <div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
@@ -167,51 +560,49 @@
         {
             columns.Command(command =>
             {
-                command.Edit().Text(" ");
-                command.Destroy().Text(" ");
-            }).Width(70);
-            columns.Bound(g => g.Id).Title("Id").Width(100);
-            columns.Bound(g => g.Name).Title("Naziv").Width("100%");
-            columns.Bound(g => g.TIN).Title("Poreski identifikacioni broj").Width(200);
-            columns.Bound(g => g.Address).Title("Adresa").Width(300);
-            columns.Bound(g => g.Country).Title("Država").Width(150);
-            columns.Bound(g => g.InVat).Title("U PDV-u").Width(100).ClientTemplate("#= InVat ? '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' #");
+                command.Edit().Text(" ").CancelText(" ").UpdateText(" ");
+                command.Destroy().Text(" ");                
+            }).Width("70px");
+
+            columns.Bound(g => g.Id).Title("Id").Width("80px");
+            columns.Bound(g => g.Name).Title("Naziv").Width("40%");
+            columns.ForeignKey(g => g.Type, legalEntityTypes).Title("Vrsta").Width("150px");
+            if (property_admin) columns.ForeignKey(g => g.AdministratorId, admins).Title("Administrator").Width("250px");
+            columns.Bound(g => g.TIN).Title("Poreski broj").Width("150px").HtmlAttributes(new { style = "text-align:center;" });
+            columns.Bound(g => g.Address).Title("Adresa").Width("40%");
+            columns.Bound(g => g.Country).Title("Država").Width("150px");
+            columns.Bound(g => g.InVat).Title("U PDV-u").Width("100px").ClientTemplate("#= InVat ? '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' #");
         })
         .Pageable(p => p.Refresh(true))
-        .Editable(e => e.Mode(GridEditMode.PopUp)
-            .TemplateName("_LegalEntityEditor")
-            .Window(w => w
-            .Title("Ažuriraj klijenta")
-            .Width(450)
-            .Height(610)
-            )
-        )
+        .Editable(e => e.Mode(GridEditMode.InLine))
         .Sortable()
         .Selectable()
         .Scrollable()
         .Filterable()
-        .HtmlAttributes(new { style = "height:100%;" })
-        .Events(e => e.Cancel("onCancel"))
+        .HtmlAttributes(new { style = "height:100%;" })        
         .DataSource(ds => ds
-        .Ajax()
-        .PageSize(20)
-        .Model(m =>
-        {
-            m.Field(g => g.Id);
-            m.Field(g => g.Type);
-            m.Field(g => g.Name);
-            m.Field(g => g.TIN);
-            m.Field(g => g.Address);
-            m.Field(g => g.Country);
-            m.Field(g => g.InVat);
-            m.Field(g => g.UserCreated);
-            m.Field(g => g.UserCreatedDate);
-            m.Field(g => g.UserModified);
-            m.Field(g => g.UserModifiedDate);
-        })
-        .Read(read => read.Action("Read", "LegalEntity"))
-        .Update(update => update.Action("Update", "LegalEntity"))
-        .Destroy(destroy => destroy.Action("Destroy", "LegalEntity"))
+            .Ajax()
+            .PageSize(20)
+            .Model(m =>
+            {
+                m.Id(g => g.Id);
+                m.Field(g => g.Id).Editable(false);
+                m.Field(g => g.Type);
+                m.Field(g => g.Name);
+                m.Field(g => g.TIN);
+                m.Field(g => g.AdministratorId);
+                m.Field(g => g.Address);
+                m.Field(g => g.Country);
+                m.Field(g => g.InVat);
+                m.Field(g => g.UserCreated);
+                m.Field(g => g.UserCreatedDate);
+                m.Field(g => g.UserModified);
+                m.Field(g => g.UserModifiedDate);
+            })
+        .Read(a => a.Url("legal-entity-read"))
+        .Create(a => a.Url("legal-entity-create"))
+        .Update(a => a.Url("legal-entity-update"))
+        .Destroy(a => a.Url("legal-entity-destroy"))
         ))
 </div>
 
@@ -224,6 +615,76 @@
     .Width(450)
     .Height(410)
     .HtmlAttributes(new { style = "padding:20px;" })
+)
+
+@(Html.Kendo().Window().Name("wndMneCert")
+    .Title("digitalni sertifikat")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(400)
+    .Height(500)
+    .HtmlAttributes(new { style = "padding:20px;" })
+)
+
+@(Html.Kendo().Window().Name("wndProperties")
+    .Title("Smještajni objekti")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(400)
+    .Height(500)
+    .HtmlAttributes(new { style = "padding:20px;" })
+)
+
+@(Html.Kendo().Window().Name("wndRegister")
+    .Title("Kreiranje izdavaoca")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(1200)
+    .Height(600)
+    .HtmlAttributes(new { style = "padding:20px; font-size:14px;" })
+)
+
+@(Html.Kendo().Window().Name("wndAccount")
+    .Title("Korisnički nalog")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(400)
+    .Height(560)
+    .HtmlAttributes(new { style = "padding:20px; padding-bottom:10px; font-size:14px;" })
+)
+
+@(Html.Kendo().Window().Name("wndRoles")
+    .Title("Korisničke uloge")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(400)
+    .Height(560)
+    .HtmlAttributes(new { style = "padding:20px; padding-bottom:10px; font-size:14px;" })
+)
+
+@(Html.Kendo().Window().Name("wndLogo")
+    .Title("Logo")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(400)
+    .Height(560)
+    .HtmlAttributes(new { style = "padding:20px; padding-bottom:10px; font-size:14px;" })
+)
+
+@(Html.Kendo().Window().Name("wndHeader")
+    .Title("Zaglavlje računa")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(500)
+    .Height(450)
+    .HtmlAttributes(new { style = "padding:20px; padding-bottom:10px; font-size:14px;" })
 )
 
 @Html.Kendo().Window().Name("wndSendLink").Title("Slanje linka").Visible(false).Modal(true).Draggable(false).Width(400).Height(450).HtmlAttributes(new { style = "padding:20px;" })

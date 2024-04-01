@@ -74,7 +74,7 @@ public class identifikacioniDokumentStranogLica
 
     public string? MestoUlaskaURepublikuSrbiju { get; set; }
 
-    public DateTime? DatumDoKadaJeOdobrenBoravakURepubliciSrbiji { get; set; }
+    public string? DatumDoKadaJeOdobrenBoravakURepubliciSrbiji { get; set; }
 
     public string Napomena { get; set; }
 

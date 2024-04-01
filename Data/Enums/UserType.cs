@@ -6,6 +6,9 @@
         Partner,
         Admin,
         SuperAdmin,
-        Test
+        Test,
+        TouristOrgAdmin,
+        TouristOrgController,
+        TouristOrgOperator
     }
 }

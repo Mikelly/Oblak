@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Oblak.Data.Enums;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Oblak.Data
@@ -44,7 +45,19 @@ namespace Oblak.Data
         [StringLength(450)]
         public string Status { get; set; } = "A";
 
-        [StringLength(450)]
+		public int? ResTaxTypeId { get; set; }
+
+		public ResTaxType? ResTaxType { get; set; }
+
+		public int? ResTaxPaymentTypeId { get; set; }
+
+		public ResTaxPaymentType ResTaxPaymentType { get; set; }
+
+		public decimal? ResTaxAmount { get; set; }
+
+		public decimal? ResTaxFee { get; set; }
+
+		[StringLength(450)]
         public string? UserCreated { get; set; }
 
         public DateTime? UserCreatedDate { get; set; }
@@ -55,6 +68,9 @@ namespace Oblak.Data
         public DateTime? UserModifiedDate { get; set; }
 
 
+        
+        
+        
         #region Navigation Properties
 
         public LegalEntity LegalEntity { get; set; }

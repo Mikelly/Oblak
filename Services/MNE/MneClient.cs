@@ -14,7 +14,7 @@ using Telerik.Windows.Documents.Flow.Model;
 using Telerik.Windows.Documents.Flow.Model.Editing;
 using Telerik.Windows.Documents.Flow.FormatProviders.Pdf;
 using Oblak.Helpers;
-using Oblak.Models.rb90;
+using Oblak.Models.EFI;
 using System.Runtime.ConstrainedExecution;
 using Oblak.Interfaces;
 using Microsoft.AspNetCore.SignalR;
@@ -27,21 +27,23 @@ using AutoMapper;
 using Oblak.Data.Enums;
 using Telerik.Documents.Common.Model;
 using Telerik.Windows.Documents.Flow.Model.Styles;
+using Humanizer;
 
 namespace Oblak.Services.MNE
 {
     public class MneClient : Register
     {
-        readonly ILogger<MneClient> _logger;
-        readonly mup _rb90client;
-        IMapper _mapper;
-        ApplicationUser _user;
-        LegalEntity _legalEntity;
-        X509Certificate2 _cert;
-        user _rb90User;
+        protected readonly ILogger<MneClient> _logger;
+        protected readonly mup _rb90client;
+        protected IMapper _mapper;
+        protected ApplicationUser _user;        
+        protected X509Certificate2 _cert;
+        protected user _rb90User;
+        protected HttpContext _context;        
 
         public MneClient(
             IConfiguration configuration,
+            IHttpContextAccessor httpContextAccessor,
             ILogger<MneClient> logger,            
             mup rb90client,
             ApplicationDbContext db,
@@ -52,13 +54,14 @@ namespace Oblak.Services.MNE
         {
             _logger = logger;            
             _rb90client = rb90client;
-            
-            //var username = _context.User.Identity!.Name;
-            //if (username != null)
-            //{
-            //    _user = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username)!;
-            //    if(_user != null) _legalEntity = _user.LegalEntity;
-            //}
+            _context = httpContextAccessor.HttpContext;
+
+            var username = _context.User.Identity!.Name;
+            if (username != null)
+            {
+                _user = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username)!;
+                if (_user != null) _legalEntity = _user.LegalEntity;
+            }
         }
 
         public (user, smjestajniObjekat[], X509Certificate2) Auth(LegalEntity legalEntity)
@@ -81,8 +84,9 @@ namespace Oblak.Services.MNE
         public override async Task<List<PersonErrorDto>> RegisterGroup(Group group, DateTime? checkInDate, DateTime? checkOutDate)
         {
             try
-            {
-                var test = _user.Type == Data.Enums.UserType.Test;
+            {        
+                var retval = new List<PersonErrorDto>();
+
                 var data = _db.MnePersons.Where(a => a.GroupId == group.Id).ToList();
 
                 if (checkInDate.HasValue)
@@ -108,9 +112,9 @@ namespace Oblak.Services.MNE
 
                 if (errors.Any()) return errors;
 
-                if (test)
+                if (_legalEntity.Test)
                 {
-                    foreach (var pr in data) pr.ExternalId = 0;                    
+                    foreach (var pr in data) pr.ExternalId = 0;
                     _db.SaveChanges();
                     return null;
                 }
@@ -119,8 +123,8 @@ namespace Oblak.Services.MNE
 
                 try
                 {
-                    (user, so, cert) = ((user, smjestajniObjekat[], X509Certificate2)) await Authenticate();
-                    Thread.Sleep(100);
+                    (user, so, cert) = ((user, smjestajniObjekat[], X509Certificate2)) await Authenticate(group.LegalEntity);
+                    await Task.Delay(100);
                 }
                 catch (Exception e)
                 {
@@ -132,19 +136,45 @@ namespace Oblak.Services.MNE
                 foreach (var pr in data.OrderBy(a => a.ExternalId))
                 {
                     c++;
-                    await _messageHub.Clients.User(_context.User.Identity!.Name!).SendAsync("status",
-                        (int)(Math.Round((decimal)c / (decimal)total * 100m, 0, MidpointRounding.AwayFromZero)),
-                        $"Prijavljivanje gostiju {c}/{total}", $"{pr.FirstName} {pr.LastName}"
-                        );
+                    if (_context != null)
+                    {
+						MessageHub._connectedUsers.ForEach(val =>
+						{
+                            if (val.Username == _context.User.Identity!.Name!)
+                            {
+                                _messageHub.Clients.Client(val.ConnectionId).SendAsync(
+                                    "status", 
+                                    (int)(Math.Round((decimal)c / (decimal)total * 100m, 0, MidpointRounding.AwayFromZero)),
+									$"Prijavljivanje gostiju {c}/{total}",
+									$"{pr.FirstName} {pr.LastName}");
+                            }
+						});
+					}
 
-                    var error = sendOne2Mup(pr, false);
-                    if (error != null) pr.Error = error;
-                    Thread.Sleep(100);
+					var error = sendOne2Mup(pr, false);
+                    if (error != null)
+                    {
+                        pr.Error = error;                        
+                        retval.Add(new PersonErrorDto() { PersonId = $"{pr.FirstName} {pr.LastName}", ExternalErrors = new List<string>() { error } });
+                    }
+                    _db.SaveChanges();
+                    await Task.Delay(100);                    
                 }
 
-                await _messageHub.Clients.User(_context.User.Identity!.Name!).SendAsync("status", 100, $"Prijavljivanje završeno");
+                if (_context != null)
+                {
+					MessageHub._connectedUsers.ForEach(val =>
+					{
+						if (val.Username == _context.User.Identity!.Name!)
+						{
+							_messageHub.Clients.Client(val.ConnectionId).SendAsync("status", 100, $"Prijavljivanje gostiju završeno", $"");
+						}
+					});
 
-                return null;
+					//await _messageHub.Clients.All/*.User(_context.User.Identity!.Name!)*/.SendAsync("status", 100, $"Prijavljivanje završeno");
+				}
+
+                return retval;
             }
             catch (Exception e)
             {
@@ -154,7 +184,36 @@ namespace Oblak.Services.MNE
 
         public override async Task<PersonErrorDto> RegisterPerson(Person person, DateTime? checkInDate, DateTime? checkOutDate)
         {
-            return null;
+            var mnePerson = person as MnePerson;
+
+            try
+            {
+                var (user, so, cert) = ((user, smjestajniObjekat[], X509Certificate2))await Authenticate(mnePerson.Property.LegalEntity);
+                await Task.Delay(100);
+            }
+            catch (Exception e)
+            {
+                _logger.LogDebug("SEND2MUP AUTH ERROR - RB: " + Exceptions.StringException(e));
+                throw new Exception("Greška prilikom autentifikacije na RB90 servis.");
+            }
+
+            try
+            {
+                var error = sendOne2Mup(mnePerson, false);
+                var errorDto = new PersonErrorDto();
+                if (error != null)
+                {
+                    mnePerson.Error = error;
+                    errorDto.PersonId = $"{mnePerson.FirstName} {mnePerson.LastName}";
+                    errorDto.ExternalErrors = new List<string> { error };
+                }
+                _db.SaveChanges();
+                return errorDto;
+            }
+            catch(Exception e)
+            {
+                throw;
+            }
         }
 
 
@@ -256,7 +315,7 @@ namespace Oblak.Services.MNE
             r += item.drzavaPrebivalista.kod + ",";
             if (item.gradPrebivalista != null) r += item.gradPrebivalista + ",";
             if (item.adresaiBrojPrebivalista != null) r += item.adresaiBrojPrebivalista + ",";
-            r += item.davaocSmjestaja.id.ToString() + ",";
+            r += item.davaocSmjestaja.id.ToString() + ",";            
             r += user.id.ToString() + ",";
             r += item.obrisan.ToString() + ",";
 
@@ -312,10 +371,9 @@ namespace Oblak.Services.MNE
             s.jmbgKorisnikaObjekta = null;
             s.datumPrijave = p.CheckIn;
             if (p.CheckOut.HasValue) s.datumOdjave = p.CheckOut.Value;
-            s.drzavaPrebivalista = new drzava(); s.drzavaPrebivalista.kod = dp.ExternalId; s.drzavaPrebivalista.naziv = dp.Name; ;
+            s.drzavaPrebivalista = new drzava(); s.drzavaPrebivalista.kod = dp.ExternalId; s.drzavaPrebivalista.naziv = dp.Name;;
             s.gradPrebivalista = p.PermanentResidencePlace;
             s.adresaiBrojPrebivalista = p.PermanentResidenceAddress;
-
 
             s.davaocSmjestaja = new smjestajniObjekat(); s.davaocSmjestaja.id = so.ExternalId; s.davaocSmjestaja.naziv = so.Name ?? so.Name;
             s.azurirao = user;
@@ -373,7 +431,7 @@ namespace Oblak.Services.MNE
             var pdfProvider = new PdfFormatProvider();
             RadFlowDocument document;
 
-            var path = _webHostEnvironment.WebRootPath + "/templates/test.docx";
+            var path = _env.WebRootPath + "/templates/test.docx";
 
             using (Stream input = File.OpenRead(path))
             {
@@ -402,7 +460,7 @@ namespace Oblak.Services.MNE
 
         public async Task ResTaxEmail(int id, string from, string email)
         {
-            var tax = _db.ResTaxes.FirstOrDefault(a => a.Id == id);
+            var tax = _db.ResTaxCalc.FirstOrDefault(a => a.Id == id);
             var obj = _db.Properties.FirstOrDefault(a => a.Id == tax.PropertyId);
             var pdfStream = await ResTaxPdf(id);
             var template = _configuration["SendGrid:Templates:rb90ResTax"]!;
@@ -413,7 +471,7 @@ namespace Oblak.Services.MNE
             }, ("Boravišna taksa.pdf", pdfStream));            
         }
 
-        public void CalcResTax(ResTax tax, int objekat, DateTime OD, DateTime DO, string vrsta, string tip_gosta)
+        public void CalcResTax(ResTaxCalc tax, int objekat, DateTime OD, DateTime DO, string vrsta, string tip_gosta)
         {            
             try
             {
@@ -421,7 +479,7 @@ namespace Oblak.Services.MNE
                 var firma = obj!.LegalEntityId;
                 var last_date = DO;
                 var limit18 = last_date.AddYears(-18);
-                var btx = new ResTaxItem();
+                var btx = new ResTaxCalcItem();
 
                 var data = _db.MnePersons
                     .Where(a => a.LegalEntityId == firma && a.PropertyId == obj.Id)
@@ -435,7 +493,7 @@ namespace Oblak.Services.MNE
                 if (vrsta == "NONE") data = data.Where(a => EF.Functions.DateDiffYear(a.BirthDate, DO) < 12);
 
                 var lica = data.Count();
-                var noc = data.Select(a => _db.Nights(a.Id, DO)).DefaultIfEmpty(0).Sum();
+                var noc = data.Select(a => _db.Nights(a.Id, DO)).Sum();
 
                 var iznos_tax = obj.ResidenceTax ?? 0;
 
@@ -446,6 +504,7 @@ namespace Oblak.Services.MNE
                 btx.TaxType = vrsta;
                 btx.GuestType = tip_gosta;
 
+                tax.Items = new List<ResTaxCalcItem>();
                 tax.Items.Add(btx);
 
                 _db.SaveChanges();
@@ -465,6 +524,7 @@ namespace Oblak.Services.MNE
         {
             try
             {
+                if (legalEntity != null) _legalEntity = legalEntity;
                 _cert = new X509Certificate2(_legalEntity.Rb90CertData, _legalEntity.Rb90Password);
                 var issuer = _cert.Issuer.Split(new char[] { ',' });
                 var cn = issuer.Where(a => a.Trim().StartsWith("CN")).FirstOrDefault();
@@ -482,20 +542,86 @@ namespace Oblak.Services.MNE
             }
         }
 
-        public override async Task CertificateMail(Group group, string email)
+
+        public override async Task ConfirmationGroupMail(Group group, string email)
         {
-            var template = _configuration["SendGrid:Templates:rb90Confirmation"];
-            var pdfStream = await CertificatePdf(group);
-            await _eMailService.SendMail(_user.Email, email ?? group.Email, template, new
+            var template = _configuration["REPORTING:MNE:ConfirmationEmailTemplate"];
+            var senderEmail = _configuration["SendGrid:EmailAddress"];
+			var pdfStream = await ConfirmationGroupPdf(group);
+            await _eMailService.SendMail(senderEmail, email ?? group.Email, template, new
             {
                 subject = $@"donotreply: Potvrde o prijavi boravka",
-                body = $"Poštovani,\n\nU prilogu se nalaze potvrde o prijavi boravka.\n\nSrdačan pozdrav,"
-            }, ("Potvrde.pdf", pdfStream));
+                message = $"U prilogu se nalaze potvrde o prijavi boravka.",
+				sender = group.Property.LegalEntity.Name
+			}, ("Potvrde.pdf", pdfStream));
         }
 
-        public override async Task<Stream> CertificatePdf(Group group)
+
+		public override async Task ConfirmationPersonMail(Person person, string email)
+		{
+			var template = _configuration["REPORTING:MNE:ConfirmationEmailTemplate"];
+			var senderEmail = _configuration["SendGrid:EmailAddress"];
+			var pdfStream = await ConfirmationPersonPdf(person);
+			await _eMailService.SendMail(senderEmail, email, template, new
+			{
+				subject = $@"donotreply: Potvrda o prijavi boravka",
+				message = $"U prilogu se nalazi potvrda o prijavi boravka",
+				sender = person.Property.LegalEntity.Name
+			}, ("Potvrda.pdf", pdfStream));
+		}
+
+
+		public override async Task<Stream> ConfirmationGroupPdf(Group group)
         {
-            return null;
+            var reportProcessor = new Telerik.Reporting.Processing.ReportProcessor();
+            var deviceInfo = new System.Collections.Hashtable();
+            var reportSource = new Telerik.Reporting.UriReportSource();
+
+            var reportName = _configuration["REPORTING:MNE:Confirmation"];
+            var report = _db.Reports.FirstOrDefault(a => a.Name == reportName);
+            var path = Path.Combine(_env.ContentRootPath, "Reports", report.Path);
+
+            reportSource.Uri = path;                        
+            reportSource.Parameters.Add("group", group.Id);
+            reportSource.Parameters.Add("person", 0);
+
+            Telerik.Reporting.Processing.RenderingResult result = reportProcessor.RenderReport("PDF", reportSource, deviceInfo);
+
+            if (!result.HasErrors)
+            {
+                return new MemoryStream(result.DocumentBytes);
+            }
+            else
+            {
+                return null;
+            }
+        }
+        
+
+        public override async Task<Stream> ConfirmationPersonPdf(Person person)
+        {
+            var reportProcessor = new Telerik.Reporting.Processing.ReportProcessor();
+            var deviceInfo = new System.Collections.Hashtable();
+            var reportSource = new Telerik.Reporting.UriReportSource();
+
+            var reportName = _configuration["REPORTING:MNE:Confirmation"];
+            var report = _db.Reports.FirstOrDefault(a => a.Name == reportName);
+            var path = Path.Combine(_env.ContentRootPath, "Reports", report.Path);
+
+            reportSource.Uri = path;
+            reportSource.Parameters.Add("group", 0);
+            reportSource.Parameters.Add("person", person.Id);
+
+            Telerik.Reporting.Processing.RenderingResult result = reportProcessor.RenderReport("PDF", reportSource, deviceInfo);
+
+            if (!result.HasErrors)
+            {
+                return new MemoryStream(result.DocumentBytes);
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public override async Task SendGuestToken(int propertyId, int? unitId, string email, string phoneNo, string lang)
@@ -519,9 +645,106 @@ namespace Oblak.Services.MNE
                 mnePerson = _db.MnePersons.FirstOrDefault(a => a.Id == dto.Id)!;
             }
 
-            dto.LegalEntityId = _user.LegalEntityId;
+            mnePerson.LegalEntityId = _legalEntity.Id;
+            //mnePerson.Id = dto.Id;
+            //mnePerson.ExternalId = dto.ExternalId;
+            //mnePerson.Guid = dto.Guid;
+            //mnePerson.LegalEntityId = dto.LegalEntity.Id;
+            //mnePerson.LegalEntityName = dto.LegalEntityName;
+            //mnePerson.PropertyExternalId = dto.PropertyExternalId;
+            mnePerson.PropertyId = dto.PropertyId;
+            mnePerson.GroupId = dto.GroupId;
+            //mnePerson.UnitId = dto.UnitId;
+            mnePerson.LastName  = dto.LastName; 
+            mnePerson.FirstName = dto.FirstName;
+            mnePerson.PersonalNumber = dto.PersonalNumber;
+            mnePerson.Gender = dto.Gender;
+            mnePerson.BirthDate = dto.BirthDate;
+            mnePerson.IsDeleted = dto.IsDeleted;
+            mnePerson.Status = dto.Status;
+            mnePerson.Error = dto.Error;
+            mnePerson.BirthPlace = dto.BirthPlace;
+            mnePerson.BirthCountry = dto.BirthCountry;
+            mnePerson.Nationality = dto.Nationality;
+            mnePerson.PersonType = dto.PersonType;
+            mnePerson.PermanentResidenceCountry = dto.PermanentResidenceCountry;
+            mnePerson.PermanentResidencePlace = dto.PermanentResidencePlace;
+            mnePerson.PermanentResidenceAddress = dto.PermanentResidenceAddress;
+            //mnePerson.ResidencePlace = dto.ResidencePlace;
+            //mnePerson.ResidenceAddress = dto.ResidenceAddress;
+            mnePerson.CheckIn = dto.CheckIn.Date;
+            mnePerson.CheckOut = dto.CheckOut;
+            mnePerson.DocumentType = dto.DocumentType;
+            mnePerson.DocumentNumber = dto.DocumentNumber;
+            mnePerson.DocumentValidTo = dto.DocumentValidTo;
+            mnePerson.DocumentCountry = dto.DocumentCountry;
+            mnePerson.DocumentIssuer = dto.DocumentIssuer;
+            mnePerson.VisaType = dto.VisaType;
+            mnePerson.VisaNumber  = dto.VisaNumber; 
+            mnePerson.VisaValidFrom = dto.VisaValidFrom;
+            mnePerson.VisaValidTo = dto.VisaValidTo;
+            mnePerson.VisaIssuePlace = dto.VisaIssuePlace;
+            mnePerson.EntryPoint = dto.EntryPoint;
+            mnePerson.EntryPointDate = dto.EntryPointDate;
+            mnePerson.Other = dto.Other;
+            mnePerson.ResTaxTypeId = dto.ResTaxTypeId;
+            mnePerson.ResTaxPaymentTypeId = dto.ResTaxPaymentTypeId;
+            mnePerson.ResTaxAmount = dto.ResTaxAmount;
 
-            _mapper.Map(dto, mnePerson);
+            if (_user != null)
+            { 
+                mnePerson.CheckInPointId = _user.CheckInPointId;
+            }
+
+            var partner = _db.Properties.Include(x => x.LegalEntity).ThenInclude(x => x.Partner).Where(x => x.Id == dto.PropertyId).FirstOrDefault().LegalEntity.Partner;
+
+            if (mnePerson.ResTaxTypeId != null)
+            {
+                var resTaxType = _db.ResTaxTypes.FirstOrDefault(a => a.Id == mnePerson.ResTaxTypeId);
+                if (mnePerson.CheckOut.HasValue)
+                {
+                    var days = (int)(mnePerson.CheckOut.Value.Date - mnePerson.CheckIn.Date).TotalDays;
+                    mnePerson.ResTaxAmount = resTaxType.Amount * days;
+                }
+
+                if (mnePerson.ResTaxPaymentTypeId != null)
+                {
+                    var resTaxPayment = _db.ResTaxPaymentTypes.Include(a => a.PaymentFees).FirstOrDefault(a => a.Id == mnePerson.ResTaxPaymentTypeId);
+                    if (resTaxPayment.PaymentFees.Any())
+                    {
+                        var resTaxFee = resTaxPayment.PaymentFees.Where(a => a.LowerLimit <= mnePerson.ResTaxAmount && mnePerson.ResTaxAmount <= a.UpperLimit).FirstOrDefault();
+                        if (resTaxFee != null)
+                        {
+                            if (resTaxFee.FeeAmount.HasValue) mnePerson.ResTaxFee = resTaxFee.FeeAmount.Value;
+                            if (resTaxFee.FeePercentage.HasValue) mnePerson.ResTaxFee = resTaxFee.FeePercentage.Value / 100m * mnePerson.ResTaxAmount;
+                        }
+                    }
+                }    
+            }
+            else
+            {
+                var zero = new DateTime(1, 1, 1);
+                var span = (DateTime.Now.Date - mnePerson.BirthDate.Date);
+                var age = (zero + span).Year - 1;
+
+                var resTaxType = _db.ResTaxTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.AgeFrom <= age && age <= a.AgeTo);
+                if (resTaxType != null)
+                {
+                    mnePerson.ResTaxTypeId = resTaxType.Id;
+
+                    if (mnePerson.CheckOut.HasValue)
+                    {
+                        var days = (int)(mnePerson.CheckOut.Value.Date - mnePerson.CheckIn.Date).TotalDays;
+                        if (days < 0) days = 0;
+                        mnePerson.ResTaxAmount = resTaxType.Amount * days;
+                    }
+
+                    var resPaymentType = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.PaymentStatus == ResTaxPaymentStatus.Unpaid);
+                    mnePerson.ResTaxPaymentTypeId = resPaymentType.Id;
+                }
+            }
+
+            //_mapper.Map(dto, mnePerson);
 
             _db.SaveChanges();
 
@@ -555,7 +778,8 @@ namespace Oblak.Services.MNE
 			_db.SaveChanges();
 
 			return mnePerson;
-		}
+		}        
+
 
 		public override List<PersonErrorDto> Validate(Group group, DateTime? checkInDate, DateTime? checkOutDate)
         {
@@ -600,19 +824,18 @@ namespace Oblak.Services.MNE
 
         public async override Task<object> Properties(LegalEntity legalEntity)
         {
-            (user user, smjestajniObjekat[] so, X509Certificate2 cert) = ((user, smjestajniObjekat[], X509Certificate2)) await Authenticate();
+            (user user, smjestajniObjekat[] so, X509Certificate2 cert) = ((user, smjestajniObjekat[], X509Certificate2)) await Authenticate(legalEntity);
             try
             {
                 foreach (var s in so)
                 {
-                    if (_db.Properties.Any(a => a.LegalEntityId == _user.LegalEntityId && a.ExternalId == s.id) == false)
+                    if (_db.Properties.Any(a => a.LegalEntityId == legalEntity.Id && a.ExternalId == s.id) == false)
                     {
                         var property = new Property();
-                        property.LegalEntityId = _user.LegalEntityId;
+                        property.LegalEntityId = legalEntity.Id;
                         property.ExternalId = s.id;
                         property.Type = "";
-                        property.Address = "";
-                        property.Municipality = "";
+                        property.Address = "";                        
                         property.RegNumber = "";
                         property.Status = "";
                         property.Name = s.naziv;
@@ -631,6 +854,7 @@ namespace Oblak.Services.MNE
             }
         }
 
+        /*
         public async Task<Document> CreateInvoice(Group g, PaymentType? pay)
         { 
             var doc = new Document();
@@ -640,7 +864,7 @@ namespace Oblak.Services.MNE
             doc.InvoiceDate = DateTime.Now;
             doc.BusinessUnitCode = g.Property.BusinessUnitCode;
             doc.FiscalEnuCode = g.Property.FiscalEnuCode;
-            doc.OperatorCode = _user.EfiOperator;            
+            doc.OperatorCode = _user.EfiOperator;
 
             var person = g.Persons.First() as MnePerson;
 
@@ -664,14 +888,14 @@ namespace Oblak.Services.MNE
             var boravak = g.Persons.Select(a => a as MnePerson).ToList().Select(a => new
             {
                 Item = bor,
-                Quant = ((a.CheckOut ?? DateTime.Now) - a.CheckIn).TotalDays,
+                Quant = Math.Round(((a.CheckOut ?? DateTime.Now) - a.CheckIn).TotalDays, 0),
                 Price = a.Property.Price ?? 1m
             }).ToList();
 
             var taxes = g.Persons.Select(a => a as MnePerson).ToList().Select(a => new
             {
                 Item = btax,
-                Quant = ((a.CheckOut ?? DateTime.Now) - a.CheckIn).TotalDays,
+                Quant = Math.Round(((a.CheckOut ?? DateTime.Now) - a.CheckIn).TotalDays, 0),
                 Price = (a.Property.ResidenceTax ?? 1) * (new DateTime(1, 1, 1) + (DateTime.Now - a.BirthDate)).Year - 1 switch { >= 18 => 1m, >= 12 => 0.5m, _ => 0m }
             }).ToList();
 
@@ -693,6 +917,9 @@ namespace Oblak.Services.MNE
                 SetItemValues(sd);
                 _db.SaveChanges();
             }
+
+            doc.Amount = doc.DocumentItems.Select(a => a.LineTotal).Sum();
+            _db.SaveChanges();
 
             Payment(doc, pay ?? PaymentType.Cash);
 
@@ -766,6 +993,7 @@ namespace Oblak.Services.MNE
                 _db.SaveChanges();
             }
         }
+        */
 
         public async Task<Stream> InvoicePdf(Document doc, string output = "pdf")
         {

@@ -1,9 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Humanizer;
+using Kendo.Mvc.UI;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Oblak.Data;
+using Oblak.Data.Enums;
 using Oblak.Models.Account;
+using Oblak.Models.Api;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -35,35 +41,43 @@ namespace Oblak.Controllers
             _roleManager = roleManager;
         }
 
-        private void AddPasswordErrors(IdentityResult result)
+        private string AddPasswordErrors(IdentityResult result)
         {
+            var errors = string.Empty;
             foreach (var error in result.Errors)
             {
                 if (error.Code == "PasswordTooShort")
                 {
                     ModelState.AddModelError(string.Empty, "Lozinka mora biti duga barem 8 karaktera.");
+                    errors += "Lozinka mora biti duga barem 8 karaktera." + Environment.NewLine;
                 }
                 else if (error.Code == "PasswordRequiresNonAlphanumeric")
                 {
                     ModelState.AddModelError(string.Empty, "Loznika mora imati barem jedan specijalan karakter.");
+                    errors += "Loznika mora imati barem jedan specijalan karakter." + Environment.NewLine;
                 }
                 else if (error.Code == "PasswordRequiresDigit")
                 {
                     ModelState.AddModelError(string.Empty, "Lozinka mora imati barem jedan broj ('0'-'9').");
+                    errors += "Lozinka mora imati barem jedan broj ('0'-'9')." + Environment.NewLine;
                 }
                 else if (error.Code == "PasswordRequiresLower")
                 {
                     ModelState.AddModelError(string.Empty, "Lozinka mora imati barem jedno malo slovo ('a'-'z').");
+                    errors += "Lozinka mora imati barem jedno malo slovo ('a'-'z')." + Environment.NewLine;
                 }
                 else if (error.Code == "PasswordRequiresUpper")
                 {
                     ModelState.AddModelError(string.Empty, "Lozinka mora imati barem jedno veliko slovo slovo. ('A'-'Z').");
+                    errors += "Lozinka mora imati barem jedno veliko slovo slovo. ('A'-'Z')." + Environment.NewLine;
                 }
                 else
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
+                    errors += error.Description + Environment.NewLine;
                 }
             }
+            return errors;
         }
 
 
@@ -80,7 +94,8 @@ namespace Oblak.Controllers
         {
             var model = new SignInViewModel();
 
-            ViewData["ReturnUrl"] = returnUrl;            
+            ViewData["ReturnUrl"] = returnUrl;
+            ViewBag.Error = "";
 
             return View(model);
         }
@@ -121,9 +136,10 @@ namespace Oblak.Controllers
                     }
                 }
 
-                _logger.LogInformation(1, "Neuspješan pokusaj prijave.");
+                _logger.LogInformation(1, "Neuspješan pokušaj prijave.");
 
-                ModelState.AddModelError(string.Empty, "Neuspješan pokusaj prijave.");
+                ModelState.AddModelError(string.Empty, "Neuspješan pokušaj prijave.");
+                ViewBag.Error = "Neuspješan pokušaj prijave.";
                 return View(model);
             }
 
@@ -268,6 +284,7 @@ namespace Oblak.Controllers
 			return Ok();
 		}
 
+
 		[HttpPost("remove-role-from-user")]
 		public async Task<IActionResult> RemoveRoleFromUser(string roleName, string userName)
 		{
@@ -277,5 +294,217 @@ namespace Oblak.Controllers
 
 			return Ok();
 		}
-	}
+
+
+        [HttpGet("roles-admin")]
+        public async Task<IActionResult> RolesAdmin(int legalEntity)
+        {
+            var userName = _db.Users.Where(a => a.LegalEntityId == legalEntity).Select(a => a.UserName).FirstOrDefault();
+
+            if (userName != null)
+            {
+                var user = await _userManager.FindByNameAsync(userName);
+                var userRoles = await _userManager.GetRolesAsync(user);
+                var roles = _roleManager.Roles.ToList();
+
+                if (await _userManager.IsInRoleAsync(user, "ADMINISTRATOR") == false)
+                {
+                    roles = roles.Where(a => a.NormalizedName != "PARTNER" && a.NormalizedName != "ADMINISTRATOR").ToList();
+                }
+
+                var data = roles.Select(a => new { a.Name, HasRole = userRoles.Contains(a.Name) }).ToDictionary(a => a.Name!, b => b.HasRole);
+
+                ViewBag.UserName = userName;
+                ViewBag.Roles = data;
+
+                return PartialView();
+            }
+            else
+            {
+                return Json(new BasicDto() { info = "", error = "Ne možete administrirati korisničke uloge, prije nego što napravite korisnički nalog za izdavaoca!" });
+            }
+        }
+
+
+        [HttpGet("legal-entity-account")]
+        public async Task<IActionResult> LegalEntityAccount(int legalEntity)
+        {
+            var le = _db.LegalEntities.Find(legalEntity);
+
+            var user = _db.Users.FirstOrDefault(a => a.LegalEntityId == le.Id);            
+
+            if (user != null)
+            {
+                var appUser = await _userManager.FindByNameAsync(user.UserName);
+                ViewBag.User = user;
+                ViewBag.Locked = await _userManager.IsLockedOutAsync(appUser);
+            }
+            else
+            { 
+                ViewBag.Locked = false;
+            }
+
+            return PartialView();
+        }
+
+        [HttpGet("tourist-org-account")]
+        public async Task<IActionResult> TouristOrgAccount()
+        {
+            var username = User.Identity.Name;
+            var _appUser = _db.Users.FirstOrDefault(a => a.UserName == username);
+
+            ViewBag.CPS = new SelectList(_db.CheckInPoints.Where(a => a.PartnerId == _appUser.PartnerId), "Id", "Name");
+            ViewBag.TPS = new SelectList(Enum.GetNames(typeof(UserType)).ToArray().Where(a => a.StartsWith("Tourist")).Select(a => new { Id = a, Name = a }), "Id", "Name");
+            return PartialView();
+        }
+
+        [HttpPost("legal-entity-account")]
+        public async Task<IActionResult> LegalEntityAccount(int legalEntity, AccountViewModel model)
+        {
+            var le = _db.LegalEntities.Find(legalEntity);
+
+            var user = _db.Users.FirstOrDefault(a => a.LegalEntityId == le.Id);
+
+            if (user == null)
+            {
+                var errors = string.Empty;
+                if (_db.Users.Any(a => a.Email == model.Email))
+                {
+                    errors += "Već postoji korisnik sa unesenom e-mail adresom!" + Environment.NewLine;                    
+                }
+                if (_db.Users.Any(a => a.UserName == model.UserName))
+                {
+                    errors += "Već postoji korisnik sa unesenim korisničkim imenom!" + Environment.NewLine;                    
+                }
+                if (model.ConfirmPassword != model.Password)
+                {
+                    errors += "Lozinka i potvrda lozinke se ne poklapaju!" + Environment.NewLine;
+                }
+
+                var passwordValidator = new PasswordValidator<IdentityUser>();
+                var passwordValidationResult = await passwordValidator.ValidateAsync(_userManager, null, model.Password);
+                errors += AddPasswordErrors(passwordValidationResult);
+
+                if (errors != string.Empty) return Json(new BasicDto() { error = errors, info = "" });
+                else
+                {
+                    var result = await _userManager.CreateAsync(new ApplicationUser()
+                    {
+                        UserName = model.UserName,
+                        Email = model.Email,
+                        PhoneNumber = model.PhoneNumber,
+                        LegalEntityId = le.Id
+                    }, model.Password);
+
+                    if (result.Succeeded)
+                    {
+                        user = _db.Users.FirstOrDefault(a => a.UserName == model.UserName);
+                        if (user != null)
+                        {
+                            user.EmailConfirmed = true;
+                            user.LegalEntityId = legalEntity;
+                            _db.SaveChanges();
+                        }
+
+                        return Json(new BasicDto() { error = "", info = "Uspješno kreiran nalog!" });
+                    }
+                    else
+                    {
+                    }
+                }
+            }
+            else
+            {
+                return Json(new BasicDto() { error = "Već postoji korisnički nalog za izdavaoca", info = "" });
+            }
+
+            return Ok();
+        }
+
+        [HttpPost("tourist-org-account")]
+        public async Task<IActionResult> TouristOrgAccount(AccountViewModel model)
+        {
+            var errors = string.Empty;
+            if (model.UserName == null)
+            {
+                errors += "Morate unijeti korisničko ime!" + Environment.NewLine;
+            }
+            if (model.Password == null || model.ConfirmPassword == null)
+            {
+                errors += "Morate unijeti lozinku i potvrdu lozinke!" + Environment.NewLine;
+            }
+            if (model.Email == null)
+            {
+                errors += "Morate unijeti email adresu!" + Environment.NewLine;
+            }
+            if (model.Type == null)
+            {
+                errors += "Morate unijeti vrstu korisnika!" + Environment.NewLine;
+            }
+            if (model.CheckInPointId == null)
+            {
+                errors += "Morate unijeti Check-In Point!" + Environment.NewLine;
+            }
+            if (model.Email != null && _db.Users.Any(a => a.Email == model.Email))
+            {
+                errors += "Već postoji korisnik sa unesenom e-mail adresom!" + Environment.NewLine;
+            }
+            if (model.UserName != null && _db.Users.Any(a => a.UserName == model.UserName))
+            {
+                errors += "Već postoji korisnik sa unesenim korisničkim imenom!" + Environment.NewLine;
+            }
+            if (model.Password != null && model.ConfirmPassword != null && model.ConfirmPassword != model.Password)
+            {
+                errors += "Lozinka i potvrda lozinke se ne poklapaju!" + Environment.NewLine;
+            }
+
+            if (model.Password != null)
+            {
+                var passwordValidator = new PasswordValidator<IdentityUser>();
+                var passwordValidationResult = await passwordValidator.ValidateAsync(_userManager, null, model.Password);
+                errors += AddPasswordErrors(passwordValidationResult);
+            }
+
+            var username = User.Identity.Name;
+            var _appUser = _db.Users.FirstOrDefault(a => a.UserName == username);
+
+            if (errors != string.Empty) return Json(new BasicDto() { error = errors, info = "" });
+            else
+            {
+                var result = await _userManager.CreateAsync(new ApplicationUser()
+                {
+                    UserName = model.UserName,
+                    Email = model.Email,
+                    PhoneNumber = model.PhoneNumber,
+                    PartnerId = _appUser.PartnerId,
+                    LegalEntityId = _appUser.LegalEntityId,
+                    CheckInPointId = model.CheckInPointId,
+                    Type = (UserType)Enum.Parse(typeof(UserType), model.Type)
+                }, model.Password);
+
+                if (result.Succeeded)
+                {
+                    var user = _db.Users.FirstOrDefault(a => a.UserName == model.UserName);
+                    if (user != null)
+                    {
+                        user.EmailConfirmed = true;                        
+                        _db.SaveChanges();
+
+                        if (user.Type.ToString().StartsWith("Tourist"))
+                        {
+                            await _userManager.AddToRoleAsync(user, "TouristOrg");
+                            await _userManager.AddToRoleAsync(user, user.Type.ToString());
+                        }
+                    }
+
+                    return Json(new BasicDto() { error = "", info = "Uspješno kreiran korisnički nalog!" });
+                }
+                else
+                {
+                }
+            }
+
+            return Ok();
+        }
+    }
 }

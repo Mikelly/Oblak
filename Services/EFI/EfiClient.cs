@@ -7,7 +7,7 @@ using System.Security.Cryptography.Xml;
 using System.Security.Cryptography;
 using System.Xml;
 using System.Text;
-using Oblak.Models.rb90;
+using Oblak.Models.EFI;
 using Kendo.Mvc.Extensions;
 using Oblak.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -67,7 +67,9 @@ public class EfiClient
     {  
         if (doc.Status == DocumentStatus.Fiscalized) throw new Exception("Račun je već fiskalizovan!");
 
-        var enu = _db.FiscalEnu.FirstOrDefault(a => a.Code == doc.FiscalEnuCode)!;
+        var enu = _db.FiscalEnu.FirstOrDefault(a => a.FiscalEnuCode == doc.FiscalEnuCode)!;
+
+        if(doc.InvoiceDate.Date != DateTime.Now.Date) doc.InvoiceDate = DateTime.Now.Date;
 
         if (doc.TypeOfInvoce == TypeOfInvoice.Cash && enu.AutoDeposit.HasValue)
         {
@@ -79,7 +81,7 @@ public class EfiClient
             }
         }
 
-        var url = GetFiscalParameter("URL");
+        var url = GetFiscalParameter("URL", _appUser!.LegalEntity.Test);
 
         (doc.No, doc.OrdinalNo) = _documentService.DocumentNumbers(doc.BusinessUnitCode);
         if ((late ?? "") == "") doc.InvoiceDate = DateTime.Now;
@@ -117,25 +119,28 @@ public class EfiClient
             fr.LegalEntityId = doc.LegalEntityId;
             fr.FiscalEnuCode = doc.FiscalEnuCode;            
             fr.BusinessUnitCode = doc.BusinessUnitCode;
-            fr.Amount = request.Invoice.TotPrice;
-            fr.FicalizationDate = DateTime.Now;
+            fr.Amount = request.Invoice.TotPrice;            
+            fr.FicalizationDate = request.Header.SendDateTime;
             fr.Status = "A";
             doc.Status = DocumentStatus.Active;            
-            doc.IIC = request.Invoice.IIC;     
+            doc.IIC = request.Invoice.IIC;
+            doc.Amount = request.Invoice.TotPrice;
+            doc.FiscalNo = request.Invoice.InvNum;
+            doc.FiscalizationDate = request.Header.SendDateTime;
             fr.Request = xml;            
             fr.IIC = request.Invoice.IIC;
 
             var inv = request.Invoice;
             var d = inv.IssueDateTime;
             var dtm = $"{d.ToString("yyyy")}-{d.ToString("MM")}-{d.ToString("dd")}T{d.ToString("HH")}:{d.ToString("mm")}:{d.ToString("ss")}{d.ToString("zzz")}";
-            var qrurl = GetFiscalParameter("QR");
+            var qrurl = GetFiscalParameter("QR", _appUser!.LegalEntity.Test);
             doc.Qr = $@"{qrurl}/ic/#/verify?iic={inv.IIC}&tin={inv.Seller.IDNum}&crtd={dtm}&ord={inv.InvOrdNum}&bu={inv.BusinUnitCode}&cr={inv.TCRCode}&sw={inv.SoftCode}&prc={inv.TotPrice.ToString("n2", System.Globalization.CultureInfo.GetCultureInfo("en-US")).Replace(",", "")}";
             _db.SaveChanges();
 
-            var qr = QrCode.EncodeText(doc.Qr, QrCode.Ecc.Medium);
-            var path = Path.Combine(_env.WebRootPath, $"QR/{doc.Id}.png");
-            qr.SaveAsPng(path, 10, 3);
-            _db.SaveChanges();
+            //var qr = QrCode.EncodeText(doc.Qr, QrCode.Ecc.Medium);
+            //var path = Path.Combine(_env.WebRootPath, $"QR/{doc.Id}.png");
+            //qr.SaveAsPng(path, 10, 3);
+            //_db.SaveChanges();
             
             response = client.registerInvoice(request);
                         
@@ -143,8 +148,7 @@ public class EfiClient
             fr.FIC = response.FIC.ToUpper().Replace("-", "");
             fr.Status = "F";
             doc.FIC = fr.FIC;
-            doc.Status = DocumentStatus.Fiscalized;
-            doc.FIC = fr.FIC;                
+            doc.Status = DocumentStatus.Fiscalized;              
             _db.SaveChanges();
         }
         catch (Exception excp)
@@ -177,9 +181,7 @@ public class EfiClient
 
     public async Task<RegisterCashDepositRequest> Cash(decimal amount, string type, string enu, string bu)
     {
-        var f = _context.Session.GetInt32("FIRMA");        
-
-        var url = GetFiscalParameter("URL");
+        var url = GetFiscalParameter("URL", _appUser!.LegalEntity.Test);
 
         System.Net.ServicePointManager.ServerCertificateValidationCallback += (se, cert, chain, sslerror) => { return true; };
 
@@ -199,7 +201,7 @@ public class EfiClient
         cash.CashDeposit.Operation = type.ToLower() == "i" ? CashDepositOperationSType.INITIAL : CashDepositOperationSType.WITHDRAW;
         cash.CashDeposit.TCRCode = enu;
         cash.CashDeposit.IssuerTIN = _appUser!.LegalEntity.TIN;
-        cash.CashDeposit.ChangeDateTime = DateTime.Now.forXML();
+        cash.CashDeposit.ChangeDateTime = cash.Header.SendDateTime;
 
         var xml = SignCashRequest(cash);
 
@@ -288,16 +290,17 @@ public class EfiClient
         else
         {
             inv.Invoice.TaxPeriod = inv.Invoice.IssueDateTime.ToString("MM") + "/" + inv.Invoice.IssueDateTime.ToString("yyyy");
-        }            
-                    
-        var oper = _appUser.EfiOperator;
+        }
+
+        var fenu = _db.FiscalEnu.FirstOrDefault(a => a.FiscalEnuCode == doc.FiscalEnuCode);
+        var oper = fenu.OperatorCode;
         if ((oper ?? "") == "")
         {
             throw new Exception("Neispravno definisan operator!");
         }
 
         inv.Invoice.OperatorCode = oper;            
-        inv.Invoice.SoftCode = GetFiscalParameter("SFT");
+        inv.Invoice.SoftCode = GetFiscalParameter("SFT", _appUser!.LegalEntity.Test);
         inv.Invoice.IsReverseCharge = false;
 
         inv.Invoice.Currency = new CurrencyType();
@@ -311,7 +314,7 @@ public class EfiClient
         inv.Invoice.Seller.Address = _appUser.LegalEntity.Address;
         
         inv.Invoice.Buyer = new EfiService.BuyerType();
-        if (doc.PartnerIdNumber != null && doc.PartnerIdType != null && doc.PartnerName != null)
+        if ((doc.PartnerIdNumber ?? "") != "" && (doc.PartnerIdType.ToString() ?? "") != "" && (doc.PartnerName ?? "") != "")
         {
             inv.Invoice.Buyer.IDType = doc.PartnerIdType switch
             { 
@@ -345,7 +348,7 @@ public class EfiClient
         if (inv.Invoice.IsIssuerInVAT)
         {
             inv.Invoice.TotVATAmt = stavke.Select(a => a.LineTotal - a.LineTotalWoVat).Sum().Round2();
-            inv.Invoice.TotVATAmtSpecified = true;
+            inv.Invoice.TotVATAmtSpecified = true;            
         }
         else
         {
@@ -745,358 +748,9 @@ public class EfiClient
         var d = request.Invoice.IssueDateTime;
         var dtm = $"{d.ToString("yyyy")}-{d.ToString("MM")}-{d.ToString("dd")}T{d.ToString("HH")}:{d.ToString("mm")}:{d.ToString("ss")}{d.ToString("zzz")}";
 
-        var qrurl = GetFiscalParameter("QR");        
+        var qrurl = GetFiscalParameter("QR", _appUser!.LegalEntity.Test);        
 
         return $@"{qrurl}/ic/#/verify?iic={request.Invoice.IIC}&tin={request.Invoice.Seller.IDNum}&crtd={dtm}&ord={request.Invoice.InvOrdNum}&bu={request.Invoice.BusinUnitCode}&cr={request.Invoice.TCRCode}&sw={request.Invoice.SoftCode}&prc={request.Invoice.TotPrice.ToString("n2", System.Globalization.CultureInfo.GetCultureInfo("en-US")).Replace(",", "")}";        
     }
-
-    /*
-    public Document Storno(Document doc)
-    {
-        return doc;
-    }
-
-
-    public Document CreateInvoice(int? g, int? o, int? gost, int? noc)
-    {   
-        Item brv = null;
-        Item btx = null;
-        CheckItems(out brv, out btx);
-
-        List<Stavka> stavke = new List<Stavka>();
-        
-        var obj = _db.rb90Properties.FirstOrDefault(a => a.Id == o.Value);
-        var npl = obj.PaymentType;
-        var cij = obj.Price ?? 0m;
-        var bor = (obj.ResidenceTaxYN ?? true) ? (obj.ResidenceTax ?? 0m) : 0m;
-
-        stavke.Add(
-            new Stavka() { 
-                Artikal = brv.Id, 
-                Cijena = cij, 
-                Kolicina = (npl == "A" ? noc.Value : noc.Value * gost.Value) 
-            });
-
-        if (bor > 0)
-            stavke.Add(
-                new Stavka()
-                {
-                    Artikal = btx.Id,
-                    Cijena = bor,
-                    Kolicina = noc.Value * gost.Value
-                });                
-       
-        var doc = new Document();            
-        doc.No = 0;
-        doc.Status = "A";
-        doc.CurrencyCode = "EUR";
-        doc.ExchangeRate = 1;
-        obj.BusinessUnitCode = obj.BusinessUnitCode;
-        doc.FiscalEnuCode = obj.FiscalEnuCode; 
-        doc.InvoiceDate = DateTime.Now;
-        doc.rb90GroupId = g;
-        doc.TypeOfInvoce = "CASH";
-        _db.Documents.Add(doc);
-        _db.SaveChanges();
-        doc.IdEncrypted = Encryptor.Base64Encode(Encryptor.EncryptSimple(doc.Id.ToString()));
-        _db.SaveChanges();            
-        
-
-        foreach (var s in doc.DocumentItems.ToList())
-        {
-            _db.DocumentItems.Remove(s);
-        }
-        _db.SaveChanges();
-
-        foreach (var i in stavke)
-        {
-            var art = _db.Items.Where(a => a.Id == i.Artikal).FirstOrDefault();
-
-            var stavka = new DocumentItem();
-
-            stavka.DocumentId = doc.Id;
-            stavka.ItemId = art.Id;
-            stavka.ItemUnit = art.Unit;
-            stavka.Quantity = i.Kolicina;
-            stavka.UnitPrice = i.Cijena;
-            stavka.Discount = 0;
-            stavka.VatRate = art.VatRate;
-            stavka.VatExempt = art.VatExempt;
-
-            _db.DocumentItems.Add(stavka);
-            _db.SaveChanges();
-
-            SetItemValues(stavka);
-
-            _db.SaveChanges();
-        }
-
-        Payment(doc, null);
-
-        return doc;
-    }
-
-
-    public (Document, string, string) CreateRacun(Racun racun, BusinessUnit bu, FiscalEnu enu)
-    {
-        var doc = _db.Documents.Where(a => a.Id == racun!.ID).FirstOrDefault();
-        if (doc == null)
-        {
-            doc = new Document();
-
-            doc.Status = "A";
-            _db.SaveChanges();
-            doc.IdEncrypted = Encryptor.Base64Encode(Encryptor.EncryptSimple(doc.Id.ToString()));
-            _db.SaveChanges();
-        }
-        else
-        {
-            if (doc.Status == "F")
-            {
-                return (doc, "", "Ne možete mijenjati račun koji je fiskalizovan");                                        
-            }
-        }
-
-        doc.No = 0;
-        doc.BusinessUnitCode = bu.Code;
-        doc.FiscalEnuCode = enu.Code;
-        doc.InvoiceDate = racun.Datum;
-        doc.rb90GroupId = racun.PrijavaID;
-        doc.TypeOfInvoce = "CASH";
-        _db.SaveChanges();
-
-        var to_delete = doc.DocumentItems.Where(a => racun.stavke.Any(b => b.ID != 0 && b.ID == a.Id) == false).ToList();
-        foreach (var del in to_delete) _db.DocumentItems.Remove(del);
-        _db.SaveChanges();
-
-        foreach (var stavka in racun.stavke)
-        {
-            var s = UpdateStavka(doc, stavka, "N");
-        }
-
-        Payment(doc, racun.NacinPlacanja);
-
-        var ime = racun.Kupac ?? "";
-        var brd = racun.Dokument ?? "";
-        var pib = racun.PIB ?? "";
-        var vrs = racun.VrstaKupca;
-        var vrd = racun.VrstaDokumenta;
-
-        doc.PartnerName = racun.Kupac;
-        doc.PartnerType = racun.VrstaKupca;
-        doc.PartnerIdType = racun.VrstaKupca;
-        doc.PartnerIdNumber = racun.Dokument;
-
-        _db.SaveChanges();
-
-        var rac = Doc2Racun(doc);
-
-        return (doc, "", "");
-    }
-
-
-    public void DeleteRacun(Document doc)
-    {
-        return;
-    }
-
-
-    public DocumentItem UpdateStavka(Document doc, Stavka s, string delete)
-    {
-        DocumentItem sd = null;
-        if (s.ID == 0)
-        {
-            sd = new DocumentItem();
-            sd.DocumentId = doc.Id;
-            doc.DocumentItems.Add(sd);
-        }
-        else
-        {
-            sd = _db.DocumentItems.Where(a => a.Id == s.ID).FirstOrDefault();
-        }
-
-        if (delete == "Y")
-        {
-            _db.DocumentItems.Remove(sd);
-            _db.SaveChanges();
-
-            return new DocumentItem();
-        }
-
-        var art = _db.Items.Where(a => a.Id == s.Artikal).FirstOrDefault();
-
-        sd.DocumentId = doc.Id;
-        sd.ItemId = art.Id;
-        sd.ItemUnit = art.Unit;
-        sd.ItemName = art.Name;
-        sd.Quantity = s.Kolicina;
-        sd.UnitPrice = s.Cijena;
-        sd.Discount = 0;
-        sd.VatRate = art.VatRate;
-        _db.SaveChanges();
-
-        return sd;
-    }
-
-
-    public void SetItemValues(DocumentItem s)    {
-        s.ItemUnit = s.Item.Unit;        
-        s.UnitPriceWoVat = s.UnitPrice * 100m / (100m + s.VatRate);        
-        s.LineAmount = s.Quantity * s.UnitPrice;
-        s.LineTotalWoVat = s.Quantity * s.FinalPrice * 100m / (100m + s.VatRate);
-        s.VatAmount = s.Quantity * s.FinalPrice * s.VatRate / (100m + s.VatRate);
-        s.LineTotal = s.Quantity * s.FinalPrice;
-    }
-
-    public void Payment(Document doc, int? p)
-    {
-        var payment = doc.DocumentPayments.FirstOrDefault();
-        if (payment == null)
-        {
-            payment = new DocumentPayment();
-            payment.DocumentId = doc.Id;                
-            payment.PaymentType = p ?? 2;
-            payment.Amount = doc.DocumentItems.Select(a => a.LineTotal).Sum().Round2();
-            _db.DocumentPayments.Add(payment);
-            _db.SaveChanges();
-        }
-        else
-        {
-            payment.Amount = doc.DocumentItems.Select(a => a.LineTotal).Sum().Round2();
-            if (p != null) payment.PaymentType = p.Value;
-            _db.SaveChanges();
-        }
-    }
-
-
-    public Racun Doc2Racun(Document d)
-    {
-        var r = new Racun();
-        r.ID = d.Id;
-        r.Datum = d.InvoiceDate;
-        r.PrijavaID = d.rb90GroupId;
-        r.BrojGostiju = 0;
-        r.BrojNocenja = 0;
-        r.ENU = d.FiscalEnuCode;
-        r.Status = d.Status;
-        r.Kupac = d.PartnerName;
-        r.Dokument = d.PartnerIdNumber;
-        r.VrstaKupca = d.PartnerType;
-        r.VrstaDokumenta = d.PartnerIdType;
-        r.PIB = "";                        
-
-        var pay = d.DocumentPayments.ToList();
-
-        if (pay.Any())
-        {
-            r.Iznos = pay.Sum(a => a.Amount);
-            r.NacinPlacanja = pay.First().PaymentType;
-        }
-        else
-        {
-            r.Iznos = 0;
-            r.NacinPlacanja = 0;
-        }
-
-        r.stavke = new List<Stavka>();
-
-        foreach (var s in d.DocumentItems.ToList())
-        {
-            r.stavke.Add(new Stavka()
-            {
-                ID = s.Id,
-                RacunID = s.DocumentId,
-                Artikal = s.ItemId,
-                JedinicaMjere = s.ItemUnit,
-                Cijena = s.FinalPrice,
-                Kolicina = s.Quantity,
-                Iznos = s.LineTotal
-            });
-        }
-
-        return r;
-    }
-
-
-    public void CheckItems(out Item boravak, out Item btax)
-    {
-        boravak = _db.Items.Where(a => a.Code == "BORAV").Where(a => a.UserId == _appUser.Id).FirstOrDefault();
-        if (boravak == null)
-        {
-            boravak = new Item();
-            boravak.UserId = _appUser.Id;
-            boravak.Code = "BORAV";
-            boravak.Name = "Usluga smještaja";
-            boravak.Unit = "KOM";
-            boravak.VatRate = _appUser!.LegalEntity.InVat ? 21m : 0m;            
-            _db.Items.Add(boravak);
-            _db.SaveChanges();           
-        }
-
-        btax = _db.Items.Where(a => a.Code == "BTAX").Where(a => a.UserId == _appUser.Id).FirstOrDefault();        
-        if (btax == null)
-        {
-            btax = new Item();
-            btax.UserId = _appUser.Id;
-            btax.Code = "BTAX";
-            btax.Name = "Boravišna taksa";
-            btax.Unit = "KOM";
-            btax.VatRate = _appUser.LegalEntity.InVat ? 21m : 0m;
-            btax.VatExempt = "CL_20";
-            _db.Items.Add(boravak);
-            _db.SaveChanges();
-        }
-    }
-
-    public (int, int) DocumentNumbers(string bu)
-    {
-        var no = _db.Documents.Where(a => a.BusinessUnitCode == bu).Select(a => (int?)a.No).Max() ?? 0;
-        var ordno = _db.Documents.Where(a => a.BusinessUnitCode == bu).Select(a => (int?)a.OrdinalNo).Max() ?? 0;
-
-        return (no + 1, ordno + 1);
-    }
-
-    public string ExternalNumber(Document doc)
-    {
-        return "";
-    }
-
-    public async Task<Stream> InvoicePdf(int id)
-    {
-        var docxProvider = new DocxFormatProvider();
-        var pdfProvider = new PdfFormatProvider();
-        RadFlowDocument document;
-
-        var path = _webHostEnvironment.WebRootPath + "/templates/invoice.docx";
-
-        using (Stream input = File.OpenRead(path))
-        {
-            document = docxProvider.Import(input);
-        }
-
-        RadFlowDocumentEditor editor = new RadFlowDocumentEditor(document);
-        editor.ReplaceText("Point", "trtvrt");
-        editor.ReplaceText("<Expr3>", "");
-
-        var stream = new MemoryStream();
-        pdfProvider.Export(document, stream);
-        stream.Seek(0, SeekOrigin.Begin);
-
-        return stream;
-    }
-
-    public async Task InvoiceEmail(int id, string email)
-    {
-        var tax = _db.rb90ResTaxes.FirstOrDefault(a => a.Id == id);
-        var obj = _db.rb90Properties.FirstOrDefault(a => a.Id == tax.PropertyId);
-        var pdfStream = await InvoicePdf(id);
-        var template = _config["SendGrid:Templates:EfiInvoice"]!;
-        await _eMailService.SendMail(_appUser.Email, email, template, new
-        {
-            subject = $@"donotreply: Prijava boravišne takse",
-            body = $"Poštovani,\n\nU prilogu se nalazi prijava boravišne takse za period od {tax.DateFrom.ToString("dd.MM.yyyy")} od {tax.DateTo.ToString("dd.MM.yyyy")} za smještajni objekat {obj.Name}.\n\nSrdačan pozdrav,"
-        }, ("Boravišna taksa.pdf", pdfStream));
-    }
-
-    */
+    
 }

@@ -193,5 +193,37 @@ namespace Oblak.Controllers
             }
             return Ok();
         }
+
+        [HttpPost]
+        [Route("MigrateRB")]
+        public async Task<ActionResult> MigrateRB(int id)
+        {
+            try
+            {
+                _db.Database.ExecuteSqlRaw($"MigrateDB {id}");
+
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        [HttpPost]
+        [Route("MigrateEFI")]
+        public async Task<ActionResult> MigrateEFI(int id)
+        {
+            try
+            {
+                _db.Database.ExecuteSqlRaw($"MigrateEFI {id}");
+
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
     }
 }

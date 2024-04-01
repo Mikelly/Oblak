@@ -1,0 +1,39 @@
+﻿@using Oblak.Models;
+@using Kendo.Mvc.TagHelpers;
+
+@{
+    var roles = ViewBag.Roles as Dictionary<string, bool>;
+}
+
+<script type="text/javascript">
+
+    function roleChanged(e) { 
+        var user = '@ViewBag.UserName';
+        var role = e.sender.element[0].id.replace('Role', '');
+        var url = e.checked ? 'add-role-to-user' : 'remove-role-from-user';
+
+        $('[data-role=switch]').data('kendoSwitch').enable(false);
+
+        $.ajax({
+            url: `/${url}?username=${user}&rolename=${role}`,
+            type: 'POST',
+            success: function (data, status, xhr) {
+                $('[data-role=switch]').data('kendoSwitch').enable(true);
+            }
+        });
+    }
+
+</script>
+
+<div class="demo-section">
+
+    @foreach(var r in roles)
+    {
+        <div style="margin-bottom:10px;">
+            @Html.Kendo().Switch().Name($"Role{r.Key}").Checked(r.Value).Events(e => e.Change("roleChanged"))
+            @r.Key
+        </div>
+    }
+
+
+</div>

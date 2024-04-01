@@ -39,7 +39,7 @@ namespace Oblak.Services
             msg.AddTo(new EmailAddress(to, to));
             msg.SetTemplateId(templateId);
             msg.SetTemplateData(templateData);
-            await msg.AddAttachmentAsync(attachment.Item1, attachment.Item2);
+            await msg.AddAttachmentAsync(attachment.Item1, attachment.Item2);            
             var response = await _sendGridClient.SendEmailAsync(msg);
             if (response.IsSuccessStatusCode)
             {

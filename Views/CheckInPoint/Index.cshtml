@@ -1,0 +1,180 @@
+﻿@using Oblak.Models.Api;
+@using Oblak.Models.EFI;
+@{
+
+        ViewBag.Title = "Punktovi";            
+        Layout = "~/Views/Shared/_LayoutINV.cshtml";
+    
+}
+
+<script type="text/javascript">
+    $(document).ready(function () {
+
+    });
+
+    function loadProperties() {
+        $.ajax({
+            url: `/Property/FetchPropertiesExternal?legalEntity=${le}`,
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                if (data.success) {
+                    Swal.fire({icon: 'success', title: 'Smještajni objekti su uspješno preuzeti.', confirmButtonText: 'U redu' });
+                    var grid = $("#propertiesGrid").data("kendoGrid");
+                    grid.dataSource.read();                        
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Došlo je do greške prilikom preuzimanja smještajnih objekata.', confirmButtonText: 'U redu' });
+                }
+            },
+            error: function (error) {
+                Swal.fire({ icon: 'error', title: 'Došlo je do greške prilikom preuzimanja smještajnih objekata.', confirmButtonText: 'U redu' });
+            }
+        });
+    }
+
+    function newProperty(e) {
+        var grid = $("#propertiesGrid").data("kendoGrid");
+        grid.addRow();
+    }
+
+
+    function fiscal() {
+
+        var grid = $('#propertiesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati smještajni objekat', confirmButtonText: `U redu` });
+
+        var prop = item.Id;
+
+        $.ajax({
+            url: `/fiscal-enu?property=${prop}`,
+            type: 'GET',
+            success: function (data, status, xhr) {
+                var wnd = $("#wndFiscal").data("kendoWindow");
+                wnd.content(data);
+                wnd.center().open();
+            }
+        });
+    }
+
+    function setFiscal() {
+
+        $.ajax({
+            url: `/fiscal-enu`,
+            type: 'POST',
+            data: $('#frmFiscal').serialize(),
+            success: function (data, status, xhr) {
+                if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+                else {
+                    $("#wndFiscal").data("kendoWindow").close();                    
+                }
+            }
+        });
+    }
+
+
+</script>
+
+<div style="position:absolute; top:25px; bottom: 15px; left: 15px; right:15px;">
+     @(Html.Kendo().Button().Name("btnLoadProperties")
+        .HtmlAttributes(new { type = "button", onclick = "loadProperties()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/hotel.png'/>
+    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>UČITAJ<br/>OBJEKTE<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnNewProperty")
+        .HtmlAttributes(new { type = "button", onclick = "newProperty()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/building.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>NOVI<br/>OBJEKAT<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnFiscal")
+        .HtmlAttributes(new { type = "button", onclick = "fiscal()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:48px;height:48px;text-align:center;display:block;margin-left:auto;margin-right:auto;margin-top:2px;' src='/Content/Icons/cash_register.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>FISKALNI<br/>PODACI<div>
+                </div>"))
+    
+    
+@*     <div style="display: inline-block; margin-right: 15px;">
+        @(Html.Kendo().Button().Name("btnLoadProperties")
+            .Content("<div style='display:flex;align-items:center; justify-content:space-between;'><img style='width:35px;height:35px;text-align:center; position:relative; top:0px;' src='/Content/Icons/hotel.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>UČITAJ<br/>OBJEKTE</div></div>")
+            .HtmlAttributes(new { onclick = "loadProperties()", style = "width:220px; height:50px;" })
+            )
+    </div>
+    <div style="display: inline-block; margin-right: 15px;">
+        @(Html.Kendo().Button().Name("btnNewProperty")
+            .Content("<div style='display:flex;align-items:center; justify-content:space-between;'><img style='width:35px;height:35px;text-align:center; position:relative; top:0px;' src='/Content/Icons/building.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>Novi smještajni objekat</div></div>")
+            .HtmlAttributes(new { onclick = "newProperty()", style = "width:220px; height:50px;" })
+            )
+    </div>
+
+    <div style="display: inline-block; margin-right: 15px;">
+        @(Html.Kendo().Button().Name("btnFiscal")
+            .Content("<div style='display:flex;align-items:center; justify-content:space-between;'><img style='width:35px;height:35px;text-align:center; position:relative; top:0px;' src='/Content/Icons/cash_register.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>FISKALNI<br/>PODACI</div></div>")
+            .HtmlAttributes(new { onclick = "fiscal()", style = "width:170px; height:50px;" })
+            )
+    </div> *@
+</div>
+
+<div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
+    @(Html.Kendo().Grid<CheckInPointDto>()
+        .Name("checkInPointsGrid")
+        .ToolBar(t => t.Create().Text("Novi punkt"))
+        .Columns(columns =>
+        {
+            columns.Command(command => { 
+                command.Edit().Text(" ").UpdateText(" ").CancelText(" "); 
+                command.Destroy().Text(" "); 
+            })
+            .Width(70);
+
+            columns.Bound(g => g.Id).Title("ID").Width(100).ClientTemplate("#= Id #").HtmlAttributes(new { style = "pointer-events:none;" });
+            columns.Bound(g => g.Name).Title("Naziv").Width(400);            
+            columns.Bound(g => g.Address).Title("Adresa").Width("100%");
+            columns.Bound(g => g.Location).Title("GeoLokacija").Width(200);
+            columns.Bound(g => g.Status).Title("Status").Width(150);
+            
+            })
+            .Pageable(p => p.Refresh(true))
+            .Sortable()
+            .Selectable()
+            .Scrollable()
+            .Filterable()
+            .HtmlAttributes(new { style = "height:100%;" })
+            .Editable(editable => editable.Mode(GridEditMode.InLine))
+            .DataSource(ds => ds
+                .Ajax()
+                .PageSize(20)
+                .Model(m =>
+                {
+                    m.Id(g => g.Id);
+                    m.Field(g => g.Id).Editable(false);
+                    m.Field(g => g.Name);
+                    m.Field(g => g.Address);
+                    m.Field(g => g.Location);
+                    m.Field(g => g.Status).DefaultValue("A");
+                })
+        .Create(a => a.Action("Create", "CheckInPoint"))
+        .Read(a => a.Action("Read", "CheckInPoint"))
+        .Update(a => a.Action("Update", "CheckInPoint"))
+        .Destroy(a => a.Action("Destroy", "CheckInPoint"))
+        )
+    )
+</div>
+
+
+@(Html.Kendo().Window().Name("wndFiscal")
+    .Title("Fiskalni podaci")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(400)
+    .Height(600)
+    .HtmlAttributes(new { style = "padding:20px; padding-bottom:10px; font-size:14px;" })
+)

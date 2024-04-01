@@ -16,8 +16,11 @@ namespace Oblak.Mappers
     {
         public SrbPersonEnrichedDtoMapper()
         {
-            CreateMap<SrbPerson, SrbPersonEnrichedDto>()
-                .ReverseMap();
+            CreateMap<SrbPerson, SrbPersonEnrichedDto>();
+            CreateMap<SrbPersonEnrichedDto, SrbPerson>()            
+                .ForMember(a => a.LegalEntityId, opt => opt.Ignore())                
+                .ForMember(a => a.LegalEntity, opt => opt.Ignore());
+                
         }
     }
 }

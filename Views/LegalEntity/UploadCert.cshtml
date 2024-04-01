@@ -1,53 +1,94 @@
-﻿@section Scripts {
-
-
-	<script type="text/javascript">
-		function UploadFile(e) {
-			e.preventDefault();
-			var form = $('#certForm')[0];
-			var formData = new FormData(form);
-
-			$.each($("input[type='file']")[0].files, function (i, file) {
-				formData.append('certFile', file);
-			});
-
-			formData.append('certPassword', $('#certPassword').val());
-			formData.append('certType', $('#certType').val());
-			formData.append('legalEntity', $('#legalEntity').val());
-
-			$.ajax({
-				url: '/upload-cert',
-				type: 'POST',
-				data: formData,
-				contentType: false,
-				processData: false,
-				success: function (data) {
-
-				},
-				error: function () {
-
-				}
-			});
-		}
-	</script>
+﻿@{
+	var ct = (string)ViewBag.CertType == "efi" ? "EFI" : "RB90";
 }
 
-
-<form onsubmit="UploadFile(event)" method="POST" action="/upload-cert" name="certForm">
-	<div class="row justify-content-center">
-		<div class="col-12 mb-3">
-			<label class="form-label" for="certFile">Select file to upload</label>
-			<input type="file" class="form-control" id="certFile" name="certFile">
-		</div>
-		<div class="col-12 mb-3">
-			<label class="form-label" for="certPassword">Enter password</label>
-			<input type="text" class="form-control" id="certPassword" name="certPassword">
-		</div>
-		<input type="hidden" id="certType" value="@ViewBag.Type" />
-		<input type="hidden" id="legalEntity" value="@ViewBag.LegalEntity" />
-		<div class="col-3 mb-3 mt-3">
-			<button type="submit" class="btn btn-outline-theme w-100">Create request</button>
-		</div>
+<div id="gedit" style="width:255px; margin-left:auto; margin-right:auto; padding-top: 15px; padding-bottom: 35px;">
+	<div style="margin-bottom:20px;">
+		@if ((bool)ViewBag.CERT)
+		{
+			<div style="display:flex; align-items:center; align-content:center;">
+				<img src="~/Content/Icons/verified.png" style="width:60px; height:60px; display:inline-block" />
+				<span style="width:150px; font-size:13px; line-height:1.1em; padding-left:5px; color: darkgreen;">SSL Sertifikat je unesen, ispravan i važeći. Gosti se mogu prijavljivati!</span>
+			</div>
+			<div style="display:flex; align-items:center; align-content:center; margin-top:10px;">
+				<img src="~/Content/Icons/time_machine.png" style="width:60px; height:60px; display:inline-block" />
+				<span style="width:150px; font-size:13px; line-height:1.1em; padding-left:5px; color: darkgreen;">SSL Sertifikat važi <br /> od @(((DateTime)ViewBag.ValidFrom).ToString("dd.MM.yyyy")) <br />do @(((DateTime)ViewBag.ValidTo).ToString("dd.MM.yyyy"))</span>
+			</div>
+		}
+		else
+		{
+			<div style="display:flex; align-items:center; align-content:center;">
+				<img src="~/Content/Icons/stop.png" style="width:60px; height:60px;" />
+				<div style="width:150px; line-height:1.1em; font-size:13px; padding-left:5px; color: red;">SSL Sertifikat nije unesen, te se prijava gostiju ne može vršiti!</div>
+			</div>
+		}
 	</div>
-</form>
 
+	@if ((bool)ViewBag.CERT == false)
+	{
+		<form id="certForm">
+
+			<input type="hidden" id="certType" value="@ViewBag.CertType" />
+			<input type="hidden" id="legalEntity" value="@ViewBag.LegalEntity" />
+
+			<div style="margin-bottom:10px;">
+				@Html.Label("lCERT", "SSL digitalni sertifikat", new { style = "font-size:12px;" })
+				@Html.Kendo().Upload().Name("certFile").HtmlAttributes(new { style = "width:300px; font-size:12px!important;" }).Messages(m => m.Select("Izaberite fajl sa sertifikatom")).Multiple(false).ShowFileList(true)
+			</div>
+
+			<div style="margin-bottom:10px;">
+				@Html.Label("lCERTPASS", "Lozinka za sertifikat", new { style = "font-size:12px;" })
+				@Html.Kendo().TextBox().Name("certPassword").HtmlAttributes(new { id = "certPassword", type = "password", autocomplete = "new-password", style = "font-size:12px; width:250px; margin-top:0px; margin-bottom:0px; padding-left:25px;" })
+			</div>
+
+			<div style="display:flex; justify-content:center; justify-items:center; margin-top:30px;">
+				@(Html.Kendo().Button().Name("btnMneCertUpload")
+					.HtmlAttributes(new { type = "button", onclick = $"uploadSSL()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+					.Content($@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+						<img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/certificate.png'/>
+						<div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>UČITAJ {ct}<br/>CERTIFIKAT<div>
+						</div>"))
+			</div>
+
+@* 			<div style="width:100%; margin-top:20px;">			
+				@(Html.Kendo().Button().Name("btnMneCertUpload")
+				.Content($"<div style='display:flex;align-items:center; justify-content:space-between;'><img style='width:35px;height:35px;text-align:center; position:relative; top:0px;' src='/Content/Icons/certificate.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>Učitaj {ct} certifikat</div></div>")
+				.HtmlAttributes(new { onclick = "uploadSSL()", type = "button", style = "width:250px; height:50px;" })
+				)
+			</div> *@
+		</form>
+	}
+
+	@if ((bool)ViewBag.CERT)
+	{
+		<div style="display:flex; justify-content:center; justify-items:center; margin-top:30px;">
+			@(Html.Kendo().Button().Name("btnDeleteCert")
+				.HtmlAttributes(new { type = "button", onclick = $"deleteSSL('{ViewBag.CertType}',{ViewBag.LegalEntity})", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+				.Content($@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+					<img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/delete.png'/>
+					<div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>OBRIŠI {ct}<br/>CERTIFIKAT<div>
+					</div>"))
+
+			@(Html.Kendo().Button().Name("btnDownloadCert")
+					.HtmlAttributes(new { type = "button", onclick = $"window.location = '/download-cert?certType={ViewBag.CertType}&legalEntity={ViewBag.LegalEntity}'", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+				.Content($@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+					<img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/save.png'/>
+					<div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>DOWN {ct}<br/>CERTIFIKAT<div>
+					</div>"))
+		</div>
+
+@* 		<div style="width:100%; margin-top:20px;">
+			@(Html.Kendo().Button().Name("btnDeleteCert")
+				.Content($"<div style='display:flex;align-items:center; justify-content:space-between;'><img style='width:35px;height:35px;text-align:center; position:relative; top:0px;' src='/Content/Icons/delete.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>Obriši {ct} certifikat</div></div>")
+				.HtmlAttributes(new { onclick = $"deleteSSL('{ViewBag.CertType}',{ViewBag.LegalEntity})", style = "width:250px; height:50px;" })
+				)
+		</div>
+
+		<div style="width:100%; margin-top:20px;">
+			@(Html.Kendo().Button().Name("btnDownloadCert")
+				.Content($"<div style='display:flex;align-items:center; justify-content:space-between;'><img style='width:32px;height:32px;text-align:center; position:relative; top:0px;' src='/Content/Icons/save-as.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>Download {ct} certifikat</div></div>")
+				.HtmlAttributes(new { onclick = $"window.location = '/download-ssl?certType={ViewBag.CertType}&legalEntity={ViewBag.LegalEntity}", style = "width:250px; height:50px;" })
+				)
+		</div> *@
+	}
+</div>

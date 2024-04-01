@@ -1,35 +1,135 @@
-﻿@using Oblak.Models;
-@using Kendo.Mvc.TagHelpers;
-
-@{
-    Layout = "~/Views/Shared/_Layout.cshtml";    
+﻿@{
+	Layout = null;
 }
 
-<style>
-    .k-form-field
-    {
-        margin:0px!important;
-    }
-</style>
+<html class="no-js" lang="">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<title>Oblak | Prijava</title>
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<!-- Favicon -->
+	<link rel="shortcut icon" type="image/x-icon" href="img/favicon.png">
+	<!-- Bootstrap CSS -->
+	<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css">
+	<!-- Fontawesome CSS -->
+	<link rel="stylesheet" href="~/fontawesome6/css/all.min.css">
+	<!-- Flaticon CSS -->
+	<link rel="stylesheet" href="font/flaticon.css">
+	<!-- Google Web Fonts -->
+	<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&amp;display=swap" rel="stylesheet">
+	<!-- Custom CSS -->
+	<link rel="stylesheet" href="~/css/style.css">
+</head>
 
-<div class="demo-section">
-    <div id="validation-success"></div>
-    @(
-        Html.Kendo().Form<RegisterViewModel>()
-            .Name("signInForm")            
-            .HtmlAttributes(new { action = "/sign-in", method = "POST" })
-            .Layout("grid")            
-            .Items(items =>
-            {
-                items.AddGroup()
-                .Label("Podaci o korisniku")
-                .Layout("grid")
-                .Grid(a => a.Cols(2).Gutter(30))
-                .Items(i =>
-                {                    
-                    i.Add().Field(f => f.UserName).Label(l => l.Text("Korisničko ime:"));
-                    i.Add().Field(f => f.Password).Label(l => l.Text("Lozinka:"));                 
-                });                
-            })            
-        )
-</div>
+<body>
+	<!--[if lt IE 8]>
+		<p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+	<![endif]-->
+
+	<section class="fxt-template-animation fxt-template-layout25 loaded">
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-md-6 col-12 fxt-bg-gradient">
+					<div class="fxt-header">
+						<div class="fxt-top-content">
+							<div class="fxt-transformY-50 fxt-transition-delay-1">
+								<a href="login-25.html" class="fxt-logo"><img src="img/logo-25.png" alt="Logo"></a>
+							</div>
+							<div class="fxt-transformY-50 fxt-transition-delay-2">
+								<h1>Dobrodošli u OBLAK</h1>
+							</div>
+							<div class="fxt-transformY-50 fxt-transition-delay-3">
+								<p>Aplikacija za izdavaoce smještaja.</p>
+							</div>
+						</div>
+						<div style="display:none;" class="fxt-bottom-content">
+							<div class="fxt-transformY-50 fxt-transition-delay-4">
+								<h2>Login With</h2>
+							</div>
+							<ul class="fxt-socials">
+								<li class="fxt-facebook fxt-transformY-50 fxt-transition-delay-6">
+									<a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+								</li>
+								<li class="fxt-twitter fxt-transformY-50 fxt-transition-delay-7">
+									<a href="#" title="twitter"><i class="fab fa-twitter"></i></a>
+								</li>
+								<li class="fxt-google fxt-transformY-50 fxt-transition-delay-8">
+									<a href="#" title="google"><i class="fab fa-google-plus-g"></i></a>
+								</li>
+								<li class="fxt-linkedin fxt-transformY-50 fxt-transition-delay-9">
+									<a href="#" title="linkedin"><i class="fab fa-linkedin-in"></i></a>
+								</li>
+								<li class="fxt-pinterest fxt-transformY-50 fxt-transition-delay-10">
+									<a href="#" title="pinterest"><i class="fab fa-pinterest-p"></i></a>
+								</li>
+							</ul>
+							<div class="fxt-transformY-50 fxt-transition-delay-11">
+								<p>Don't have an account?<a href="register-25.html" class="switcher-text inline-text">Register</a></p>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-6 col-12 fxt-bg-color">
+					<div class="fxt-content">
+						<div class="fxt-form">
+							<div class="fxt-transformY-50 fxt-transition-delay-12">
+								<h2>Prijavite se na svoj nalog</h2>
+							</div>
+							<form method="POST">
+								<div class="form-group">
+									<div class="fxt-transformY-50 fxt-transition-delay-14">
+										<input type="text" class="form-control" name="username" placeholder="Korisničko ime ili email adresa" required="required">
+									</div>
+								</div>
+								<div class="form-group">
+									<div class="fxt-transformY-50 fxt-transition-delay-15">
+										<input id="password" type="password" class="form-control" name="password" placeholder="Lozinka" required="required">
+										<i toggle="#password" class="fa fa-fw toggle-password field-icon fa-eye"></i>
+									</div>
+								</div>
+								<div class="form-group">
+@* 									<div class="fxt-transformY-50 fxt-transition-delay-16">
+										<div class="fxt-checkbox-area">
+											<div class="checkbox">
+												<input id="checkbox1" type="checkbox">
+												<label for="checkbox1">Keep me logged in</label>
+											</div>
+											<a href="forgot-password-25.html" class="switcher-text2">Zaboravljena lozinka?</a>
+										</div>
+									</div> *@
+								</div>
+								@if (ViewBag.Error != "")
+								{
+									<div class="form-group mt-4">
+										@ViewBag.Error
+									</div>								
+								}
+								<div class="form-group mt-4">
+									<div class="fxt-transformY-50 fxt-transition-delay-17">
+										<button type="submit" class="fxt-btn-fill">Prijava</button>
+									</div>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+	<!-- jquery-->
+	<script src="~/lib/jquery/dist/jquery.min.js"></script>
+	<!-- Bootstrap js -->
+	<script src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>
+	<!-- Imagesloaded js -->
+	<script src="~/js/imagesloaded.pkgd.min.js"></script>
+	<!-- Validator js -->
+	<script src="~/js/validator.min.js"></script>
+	<!-- Custom Js -->
+	<script src="~/js/main.js"></script>
+
+
+
+</body>
+</html>

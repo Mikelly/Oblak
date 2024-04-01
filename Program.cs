@@ -1,4 +1,3 @@
-using Coravel;
 using Hangfire;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -25,11 +24,17 @@ using Microsoft.AspNetCore.Builder.Extensions;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Oblak.Services.FCM;
+using Serilog;
+using Microsoft.AspNetCore.Localization;
+using System.Globalization;
+using Oblak.Services.Reporting;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
+
+builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Configuration(context.Configuration));
 
 builder.Services.AddAuthentication(x =>
 {
@@ -48,8 +53,10 @@ builder.Services.AddIdentityCore<IdentityUser>(options => options.SignIn.Require
 
 builder.Services.Configure<IdentityOptions>(options =>
 {
-    options.Password.RequireDigit = true;
-    options.Password.RequiredLength = 8;    
+    options.Password.RequireDigit = false;
+    options.Password.RequiredLength = 6;    
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;    
 
     options.Lockout.MaxFailedAccessAttempts = 3;
     options.Lockout.AllowedForNewUsers = true;
@@ -132,6 +139,8 @@ builder.Services
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());    
     });
 
+builder.Services.AddLocalization();
+
 builder.Services.AddKendo();
 builder.Services.AddSignalR();
 //builder.Services.AddScoped<IHubContext>();
@@ -162,7 +171,6 @@ builder.Services.AddHangfire(configuration => configuration
 
 builder.Services.AddHangfireServer();
 
-builder.Services.AddScheduler();
 //builder.Services.AddTransient<RB90Scheduler>();
 builder.Services.AddTransient<SelfRegisterService>();
 builder.Services.AddTransient<eMailService>();
@@ -174,6 +182,7 @@ builder.Services.AddScoped<mup, mupClient>();
 builder.Services.AddScoped<MneClient>();
 builder.Services.AddScoped<SrbClient>();
 builder.Services.AddScoped<DocumentService>();
+builder.Services.AddScoped<ReportingService>();
 builder.Services.AddScoped<EfiClient>();
 
 builder.Services.AddTransient<SrbScheduler>();
@@ -227,15 +236,26 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-app.Services.UseScheduler(scheduler =>
+var supportedCultures = new[] { new CultureInfo("sr-Latn-ME")/*, new CultureInfo("en-US")*/ };
+
+app.UseRequestLocalization(new RequestLocalizationOptions
 {
-    //scheduler.Schedule<RB90Scheduler>().EveryThirtyMinutes();    
+    DefaultRequestCulture = new RequestCulture("sr-Latn-ME"),    
+    SupportedCultures = supportedCultures,    
+    SupportedUICultures = supportedCultures,
+    FallBackToParentCultures = false
 });
+
+CultureInfo.CurrentCulture = new CultureInfo("sr-Latn-ME");
+CultureInfo.DefaultThreadCurrentCulture = CultureInfo.CreateSpecificCulture("sr-Latn-ME");
+CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.CreateSpecificCulture("sr-Latn-ME");
 
 app.UseCors("CORSPolicy");
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+app.UseSerilogRequestLogging();
 
 app.UseSession();
 app.UseRouting();
@@ -249,12 +269,17 @@ app.MapControllerRoute(
 
 app.UseHangfireDashboard("/dashboard", new DashboardOptions
 {
-	Authorization = new[] { new DashboardAuthFilter() }
+	Authorization = new[] { new DashboardAuthFilter() },
+    IgnoreAntiforgeryToken = true
 });
 
 app.MapHangfireDashboard();
 
-RecurringJob.AddOrUpdate<SrbScheduler>("HourlyCheckOutSrb", a => a.HourlyCheckOut(), builder.Configuration["SRB:Schedulers:HourlyCheckOut"]);
+
+if (!app.Environment.IsDevelopment())
+{
+    RecurringJob.AddOrUpdate<SrbScheduler>("HourlyCheckOutSrb", a => a.HourlyCheckOut(), builder.Configuration["SRB:Schedulers:HourlyCheckOut"]);
+}
 
 app.MapHub<MessageHub>("/messageHub");
 

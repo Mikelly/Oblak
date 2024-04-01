@@ -235,7 +235,7 @@ public class SrbClient : Register
             {
                 foreach (var err in data.Where(a => a.Error != null))
                 {
-                    errors.Add(new PersonErrorDto() { PersonId = err.Id, ExternalErrors = err.Error != null ? JsonSerializer.Deserialize<List<string>>(err.Error)! : null });
+                    errors.Add(new PersonErrorDto() { PersonId = $"{err.FirstName} {err.LastName}", ExternalErrors = err.Error != null ? JsonSerializer.Deserialize<List<string>>(err.Error)! : null });
                 }
             }
 
@@ -337,12 +337,12 @@ public class SrbClient : Register
                 DrzavljanstvoAlfa3 = person.NationalityIso3,
                 DrzavaRodjenjaAlfa2 = person.BirthCountryIso2,
                 DrzavaRodjenjaAlfa3 = person.BirthCountryIso3,
-                DrzavaPrebivalistaAlfa2 = person.ResidenceCountryIso2,
-                DrzavaPrebivalistaAlfa3 = person.ResidenceCountryIso3,
-                MestoPrebivalistaMaticniBroj = person.ResidencePlaceCode,
-                MestoPrebivalistaNaziv = person.ResidencePlaceName,
-                OpstinaPrebivalistaMaticniBroj = person.ResidenceMunicipalityCode,
-                OpstinaPrebivalistaNaziv = person.ResidenceMunicipalityName,
+                //DrzavaPrebivalistaAlfa2 = person.ResidenceCountryIso2,
+                //DrzavaPrebivalistaAlfa3 = person.ResidenceCountryIso3,
+                //MestoPrebivalistaMaticniBroj = person.ResidencePlaceCode,
+                //MestoPrebivalistaNaziv = person.ResidencePlaceName,
+                //OpstinaPrebivalistaMaticniBroj = person.ResidenceMunicipalityCode,
+                //OpstinaPrebivalistaNaziv = person.ResidenceMunicipalityName,
             },
             PodaciOBoravku = new podaciOBoravku
             {
@@ -361,12 +361,12 @@ public class SrbClient : Register
             {
                 BrojPutneIsprave = person.DocumentNumber,
                 VrstaPutneIspraveSifra = person.DocumentType,
-                MestoUlaskaURepublikuSrbiju = person.EntryPlace,
-                MestoUlaskaURepublikuSrbijuSifra = person.EntryPlaceCode,
-                DatumUlaskaURepublikuSrbiju = person.EntryDate.HasValue ? person.EntryDate.Value.ToString("yyyy-MM-dd") : null,
+                MestoUlaskaURepublikuSrbiju = null,
+                MestoUlaskaURepublikuSrbijuSifra = null,
+                DatumUlaskaURepublikuSrbiju = null,
+                DatumDoKadaJeOdobrenBoravakURepubliciSrbiji = null,
                 DatumIzdavanjaPutneIsprave = person.DocumentIssueDate.HasValue ? person.DocumentIssueDate.Value.ToString("yyyy-MM-dd") : null,
                 OrganIzdavanjaPutneIsprave = person.IssuingAuthorithy,
-                DatumDoKadaJeOdobrenBoravakURepubliciSrbiji = person.StayValidTo,
                 VrstaVizeSifra = person.VisaType,
                 BrojVize = person.VisaNumber,
                 MestoIzdavanjaVize = person.VisaIssuingPlace,
@@ -374,9 +374,47 @@ public class SrbClient : Register
             }
         };
 
+        if (person.IsDomestic == true)
+        {
+            request.OsnovniPodaci.DrzavaPrebivalistaAlfa2 = person.ResidenceCountryIso2;
+            request.OsnovniPodaci.DrzavaPrebivalistaAlfa3 = person.ResidenceCountryIso3;
+            request.OsnovniPodaci.MestoPrebivalistaMaticniBroj = person.ResidencePlaceCode;
+            request.OsnovniPodaci.MestoPrebivalistaNaziv = person.ResidencePlaceName;
+            request.OsnovniPodaci.OpstinaPrebivalistaMaticniBroj = person.ResidenceMunicipalityCode;
+            request.OsnovniPodaci.OpstinaPrebivalistaNaziv = person.ResidenceMunicipalityName;
+        }
+
+        if (person.IsDomestic == false)
+        {
+            request.IdentifikacioniDokumentStranogLica.MestoUlaskaURepublikuSrbiju = person.EntryPlace;
+            request.IdentifikacioniDokumentStranogLica.MestoUlaskaURepublikuSrbijuSifra = person.EntryPlaceCode;
+            request.IdentifikacioniDokumentStranogLica.DatumUlaskaURepublikuSrbiju = person.EntryDate.HasValue ? person.EntryDate.Value.ToString("yyyy-MM-dd") : null;
+        }
+
+        if (new string[] { "72", "85", "86", "87", "88" }.Contains(person.DocumentType))
+        {
+            request.IdentifikacioniDokumentStranogLica.DatumDoKadaJeOdobrenBoravakURepubliciSrbiji = person.StayValidTo.HasValue ? person.StayValidTo.Value.ToString("yyyy-MM-dd") : null;
+        }
+
         if (person.ExternalId.HasValue && person.ExternalId.Value > 0)
         {
             request.OsnovniPodaci.Izmena = true;
+        }
+
+        if (person.Property.Type != "10" && person.Property.Type != "12")
+        {
+            request.PodaciOBoravku.SmestajneJedinice = new SmestajnaJedinica[] 
+            {
+                new SmestajnaJedinica()
+                { 
+                    BrojSmestajneJedinice = "1",
+                    SpratSmestajneJedinice = "1",
+                    JedinstveniIdentifikator = 0,
+                    JeObrisan = 0,
+                    //DatumBoravkaDo = person.PlannedCheckOut.Value.ToString("yyyy-MM-dd HH:mm"),
+                    DatumBoravkaOd = person.CheckIn.Value.ToString("yyyy-MM-dd HH:mm")
+                }
+            };
         }
 
         return request;
@@ -396,7 +434,7 @@ public class SrbClient : Register
 
         if (person.Property.LegalEntity.Type == Data.Enums.LegalEntityType.Company) 
         {
-            request.BrojPruzenihUslugaSmestaja = person.NumberOfServices ?? 1;
+            request.BrojPruzenihUslugaSmestaja = person.NumberOfServices;
         }
 
         return request;
@@ -461,14 +499,65 @@ public class SrbClient : Register
         }
     }
 
-    public override async Task CertificateMail(Group group, string email)
+	public override async Task ConfirmationGroupMail(Group group, string email)
+	{
+		var template = _configuration["REPORTING:SRB:ConfirmationEmailTemplate"];
+		var senderEmail = _configuration["SendGrid:EmailAddress"];
+		var pdfStream = await ConfirmationGroupPdf(group);
+		await _eMailService.SendMail(senderEmail, email ?? group.Email, template, new
+		{
+			subject = $@"donotreply: Potvrde o prijavi boravka",
+			message = $"U prilogu se nalaze potvrde o prijavi boravka",
+			sender = group.Property.LegalEntity.Name
+		}, ("Potvrde.pdf", pdfStream));
+	}
+
+
+	public override async Task ConfirmationPersonMail(Person person, string email)
+	{
+		var template = _configuration["REPORTING:SRB:ConfirmationEmailTemplate"];
+		var senderEmail = _configuration["SendGrid:EmailAddress"];
+		var pdfStream = await ConfirmationPersonPdf(person);
+		await _eMailService.SendMail(senderEmail, email, template, new
+		{
+			subject = $@"donotreply: Potvrda o prijavi boravka",
+			message = $"U prilogu se nalazi potvrda o prijavi boravka",
+			sender = person.Property.LegalEntity.Name
+		}, ("Potvrda.pdf", pdfStream));
+	}
+
+	public override async Task<Stream> ConfirmationGroupPdf(Group group)
     {
-        throw new NotImplementedException();
+        if (_client == null) Authenticate(group.Property.LegalEntity);
+        var ids = await GetExternalIds(group);
+        var streams = new List<Stream>();
+        foreach (int id in ids)
+        {
+            try
+            {
+                var confirmationPdfEndpoint = _configuration["SRB:Endpoints:Confirmation"]!.Trim('/');
+                var request = new RestRequest(confirmationPdfEndpoint, Method.Post);
+                request.AddHeader("Authorization", $"Bearer {_token}");
+                request.AddHeader("RefreshToken", $"{_refreshToken}");
+                var json = JsonSerializer.Serialize(id);
+                request.AddJsonBody(json);
+                var response = await _client.ExecutePostAsync(request);
+                var result = new MemoryStream(response.RawBytes!);
+                streams.Add(result);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError($"ERROR SRB: Confirmation {e.Message}");
+                _logger.LogTrace($"POST Confirmation {JsonSerializer.Serialize(85284)}");
+                throw;
+            }
+        }
+        return await new Pdf().Merge(streams);
     }
 
-    public override async Task<Stream> CertificatePdf(Group group)
+    public override async Task<Stream> ConfirmationPersonPdf(Person person)
     {
-        var ids = await GetExternalIds(group);
+        var ids = new int[] { (person as SrbPerson).ExternalId2 ?? 0 };
         var streams = new List<Stream>();
         foreach (int id in ids)
         {
@@ -499,6 +588,12 @@ public class SrbClient : Register
         var ids = new List<int>();
         foreach (SrbPerson p in group.Persons)
         {
+            if (p.ExternalId2 != null)
+            {
+                ids.Add(p.ExternalId2.Value);
+                continue;
+            }
+
             try
             {
                 await GetExternalId(p);
@@ -538,9 +633,19 @@ public class SrbClient : Register
 				request.AddJsonBody(json);
 				var response = await _client.ExecutePostAsync(request);
 				var result = JsonSerializer.Deserialize<TuristResponse>(response.Content!)!;
-				if (result.totalRowsCount == 1)
+				if (result.totalRowsCount >= 1)
 				{
-					p.ExternalId2 = result.data.First().turistaId;
+                    if (result.totalRowsCount == 1)
+                    {
+                        p.ExternalId2 = result.data.First().turistaId;
+                    }
+                    else
+                    {
+                        var results = result.data.Select(a => a.turistaId).ToList();
+                        var existing = _db.SrbPersons.Where(a => a.ExternalId2 != null).Where(a => results.Contains(a.ExternalId2.Value)).Select(a => a.ExternalId2.Value).ToList();
+                        var hit = results.Except(existing).FirstOrDefault();
+                        if(hit != null) p.ExternalId2 = hit;
+                    }
 					_db.SaveChanges();
 				}
 			}
@@ -575,11 +680,13 @@ public class SrbClient : Register
 
         dto.LegalEntityId = _legalEntity.Id;
 
-        (bool checkedin, bool checkedout) = (srbPerson.CheckedIn, srbPerson.CheckedOut);
+        dto.SetEntity(srbPerson);
 
-        _mapper.Map(dto, srbPerson);
+        //(bool checkedin, bool checkedout) = (srbPerson.CheckedIn, srbPerson.CheckedOut);
 
-        (srbPerson.CheckedIn, srbPerson.CheckedOut) = (checkedin, checkedout);
+        //_mapper.Map(dto, srbPerson);
+
+        //(srbPerson.CheckedIn, srbPerson.CheckedOut) = (checkedin, checkedout);
 
         _db.SaveChanges();
 
@@ -685,7 +792,7 @@ public class SrbClient : Register
             }
             else
             {
-                if (p.ExternalId.HasValue) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ExternalId), Error = "Podaci o stranom državljaninu se ne mogu menjati." });
+                //if (p.ExternalId.HasValue) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ExternalId), Error = "Podaci o stranom državljaninu se ne mogu menjati." });
                 if (p.NationalityIso2 == null && p.NationalityIso3 == null)
                 {
                     err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.NationalityIso2), Error = "Morate uneti ili podatak 'Nacionalnost alfa 2' ili podatak 'Nacionalnost alfa 3'." });
@@ -744,18 +851,20 @@ public class SrbClient : Register
             {
                 if (_db.Properties.Any(a => a.LegalEntityId == _legalEntity.Id && a.ExternalId == int.Parse(o.idObjekta)) == false)
                 {
-                    var property = new Property();
-                    property.LegalEntityId = _legalEntity.Id;
-                    property.ExternalId = int.Parse(o.idObjekta);
-                    property.Type = o.vrstaObjekta.ToString();
-                    property.Address = o.adresa;
-                    property.Municipality = o.sifraOpstine;
-                    property.RegNumber = o.brojResenja;
-                    property.Status = o.sifraStatusa;
-                    property.Name = o.nazivObjekta;
-                    property.PropertyName = o.nazivObjekta;
-                    _db.Properties.Add(property);
-                    _db.SaveChanges();
+                    if (o.sifraStatusa == "1")
+                    {
+                        var property = new Property();
+                        property.LegalEntityId = _legalEntity.Id;
+                        property.ExternalId = int.Parse(o.idObjekta);
+                        property.Type = o.vrstaObjekta.ToString();
+                        property.Address = o.adresa;                        
+                        property.RegNumber = o.brojResenja;
+                        property.Status = o.sifraStatusa;
+                        property.Name = o.nazivObjekta;
+                        property.PropertyName = o.nazivObjekta;
+                        _db.Properties.Add(property);
+                        _db.SaveChanges();
+                    }
                 }
             }
 

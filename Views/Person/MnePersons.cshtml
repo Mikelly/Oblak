@@ -1,12 +1,17 @@
 ﻿@using Oblak.Models.Api;
-@using Oblak.Models.rb90;
+@using Oblak.Models.EFI;
 
 @{
     ViewBag.Title = "Prijave gostiju";
     Layout = "~/Views/Shared/_LayoutINV.cshtml";
 }
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
+
 <script type="text/javascript">
+    
+    var group = '@(ViewBag.Group ?? 0)';
+    
     $(document).ready(function () {
 
         setTimeout(function () {
@@ -14,12 +19,179 @@
             window.postMessage({ type: "FROM_PAGE", message: { type: "Initialize" } }, "*");
         }, 500);    
 
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/messageHub")
+            .configureLogging(signalR.LogLevel.Information)
+            .withAutomaticReconnect()
+            .build();
+
+        async function start() {
+            try {
+                await connection.start();
+                console.log("SignalR Connected.");
+            } catch (err) {
+                console.log(err);
+                setTimeout(start, 5000);
+            }
+        };
+
+        connection.onclose(async () => {
+            await start();
+        });
+
+        start();
+
+        connection.on("status", (progress, message, guest) => {            
+            if(guest != "") Swal.update({ text: `${message} - ${guest}` });            
+            else Swal.update({ text: `${message}` });
+        });
+
     });
 
-    function newGuest() {
+    window.addEventListener("FromContextScript", function (evt) {
+        var mrz = evt.detail;
+
+        var obj = jQuery.parseJSON(mrz);
+
+        //alert(mrz);
+
+        if ($('#wndGuest').is(':visible')) {
+
+            $('#p_Tip').data('kendoDropDownList').value(obj.DocIssuer == 'MNE' ? '1' : '4');
+            $('#p_Prezime').val(obj.HolderNamePrimary);
+            $('#p_Ime').val(obj.HolderNameSecondary);
+            $('#p_JMBG').val(obj.HolderNumber ?? "-");
+            $('#p_LD_Broj').val(obj.DocNumber);
+            $('#p_Pol').data('kendoDropDownList').value(obj.HolderSex);
+            $('#p_LD_Vrsta').data('kendoDropDownList').value(obj.DocType == 'IcaoTd1' || obj.DocType == 'IcaoTd2' ? '2' : '1');
+
+            var dr = obj.HolderDateOfBirth;
+            var day = dr.substring(4, 6);
+            var month = dr.substring(2, 4);
+            var year = dr.substring(0, 2);
+            var curr_year = parseInt(new Date().getFullYear().toString().substr(2, 2));
+            if (Number(year) < curr_year) year = '20' + year; else year = '19' + year;
+            $('#p_Rodj_Datum').data('kendoDatePicker').value(new Date(year, month - 1, day));
+
+            var dr = obj.DocExpiry;
+            var day = dr.substring(4, 6);
+            var month = dr.substring(2, 4);
+            var year = dr.substring(0, 2);
+            year = '20' + year;
+            $('#p_LD_Rok').data('kendoDatePicker').value(new Date(year, month - 1, day));
+
+            obj.DocIssuer = obj.DocIssuer.replaceAll('<', '');
+            obj.HolderNationality = obj.HolderNationality.replaceAll('<', ''); 	
+
+            $('#p_LD_Drzava').data('kendoDropDownList').value(obj.DocIssuer);
+            $('#p_Drzava').data('kendoDropDownList').value(obj.HolderNationality);
+            $('#p_Rodj_Drzava').data('kendoDropDownList').value(obj.HolderNationality);
+            $('#p_Preb_Drzava').data('kendoDropDownList').value(obj.HolderNationality);
+
+            $.ajax({
+                url: '@Url.Content("~/rbgrp/fsetall")',
+                type: 'POST',
+                data: $('#prijavaForm').serialize(),
+                success: function (data) {
+                    debugger;
+                    if (data.error != "") {
+                        alert(data.error);
+                    }
+                    else if (data.js != "") {
+                        eval(data.js);
+                    }
+                }
+            });
+        }
+        else {
+
+            if (obj.DocIssuer != "") {
+                $.ajax({
+                    url: `/person/get?person=0&group=${group}`,
+                    type: 'POST',
+                    data: { mrz: mrz },
+                    success: function (data, status, xhr) {
+                        var wnd = $("#wndGuest").data("kendoWindow");
+                        wnd.content(data);
+                        wnd.setOptions({
+                            width: $(window).width() * 0.95,
+                            height: $(window).height() * 0.95
+                        });
+                        wnd.center().open();
+                    }
+                });
+            }
+        }
+
+    }, false);
+
+    
+    function registerGroup(e, r) {
+
+        Swal.fire({
+            title: 'Provjera i slanje podataka...',
+            text: 'Molimo sačekajte',
+            position: 'bottom',
+            showClass: {
+                popup: `
+                        animate__animated
+                        animate__fadeInUp
+                        animate__faster
+                        `
+            },
+            hideClass: {
+                popup: `
+                    animate__animated
+                    animate__fadeOutDown
+                    animate__faster
+                    `
+            },
+            grow: 'row',
+            showConfirmButton: false,
+            showCloseButton: false,
+            imageUrl: "/content/icons/loading.gif",
+            imageWidth: 80,
+            imageHeight: 80,
+            allowOutsideClick: false
+        });
+
         $.ajax({
-            url: '/person/get',
+            url: `/api/groupRegister?id=${@(ViewBag.Group ?? 0)}`,
             type: 'GET',
+            success: function (data, status, xhr) {
+                setTimeout(function () {
+                    
+                    if (data.length > 0) {
+                        var extErrors = data.filter(a => a.ExternalErrors.length > 0);
+                        if (extErrors.length > 0) {
+                            var errorMessages = extErrors.map((a) => { return a.PersonId + '<br/>' + a.ExternalErrors.map((b) => { return b; }).join('<br/>') }).join('<br/><br/>');
+                            Swal.fire({ icon: 'error', title: errorMessages, confirmButtonText: `U redu` });
+                        }                        
+                    }
+                    else {
+                        Swal.fire({ icon: 'success', title: 'Gosti su uspješno prijavljeni!', confirmButtonText: `U redu` });
+                        $('#mnePersonGrid').data('kendoGrid').dataSource.read();
+                    }
+                }, 750);                
+            },
+            error: function (data, error, xhr) {
+                Swal.fire({
+                    title: "Greška",
+                    text: "Desila se greška prilikom slanja podataka MUP-u. Molimo pokušajte ponovo.",
+                    icon: "error"
+                });
+            }
+        });
+    }
+
+
+
+    function guest(person) {
+        
+        $.ajax({
+            url: `/person/get?person=${person}&group=${@(ViewBag.Group ?? 0)}`,
+            type: 'POST',
+            data: { mrz: '' },
             success: function (data, status, xhr) {
                 var wnd = $("#wndGuest").data("kendoWindow");
                 wnd.content(data);
@@ -28,66 +200,287 @@
                     height: $(window).height() * 0.95
                 });
                 wnd.center().open();
+
+                if (person != 0) {
+                    var grid = $('#mnePersonGrid').data('kendoGrid');
+                    var item = grid.dataItem(grid.select());                    
+                    wnd.title(`Izmjena prijave: ${item.FullName}`);
+                }
+            }
+        });
+    }
+
+    function virmanfoo(id) {
+
+        $.ajax({
+            url: `/virman?id=${id}`,
+            type: 'GET',            
+            success: function (data, status, xhr) {
+                var wnd = $("#wndVirman").data("kendoWindow");
+                wnd.content(data);                
+                wnd.center().open();
             }
         });
     }
 
 
+    function showGuest(id) {
+
+        var grid = $('#mnePersonGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+        var person = item.Id;
+        
+        guest(person);
+    }
+
+
+
+    function saveGuest() {
+        $.ajax({
+            url: '/save-mne-person',
+            type: 'POST',
+            data: $('#mnePersonForm').serialize(),
+            success: function (data) {
+                if (data.info != "") {
+                    var grid = $('#mnePersonGrid').data('kendoGrid');
+                    grid.dataSource.read();
+                    Swal.fire({ icon: 'success', title: 'Uspješno sačuvane izmjene!', confirmButtonText: `U redu` });
+                    if (isgroup == false) {
+                        var wnd = $("#wndGuest").data("kendoWindow");
+                        wnd.close();
+                    }
+                }
+                else if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+                else if (data.errors) {
+                    var errorMessages = data.errors.map(function (v) {
+                        return v.Error;
+                    }).join('<br>');
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Greške u unosu podataka',
+                        html: errorMessages,
+                        width: '500px',
+                        footer: 'Molimo ispravite greške.',
+                        confirmButtonText: 'U redu'
+                    });
+                }                
+            },
+            error: function () {
+                alert("Došlo je do greške.");
+            }
+        });
+    }
+
+    function registerGuest(person) {
+
+        // var grid = $('#mnePersonGrid').data('kendoGrid');
+        // var item = grid.dataItem(grid.select());
+
+        // if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati gosta', confirmButtonText: `U redu` });
+
+        // var person = item.Id;
+
+        var person = $('#Id').val();
+        
+        $.ajax({
+            url: `/api/personRegister?id=${person}`,
+            type: 'GET',
+            success: function (data, status, xhr) {
+                if (data.ExternalErrors != undefined) {
+                    var errorMessages = data.ExternalErrors.map(function (v) {
+                        return v;
+                    }).join('<br>');
+                    Swal.fire({ icon: 'error', title: errorMessages, confirmButtonText: `U redu` });
+                }
+                else {
+                    Swal.fire({ icon: 'success', title: 'Gost je uspješno prijavljen!', confirmButtonText: `U redu` });
+                }
+                //var wnd = $("#wndGuest").data("kendoWindow");                
+            }
+        });
+    }
+
+    function deleteGuestFromRb90() {
+
+        var grid = $('#mnePersonGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati gosta', confirmButtonText: `U redu` });
+
+        var person = item.Id;
+
+        $.ajax({
+            url: `/api/personExternalDelete?id=${person}`,
+            type: 'GET',
+            success: function (data, status, xhr) {
+                if (data.ExternalErrors != undefined) {
+                    var errorMessages = data.ExternalErrors.map(function (v) {
+                        return v;
+                    }).join('<br>');
+                    Swal.fire({ icon: 'error', title: errorMessages, confirmButtonText: `U redu` });
+                }
+                else {
+                    Swal.fire({ icon: 'success', title: 'Gost je uspješno obrisan iz RB90!', confirmButtonText: `U redu` });
+                }
+                //var wnd = $("#wndGuest").data("kendoWindow");
+            }
+        });
+    }
+
+    function sendCert(g, p) {    
+
+        var html =
+            `<label for="latefisc" class="swal2-input-label">e-Mail adresa na koju želite poslati potvrde:</label>` +
+            `<input value="@ViewBag.Email" class="swal2-input" id="swal2-input-email" placeholder="Unesite e-mail adresu" type="email" style="display: flex;" autocomplete="off"/>` +
+            `<button onclick="certsend(${g},${p})" type="button" class="swal2-confirm swal2-styled" aria-label="" style="display: inline-block;">Pošalji na e-mail</button>` +
+            `<button onclick="certprint(${g},${p})" type="button" class="swal2-deny swal2-styled" aria-label="" style="display: inline-block;">Odštampaj</button>`;
+
+        Swal.fire({
+            title: 'Potvrda o prijavi',
+            showConfirmButton: false,
+            focusConfirm: false,
+            html: html
+        });
+    }
+
+    function certsend(g, p) {
+        var email = $('#swal2-input-email').val();
+        kendo.ui.progress($(body), true);
+        swal.close();
+
+        $.ajax({
+            url: `/api/certificatepdf?grupa=${g}&person=${p}&email=${email}`,
+            type: 'POST',
+            success: function (data) {
+                if (data.info != "") {
+                    Swal.fire({ icon: 'info', title: data.info, confirmButtonText: `U redu` });
+                }
+                if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+            },
+            complete: function (data) {
+                kendo.ui.progress($(body), false);
+            }
+        });
+    }
+
+    function certprint(g, p) {
+        window.open(`/api/certificatepdf?grupa=${g}&person=${p}`, "_blank");
+    }
+
+    function resTaxCalc() { 
+        if (isto) {
+            var birthDate = $('#BirthDate').data('kendoDatePicker').value();
+            var checkIn = $('#CheckIn').data('kendoDatePicker').value();
+            var checkOut = $('#CheckOut').data('kendoDatePicker').value();
+            var property = $('#PropertyId').data('kendoMultiColumnComboBox').value();
+            var taxType = $('#ResTaxTypeId').data('kendoDropDownList').value();
+            var payType = $('#ResTaxPaymentTypeId').data('kendoDropDownList').value();
+
+            if (checkIn != null && checkOut != null) {
+                if (checkIn > checkOut) Swal.fire({ icon: 'error', title: 'Datum odjave mora biti veći od datuma odjave!', confirmButtonText: `U redu` });
+                if (checkIn > new Date()) Swal.fire({ icon: 'error', title: 'Datum prijave ne smije biti u budućnosti!', confirmButtonText: `U redu` });
+            }
+
+            if (birthDate != null) birthDate = kendo.toString(birthDate, "dd.MM.yyyy");
+            if (checkIn != null) checkIn = kendo.toString(checkIn, "dd.MM.yyyy");
+            if (checkOut != null) checkOut = kendo.toString(checkOut, "dd.MM.yyyy");
+
+            $.ajax({
+                url: `/person/restax?property=${property}&resType=${taxType}&payType=${payType}&birthDate=${birthDate}&checkIn=${checkIn}&checkOut=${checkOut}`,
+                type: 'GET',
+                success: function (data) {
+                    $('#ResTaxTypeId').data('kendoDropDownList').value(data.resType);
+                    $('#ResTaxAmount').data('kendoNumericTextBox').value(data.tax);
+                    $('#ResTaxFee').data('kendoNumericTextBox').value(Math.round(data.fee * 100) / 100);
+                },
+                complete: function (data) {
+                    kendo.ui.progress($(body), false);
+                }
+            });
+        }
+    }
+
+    function virman(id) {        
+        $.ajax({
+            url: `/print-direct?id=${id}`,
+            type: 'GET',
+            success: function (data) {
+                window.postMessage({
+                    type: "FROM_PAGE",
+                    message: {
+                        type: "Virman",
+                        data: data
+                    }
+                }, "*");
+            },
+            complete: function (data) {
+                
+            }
+        });
+    }
+
 </script>
 
-<div>
-    <div style="display:inline-block; float:left; margin-top:10px;">
-        <div style="display: inline-block; margin-right: 35px; margin-left:20px; text-align:center;">
-            @(Html.Kendo().Button().Name("btnNewGuest")
-                .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-1px; left:1px;' src='/Content/Icons/new_contact_plus.png'></img>")
-                .HtmlAttributes(new { onclick = "newGuest()", style = "width:80px; height:80px; border-radius:50%;" })
-                )
-            <div style="margin-top:3px;"><b>Novi gost</b></div>
-        </div>
-        <div style="display: inline-block; margin-right: 35px; text-align:center;">
-            @(Html.Kendo().Button().Name("btnOpenGuest")
-                .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-2px; left:2px;' src='/Content/Icons/view_glass.png'></img>")
-                .HtmlAttributes(new { onclick = "showGuest(event)", style = "width:80px; height:80px; border-radius:50%;" })
-                )
-            <div style="margin-top:3px;"><b>Prikaži detalje gosta</b></div>
-        </div>
-        <div style="display: inline-block; margin-right: 35px; text-align:center;">
-            @(Html.Kendo().Button().Name("btnDeleteGuest")
-                .Content("<img style='width:58px;height:58px;text-align:center; position:relative; top:-1px;' src='/Content/Icons/remove.png'></img>")
-                .HtmlAttributes(new { onclick = "deleteGuest(event)", style = "width:80px; height:80px; border-radius:50%;" })
-                )
-            <div style="margin-top:3px;"><b>Obriši gosta</b></div>
-        </div>
-    </div>
+<div style="display:flex; margin-left:15px; margin-top:25px; margin-right:15px;">
 
-    <div style="display:inline-block; float:right; margin-top:10px;">
-        <div style="display: inline-block; margin-right:35px; text-align:center;">
-            @(Html.Kendo().Button().Name("btnSignIn")
-                .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-7px;' src='/Content/Icons/police.png'></img><img style='filter: drop-shadow(0px 0px 1px #222); width:30px;height:30px;text-align:center; position:absolute; top:46px; left:26px' src='/Content/Icons/plus2.png'></img>")
-                .HtmlAttributes(new { onclick = "showMUP(event, 'p')", style = "width:80px; height:80px; border-radius:50%;" })
-                )
-            <div style="margin-top:3px;"><b>Prijavi sve MUP-u</b></div>
-        </div>
-        <div style="display: inline-block; margin-right: 35px; text-align:center;">
-            @(Html.Kendo().Button().Name("btnSignOut")
-                .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-7px;' src='/Content/Icons/police.png'></img><img style='filter: drop-shadow(0px 0px 1px #222); width:30px;height:30px;text-align:center; position:absolute; top:46px; left:26px' src='/Content/Icons/minus2.png'></img>")
-                .HtmlAttributes(new { onclick = "showMUP(event, 'o')", style = "width:80px; height:80px; border-radius:50%;" })
-                )
-            <div style="margin-top:3px;"><b>Odjavi sve iz MUP-a</b></div>
-        </div>
-        <div style="display: inline-block; margin-right: 35px; text-align:center;">
-            @(Html.Kendo().Button().Name("btnCert")
-                .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:0px;left:-1px;' src='/Content/Icons/licence_color.png'></img></img>")
-                .HtmlAttributes(new { onclick = "sendCert(event)", style = "width:80px; height:80px; border-radius:50%;" })
-                )
-            <div style="margin-top:3px;"><b>Potvrde o prijavi</b></div>
-        </div>
-    </div>
+    @(Html.Kendo().Button().Name("btnNewGuest")
+        .HtmlAttributes(new { type = "button", onclick = "guest(0)", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/new_contact_plus.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>NOVI<br/>GOST<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnOpenGuest")
+        .HtmlAttributes(new { type = "button", onclick = "showGuest(event)", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/edit_color.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>IZMJENA<br/>PODATAKA<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnDeleteGuest")
+        .HtmlAttributes(new { type = "button", onclick = "deleteGuest(event)", style = "height:95px; width:95px; margin-right:10px;  cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/remove.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>OBRIŠI<br/>GOSTA<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnDeleteGuestRb90")
+        .HtmlAttributes(new { type = "button", onclick = "deleteGuestFromRb90(event)", style = "height:95px; width:95px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/eraser_color.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>OBRIŠI GOSTA<br/>IZ RB90<div>
+                </div>"))
+
+    <div style="flex-grow:1"></div>
+
+    @if(ViewBag.Group != null)
+    {
+
+        @(Html.Kendo().Button().Name("btnRegisterGroup")
+            .HtmlAttributes(new { type = "button", onclick = $"registerGroup({@ViewBag.Group})", style = "height:95px; width:95px; margin-right:10px;" })
+            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0; cursor:pointer;'>
+                        <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/police.png'/>
+                        <div style='font-weight:bold;display:block;position:relative;top:6px;line-height:110%;font-size:90%'>PRIJAVI<br/>GOSTE<div>
+                    </div>"))
+
+        @(Html.Kendo().Button().Name("btnCert")
+            .HtmlAttributes(new { type = "button", onclick = $"sendCert({@ViewBag.Group}, 0)", style = "height:95px; width:95px; cursor:pointer;" })
+            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/licence_color.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>POTVRDE<br/>O PRIJAVI<div>
+                    </div>"))
+    }
+    
 </div>
 
 <div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
-    @(Html.Kendo().Grid<SrbPersonEnrichedDto>()
-        .Name("srbPersonGrid")
+    @(Html.Kendo().Grid<MnePersonEnrichedDto>()
+        .Name("mnePersonGrid")
         .Columns(columns =>
         {
             // First Level Header
@@ -98,7 +491,7 @@
             {
                 col.Bound(g => g.PropertyName).Title("Smještajni objekat").Width(250);
                 col.Bound(g => g.FullName).Title("Ime i prezime").Width(250);
-                col.Bound(g => g.IsDomestic).Title("Tip gosta").Width(250).ClientTemplate("#= IsDomestic ? 'Domaći gost' : 'Strani gost' #");
+                col.Bound(g => g.PersonType).Title("Tip gosta").Width(250).ClientTemplate("#= PersonType == 1 ? 'Domaći gost' : 'Strani gost' #");
                 col.Bound(g => g.CheckIn).Title("Prijava").Format("{0:dd.MM.yyyy}").Width(100);
                 col.Bound(g => g.CheckOut).Title("Odjava").Format("{0:dd.MM.yyyy}").Width(100);
             })
@@ -112,7 +505,7 @@
             {
                 col.Bound(g => g.DocumentType).Title("Vrsta").Width(150);
                 col.Bound(g => g.DocumentNumber).Title("Broj").Width(100);
-                col.Bound(g => g.DocumentIssueDate).Title("Datum izdavanja").Format("{0:dd.MM.yyyy}").Width(100);
+                col.Bound(g => g.DocumentValidTo).Title("Rok važenja").Format("{0:dd.MM.yyyy}").Width(100);
             })
             );
 
@@ -123,9 +516,9 @@
             .Columns(col =>
             {
                 // Display boolean fields as non-clickable checkboxes using Kendo UI elements
-                col.Bound(g => g.Registered).Title("Prijavljen").Width(100).ClientTemplate("#= Registered ? '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' #");
-                col.Bound(g => g.Locked).Title("Zaključan").Width(100).ClientTemplate("#= Locked ? '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' #");
-                col.Bound(g => g.Deleted).Title("Obrisan").Width(100).ClientTemplate("#= Deleted ? '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' #");
+                col.Bound(g => g.Registered).Title("Prijavljen").Width(100).ClientTemplate("#= Registered ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
+                //col.Bound(g => g.Locked).Title("Zaključan").Width(100).ClientTemplate("#= Locked ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
+                col.Bound(g => g.Deleted).Title("Obrisan").Width(100).ClientTemplate("#= Deleted ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
             })
             );
         })
@@ -139,21 +532,22 @@
         .PageSize(20)
         .Model(m =>
         {
+            m.Id(g => g.Id);
             m.Field(g => g.Id);
             m.Field(g => g.FullName);
             m.Field(g => g.PropertyName);
-            m.Field(g => g.IsDomestic);
+            m.Field(g => g.PersonType);
             m.Field(g => g.CheckIn);
             m.Field(g => g.CheckOut);
             m.Field(g => g.DocumentType);
             m.Field(g => g.DocumentNumber);
-            m.Field(g => g.DocumentIssueDate);
+            m.Field(g => g.DocumentValidTo);
             m.Field(g => g.Registered);
             m.Field(g => g.Locked);
             
             m.Field(g => g.Deleted);
         })
-        .Read(read => read.Action("ReadSrbPersons", "Person").Data("function() { return { groupId: 0 }; }"))
+        .Read(read => read.Action("ReadMnePersons", "Person", new { groupId = ViewBag.Group }))
         ))
 </div>
 
@@ -164,6 +558,15 @@
     .Draggable(false)
     .Width(1200)
     .Height(700)        
-    .HtmlAttributes(new { style = "padding:20px; position:absolute; top:50px; bottom:0px; right:0px; left:0px;" })    
-    
+    .HtmlAttributes(new { style = "padding:20px; position:absolute; top:50px; bottom:0px; right:0px; left:0px;" })        
+)
+
+@(Html.Kendo().Window().Name("wndVirman")
+    .Title("Štampa uplatnice")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(800)
+    .Height(550)
+    .HtmlAttributes(new { style = "padding:20px;" })
 )

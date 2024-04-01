@@ -1,10 +1,16 @@
 ﻿@using Oblak.Models.Api;
-@using Oblak.Models.rb90;
+@using Oblak.Models.EFI;
 @{
-    ViewBag.Title = "Smještajni objekti";
-    Layout = "~/Views/Shared/_LayoutINV.cshtml";
     var sl = ViewBag.MunicipalityCodeList as SelectList;
     var tl = ViewBag.TypeCodeList as SelectList;
+    var le =(int?)ViewBag.LegalEntity;
+    var cntr = (string)ViewBag.Country ?? "MNE";
+    var partial = ViewBag.Partial;
+    if (partial == false)
+    {
+        ViewBag.Title = "Smještajni objekti";            
+        Layout = "~/Views/Shared/_LayoutINV.cshtml";
+    }
 }
 
 <script type="text/javascript">
@@ -12,82 +18,117 @@
 
     });
 
-    function onCancel(e) {
-        var grid = e.sender;
-        grid.dataSource.cancelChanges();
-        grid.dataSource.read();
-    }
-
-    function onBtnLoadObjectsClick() {
+    function loadProperties() {
         $.ajax({
-            url: '/Property/FetchPropertiesExternal',
+            url: `/Property/FetchPropertiesExternal?legalEntity=${le}`,
             type: 'GET',
             dataType: 'json',
             success: function (data) {
                 if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Smještajni objekti su uspješno preuzeti.',
-                        confirmButtonText: 'U redu'
-                    });
+                    Swal.fire({icon: 'success', title: 'Smještajni objekti su uspješno preuzeti.', confirmButtonText: 'U redu' });
                     var grid = $("#propertiesGrid").data("kendoGrid");
-                    if (grid) {
-                        grid.dataSource.read();
-                        grid.refresh();
-                    }
+                    grid.dataSource.read();                        
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Došlo je do greške prilikom preuzimanja smještajnih objekata.',
-                        confirmButtonText: 'U redu'
-                    });
+                    Swal.fire({ icon: 'error', title: 'Došlo je do greške prilikom preuzimanja smještajnih objekata.', confirmButtonText: 'U redu' });
                 }
             },
             error: function (error) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Došlo je do greške prilikom preuzimanja smještajnih objekata.',
-                    confirmButtonText: 'U redu'
-                });
+                Swal.fire({ icon: 'error', title: 'Došlo je do greške prilikom preuzimanja smještajnih objekata.', confirmButtonText: 'U redu' });
             }
         });
     }
 
-    function grid_error(e) {
-        if (e.errors) {
-            var message = "There are some errors:\n";
-            // Create a message containing all errors.
-            $.each(e.errors, function (key, value) {
-                if ('errors' in value) {
-                    $.each(value.errors, function () {
-                        message += this + "\n";
-                    });
-                }
-            });
-            // Display the message.
-            alert(message);
-            // Cancel the changes.
-            var grid = $("#grid").data("kendoGrid");
-            grid.cancelChanges();
-        }
+    function newProperty(e) {
+        var grid = $("#propertiesGrid").data("kendoGrid");
+        grid.addRow();
     }
+
+
+    function fiscal() {
+
+        var grid = $('#propertiesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati smještajni objekat', confirmButtonText: `U redu` });
+
+        var prop = item.Id;
+
+        $.ajax({
+            url: `/fiscal-enu?property=${prop}`,
+            type: 'GET',
+            success: function (data, status, xhr) {
+                var wnd = $("#wndFiscal").data("kendoWindow");
+                wnd.content(data);
+                wnd.center().open();
+            }
+        });
+    }
+
+    function setFiscal() {
+
+        $.ajax({
+            url: `/fiscal-enu`,
+            type: 'POST',
+            data: $('#frmFiscal').serialize(),
+            success: function (data, status, xhr) {
+                if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+                else {
+                    $("#wndFiscal").data("kendoWindow").close();                    
+                }
+            }
+        });
+    }
+
+
 </script>
 
-<div>
-    <div style="display: inline-block; margin-right: 35px; margin-left:20px; margin-top:10px; text-align:center;">
-        @(Html.Kendo().Button()
-            .Name("btnLoadObjects")
-            .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/real_estate.png'></img>")
-            .HtmlAttributes(new { style = "width:80px; height:80px; border-radius:50%;" })
-            .Events(events => events
-            .Click("onBtnLoadObjectsClick")
+<div style="position:absolute; top:@(partial ? 15 : 25)px; bottom: 15px; left: 15px; right:15px;">
+     @(Html.Kendo().Button().Name("btnLoadProperties")
+        .HtmlAttributes(new { type = "button", onclick = "loadProperties()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/hotel.png'/>
+    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>UČITAJ<br/>OBJEKTE<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnNewProperty")
+        .HtmlAttributes(new { type = "button", onclick = "newProperty()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/building.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>NOVI<br/>OBJEKAT<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnFiscal")
+        .HtmlAttributes(new { type = "button", onclick = "fiscal()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:48px;height:48px;text-align:center;display:block;margin-left:auto;margin-right:auto;margin-top:2px;' src='/Content/Icons/cash_register.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>FISKALNI<br/>PODACI<div>
+                </div>"))
+    
+    
+@*     <div style="display: inline-block; margin-right: 15px;">
+        @(Html.Kendo().Button().Name("btnLoadProperties")
+            .Content("<div style='display:flex;align-items:center; justify-content:space-between;'><img style='width:35px;height:35px;text-align:center; position:relative; top:0px;' src='/Content/Icons/hotel.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>UČITAJ<br/>OBJEKTE</div></div>")
+            .HtmlAttributes(new { onclick = "loadProperties()", style = "width:220px; height:50px;" })
             )
-            )
-        <div style="display:inline-block; text-align: left; margin-left:10px;"><b>Preuzmi prijavljene smještajne<br />objekte iz MUP-a</b></div>
     </div>
+    <div style="display: inline-block; margin-right: 15px;">
+        @(Html.Kendo().Button().Name("btnNewProperty")
+            .Content("<div style='display:flex;align-items:center; justify-content:space-between;'><img style='width:35px;height:35px;text-align:center; position:relative; top:0px;' src='/Content/Icons/building.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>Novi smještajni objekat</div></div>")
+            .HtmlAttributes(new { onclick = "newProperty()", style = "width:220px; height:50px;" })
+            )
+    </div>
+
+    <div style="display: inline-block; margin-right: 15px;">
+        @(Html.Kendo().Button().Name("btnFiscal")
+            .Content("<div style='display:flex;align-items:center; justify-content:space-between;'><img style='width:35px;height:35px;text-align:center; position:relative; top:0px;' src='/Content/Icons/cash_register.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>FISKALNI<br/>PODACI</div></div>")
+            .HtmlAttributes(new { onclick = "fiscal()", style = "width:170px; height:50px;" })
+            )
+    </div> *@
 </div>
 
-<div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
+<div style="position:absolute; top:@(partial ? 120 : 130)px; bottom: 15px; left: 15px; right:15px;">
     @(Html.Kendo().Grid<PropertyEnrichedDto>()
         .Name("propertiesGrid")
         .Columns(columns =>
@@ -98,28 +139,35 @@
             })
             .Width(70);
 
-            columns.Group(group => group
+@*             columns.Group(group => group
             .Title("MUP")
             .HeaderHtmlAttributes(new { style = "text-align: center;" })
             .Columns(col =>
             {
-                col.Bound(g => g.Id).Title("ID").Width(100).ClientTemplate("#= Id #").HtmlAttributes(new { style = "pointer-events:none;" });
                 col.Bound(g => g.RegNumber).Title("Reg. broj").Width(100);
                 col.Bound(g => g.RegDate).Title("Rješenje ističe").Width(100);
-                col.Bound(g => g.Name).Title("Naziv").Width(100);
-            })
-            );
+            })); *@
 
-            columns.Group(group => group
-            .Title("Osnovni podaci")
-            .HeaderHtmlAttributes(new { style = "text-align: center;" })
+            columns.Bound(g => g.Id).Title("ID").Width(100).ClientTemplate("#= Id #").HtmlAttributes(new { style = "pointer-events:none;" });
+            columns.Bound(g => g.Name).Title("Naziv").Width(250);
+            @* col.Bound(g => g.PropertyName).Title("Naziv objekta").Width(100); *@
+            columns.Bound(g => g.Address).Title("Adresa").Width("100%");
+            columns.ForeignKey(g => g.Type, tl).Title("Vrsta").Width(250);
+            columns.Bound(g => g.ExternalId).Title("Šifra").Width(150);
+            columns.ForeignKey(g => g.Municipality, sl).Title("Opština").Width(300);
+
+            if (cntr == "MNE") columns.Bound(g => g.ResidenceTax).Title("Boravišna taksa").Width(175);
+
+@*             columns.Group(group => group.Title("Osnovni podaci").HeaderHtmlAttributes(new { style = "text-align: center;" })
             .Columns(col =>
             {
-                @* col.Bound(g => g.PropertyName).Title("Naziv objekta").Width(100); *@
-                col.Bound(g => g.Address).Title("Adresa").Width(100);
-                col.ForeignKey(g => g.Type, tl).Title("Vrsta").Width(100);
+                col.Bound(g => g.Id).Title("ID").Width(100).ClientTemplate("#= Id #").HtmlAttributes(new { style = "pointer-events:none;" });
+                col.Bound(g => g.Name).Title("Naziv").Width(200);
+                @* col.Bound(g => g.PropertyName).Title("Naziv objekta").Width(100);
+                col.Bound(g => g.Address).Title("Adresa").Width("100%");
+                col.ForeignKey(g => g.Type, tl).Title("Vrsta").Width(200);
                 col.Bound(g => g.ExternalId).Title("Šifra").Width(100);
-                col.ForeignKey(g => g.Municipality, sl).Title("Opština").Width(100);
+                col.ForeignKey(g => g.Municipality, sl).Title("Opština").Width(200);
             })
             );
 
@@ -128,52 +176,63 @@
             .HeaderHtmlAttributes(new { style = "text-align: center;" })
             .Columns(col =>
             {
-                @* col.Bound(g => g.PaymentType).Title("Naplata").Width(100); *@
+                @* col.Bound(g => g.PaymentType).Title("Naplata").Width(100);
                 col.Bound(g => g.Price).Title("Cijena").Width(100);
                 col.Bound(g => g.Capacity).Title("Kapacitet").Width(100);
             })
-            );
+            ); *@
 
-            columns.Group(group => group
+@*             columns.Group(group => group
             .Title("Boravišna taksa")
             .HeaderHtmlAttributes(new { style = "text-align: center;" })
             .Columns(col =>
             {
                 col.Bound(g => g.ResidenceTax).Title("Iznos").Width(100);
                 col.Bound(g => g.ResidenceTaxYN).Title("Naplata BT?").Width(100).ClientTemplate("#= ResidenceTaxYN ? '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' #"); ;
+            })); *@
             })
-            );
-        })
-        .Pageable(p => p.Refresh(true))
-        .Sortable()
-        .Selectable()
-        .Scrollable()
-        .Filterable()
-        .HtmlAttributes(new { style = "height:70%;" })
-        .Editable(editable => editable.Mode(GridEditMode.InLine))
-        .Events(e => e.Cancel("onCancel"))
-        .DataSource(ds => ds
-            .Ajax()
-            .Events(events => events.Error("grid_error"))
-            .PageSize(20)
-            .Model(m =>
-            {
-                m.Id(g => g.Id);
-                m.Field(g => g.Id);
-                m.Field(g => g.RegNumber);
-                m.Field(g => g.RegDate);
-                m.Field(g => g.Name);
-                m.Field(g => g.PropertyName);
-                m.Field(g => g.Address);
-                m.Field(g => g.Municipality);
-                m.Field(g => g.PaymentType);
-                m.Field(g => g.Price);
-                m.Field(g => g.Capacity);
-                m.Field(g => g.ResidenceTax);
-                m.Field(g => g.ResidenceTaxYN);
-            })
-            .Read(read => read.Action("Read", "Property"))
-            .Update(update => update.Action("Update", "Property"))
-            .Destroy(destroy => destroy.Action("Destroy", "Property"))
-        ))
+            .Pageable(p => p.Refresh(true))
+            .Sortable()
+            .Selectable()
+            .Scrollable()
+            .Filterable()
+            .HtmlAttributes(new { style = "height:100%;" })
+            .Editable(editable => editable.Mode(GridEditMode.InLine))
+            .DataSource(ds => ds
+                .Ajax()
+                .PageSize(20)
+                .Model(m =>
+                {
+                    m.Id(g => g.Id);
+                    m.Field(g => g.Id).Editable(false);
+                    m.Field(g => g.RegNumber);
+                    m.Field(g => g.RegDate);
+                    m.Field(g => g.Name);
+                    m.Field(g => g.PropertyName);
+                    m.Field(g => g.Address);
+                    m.Field(g => g.Municipality);
+                    m.Field(g => g.PaymentType);
+                    m.Field(g => g.Price);
+                    m.Field(g => g.Capacity);
+                    m.Field(g => g.ResidenceTax);
+                    m.Field(g => g.ResidenceTaxYN);
+                    m.Field(g => g.Status).DefaultValue("A");
+                })
+        .Create(a => a.Action("Create", "Property", new { legalEntity = le }))
+        .Read(a => a.Action("Read", "Property", new { legalEntity = le }))
+        .Update(a => a.Action("Update", "Property", new { legalEntity = le }))
+        .Destroy(a => a.Action("Destroy", "Property", new { legalEntity = le }))
+        )
+    )
 </div>
+
+
+@(Html.Kendo().Window().Name("wndFiscal")
+    .Title("Fiskalni podaci")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(400)
+    .Height(600)
+    .HtmlAttributes(new { style = "padding:20px; padding-bottom:10px; font-size:14px;" })
+)

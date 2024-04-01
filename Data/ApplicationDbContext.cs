@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oblak.Data.Enums;
+using System.Reflection;
 
 namespace Oblak.Data
 {
@@ -15,40 +16,40 @@ namespace Oblak.Data
 			if (accessor != null) _user = accessor.HttpContext?.User.Identity?.Name ?? "unknown";
 		}
 
-        public ApplicationDbContext(IHttpContextAccessor accessor)
+        //public ApplicationDbContext(IHttpContextAccessor accessor)
+        //{
+        //    if (accessor != null) _user = accessor.HttpContext?.User.Identity?.Name ?? "unknown";
+        //}
+
+        public override int SaveChanges()
         {
-            if (accessor != null) _user = accessor.HttpContext?.User.Identity?.Name ?? "unknown";
+            if (_user != null)
+            {
+                foreach (var e in this.ChangeTracker.Entries().Where(a => a.State == EntityState.Modified || a.State == EntityState.Added))
+                {
+                    DateTime now = DateTime.Now;
+                    Type T = e.Entity.GetType();
+
+                    PropertyInfo? ucd = T.GetProperty("UserCreatedDate") ?? null;
+                    PropertyInfo? umd = T.GetProperty("UserModifiedDate") ?? null;
+                    PropertyInfo? uc = T.GetProperty("UserCreated") ?? null;
+                    PropertyInfo? um = T.GetProperty("UserModified") ?? null;
+
+                    if (uc != null && e.State == EntityState.Added)
+                        uc.SetValue(e.Entity, _user);
+                    if (um != null && (e.State == EntityState.Modified || e.State == EntityState.Added))
+                        um.SetValue(e.Entity, _user);
+                    if (ucd != null && e.State == EntityState.Added)
+                        ucd.SetValue(e.Entity, now);
+                    if (umd != null && (e.State == EntityState.Modified || e.State == EntityState.Added))
+                        umd.SetValue(e.Entity, now);
+                }
+            }
+
+            return base.SaveChanges();
         }
 
-		//public override int SaveChanges()
-		//{
-		//	if (_user != null)
-		//	{
-		//		foreach (var e in this.ChangeTracker.Entries().Where(a => a.State == EntityState.Modified || a.State == EntityState.Added))
-		//		{
-		//			DateTime now = DateTime.Now;
-		//			Type T = e.Entity.GetType();
-
-		//			PropertyInfo? ucd = T.GetProperty("UserCreatedDate") ?? null;
-		//			PropertyInfo? umd = T.GetProperty("UserModifiedDate") ?? null;
-		//			PropertyInfo? uc = T.GetProperty("UserCreated") ?? null;
-		//			PropertyInfo? um = T.GetProperty("UserModified") ?? null;
-
-		//			if (uc != null && e.State == EntityState.Added)
-		//				uc.SetValue(e.Entity, _user);
-		//			if (um != null && (e.State == EntityState.Modified || e.State == EntityState.Added))
-		//				um.SetValue(e.Entity, _user);
-		//			if (ucd != null && e.State == EntityState.Added) 
-  //                      ucd.SetValue(e.Entity, now);
-		//			if (umd != null && (e.State == EntityState.Modified || e.State == EntityState.Added))
-		//				umd.SetValue(e.Entity, now);
-		//		}
-		//	}
-
-		//	return base.SaveChanges();
-		//}
-
-		protected override void OnModelCreating(ModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
@@ -68,10 +69,19 @@ namespace Oblak.Data
             modelBuilder.Entity<LegalEntity>().HasMany(a => a.ResTaxes).WithOne(a => a.LegalEntity).OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<LegalEntity>().HasOne(a => a.Partner).WithMany(a => a.LegalEntities);
 			modelBuilder.Entity<LegalEntity>().HasOne(a => a.Administrator).WithMany(a => a.Clients);
-			modelBuilder.Entity<LegalEntity>().Property(a => a.Type).HasConversion(new EnumToStringConverter<LegalEntityType>());
+            modelBuilder.Entity<LegalEntity>().HasOne(a => a.PassThrough);
+            modelBuilder.Entity<LegalEntity>().Property(a => a.Type).HasConversion(new EnumToStringConverter<LegalEntityType>());
             modelBuilder.Entity<LegalEntity>().Property(a => a.Country).HasConversion(new EnumToStringConverter<Country>());
 
+            modelBuilder.Entity<Partner>().Property(a => a.Country).HasConversion(new EnumToStringConverter<Country>());
+            modelBuilder.Entity<Partner>().Property(a => a.PartnerType).HasConversion(new EnumToStringConverter<PartnerType>());
+
+            modelBuilder.Entity<Municipality>().Property(a => a.Country).HasConversion(new EnumToStringConverter<Country>());
+            modelBuilder.Entity<Municipality>().Property(a => a.ResidenceTaxAmount).HasPrecision(18, 2);
+            modelBuilder.Entity<Municipality>().HasMany(a => a.Properties).WithOne(a => a.Municipality).OnDelete(DeleteBehavior.NoAction);
+
             modelBuilder.Entity<Property>().HasOne(a => a.LegalEntity);
+            modelBuilder.Entity<Property>().HasOne(a => a.Municipality);
             modelBuilder.Entity<Property>().HasMany(a => a.GuestTokens);
             modelBuilder.Entity<Property>().HasMany(a => a.Groups).WithOne(a => a.Property).OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<Property>().Property(a => a.Price).HasPrecision(18, 2);
@@ -81,34 +91,56 @@ namespace Oblak.Data
 
             modelBuilder.Entity<PropertyUnit>().Property(a => a.Price).HasPrecision(12, 8);
 
-            modelBuilder.Entity<Partner>().Property(a => a.Country).HasConversion(new EnumToStringConverter<Country>());
-
             modelBuilder.Entity<Group>().HasOne(a => a.LegalEntity);
             modelBuilder.Entity<Group>().HasMany(a => a.Persons);
             modelBuilder.Entity<Group>().HasOne(a => a.Property);
+			modelBuilder.Entity<Group>().HasOne(a => a.ResTaxType);
+			modelBuilder.Entity<Group>().HasOne(a => a.ResTaxPaymentType);
+			modelBuilder.Entity<Group>().Property(a => a.ResTaxAmount).HasPrecision(18, 2);
+			modelBuilder.Entity<Group>().Property(a => a.ResTaxFee).HasPrecision(18, 2);
 
-            modelBuilder.Entity<Person>().UseTpcMappingStrategy();
+			modelBuilder.Entity<Person>().UseTpcMappingStrategy();
             modelBuilder.Entity<Person>().HasOne(a => a.Group);
             modelBuilder.Entity<Person>().HasOne(a => a.Property);
+            modelBuilder.Entity<Person>().HasOne(a => a.CheckInPoint);
 
             modelBuilder.Entity<MnePerson>().ToTable("MnePersons");
             modelBuilder.Entity<MnePerson>().HasOne(a => a.Group);
             modelBuilder.Entity<MnePerson>().HasOne(a => a.Property);
-            modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxAmount).HasPrecision(18, 2);
+			modelBuilder.Entity<MnePerson>().HasOne(a => a.ResTaxType);
+            modelBuilder.Entity<MnePerson>().HasOne(a => a.CheckInPoint);
+            modelBuilder.Entity<MnePerson>().HasOne(a => a.ResTaxPaymentType);
+			modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxAmount).HasPrecision(18, 2);
+			modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxFee).HasPrecision(18, 2);
 
-            modelBuilder.Entity<SrbPerson>().ToTable("SrbPersons");
+			modelBuilder.Entity<SrbPerson>().ToTable("SrbPersons");
             modelBuilder.Entity<SrbPerson>().HasOne(a => a.Group);
             modelBuilder.Entity<SrbPerson>().HasOne(a => a.Property);
+            modelBuilder.Entity<SrbPerson>().HasOne(a => a.CheckInPoint);
 
-            modelBuilder.Entity<ResTax>().HasOne(a => a.LegalEntity);
-            modelBuilder.Entity<ResTax>().HasOne(a => a.Property);
-            modelBuilder.Entity<ResTax>().HasMany(a => a.Items);
-            modelBuilder.Entity<ResTax>().Property(a => a.Amount).HasPrecision(18, 2);
+            modelBuilder.Entity<ResTaxCalc>().HasOne(a => a.LegalEntity);
+            modelBuilder.Entity<ResTaxCalc>().HasOne(a => a.Property);
+            modelBuilder.Entity<ResTaxCalc>().HasMany(a => a.Items);
+            modelBuilder.Entity<ResTaxCalc>().Property(a => a.Amount).HasPrecision(18, 2);
 
-            modelBuilder.Entity<ResTaxItem>().HasOne(a => a.ResTax);
-            modelBuilder.Entity<ResTaxItem>().Property(a => a.TaxPerNight).HasPrecision(18, 2);
-            modelBuilder.Entity<ResTaxItem>().Property(a => a.TotalTax).HasPrecision(18, 2);
-                        
+            modelBuilder.Entity<ResTaxCalcItem>().HasOne(a => a.ResTax);
+            modelBuilder.Entity<ResTaxCalcItem>().Property(a => a.TaxPerNight).HasPrecision(18, 2);
+            modelBuilder.Entity<ResTaxCalcItem>().Property(a => a.TotalTax).HasPrecision(18, 2);
+
+			modelBuilder.Entity<ResTaxType>().HasOne(a => a.Partner);
+            modelBuilder.Entity<ResTaxType>().Property(a => a.Amount).HasPrecision(18, 2);
+
+            modelBuilder.Entity<ResTaxPaymentType>().HasOne(a => a.Partner);
+			modelBuilder.Entity<ResTaxPaymentType>().HasMany(a => a.PaymentFees).WithOne(a => a.ResTaxPaymentType).OnDelete(DeleteBehavior.NoAction); ;
+            modelBuilder.Entity<ResTaxPaymentType>().Property(a => a.PaymentStatus).HasConversion(new EnumToStringConverter<Enums.ResTaxPaymentStatus>());
+
+			modelBuilder.Entity<ResTaxFee>().HasOne(a => a.Partner);
+			modelBuilder.Entity<ResTaxFee>().HasOne(a => a.ResTaxPaymentType);
+            modelBuilder.Entity<ResTaxFee>().Property(a => a.FeeAmount).HasPrecision(18, 2);
+            modelBuilder.Entity<ResTaxFee>().Property(a => a.FeePercentage).HasPrecision(18, 2);
+            modelBuilder.Entity<ResTaxFee>().Property(a => a.UpperLimit).HasPrecision(18, 2);
+            modelBuilder.Entity<ResTaxFee>().Property(a => a.LowerLimit).HasPrecision(18, 2);
+
             modelBuilder.Entity<SelfRegisterToken>().HasOne(a => a.Property);
 
             modelBuilder.Entity<Document>().HasMany(a => a.DocumentItems);
@@ -151,7 +183,7 @@ namespace Oblak.Data
 
             modelBuilder.Entity<FiscalRequest>().HasOne(a => a.LegalEntity);
             modelBuilder.Entity<FiscalRequest>().Property(a => a.Amount).HasPrecision(18, 4);
-
+            modelBuilder.Entity<FiscalRequest>().Property(a => a.RequestType).HasConversion(new EnumToStringConverter<FiscalRequestType>());
 
             modelBuilder
                 .HasDbFunction(typeof(ApplicationDbContext).GetMethod(nameof(GuestList), new[] { typeof(int) })!)
@@ -173,6 +205,7 @@ namespace Oblak.Data
 
         public DbSet<LegalEntity> LegalEntities { get; set; }
         public DbSet<Partner> Partners { get; set; }
+        public DbSet<CheckInPoint> CheckInPoints { get; set; }
         public DbSet<ApplicationUser> Users { get; set; }
         public DbSet<Document> Documents { get; set; }
         public DbSet<DocumentItem> DocumentItems { get; set; }
@@ -187,9 +220,13 @@ namespace Oblak.Data
         public DbSet<SrbPerson> SrbPersons { get; set; }
         public DbSet<CodeList> CodeLists { get; set; }        
         public DbSet<SelfRegisterToken> SelfRegisterTokens { get; set; }
-        public DbSet<ResTax> ResTaxes { get; set; }
-        public DbSet<ResTaxItem> ResTaxItems { get; set; }
-        public DbSet<UserDevice> UserDevices { get; set; }
+        public DbSet<ResTaxCalc> ResTaxCalc { get; set; }
+        public DbSet<ResTaxCalcItem> ResTaxCalcItems { get; set; }
+		public DbSet<ResTaxType> ResTaxTypes { get; set; }
+		public DbSet<ResTaxPaymentType> ResTaxPaymentTypes { get; set; }
+		public DbSet<ResTaxFee> ResTaxFees { get; set; }
+		public DbSet<UserDevice> UserDevices { get; set; }
+        public DbSet<Report> Reports { get; set; }
 
         public string GuestList(int id) => throw new NotImplementedException();
         public string GroupDesc(int id) => throw new NotImplementedException();

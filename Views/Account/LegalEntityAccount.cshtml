@@ -1,0 +1,99 @@
+﻿@using Oblak.Models;
+@using Kendo.Mvc.TagHelpers;
+
+@{
+    var user = ViewBag.User as ApplicationUser;
+    var lockedOut = (bool)ViewBag.Locked;
+}
+
+<style>
+
+    div.one {
+        display: inline-block;
+        padding: 10px;
+        min-width: 0;
+    }
+
+</style>
+
+@if (user == null)
+{
+    <form spellcheck="false" id="accountForm">
+
+        <div style="margin-bottom: 10px; display:flex; flex-wrap:wrap;">
+            <div class="one" style="flex:0 1 calc(100% - 20px)">
+                <label for="firstname">Korisničko ime</label>
+                @(Html.Kendo().TextBox().Name("UserName").HtmlAttributes(new { style = "width:100%" }))
+            </div>
+            <div class="one" style="flex:0 1 calc(100% - 20px)">
+                <label for="lastname">E-mail</label>
+                @(Html.Kendo().TextBox().Name("Email").HtmlAttributes(new { style = "width:100%", type = "email" }))
+            </div>
+            <div class="one" style="flex:0 1 calc(100% - 20px)">
+                <label for="lastname">Broj telefona</label>
+                @(Html.Kendo().TextBox().Name("PhoneNumber").HtmlAttributes(new { style = "width:100%", type = "tel" }))
+            </div>
+            <div class="one" style="flex:0 1 calc(100% - 20px)">
+                <label for="lastname">Lozinka</label>
+                @(Html.Kendo().TextBox().Name("Password").HtmlAttributes(new { style = "width:100%", type = "password" }))
+            </div>
+            <div class="one" style="flex:0 1 calc(100% - 20px)">
+                <label for="lastname">Potvrda lozinke</label>
+                @(Html.Kendo().TextBox().Name("ConfirmPassword").HtmlAttributes(new { style = "width:100%", type = "password" }))
+            </div>
+
+            <div class="one" style="flex:0 1 calc(100% - 20px); margin-top:30px;">
+                @(Html.Kendo().Button().Name("btnCreateAccount")
+                    .Content("<div style='display:flex;align-items:center; justify-content:space-between;'><img style='width:35px;height:35px;text-align:center; position:relative; top:0px;' src='/Content/Icons/access.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>Kreiraj korisnički nalog</div></div>")
+                    .HtmlAttributes(new { onclick = "accountCreate()", type = "button", style = "width:100%; height:50px;" })
+                    )
+            </div>
+        </div>
+    </form>
+}
+else
+{
+    <div style="display:flex; flex-wrap:wrap;">
+        <div style="flex: 0 1 39%">Korisničko ime</div>
+        <div style="flex: 0 1 59%">@user.UserName</div>
+        <div style="flex: 0 1 39%">Email</div>
+        <div style="flex: 0 1 59%">@user.Email</div>
+        <div style="flex: 0 1 39%">Telefon</div>
+        <div style="flex: 0 1 59%">@user.PhoneNumber</div>
+    </div>
+
+    <div style="margin-top:30px;font-weight:600; font-size:14px;">Zaključavanje naloga</div>
+    <fieldset style="border: 1px solid #ddd; padding:20px; margin-bottom: 10px; display:flex; flex-wrap:wrap;">
+    <div style="margin-top:0px; margin-bottom:15px;font-weight:600; font-size:14px;">@(lockedOut ? "Korisnički nalog je zaključan!" : "Korisnički nalog nije zaključan!")</div>
+    <hr style="flex-basis: 100%; height: 0; margin: 0; border: 0;" />
+    @if (lockedOut)
+    {
+        @(Html.Kendo().Button().Name("btnLockUnclokAccount")
+            .Content("<div style='display:flex;align-items:center; justify-content:space-between;'><img style='width:35px;height:35px;text-align:center; position:relative; top:0px;' src='/Content/Icons/unlock.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>Otključaj korisnički nalog</div></div>")
+            .HtmlAttributes(new { onclick = "accountLockUnlock('unlock')", type = "button", style = "width:100%; height:50px;" })
+            )
+     }
+    else
+    {
+        @(Html.Kendo().Button().Name("btnLockUnclokAccount")
+            .Content("<div style='display:flex;align-items:center; justify-content:space-between;'><img style='width:35px;height:35px;text-align:center; position:relative; top:0px;' src='/Content/Icons/lock.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>Zaključaj korisnički nalog</div></div>")
+            .HtmlAttributes(new { onclick = "accountLockUnlock('lock')", type = "button", style = "width:100%; height:50px;" })
+            )
+    }
+    
+    </fieldset>
+
+
+    <div style="margin-top:30px; font-weight:600; font-size:14px;">Resetovanje lozinke</div>
+    <fieldset style="border: 1px solid #ddd; padding:20px; margin-bottom: 10px; display:flex; flex-wrap:wrap;">
+        <div class="one" style="flex:0 1 100%; padding:0px; margin-bottom:15px;">
+            <label for="lastname">Unesite novu lozinku</label>
+            @(Html.Kendo().TextBox().Name("Password").HtmlAttributes(new { style = "width:100%", type = "password" }))
+        </div>
+        <hr style="flex-basis: 100%; height: 0; margin: 0; border: 0;" />
+        @(Html.Kendo().Button().Name("btnResetPassword")
+            .Content("<div style='display:flex;align-items:center; justify-content:space-between;'><img style='width:35px;height:35px;text-align:center; position:relative; top:0px;' src='/Content/Icons/password.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>Resetuj lozinku</div></div>")
+            .HtmlAttributes(new { onclick = "resetPassword()", type = "button", style = "width:100%; height:50px;" })
+            )
+    </fieldset>
+}

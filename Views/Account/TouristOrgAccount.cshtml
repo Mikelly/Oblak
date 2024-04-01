@@ -1,0 +1,75 @@
+﻿@using Oblak.Models;
+@using Kendo.Mvc.TagHelpers;
+
+@{
+    
+}
+
+<style>
+
+    div.one {
+        display: inline-block;
+        padding: 10px;
+        min-width: 0;
+    }
+
+</style>
+
+
+<form spellcheck="false" id="accountForm">
+
+    <div style="margin-bottom: 10px; display:flex; flex-wrap:wrap;">
+        <div class="one" style="flex:0 1 calc(100% - 20px)">
+            <label for="firstname">Korisničko ime</label>
+            @(Html.Kendo().TextBox().Name("UserName").HtmlAttributes(new { style = "width:100%" }))
+        </div>
+        <div class="one" style="flex:0 1 calc(100% - 20px)">
+            <label for="lastname">E-mail</label>
+            @(Html.Kendo().TextBox().Name("Email").HtmlAttributes(new { style = "width:100%", type = "email" }))
+        </div>
+        <div class="one" style="flex:0 1 calc(100% - 20px)">
+            <label for="lastname">Broj telefona</label>
+            @(Html.Kendo().TextBox().Name("PhoneNumber").HtmlAttributes(new { style = "width:100%", type = "tel" }))
+        </div>
+        <div class="one" style="flex:0 1 calc(100% - 20px)">
+            <label for="lastname">Lozinka</label>
+            @(Html.Kendo().TextBox().Name("Password").HtmlAttributes(new { style = "width:100%", type = "password" }))
+        </div>
+        <div class="one" style="flex:0 1 calc(100% - 20px)">
+            <label for="lastname">Potvrda lozinke</label>
+            @(Html.Kendo().TextBox().Name("ConfirmPassword").HtmlAttributes(new { style = "width:100%", type = "password" }))
+        </div>
+        <div class="one" style="flex:0 1 calc(100% - 20px)">
+            <label for="lastname">Vrsta korisnika</label>
+            @(Html.Kendo().DropDownList().Name("Type")                    
+                .DataTextField("Text")
+                .DataValueField("Value")
+                .OptionLabel("Izaberite vrstu korisnika")
+                .AutoWidth(true)                    
+                .BindTo(ViewBag.TPS as SelectList)
+                .HtmlAttributes(new { style = "width:100%" })
+                )                
+        </div>
+        <div class="one" style="flex:0 1 calc(100% - 20px)">
+            <label for="lastname">Check-In Point</label>
+            @(Html.Kendo().DropDownList().Name("CheckInPointId")
+                .DataTextField("Text")
+                .DataValueField("Value")
+                .OptionLabel("Izaberite Check-In Point")
+                .AutoWidth(true)
+                .BindTo(ViewBag.CPS as SelectList)
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+
+        <div class="one" style="display:flex; flex:0 1 calc(100% - 20px); margin-top:30px; justify-content:center; justify-items:center;">
+            @(Html.Kendo().Button().Name("btnAddUser2")
+                .HtmlAttributes(new { type = "button", onclick = "accountCreate()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+                .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                        <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/add-user.png'/>
+                        <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>KREIRAJ<br/>KORISNIKA<div>
+                        </div>"))
+        </div>
+    </div>
+</form>
+

@@ -1,0 +1,92 @@
+﻿@{
+    var propertyTypes = new SelectList(new List<SelectListItem> { new SelectListItem { Text = "Person", Value = "Fizičko lice" }, new SelectListItem { Text = "Company", Value = "Pravno lice" } });
+    var legalEntityTypes = new SelectList(new List<SelectListItem> { new SelectListItem { Text = "Person", Value = "Fizičko lice" }, new SelectListItem { Text = "Company", Value = "Pravno lice" } }, "Text", "Value");
+}
+
+
+<style>
+
+    div.one {
+        display: inline-block;
+        padding: 10px;
+        min-width: 0;
+    }
+
+</style>
+
+<form spellcheck="false" id="clientForm">
+
+    <div>Podaci o izdavaocu:</div>
+    <fieldset style="border: 1px solid #ddd; padding:0px; margin-bottom: 10px; display:flex; flex-wrap:wrap;">
+        <div class="one" style="flex:0 1 calc(33% - 20px)">
+            <label for="firstname">Naziv izdavaoca</label>
+            @(Html.Kendo().TextBox().Name("Name").HtmlAttributes(new { style = "width:100%" }))
+        </div>
+        <div class="one" style="flex:0 1 calc(33% - 20px)">
+            <label for="lastname">Poreski broj</label>
+            @(Html.Kendo().TextBox().Name("TIN").HtmlAttributes(new { style = "width:100%" }))
+        </div>
+        <div class="one" style="flex: 0 1 calc(33% - 20px)">
+            <label for="gender">Vrsta izdavaoca</label>
+            @(Html.Kendo().DropDownList().Name("Type")
+                .OptionLabel("Izaberite vrstu")
+                .BindTo(legalEntityTypes)
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+        <div class="one" style="flex: 0 1 calc(33% - 20px)">
+            <label for="gender">Adresa izdavaoca</label>
+            @(Html.Kendo().TextArea().Name("Address").HtmlAttributes(new { style = "width:100%; height:100px;" }))
+        </div>
+        <div class="one" style="display:flex; flex-wrap: wrap;  align-items: center; align-content: space-between; flex: 0 1 calc(66% - 20px)">
+            <hr style="flex-basis: 100%; height: 0; margin-top: 10px; border: 0;" />
+            <div>
+                @(Html.Kendo().Switch().Name("IsInVat").HtmlAttributes(new { style = "width:60px;" }).Messages(a => a.Checked("DA").Unchecked("NE")))
+                <label style="display:inline-block;" for="personalnumber">Poreski obveznik</label>
+            </div>
+            <hr style="flex-basis: 100%; height: 0; margin: 0; border: 0;" />
+            <div style="flex-grow:1">
+                @(Html.Kendo().Switch().Name("IsAdministered").HtmlAttributes(new { style = "width:60px;" }).Messages(a => a.Checked("DA").Unchecked("NE")))
+                <label style="display:inline-block;" for="personalnumber">Da li se administrira?</label>
+            </div>
+            <hr style="flex-basis: 100%; height: 0; margin: 0; border: 0;" />
+            <div style="flex-grow:1">
+                @(Html.Kendo().Switch().Name("IsPassThrough").HtmlAttributes(new { style = "width:60px;" }).Messages(a => a.Checked("DA").Unchecked("NE")))
+                <label style="display:inline-block;" for="personalnumber">Da li je podređen?</label>
+            </div>
+        </div>
+    </fieldset>
+
+    <div style="margin-top:25px;">Podaci o smještajnom objektu:</div>
+    <fieldset style="border: 1px solid #ddd; padding:0px; margin-bottom: 10px; display:flex; flex-wrap:wrap;">
+        <div class="one" style="flex:0 1 calc(33% - 20px)">
+            <label for="firstname">Naziv objekta</label>
+            @(Html.Kendo().TextBox().Name("PropertyName").HtmlAttributes(new { style = "width:100%" }))
+        </div>
+        <div class="one" style="flex:0 1 calc(33% - 20px)">
+            <label for="lastname">Šifra objekta (ako nije podređen)</label>
+            @(Html.Kendo().TextBox().Name("PropertyExternalId").HtmlAttributes(new { style = "width:100%" }))
+        </div>
+        <div class="one" style="flex: 0 1 calc(33% - 20px)">
+            <label for="gender">Vrsta objekta</label>
+            @(Html.Kendo().DropDownList().Name("PropertyType")
+                .OptionLabel("Izaberite vrstu")
+                .BindTo(propertyTypes)
+                .HtmlAttributes(new { style = "width:100%" })
+                )
+        </div>
+        <div class="one" style="flex: 0 1 calc(33% - 20px)">
+            <label for="gender">Adresa objekta</label>
+            @(Html.Kendo().TextArea().Name("PropertyAddress").HtmlAttributes(new { style = "width:100%; height:100px;" }))
+        </div>
+        <div class="one" style="display:flex; flex-wrap: wrap;  align-items: center; align-content: space-between; flex: 0 1 calc(33% - 20px)">
+        </div>
+        <div class="one" style="display:flex; flex-wrap: wrap;  align-items: center; align-content: center; justify-items:center; justify-content:center; flex: 0 1 calc(33% - 20px)">
+            @(Html.Kendo().Button().Name("btnregisterNewClient")
+                .Content("<div style='display:flex;align-items:center; justify-content:space-between;'><img style='width:35px;height:35px;text-align:center; position:relative; top:0px;' src='/Content/Icons/registration.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>Kreiraj novog izdavaoca</div></div>")
+                .HtmlAttributes(new { onclick = "registerClient()", type = "button", style = "width:220px; height:50px;" })
+                )
+        </div>
+    </fieldset>
+
+</form>

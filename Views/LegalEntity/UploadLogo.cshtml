@@ -1,0 +1,64 @@
+﻿@{
+	bool hasLogo = (byte[])ViewBag.Logo != null;
+	bool hideLogo = (bool)ViewBag.Hide;
+}
+
+@if (hasLogo && hideLogo == false)
+{
+	<div id="logoDiv" style="width:100%">
+
+		<div style="width:360px;">
+			<img style="width:100%; display:block;" src="data:image;base64,@System.Convert.ToBase64String(ViewBag.Logo)" />
+		</div>
+
+		<br />
+
+		<div style="display:block; width:100%; display:flex; justify-items:center; justify-content:center;">
+			@(Html.Kendo().Button().Name("btnLogoUpload")
+				.HtmlAttributes(new { type = "button", onclick = "changeLogo()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+				.Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+						<img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/logo.png'/>
+						<div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>PROMIJENI<br/>LOGO<div>
+						</div>"))
+
+			@(Html.Kendo().Button().Name("btnRemoveLogo")
+				.HtmlAttributes(new { type = "button", onclick = "removeLogo()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+				.Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+					<img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/remove.png'/>
+					<div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>OBRIŠI<br/>LOGO<div>
+					</div>"))
+		</div>
+
+	</div>
+
+}
+else
+{
+	<div id="logoUplodDiv" style="width:255px; margin-left:auto; margin-right:auto; padding-top: 15px; padding-bottom: 35px; display:block;">
+	
+		<form id="logoForm">
+				
+			<input type="hidden" id="legalEntity" name="legalEntity" value="@ViewBag.LegalEntity" />
+
+			<div style="margin-bottom:10px;">
+				@Html.Label("lCERT", "Izaberite logo", new { style = "font-size:12px;" })
+				@Html.Kendo().Upload().Name("logo").HtmlAttributes(new { style = "width:300px; font-size:12px!important;" }).Messages(m => m.Select("Izaberite fajl sa logom")).Multiple(false).ShowFileList(true)
+			</div>
+
+			<div style="width:100%; margin-top:20px; display:flex; justify-content:center; justify-items:center;">
+				@(Html.Kendo().Button().Name("btnLogoUpload")
+							.HtmlAttributes(new { type = "button", onclick = "uploadLogo()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+							.Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+								<img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/logo.png'/>
+								<div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>SAČUVAJ<br/>LOGO<div>
+							</div>"))
+	@* 
+				@(Html.Kendo().Button().Name("btnLogoUpload")
+				.Content($"<div style='display:flex;align-items:center; justify-content:space-between;'><img style='width:35px;height:35px;text-align:center; position:relative; top:0px;' src='/Content/Icons/certificate.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>Učitaj Logo</div></div>")
+				.HtmlAttributes(new { onclick = "uploadLogo()", type = "button", style = "width:250px; height:50px;" })
+				) *@
+			</div>
+		</form>
+	
+	</div>
+}

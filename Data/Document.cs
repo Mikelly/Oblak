@@ -93,6 +93,20 @@ namespace Oblak.Data
         public decimal ExchangeRate { get; set; } = decimal.One;
 
 
+        #region Audit Properties
+
+        [StringLength(450)]
+        public string? UserCreated { get; set; }
+
+        public DateTime? UserCreatedDate { get; set; }
+        [StringLength(450)]
+
+        public string? UserModified { get; set; }
+
+        public DateTime? UserModifiedDate { get; set; }
+
+        #endregion
+
 
         public Property Property { get; set; }
 

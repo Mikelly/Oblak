@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using Oblak.Data;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Oblak.Models.Api;
 
@@ -6,6 +7,7 @@ public class SrbPersonDto
 {
     public int Id { get; set; }    
     public int? ExternalId { get; set; }
+    public int? ExternalId2 { get; set; }
     public string? Guid { get; set; }
     public int? LegalEntityId { get; set; }
     public string? LegalEntityName { get; set; }
@@ -87,6 +89,58 @@ public class SrbPersonDto
     [NotMapped]
     public bool? CheckedOut { get; set; }
     #endregion
+
+    public void SetEntity(SrbPerson srb)
+    {
+        srb.ArrivalType = this.ArrivalType;
+        srb.BirthCountryIso2 = this.BirthCountryIso2;
+        srb.BirthCountryIso3 = this.BirthCountryIso3;
+        srb.BirthDate = this.BirthDate.Value;
+        srb.BirthPlaceName = this.BirthPlaceName;
+        //srb.CheckedIn = this.CheckedIn.Value;
+        //srb.CheckOut = this.CheckOut.Value;
+        srb.CheckIn = this.CheckIn;
+        srb.CheckOut = this.CheckOut;
+        srb.DocumentIssueDate = this.DocumentIssueDate;
+        srb.DocumentNumber = this.DocumentNumber;
+        srb.DocumentType = this.DocumentType;
+        srb.EntryDate = this.EntryDate;
+        srb.EntryPlace = this.EntryPlace;
+        srb.EntryPlaceCode = this.EntryPlaceCode;
+        srb.ExternalId = this.ExternalId;
+        srb.ExternalId2 = this.ExternalId2;
+        srb.FirstName = this.FirstName;
+        srb.GroupId = this.GroupId;
+        srb.Gender = this.Gender;
+        srb.Guid = this.Guid;
+        srb.IsDomestic = this.IsDomestic;
+        srb.IsForeignBorn = this.IsForeignBorn.Value;
+        srb.IssuingAuthorithy = this.IssuingAuthorithy;
+        srb.LastName = this.LastName;
+        srb.NationalityIso2 = this.NationalityIso2;
+        srb.NationalityIso3 = this.NationalityIso3;
+        srb.Note = this.Note;
+        srb.NumberOfServices = this.NumberOfServices;
+        srb.LegalEntityId = this.LegalEntityId.Value;
+        srb.PersonalNumber = this.PersonalNumber;
+        srb.PlannedCheckOut = this.PlannedCheckOut;
+        //srb.PropertyExternalId = this.PropertyExternalId;
+        srb.PropertyId = this.PropertyId.Value;        
+        srb.ReasonForStay = this.ReasonForStay;
+        srb.ResidenceCountryIso2 = this.ResidenceCountryIso2;
+        srb.ResidenceCountryIso3 = this.ResidenceCountryIso3;
+        srb.ResidenceMunicipalityCode = this.ResidenceMunicipalityCode;
+        srb.ResidenceMunicipalityName = this.ResidenceMunicipalityName;
+        srb.ResidencePlaceCode = this.ResidencePlaceCode;
+        srb.ResidencePlaceName = this.ResidencePlaceName;
+        srb.ResidenceTaxDiscountReason = this.ResidenceTaxDiscountReason;
+        srb.ServiceType = this.ServiceType;
+        srb.Status = this.Status;
+        srb.StayValidTo = this.StayValidTo;
+        srb.VisaNumber = this.VisaNumber;
+        srb.VisaIssuingPlace = this.VisaIssuingPlace;
+        srb.VisaType = this.VisaType;
+    }
 }
 
 public class SrbPersonEnrichedDto : SrbPersonDto
@@ -99,4 +153,6 @@ public class SrbPersonEnrichedDto : SrbPersonDto
     public string? NationalityExternalId { get; set; }
     public string? BirthCountryExternalId { get; set; }
     public string? ResidenceCountryExternalId { get; set; }
+
+
 }

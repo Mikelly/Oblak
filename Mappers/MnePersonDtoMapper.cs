@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using Oblak.Data;
 using Oblak.Models.Api;
-using Oblak.Models.rb90;
+using Oblak.Models.EFI;
 
 namespace Oblak.Mappers
 {

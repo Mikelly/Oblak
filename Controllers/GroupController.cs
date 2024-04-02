@@ -7,11 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Oblak.Data;
 using Oblak.Data.Enums;
 using Oblak.Models.Api;
-<<<<<<< HEAD
-using Oblak.Models.EFI;
-=======
 using Oblak.Models.rb90;
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 using Oblak.Services;
 using Oblak.Services.MNE;
 using Oblak.Services.SRB;
@@ -209,7 +205,6 @@ namespace RegBor.Controllers
             return Json(properties);
         }
 
-<<<<<<< HEAD
         public ActionResult GetPropertyUnits(int propertyId)
         {
             var propertyUnits = _db.PropertyUnits.Where(p => p.PropertyId == propertyId).ToList();
@@ -255,115 +250,6 @@ namespace RegBor.Controllers
             }
         }
 
-=======
-		//public virtual ActionResult Read([DataSourceRequest] DataSourceRequest request)
-		//{
-		//	var data = _db.Groups.Where(a => a.LegalEntityId == _company).Select(a => new rb_GrupaVM { });
-
-		//	return Json(data.ToDataSourceResult(request));
-
-		//}
-
-		private async Task<List<Property>> GetProperties()
-		{
-			var isPropertyAdmin = User.IsInRole("PropertyAdmin");
-			var legalEntityId = _appUser!.LegalEntityId;
-
-			List<Property> properties = null;
-
-			if (isPropertyAdmin)
-			{
-				var ids = _db.LegalEntities.Where(a => a.AdministratorId == legalEntityId).Select(a => a.Id).ToList();
-				properties = _db.Properties.Where(a => ids.Contains(a.LegalEntityId)).ToList();
-			}
-			else
-			{
-				properties = _db.Properties.Where(a => a.LegalEntityId == legalEntityId).ToList();
-					
-			}
-
-			return properties;
-		}
-
-		public virtual async Task<ActionResult> Read([DataSourceRequest] DataSourceRequest request)
-        {
-			var propertyIds = (await GetProperties()).Select(a => a.Id).ToArray();
-
-			var data = _db.Groups
-                .Where(a => propertyIds.Contains(a.PropertyId))
-                .Include(a => a.Property)
-				.OrderByDescending(x => x.Date)
-                .Select(a => new GroupEnrichedDto
-                {
-                    Id = a.Id,
-                    Date = a.Date,
-                    PropertyName = a.Property.PropertyName,
-                    CheckIn = a.CheckIn,
-                    CheckOut = a.CheckOut,
-                    Email = a.Email,
-                    Guests = a.Persons.Any() ? $"{a.Persons.Count}: {string.Join(", ", a.Persons.Select(p => $"{p.FirstName} {p.LastName}"))}" : ""
-                });
-
-            return Json(data.ToDataSourceResult(request));
-        }
-
-        public async Task<ActionResult> GetPropertyList()
-        {
-            var properties = await GetProperties();
-            return Json(properties);
-        }
-
-        public ActionResult GetPropertyUnits(int propertyId)
-        {
-            var propertyUnits = _db.PropertyUnits.Where(p => p.PropertyId == propertyId).ToList();
-            return Json(propertyUnits);
-        }
-
-        [Route("save-group")]
-        [HttpPost]
-        public ActionResult Create(GroupDto groupDto, [DataSourceRequest] DataSourceRequest request)
-        {
-            try
-            {
-                //var property = _db.Properties.Where(p => p.Id == groupDto.PropertyId).First();
-
-                // Map GroupDto properties to your Group entity properties
-                var newGroup = new Group
-                {
-					Date = DateTime.Now,
-                    CheckIn = groupDto.CheckIn,
-                    CheckOut = groupDto.CheckOut,
-                    Email = groupDto.Email,
-                    // Map other properties as needed
-                    PropertyId = groupDto.PropertyId,
-                    UnitId = groupDto.UnitId,
-					LegalEntityId = _legalEntityId,
-					Guid = new Guid().ToString(),
-					PropertyExternalId = groupDto.PropertyId,
-                };
-
-				//if (ModelState.IsValid)
-				//{
-					_db.Groups.Add(newGroup);
-					_db.SaveChanges();
-				//}
-
-				// Return success or any other relevant information
-				return Json(new[] { newGroup }.ToDataSourceResult(request));
-            }
-            catch (Exception ex)
-            {
-                // Handle exceptions and return error information
-                return Json(new DataSourceResult { Errors = ex.Message });
-            }
-        }
-
-        public ActionResult Update([DataSourceRequest] DataSourceRequest request, rb_GrupaVM vm)
-		{
-			var m = _db.Groups.SingleOrDefault(a => a.Id == vm.ID);
-			_mapper.Map(vm, m);
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
-
         [HttpGet]
         public JsonResult DeleteGroup(int groupId)
         {
@@ -389,36 +275,6 @@ namespace RegBor.Controllers
             }
         }
 
-<<<<<<< HEAD
-
-=======
-        [HttpGet]
-        public JsonResult DeleteGroup(int groupId)
-        {
-            try
-            {
-                // TODO: Implement your logic to delete the group with the specified ID
-                var group = _db.Groups.Find(groupId);
-
-                if (group != null)
-                {
-                    _db.Groups.Remove(group);
-                    _db.SaveChanges();
-                    return Json(new { info = "Grupa uspješno obrisana." });
-                }
-                else
-                {
-                    return Json(new { error = "Grupa nije pronađena." });
-                }
-            }
-            catch (Exception ex)
-            {
-                return Json(new { error = "Došlo je do greške prilikom brisanja grupe." });
-            }
-        }
-
-
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         public ActionResult delgrp(int id)
 		{
 			var m = _db.Groups.SingleOrDefault(a => a.Id == id);

@@ -8,11 +8,7 @@ namespace Oblak.Models.Api
         [UIHint("Integer")]
         public int? ExternalId { get; set; }
         public int LegalEntityId { get; set; }
-<<<<<<< HEAD
         public string? LegalEntityName { get; set; }
-=======
-        public string LegalEntityName { get; set; }
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         public string Name { get; set; }
         public string? Type { get; set; }
         public string? Address { get; set; }

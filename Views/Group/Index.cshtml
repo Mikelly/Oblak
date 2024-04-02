@@ -398,10 +398,7 @@
         .PageSize(20)
         .Model(m =>
         {
-<<<<<<< HEAD
             m.Id(g => g.Id);
-=======
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             m.Field(g => g.Id);
             m.Field(g => g.Date);
             m.Field(g => g.PropertyName);
@@ -422,7 +419,6 @@
     .Draggable(false)
     .Width(450)
     .Height(610)
-<<<<<<< HEAD
     .HtmlAttributes(new { style = "padding:40px;" })
     .Content(@<text>
         <div id="newGroupForm">
@@ -453,68 +449,18 @@
             .Value(DateTime.Now.AddDays(1)) // Set a default value, or use any other default logic
             )
         <br /><br /><br />
-=======
-    .HtmlAttributes(new { style = "padding:20px;" })
-    .Content(@<text>
-        <div id="newGroupForm">
-
-            <label for="propertyDropdown">Izaberite smještajni objekat:</label>
-            @(Html.Kendo().DropDownList()
-            .Name("propertyDropdown")
-            .DataTextField("Name")
-            .DataValueField("Id")
-            .OptionLabel("Izaberite smještajni objekat:")
-            .DataSource(source => source.Read(read => read.Action("GetPropertyList", "Group")))
-            .HtmlAttributes(new { style = "width:100%" })
-            )
-
-            <label for="propertyUnitDropdown">Izaberite smještajnu jedinicu/apartman:</label>
-            @(Html.Kendo().DropDownList()
-            .Name("propertyUnitDropdown")
-            .DataTextField("Name")
-            .DataValueField("Id")
-            .OptionLabel("Izaberite smještajnu jedinicu/apartman:")
-            .Enable(false)
-            .HtmlAttributes(new { style = "width:100%" })
-            )
-
-            <label for="checkInDate">Očekivani datum dolaska:</label>
-            @(Html.Kendo().DatePicker()
-            .Name("checkInDate")
-            .HtmlAttributes(new { style = "width:100%" })
-            .Value(DateTime.Now) // Set a default value, or use any other default logic
-            )
-
-            <label for="checkOutDate">Očekivani datum odlaska:</label>
-            @(Html.Kendo().DatePicker()
-            .Name("checkOutDate")
-            .HtmlAttributes(new { style = "width:100%" })
-            .Value(DateTime.Now.AddDays(1)) // Set a default value, or use any other default logic
-            )
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
-
             <label for="email">E-mail:</label>
             @(Html.Kendo().TextBox()
             .Name("email")
-<<<<<<< HEAD
             .HtmlAttributes(new { style = "width:100%;" })
             )
 
         <br /><br /><br />
-=======
-            .HtmlAttributes(new { style = "width:100%" })
-            )
-            <br /><br />
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
             <div style="display: flex; flex-direction: column; align-items: center;">
                 @(Html.Kendo().Button().Name("btnSubmitNewGroup")
                     .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/user_group_new.png'></img>")
-<<<<<<< HEAD
                     .HtmlAttributes(new { type="button", style = "width:80px; height:80px; border-radius:50%; margin-top: 10px;", onclick = "submitNewGroup()" })
-=======
-                    .HtmlAttributes(new { style = "width:80px; height:80px; border-radius:50%; margin-top: 10px;" })
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
                     )
                 <div style="margin-top:3px;"><b>Nova prijava</b></div>
             </div>
@@ -522,10 +468,4 @@
         </div>
     </text>)
 )
-
-<<<<<<< HEAD
-
 @Html.Kendo().Window().Name("wndSendLink").Title("Slanje linka").Visible(false).Modal(true).Draggable(false).Width(400).Height(450).HtmlAttributes(new { style = "padding:40px;" })
-=======
-@Html.Kendo().Window().Name("wndSendLink").Title("Slanje linka").Visible(false).Modal(true).Draggable(false).Width(400).Height(450).HtmlAttributes(new { style = "padding:20px;" })
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144

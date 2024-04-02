@@ -22,16 +22,16 @@ namespace Oblak.Controllers
         private readonly IConfiguration _configuration;
         private readonly ApplicationDbContext _db;
         private readonly UserManager<IdentityUser> _userManager;
-		private readonly RoleManager<IdentityRole> _roleManager;
-		private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly SignInManager<IdentityUser> _signInManager;
 
         public AccountController(
             ILogger<AccountController> logger,
-            IConfiguration configuration, 
+            IConfiguration configuration,
             ApplicationDbContext db,
             UserManager<IdentityUser> userManager,
-			RoleManager<IdentityRole> roleManager,
-			SignInManager<IdentityUser> signInManager)
+            RoleManager<IdentityRole> roleManager,
+            SignInManager<IdentityUser> signInManager)
         {
             _logger = logger;
             _configuration = configuration;
@@ -101,7 +101,7 @@ namespace Oblak.Controllers
         }
 
         [HttpPost]
-        [AllowAnonymous]        
+        [AllowAnonymous]
         [Route("sign-in", Name = "signIn")]
         public async Task<IActionResult> SignIn(SignInViewModel model, string? returnUrl = null)
         {
@@ -112,7 +112,7 @@ namespace Oblak.Controllers
             if (ModelState.IsValid)
             {
                 var user = await _userManager.FindByEmailAsync(model.UserName);
-                if(user == null) user = await _userManager.FindByNameAsync(model.UserName.ToUpper());
+                if (user == null) user = await _userManager.FindByNameAsync(model.UserName.ToUpper());
 
                 if (user != null)
                 {
@@ -150,7 +150,7 @@ namespace Oblak.Controllers
         [Route("sign-out", Name = "SignOut")]
         public async Task<IActionResult> SignOut()
         {
-            await _signInManager.SignOutAsync();           
+            await _signInManager.SignOutAsync();
             return RedirectToAction("SignIn");
         }
 
@@ -196,13 +196,13 @@ namespace Oblak.Controllers
                 le.InVat = model.LegalEntityInVat;
                 le.Address = model.LegalEntityAddress;
                 le.Country = model.Country;
-                le.Type = model.LegalEntityType == "Person" ? Data.Enums.LegalEntityType.Person : Data.Enums.LegalEntityType.Company; 
+                le.Type = model.LegalEntityType == "Person" ? Data.Enums.LegalEntityType.Person : Data.Enums.LegalEntityType.Company;
                 le.Name = model.LegalEntityName;
                 _db.LegalEntities.Add(le);
                 _db.SaveChanges();
 
                 if (model.Reference != null)
-                { 
+                {
                     var prtn = _db.Partners.Where(a => a.Reference == model.Reference).FirstOrDefault();
                     if (prtn != null)
                     {
@@ -211,12 +211,13 @@ namespace Oblak.Controllers
                     }
                 }
 
-                var result = await _userManager.CreateAsync(new ApplicationUser() { 
-                        UserName = model.UserName,
-                        Email = model.Email,
-                        PhoneNumber = model.PhoneNumber,
-                        LegalEntityId = le.Id
-                    }, model.Password);
+                var result = await _userManager.CreateAsync(new ApplicationUser()
+                {
+                    UserName = model.UserName,
+                    Email = model.Email,
+                    PhoneNumber = model.PhoneNumber,
+                    LegalEntityId = le.Id
+                }, model.Password);
 
                 if (result.Succeeded)
                 {
@@ -248,7 +249,7 @@ namespace Oblak.Controllers
             {
                 Issuer = _configuration["JWT:ValidIssuer"],
                 Audience = _configuration["JWT:ValidAudience"],
-                Expires = DateTime.UtcNow.AddHours(_TokenExpiryTimeInHour),                
+                Expires = DateTime.UtcNow.AddHours(_TokenExpiryTimeInHour),
                 SigningCredentials = new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256),
                 Subject = new ClaimsIdentity(claims)
             };
@@ -264,41 +265,37 @@ namespace Oblak.Controllers
             return Ok(HttpContext.User.Identity!.IsAuthenticated);
         }
 
-		[HttpPost("create-role")]
-		public async Task<IActionResult> CreateRole(string name)
-		{
+        [HttpPost("create-role")]
+        public async Task<IActionResult> CreateRole(string name)
+        {
             var newRole = new IdentityRole() { Name = name };
             await _roleManager.CreateAsync(newRole);
             //await _roleManager.UpdateAsync(newRole);
 
-			return Ok();
-		}
+            return Ok();
+        }
 
-		[HttpPost("add-role-to-user")]
-		public async Task<IActionResult> AddRoleToUser(string roleName, string userName)
-		{
-			var user = await _userManager.FindByNameAsync(userName);
+        [HttpPost("add-role-to-user")]
+        public async Task<IActionResult> AddRoleToUser(string roleName, string userName)
+        {
+            var user = await _userManager.FindByNameAsync(userName);
 
-			await _userManager.AddToRoleAsync(user, roleName);
+            await _userManager.AddToRoleAsync(user, roleName);
 
-			return Ok();
-		}
+            return Ok();
+        }
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
-		[HttpPost("remove-role-from-user")]
-		public async Task<IActionResult> RemoveRoleFromUser(string roleName, string userName)
-		{
-			var user = await _userManager.FindByNameAsync(userName);
 
-			await _userManager.RemoveFromRoleAsync(user, roleName);
+        [HttpPost("remove-role-from-user")]
+        public async Task<IActionResult> RemoveRoleFromUser(string roleName, string userName)
+        {
+            var user = await _userManager.FindByNameAsync(userName);
 
-			return Ok();
-		}
-<<<<<<< HEAD
+            await _userManager.RemoveFromRoleAsync(user, roleName);
 
+            return Ok();
+        }
 
         [HttpGet("roles-admin")]
         public async Task<IActionResult> RolesAdmin(int legalEntity)
@@ -335,7 +332,7 @@ namespace Oblak.Controllers
         {
             var le = _db.LegalEntities.Find(legalEntity);
 
-            var user = _db.Users.FirstOrDefault(a => a.LegalEntityId == le.Id);            
+            var user = _db.Users.FirstOrDefault(a => a.LegalEntityId == le.Id);
 
             if (user != null)
             {
@@ -344,7 +341,7 @@ namespace Oblak.Controllers
                 ViewBag.Locked = await _userManager.IsLockedOutAsync(appUser);
             }
             else
-            { 
+            {
                 ViewBag.Locked = false;
             }
 
@@ -374,11 +371,11 @@ namespace Oblak.Controllers
                 var errors = string.Empty;
                 if (_db.Users.Any(a => a.Email == model.Email))
                 {
-                    errors += "Već postoji korisnik sa unesenom e-mail adresom!" + Environment.NewLine;                    
+                    errors += "Već postoji korisnik sa unesenom e-mail adresom!" + Environment.NewLine;
                 }
                 if (_db.Users.Any(a => a.UserName == model.UserName))
                 {
-                    errors += "Već postoji korisnik sa unesenim korisničkim imenom!" + Environment.NewLine;                    
+                    errors += "Već postoji korisnik sa unesenim korisničkim imenom!" + Environment.NewLine;
                 }
                 if (model.ConfirmPassword != model.Password)
                 {
@@ -491,7 +488,7 @@ namespace Oblak.Controllers
                     var user = _db.Users.FirstOrDefault(a => a.UserName == model.UserName);
                     if (user != null)
                     {
-                        user.EmailConfirmed = true;                        
+                        user.EmailConfirmed = true;
                         _db.SaveChanges();
 
                         if (user.Type.ToString().StartsWith("Tourist"))
@@ -511,7 +508,4 @@ namespace Oblak.Controllers
             return Ok();
         }
     }
-=======
-	}
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 }

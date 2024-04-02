@@ -1,5 +1,4 @@
 ﻿@using Oblak.Models.Api;
-<<<<<<< HEAD
 @using Oblak.Models.EFI;
 
 @{
@@ -16,16 +15,6 @@
     
     var le = -1;
 
-=======
-@using Oblak.Models.rb90;
-@{
-    ViewBag.Title = "Prijave gostiju";
-    Layout = "~/Views/Shared/_LayoutINV.cshtml";
-
-}
-
-<script type="text/javascript">
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
     $(document).ready(function () {
         
     });
@@ -112,11 +101,7 @@
 
         if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati klijenta', confirmButtonText: `U redu` });
 
-<<<<<<< HEAD
         le = item.Id;        
-=======
-        var le = item.Id;        
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
         $.ajax({
             url: `srb-cred?legalentity=${le}`,
@@ -134,7 +119,6 @@
         });
     }
 
-<<<<<<< HEAD
     function mneCert() {
         var grid = $('#legalEntitiesGrid').data('kendoGrid');
         var item = grid.dataItem(grid.select());
@@ -492,26 +476,6 @@
                 }
             }
         });
-=======
-    function onCancel(e) {
-        var grid = e.sender;
-        grid.dataSource.cancelChanges(); // Cancel changes in the data source
-        grid.dataSource.read(); // Refresh the data source
-    }
-
-    function onUpdateButtonClick(e) {
-        // Get a reference to the Kendo Grid
-        var grid = $("#legalEntitiesGrid").data("kendoGrid");
-
-        // Save changes (update the record)
-        grid.saveRow();
-
-        // Close the editor popup
-        grid.closeCell();
-
-        // Refresh the grid
-        grid.dataSource.read();
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
     }
 
 </script>
@@ -519,7 +483,6 @@
 <style type="text/css">
 </style>
 
-<<<<<<< HEAD
 <div style="display:flex; margin-left:15px; margin-top:25px; margin-right:15px;">
     @(Html.Kendo().Button().Name("btnNewClient")
         .HtmlAttributes(new { type = "button", onclick = "register()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
@@ -585,33 +548,8 @@
                         <img style='width:48px;height:48px;text-align:center;display:block;margin-left:auto;margin-right:auto;margin-top:2px;' src='/Content/Icons/licence_color.png'/>
                         <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>EFI<br/>CERTIFIKAT<div>
                     </div>"))
-
     }    
 
-=======
-<div>
-    <div style="display: inline-block; margin-right: 35px; margin-left:20px; margin-top:10px; text-align:center;">
-        @(Html.Kendo().Button().Name("btnNewGroup")
-            .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/unlock.png'></img>")
-            .HtmlAttributes(new { onclick = "srbCred()", style = "width:80px; height:80px; border-radius:50%;" })
-            )
-        <div style="margin-top:3px;"><b>Eturista kredencijali</b></div>
-    </div>
-    <div style="display: inline-block; margin-right: 35px; text-align:center;">
-        @(Html.Kendo().Button().Name("btnOpenGroup")
-            .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-2px; left:2px;' src='/Content/Icons/logo.png'></img>")
-            .HtmlAttributes(new { onclick = "showGroup(event)", style = "width:80px; height:80px; border-radius:50%;" })
-            )
-        <div style="margin-top:3px;"><b>Dodaj logo</b></div>
-    </div>
-    <div style="display: inline-block; margin-right: 35px; text-align:center;">
-        @(Html.Kendo().Button().Name("btnDeleteGroup")
-            .Content("<img style='width:58px;height:58px;text-align:center; position:relative; top:-1px;' src='/Content/Icons/check_file_color.png'></img>")
-            .HtmlAttributes(new { onclick = "deleteGroup(event)", style = "width:80px; height:80px; border-radius:50%;" })
-            )
-        <div style="margin-top:3px;"><b>Dodaj zaglavlje racuna</b></div>
-    </div>
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 </div>
 
 <div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
@@ -621,7 +559,6 @@
         {
             columns.Command(command =>
             {
-<<<<<<< HEAD
                 command.Edit().Text(" ").CancelText(" ").UpdateText(" ");
                 command.Destroy().Text(" ");                
             }).Width("70px");
@@ -637,32 +574,10 @@
         })
         .Pageable(p => p.Refresh(true))
         .Editable(e => e.Mode(GridEditMode.InLine))
-=======
-                command.Edit().Text(" ");
-                command.Destroy().Text(" ");
-            }).Width(70);
-            columns.Bound(g => g.Id).Title("Id").Width(100);
-            columns.Bound(g => g.Name).Title("Naziv").Width("100%");
-            columns.Bound(g => g.TIN).Title("Poreski identifikacioni broj").Width(200);
-            columns.Bound(g => g.Address).Title("Adresa").Width(300);
-            columns.Bound(g => g.Country).Title("Država").Width(150);
-            columns.Bound(g => g.InVat).Title("U PDV-u").Width(100).ClientTemplate("#= InVat ? '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' #");
-        })
-        .Pageable(p => p.Refresh(true))
-        .Editable(e => e.Mode(GridEditMode.PopUp)
-            .TemplateName("_LegalEntityEditor")
-            .Window(w => w
-            .Title("Ažuriraj klijenta")
-            .Width(450)
-            .Height(610)
-            )
-        )
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         .Sortable()
         .Selectable()
         .Scrollable()
         .Filterable()
-<<<<<<< HEAD
         .HtmlAttributes(new { style = "height:100%;" })        
         .DataSource(ds => ds
             .Ajax()
@@ -687,30 +602,6 @@
         .Create(a => a.Url("legal-entity-create"))
         .Update(a => a.Url("legal-entity-update"))
         .Destroy(a => a.Url("legal-entity-destroy"))
-=======
-        .HtmlAttributes(new { style = "height:100%;" })
-        .Events(e => e.Cancel("onCancel"))
-        .DataSource(ds => ds
-        .Ajax()
-        .PageSize(20)
-        .Model(m =>
-        {
-            m.Field(g => g.Id);
-            m.Field(g => g.Type);
-            m.Field(g => g.Name);
-            m.Field(g => g.TIN);
-            m.Field(g => g.Address);
-            m.Field(g => g.Country);
-            m.Field(g => g.InVat);
-            m.Field(g => g.UserCreated);
-            m.Field(g => g.UserCreatedDate);
-            m.Field(g => g.UserModified);
-            m.Field(g => g.UserModifiedDate);
-        })
-        .Read(read => read.Action("Read", "LegalEntity"))
-        .Update(update => update.Action("Update", "LegalEntity"))
-        .Destroy(destroy => destroy.Action("Destroy", "LegalEntity"))
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         ))
 </div>
 
@@ -725,7 +616,6 @@
     .HtmlAttributes(new { style = "padding:20px;" })
 )
 
-<<<<<<< HEAD
 @(Html.Kendo().Window().Name("wndMneCert")
     .Title("digitalni sertifikat")
     .Visible(false)
@@ -796,6 +686,4 @@
     .HtmlAttributes(new { style = "padding:20px; padding-bottom:10px; font-size:14px;" })
 )
 
-=======
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 @Html.Kendo().Window().Name("wndSendLink").Title("Slanje linka").Visible(false).Modal(true).Draggable(false).Width(400).Height(450).HtmlAttributes(new { style = "padding:20px;" })

@@ -21,12 +21,9 @@ namespace Oblak.Controllers
         private readonly IMapper _mapper;
         private readonly ApplicationUser _appUser;
         private readonly int _legalEntityId;
-        private readonly Register _registerClient;
-<<<<<<< HEAD
+        private readonly Register _registerClient;        
         private LegalEntity _legalEntity;
-=======
-        private readonly LegalEntity _legalEntity;
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
+
 
         public PropertyController(
             ILogger<PropertyController> logger, 
@@ -53,11 +50,7 @@ namespace Oblak.Controllers
 
         [HttpGet]
         [Route("properties")]
-<<<<<<< HEAD
         public async Task<IActionResult> Index(string how, int? legalEntity)
-=======
-        public async Task<IActionResult> Index()
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         {
             var codeLists = await _db.CodeLists
                 .Where(a => a.Country == _appUser.LegalEntity.Country.ToString())
@@ -82,7 +75,6 @@ namespace Oblak.Controllers
             ViewBag.MunicipalityCodeList = municipalistySelectList;
             ViewBag.TypeCodeList = typeSelectList;
 
-<<<<<<< HEAD
             ViewBag.LegalEntity = legalEntity;
 
             if (how == "P")
@@ -107,8 +99,6 @@ namespace Oblak.Controllers
 
             await _registerClient.Initialize(_legalEntity);
             var properties = await _registerClient.GetProperties();
-
-=======
             return View();
         }
 
@@ -116,20 +106,13 @@ namespace Oblak.Controllers
         {
             await _registerClient.Initialize(_legalEntity);
             var properties = await _registerClient.GetProperties();
-
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             var data = _mapper.Map<List<PropertyEnrichedDto>>(properties);
-
             return Json(await data.ToDataSourceResultAsync(request));
         }
 
-<<<<<<< HEAD
+
         [HttpPost]
         public async Task<ActionResult> Update(PropertyEnrichedDto input, [DataSourceRequest] DataSourceRequest request, [FromQuery]int? legalEntity)
-=======
-        [HttpPost("properties")]
-        public async Task<ActionResult> Update(PropertyEnrichedDto input, [DataSourceRequest] DataSourceRequest request)
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         {
             try
             {
@@ -139,26 +122,17 @@ namespace Oblak.Controllers
                 {
                     return Json(new DataSourceResult { Errors = "Entity not found." });
                 }
-<<<<<<< HEAD
+
                 var dto = (PropertyDto)input;
 
                 _mapper.Map(dto, existingEntity);
 
                 existingEntity.PropertyName = existingEntity.Name;
-=======
-
-                _mapper.Map(input, existingEntity);
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
-
-                // validation
 
                 await _db.SaveChangesAsync();
 
-<<<<<<< HEAD
                 return Json(new[] { input }.ToDataSourceResult(request, ModelState));
-=======
-                return Json(new[] { _mapper.Map(existingEntity, input) }.ToDataSourceResult(request, ModelState));
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
+
             }
             catch (Exception ex)
             {
@@ -167,7 +141,6 @@ namespace Oblak.Controllers
         }
 
         [HttpPost]
-<<<<<<< HEAD
         public async Task<ActionResult> Create(PropertyEnrichedDto dto, [DataSourceRequest] DataSourceRequest request, [FromQuery] int? legalEntity)
         {
             try
@@ -200,9 +173,6 @@ namespace Oblak.Controllers
 
         [HttpPost]
         public async Task<ActionResult> Destroy([DataSourceRequest] DataSourceRequest request, PropertyEnrichedDto model, [FromQuery] int? legalEntity)
-=======
-        public async Task<ActionResult> Destroy([DataSourceRequest] DataSourceRequest request, PropertyEnrichedDto model)
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         {
             try
             {
@@ -228,7 +198,6 @@ namespace Oblak.Controllers
             }
         }
 
-<<<<<<< HEAD
         public async Task<ActionResult> FetchPropertiesExternal(int? legalEntity)
         {
             try
@@ -238,12 +207,6 @@ namespace Oblak.Controllers
                     _legalEntity = await _db.LegalEntities.FindAsync(legalEntity.Value);
                 }
 
-=======
-        public async Task<ActionResult> FetchPropertiesExternal()
-        {
-            try
-            {
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
                 var result = await _registerClient.Properties(_legalEntity);
 
                 return Json(new { success = true });

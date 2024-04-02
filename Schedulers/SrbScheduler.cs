@@ -43,7 +43,6 @@ namespace Oblak.Schedulers
                     {
                         try
                         {
-<<<<<<< HEAD
                             p.CheckOut = p.PlannedCheckOut ?? DateTime.Now;
                             p.NumberOfServices = (int)(p.CheckOut.Value.Date - p.CheckIn.Value.Date).TotalDays;
                             var result = await (_registerClient as SrbClient).CheckOut(p);
@@ -60,15 +59,6 @@ namespace Oblak.Schedulers
                                 _db.SaveChanges();
                                 _logger.LogError($"SRB Scheduler CheckOut Errors: {p.FirstName} {p.LastName} - {string.Join(", ", result.errors)}");
                             }
-=======
-                            p.CheckOut = DateTime.Now;
-                            var result = await (_registerClient as SrbClient).CheckOut(p);
-                            if (result.errors.Any() == false)
-                            {                                
-                                p.CheckedOut = true;
-                                _db.SaveChanges();
-                            }
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
                             await Task.Delay(100);
                         }

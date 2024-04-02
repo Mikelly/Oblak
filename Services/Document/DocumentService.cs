@@ -1,31 +1,8 @@
-<<<<<<< HEAD
 ﻿using Oblak.Data;
 using Oblak.Models.EFI;
 using Kendo.Mvc.Extensions;
 using Oblak.Helpers;
-using Microsoft.EntityFrameworkCore;
-=======
-﻿using EfiService;
-using Oblak.Data;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.Security.Cryptography.X509Certificates;
-using System.Security.Cryptography.Xml;
-using System.Security.Cryptography;
-using System.Xml;
-using System.Text;
-using Oblak.Models.rb90;
-using Kendo.Mvc.Extensions;
-using Oblak.Helpers;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Hosting;
-using Telerik.Windows.Documents.Flow.FormatProviders.Docx;
-using Telerik.Windows.Documents.Flow.Model.Editing;
-using Telerik.Windows.Documents.Flow.Model;
-using Telerik.Windows.Documents.Flow.FormatProviders.Pdf;
-using Oblak.Services;
-using System.Xml.Serialization;
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
+using Microsoft.EntityFrameworkCore;﻿
 using Oblak.Data.Enums;
 
 namespace Oblak.Services;
@@ -66,7 +43,6 @@ public class DocumentService
     {
         var enu = _db.FiscalEnu.Where(a => a.PropertyId == g.PropertyId).FirstOrDefault();
 
-<<<<<<< HEAD
         var doc = new Document();
         doc.GroupId = g.Id;
         doc.PropertyId = g.PropertyId;
@@ -87,48 +63,6 @@ public class DocumentService
             doc.PartnerAddress = person.PermanentResidenceAddress ?? "";
         }
 
-=======
-
-    public Document CreateInvoice(int? g, int? o, int? gost, int? noc)
-    {   
-        Item brv = null;
-        Item btx = null;
-        CheckItems(out brv, out btx);
-
-        List<Stavka> stavke = new List<Stavka>();
-        
-        var obj = _db.Properties.FirstOrDefault(a => a.Id == o.Value);
-        var npl = obj.PaymentType;
-        var cij = obj.Price ?? 0m;
-        var bor = (obj.ResidenceTaxYN ?? true) ? (obj.ResidenceTax ?? 0m) : 0m;
-
-        stavke.Add(
-            new Stavka() { 
-                Artikal = brv.Id, 
-                Cijena = cij, 
-                Kolicina = (npl == "A" ? noc.Value : noc.Value * gost.Value) 
-            });
-
-        if (bor > 0)
-            stavke.Add(
-                new Stavka()
-                {
-                    Artikal = btx.Id,
-                    Cijena = bor,
-                    Kolicina = noc.Value * gost.Value
-                });                
-       
-        var doc = new Document();            
-        doc.No = 0;
-        doc.Status = DocumentStatus.Active;
-        doc.CurrencyCode = "EUR";
-        doc.ExchangeRate = 1;
-        obj.BusinessUnitCode = obj.BusinessUnitCode;
-        doc.FiscalEnuCode = obj.FiscalEnuCode; 
-        doc.InvoiceDate = DateTime.Now;
-        doc.GroupId = g;
-        doc.TypeOfInvoce = TypeOfInvoice.Cash;
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         _db.Documents.Add(doc);
         _db.SaveChanges();
 
@@ -176,27 +110,18 @@ public class DocumentService
             _db.SaveChanges();
         }
 
-<<<<<<< HEAD
         doc.Amount = doc.DocumentItems.Select(a => a.LineTotal).Sum();
         _db.SaveChanges();
 
         Payment(doc, pay ?? PaymentType.Cash);
-=======
-        Payment(doc, PaymentType.Cash);
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
         return doc;
     }
 
 
-<<<<<<< HEAD
     public Document CreateInvoice(Invoice racun, Property property)
     {
         var enu = _db.FiscalEnu.FirstOrDefault(a => a.PropertyId == property.Id);
-=======
-    public (Document, string, string) CreateRacun(Invoice racun, Property property)
-    {
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         var doc = _db.Documents.Where(a => a.Id == racun!.Id).FirstOrDefault();
         if (doc == null)
         {
@@ -206,22 +131,14 @@ public class DocumentService
             doc.PropertyId = property.Id;
             doc.IdEncrypted = string.Empty;
             doc.BusinessUnitCode = property.BusinessUnitCode;
-<<<<<<< HEAD
             doc.FiscalEnuCode = enu == null ? "" : enu.FiscalEnuCode;
             doc.OperatorCode = enu == null ? "" : enu.OperatorCode;
-=======
-            doc.FiscalEnuCode = property.FiscalEnuCode;
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             doc.Status = DocumentStatus.Active;
             doc.No = 0;
             doc.ExternalNo = "";
             doc.OrdinalNo = 0;
             doc.InvoiceDate = racun.InvoiceDate;
             doc.GroupId = racun.GroupId;
-<<<<<<< HEAD
-=======
-            doc.OperatorCode = _appUser.EfiOperator;
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
             if (racun.PartnerId.HasValue)
             {
@@ -232,10 +149,9 @@ public class DocumentService
                 doc.PartnerType = racun.PartnerType;
                 doc.PartnerIdType = racun.PartnerIdType;
                 doc.PartnerIdNumber = racun.PartnerIdNumber;
-<<<<<<< HEAD
+
                 if (doc.PartnerType == Data.Enums.BuyerType.Company) doc.PartnerIdType = BuyerIdType.TaxIdNumber;
-=======
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
+
             }
 
             _db.SaveChanges();
@@ -250,11 +166,7 @@ public class DocumentService
             }
         }
 
-<<<<<<< HEAD
         var to_delete = doc.DocumentItems.Where(a => racun.DocumentItems.Any(b => b.Id != 0 && b.Id == a.Id) == false).ToList();
-=======
-        var to_delete = doc.DocumentItems.Where(a => racun.DocumentItems.Any(b => b.ID != 0 && b.ID == a.Id) == false).ToList();
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         foreach (var del in to_delete) _db.DocumentItems.Remove(del);
         _db.SaveChanges();
 
@@ -263,11 +175,8 @@ public class DocumentService
             var s = UpdateStavka(doc, stavka, "N");
         }
 
-<<<<<<< HEAD
         _db.Entry(doc).Collection(a => a.DocumentPayments).Load();
 
-=======
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         Payment(doc, racun.PaymentType);
 
         _db.SaveChanges();
@@ -528,24 +437,15 @@ public class DocumentService
         }
 
 
-<<<<<<< HEAD
         var art = _db.Items.Where(a => a.Id == s.ItemId).FirstOrDefault();
-=======
-        var art = _db.Items.Where(a => a.Id == s.Artikal).FirstOrDefault();
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
         sd.DocumentId = doc.Id;
         sd.ItemId = art.Id;
         sd.ItemCode = art.Code;
         sd.ItemUnit = art.Unit;
         sd.ItemName = art.Name;
-<<<<<<< HEAD
         sd.Quantity = s.Quantity;
         sd.UnitPrice = s.Price;        
-=======
-        sd.Quantity = s.Kolicina;
-        sd.UnitPrice = s.Cijena;        
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         sd.Discount = 0;
         sd.FinalPrice = sd.UnitPrice * (100m - sd.Discount) / 100m;
         sd.VatRate = art.VatRate;
@@ -567,43 +467,43 @@ public class DocumentService
     //    s.LineTotal = s.Quantity * s.FinalPrice;
     //}
 
-<<<<<<< HEAD
 
+
+    //=======
+    //    public void Payment(Document doc, PaymentType pType)
+    //    {
+    //        //var pType = p switch
+    //        //{
+    //        //    1 => PaymentType.Cash, 
+    //        //    2 => PaymentType.BankAccount, 
+    //        //    3 => PaymentType.CreditCard,
+    //        //    _ => PaymentType.Cash
+    //        //};
+
+    //        var payment = doc.DocumentPayments.FirstOrDefault();
+    //        if (payment == null)
+    //        {
+    //            payment = new DocumentPayment();
+    //            payment.DocumentId = doc.Id;                
+    //            payment.PaymentType = pType;
+    //            payment.Amount = doc.DocumentItems.Select(a => a.LineTotal).Sum().Round2();
+    //            _db.DocumentPayments.Add(payment);
+    //            _db.SaveChanges();
+    //        }
+    //        else
+    //        {
+    //            payment.Amount = doc.DocumentItems.Select(a => a.LineTotal).Sum().Round2();
+    //            payment.PaymentType = pType;
+    //            _db.SaveChanges();
+    //        }
+    //    }
+
+
+    //    public Invoice Doc2Racun(Document d)
+    //    {
+    //>>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
     public Invoice Doc2Invoice(Document d)
     {
-=======
-    public void Payment(Document doc, PaymentType pType)
-    {
-        //var pType = p switch
-        //{
-        //    1 => PaymentType.Cash, 
-        //    2 => PaymentType.BankAccount, 
-        //    3 => PaymentType.CreditCard,
-        //    _ => PaymentType.Cash
-        //};
-        
-        var payment = doc.DocumentPayments.FirstOrDefault();
-        if (payment == null)
-        {
-            payment = new DocumentPayment();
-            payment.DocumentId = doc.Id;                
-            payment.PaymentType = pType;
-            payment.Amount = doc.DocumentItems.Select(a => a.LineTotal).Sum().Round2();
-            _db.DocumentPayments.Add(payment);
-            _db.SaveChanges();
-        }
-        else
-        {
-            payment.Amount = doc.DocumentItems.Select(a => a.LineTotal).Sum().Round2();
-            payment.PaymentType = pType;
-            _db.SaveChanges();
-        }
-    }
-
-
-    public Invoice Doc2Racun(Document d)
-    {
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         var r = new Invoice();
         r.Id = d.Id;
         r.InvoiceDate = d.InvoiceDate;
@@ -614,12 +514,8 @@ public class DocumentService
         r.PartnerName = d.PartnerName;
         r.PartnerIdNumber = d.PartnerIdNumber;
         r.PartnerType = d.PartnerType;
-<<<<<<< HEAD
         r.PartnerIdType = d.PartnerIdType;    
         r.Amount = d.Amount;
-=======
-        r.PartnerIdType = d.PartnerIdType;                     
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
         var pay = d.DocumentPayments.ToList();
 
@@ -634,19 +530,11 @@ public class DocumentService
             r.PaymentType = 0;
         }
 
-<<<<<<< HEAD
         r.DocumentItems = new List<InvoiceItem>();
 
         foreach (var s in d.DocumentItems.ToList())
         {
             r.DocumentItems.Add(new InvoiceItem()
-=======
-        r.DocumentItems = new List<Stavka>();
-
-        foreach (var s in d.DocumentItems.ToList())
-        {
-            r.DocumentItems.Add(new Stavka()
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             {
                 Id = s.Id,
                 InvoiceId = s.DocumentId,
@@ -661,10 +549,6 @@ public class DocumentService
         return r;
     }
 
-
-<<<<<<< HEAD
-    
-=======
     public void CheckItems(out Item boravak, out Item btax)
     {
         boravak = _db.Items.Where(a => a.Code == "BORAV").Where(a => a.LegalEntityId == _appUser.LegalEntityId).FirstOrDefault();
@@ -694,7 +578,6 @@ public class DocumentService
             _db.SaveChanges();
         }
     }
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
     public (int, int) DocumentNumbers(string bu)
     {

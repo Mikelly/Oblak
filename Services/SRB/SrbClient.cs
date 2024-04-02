@@ -235,11 +235,7 @@ public class SrbClient : Register
             {
                 foreach (var err in data.Where(a => a.Error != null))
                 {
-<<<<<<< HEAD
                     errors.Add(new PersonErrorDto() { PersonId = $"{err.FirstName} {err.LastName}", ExternalErrors = err.Error != null ? JsonSerializer.Deserialize<List<string>>(err.Error)! : null });
-=======
-                    errors.Add(new PersonErrorDto() { PersonId = err.Id, ExternalErrors = err.Error != null ? JsonSerializer.Deserialize<List<string>>(err.Error)! : null });
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
                 }
             }
 
@@ -365,16 +361,16 @@ public class SrbClient : Register
             {
                 BrojPutneIsprave = person.DocumentNumber,
                 VrstaPutneIspraveSifra = person.DocumentType,
-<<<<<<< HEAD
+
                 MestoUlaskaURepublikuSrbiju = null,
                 MestoUlaskaURepublikuSrbijuSifra = null,
                 DatumUlaskaURepublikuSrbiju = null,
                 DatumDoKadaJeOdobrenBoravakURepubliciSrbiji = null,
-=======
-                MestoUlaskaURepublikuSrbiju = person.EntryPlace,
-                MestoUlaskaURepublikuSrbijuSifra = person.EntryPlaceCode,
-                DatumUlaskaURepublikuSrbiju = person.EntryDate.HasValue ? person.EntryDate.Value.ToString("yyyy-MM-dd") : null,
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
+
+                //MestoUlaskaURepublikuSrbiju = person.EntryPlace,
+                //MestoUlaskaURepublikuSrbijuSifra = person.EntryPlaceCode,
+                //DatumUlaskaURepublikuSrbiju = person.EntryDate.HasValue ? person.EntryDate.Value.ToString("yyyy-MM-dd") : null,
+
                 DatumIzdavanjaPutneIsprave = person.DocumentIssueDate.HasValue ? person.DocumentIssueDate.Value.ToString("yyyy-MM-dd") : null,
                 OrganIzdavanjaPutneIsprave = person.IssuingAuthorithy,
                 VrstaVizeSifra = person.VisaType,
@@ -384,7 +380,6 @@ public class SrbClient : Register
             }
         };
 
-<<<<<<< HEAD
         if (person.IsDomestic == true)
         {
             request.OsnovniPodaci.DrzavaPrebivalistaAlfa2 = person.ResidenceCountryIso2;
@@ -407,13 +402,10 @@ public class SrbClient : Register
             request.IdentifikacioniDokumentStranogLica.DatumDoKadaJeOdobrenBoravakURepubliciSrbiji = person.StayValidTo.HasValue ? person.StayValidTo.Value.ToString("yyyy-MM-dd") : null;
         }
 
-=======
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         if (person.ExternalId.HasValue && person.ExternalId.Value > 0)
         {
             request.OsnovniPodaci.Izmena = true;
         }
-<<<<<<< HEAD
 
         if (person.Property.Type != "10" && person.Property.Type != "12")
         {
@@ -430,8 +422,6 @@ public class SrbClient : Register
                 }
             };
         }
-=======
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
         return request;
     }
@@ -450,11 +440,7 @@ public class SrbClient : Register
 
         if (person.Property.LegalEntity.Type == Data.Enums.LegalEntityType.Company) 
         {
-<<<<<<< HEAD
-            request.BrojPruzenihUslugaSmestaja = person.NumberOfServices;
-=======
             request.BrojPruzenihUslugaSmestaja = person.NumberOfServices ?? 1;
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         }
 
         return request;
@@ -548,10 +534,7 @@ public class SrbClient : Register
 
 	public override async Task<Stream> ConfirmationGroupPdf(Group group)
     {
-<<<<<<< HEAD
         if (_client == null) Authenticate(group.Property.LegalEntity);
-=======
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         var ids = await GetExternalIds(group);
         var streams = new List<Stream>();
         foreach (int id in ids)
@@ -578,7 +561,6 @@ public class SrbClient : Register
         return await new Pdf().Merge(streams);
     }
 
-<<<<<<< HEAD
     public override async Task<Stream> ConfirmationPersonPdf(Person person)
     {
         var ids = new int[] { (person as SrbPerson).ExternalId2 ?? 0 };
@@ -607,8 +589,6 @@ public class SrbClient : Register
         return await new Pdf().Merge(streams);
     }
 
-=======
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
     public async Task<List<int>> GetExternalIds(Group group)
     {
         var ids = new List<int>();
@@ -659,7 +639,6 @@ public class SrbClient : Register
 				request.AddJsonBody(json);
 				var response = await _client.ExecutePostAsync(request);
 				var result = JsonSerializer.Deserialize<TuristResponse>(response.Content!)!;
-<<<<<<< HEAD
 				if (result.totalRowsCount >= 1)
 				{
                     if (result.totalRowsCount == 1)
@@ -673,11 +652,6 @@ public class SrbClient : Register
                         var hit = results.Except(existing).FirstOrDefault();
                         if(hit != null) p.ExternalId2 = hit;
                     }
-=======
-				if (result.totalRowsCount == 1)
-				{
-					p.ExternalId2 = result.data.First().turistaId;
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 					_db.SaveChanges();
 				}
 			}
@@ -712,7 +686,6 @@ public class SrbClient : Register
 
         dto.LegalEntityId = _legalEntity.Id;
 
-<<<<<<< HEAD
         dto.SetEntity(srbPerson);
 
         //(bool checkedin, bool checkedout) = (srbPerson.CheckedIn, srbPerson.CheckedOut);
@@ -721,14 +694,6 @@ public class SrbClient : Register
 
         //(srbPerson.CheckedIn, srbPerson.CheckedOut) = (checkedin, checkedout);
 
-=======
-        (bool checkedin, bool checkedout) = (srbPerson.CheckedIn, srbPerson.CheckedOut);
-
-        _mapper.Map(dto, srbPerson);
-
-        (srbPerson.CheckedIn, srbPerson.CheckedOut) = (checkedin, checkedout);
-
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         _db.SaveChanges();
 
         return srbPerson;
@@ -833,11 +798,8 @@ public class SrbClient : Register
             }
             else
             {
-<<<<<<< HEAD
                 //if (p.ExternalId.HasValue) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ExternalId), Error = "Podaci o stranom državljaninu se ne mogu menjati." });
-=======
-                if (p.ExternalId.HasValue) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ExternalId), Error = "Podaci o stranom državljaninu se ne mogu menjati." });
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
+
                 if (p.NationalityIso2 == null && p.NationalityIso3 == null)
                 {
                     err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.NationalityIso2), Error = "Morate uneti ili podatak 'Nacionalnost alfa 2' ili podatak 'Nacionalnost alfa 3'." });
@@ -896,7 +858,6 @@ public class SrbClient : Register
             {
                 if (_db.Properties.Any(a => a.LegalEntityId == _legalEntity.Id && a.ExternalId == int.Parse(o.idObjekta)) == false)
                 {
-<<<<<<< HEAD
                     if (o.sifraStatusa == "1")
                     {
                         var property = new Property();
@@ -911,20 +872,6 @@ public class SrbClient : Register
                         _db.Properties.Add(property);
                         _db.SaveChanges();
                     }
-=======
-                    var property = new Property();
-                    property.LegalEntityId = _legalEntity.Id;
-                    property.ExternalId = int.Parse(o.idObjekta);
-                    property.Type = o.vrstaObjekta.ToString();
-                    property.Address = o.adresa;
-                    property.Municipality = o.sifraOpstine;
-                    property.RegNumber = o.brojResenja;
-                    property.Status = o.sifraStatusa;
-                    property.Name = o.nazivObjekta;
-                    property.PropertyName = o.nazivObjekta;
-                    _db.Properties.Add(property);
-                    _db.SaveChanges();
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
                 }
             }
 

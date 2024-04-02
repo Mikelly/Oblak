@@ -36,15 +36,10 @@
     <link href="/fontawesome6/css/fontawesome.css" rel="stylesheet">
     <link href="/fontawesome6/css/brands.css" rel="stylesheet">
     <link href="/fontawesome6/css/solid.css" rel="stylesheet">
-<<<<<<< HEAD
-=======
-
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
     <script src="@Url.Content("~/Scripts/kendo.culture.sr-Latn-ME.min.js")"></script>
     <script src="@Url.Content("~/Scripts/kendo.messages.sr-Latn-ME.min.js")"></script>
 
-<<<<<<< HEAD
 @*     <link href="@Url.Content("~/Content/SiteSAP.css")" rel="stylesheet" type="text/css" />
     <link href="@Url.Content("~/Content/menu.css")" rel="stylesheet/less" type="text/css" /> *@
     <link href="@Url.Content("~/Content/kendo.oblak.css")" rel="stylesheet" type="text/css" />
@@ -52,49 +47,6 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Fira+Sans&display=swap" rel="stylesheet">    
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Display:ital,wght@0,100..900;1,100..900&family=Noto+Sans+Mono:wght@100..900&display=swap" rel="stylesheet">
-@* 
-    <link href="@Url.Content("~/Content/menu.css")" rel="stylesheet" type="text/css" />
-
-    <link href="https://kendo.cdn.telerik.com/themes/7.0.2/default/default-ocean-blue.css" rel="stylesheet" type="text/css" />
-
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://unpkg.com/jszip/dist/jszip.min.js"></script>
-    <script src="https://cdn.kendostatic.com/2024.1.130/js/kendo.all.min.js"></script> *@
-
-@*     <link href="https://cdn.kendostatic.com/2021.3.1207/styles/kendo.common-bootstrap.min.css" rel="stylesheet" type="text/css" />
-    <link href="https://cdn.kendostatic.com/2021.3.1207/styles/kendo.bootstrap-main.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.kendostatic.com/2021.3.1207/js/jquery.min.js"></script>
-    <script src="https://cdn.kendostatic.com/2021.3.1207/js/jszip.min.js"></script>
-    <script src="https://cdn.kendostatic.com/2021.3.1207/js/kendo.all.min.js"></script>
-    <script src="https://cdn.kendostatic.com/2021.3.1207/js/kendo.aspnetmvc.min.js"></script> *@
-    
-@*     <script src="//cdn.jsdelivr.net/npm/sweetalert2@10"></script>
-
-    <link href="/fontawesome6/css/fontawesome.css" rel="stylesheet">
-    <link href="/fontawesome6/css/brands.css" rel="stylesheet">
-    <link href="/fontawesome6/css/solid.css" rel="stylesheet"> *@
-
-
-@*     <script src="@Url.Content("~/Scripts/kendo.culture.sr-Latn-ME.min.js")"></script>
-    <script src="@Url.Content("~/Scripts/kendo.messages.sr-Latn-ME.min.js")"></script> *@
-
-@*     <link href="@Url.Content("~/Content/SiteSAP.css")" rel="stylesheet" type="text/css" />
-=======
-    <link href="@Url.Content("~/Content/SiteSAP.css")" rel="stylesheet" type="text/css" />
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
-    <link href="@Url.Content("~/Content/menu.css")" rel="stylesheet/less" type="text/css" />
-    <link href="@Url.Content("~/Content/kendo.oblak.css")" rel="stylesheet" type="text/css" />
-    
-
-    <link href="https://fonts.googleapis.com/css?family=Asap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Dosis&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Catamaran" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Mada" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Rubik&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Lexend+Exa&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans&display=swap" rel="stylesheet"> *@
 
     <script type="text/kendo-template" id="kendo_error_message">
         <div class="k-widget k-tooltip k-tooltip-validation field-validation-error" onclick="$(this).hide()" style="margin: 0.5em; display:block; cursor:pointer;" data-for="#=field#" data-valmsg-for="#=field#" id="#=field#_validationMessage">
@@ -123,19 +75,12 @@
 
     </style>
 </head>
-<<<<<<< HEAD
+
 <body style="font-family: 'Noto Sans Display', sans-serif; font-size:0.875rem!important; position: fixed; top: 0px; left: 0px; right: 0px; bottom: 0px;">
     
     @Html.Partial("_Menu")
 
     <div class="grid-wrapper" id="body" style="position: fixed; top: 45px; left: 0px; right: 0px; bottom: 0px;">
-=======
-<body>
-    
-    @Html.Partial("_Menu");
-
-    <div class="grid-wrapper" id="body">
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         @RenderBody()
     </div>
 
@@ -157,183 +102,6 @@
 </html>
 
 <script type="text/javascript">
-
-    function reports() {
-        $.ajax({
-            url: '@Url.Content("~/inv/reports/")',
-            success: function (data) {
-                var dialog = $('#wndStatus').data('kendoWindow');
-                dialog.setOptions({ width: 400, height: 400 });
-                dialog.title('Izvještaji');
-                dialog.content(data);
-                dialog.center();
-                dialog.open();
-            }
-        });
-    }
-
-    function reports2() {
-        $.ajax({
-            url: '@Url.Content("~/inv/reports2/")',
-            success: function (data) {
-                var dialog = $('#wndStatus').data('kendoWindow');
-                dialog.setOptions({ width: 400, height: 460 });
-                dialog.title('Izvještaji');
-                dialog.content(data);
-                dialog.center();
-                dialog.open();
-            }
-        });
-    }
-
-
-    function xReport() {
-        kendo.ui.progress($(body), true);
-        $.ajax({
-            url: '@Url.Content("~/pos/posreport")' + '?what=X',
-            complete: function (data) { kendo.ui.progress($(body), false); },
-            success: function (data) {
-                try {
-                    debugger;
-                    try {
-                        $.ajax({
-                            url: 'http://localhost:8080?type=report&report=x',
-                            type: 'POST',
-                            data: JSON.stringify(data),
-                            success: function (data1) {
-                                debugger;
-                            },
-                            error: function (data1) {
-                                debugger;
-                            },
-                            complete: function (data1) { }
-                        });
-                    }
-                    catch { debugger; }
-                }
-                catch { }
-            }
-        });
-    }
-
-
-    function zReport() {
-
-        kendo.ui.progress($(body), true);
-
-        $.ajax({
-            url: '@Url.Content("~/pos/posreport")' + '?what=Z',
-            complete: function (data) {
-                kendo.ui.progress($(body), false);
-            },
-            success: function (data) {
-                try {
-                    inv = data;
-                    try {
-                        $.ajax({
-                            url: 'http://localhost:8080?type=report&report=z',
-                            type: 'POST',
-                            data: JSON.stringify(data),
-                            success: function (data1) {
-                                debugger;
-                            },
-                            error: function (data1) {
-                                debugger;
-                            }
-                        });
-                    }
-                    catch{ debugger; }
-                }
-                catch { }
-            }
-        });
-    }
-
-    function status() {
-        $.ajax({
-            url: '@Url.Content("~/pos/statuswrap/")',
-            success: function (data) {
-                var dialog = $('#wndStatus').data('kendoWindow');
-                dialog.setOptions({ width: 900, height: 600 });
-                dialog.title('Pregled prometa');
-                dialog.content(data);
-                dialog.center();
-                dialog.open();
-            }
-        });
-    }
-
-    function deposit() {
-        $.ajax({
-            url: '@Url.Content("~/pos/deposit?type=i")',
-            success: function (data) {
-                try {
-                    if ('info' in data && data.info != "") {
-                        Swal.fire({ icon: 'info', title: data.info, confirmButtonText: `U redu` });
-                    }
-                }
-                catch
-                {
-                    $('#wndDeposit').data('kendoWindow').content(data).title('Unos depozita');
-                    $('#wndDeposit').data('kendoWindow').center();
-                    $('#wndDeposit').data('kendoWindow').open();
-                }
-            }
-        });
-    }
-
-    function withdraw() {
-        $.ajax({
-            url: '@Url.Content("~/pos/deposit?type=w")',
-            success: function (data) {
-                $('#wndDeposit').data('kendoWindow').content(data).title('Podizanje gotovine');
-                $('#wndDeposit').data('kendoWindow').center();
-                $('#wndDeposit').data('kendoWindow').open();
-            }
-        });
-    }
-
-    function newdoc(what, p) {
-        var s = 'h=1024&w=768';
-        window.location = '/inv/' + what + '?p=' + p + '&s=' + btoa(s);
-    }
-
-    function resizeGrid() {
-        gridElement.data("kendoGrid").resize();
-    }
-
-    $(window).resize(function () {
-        $('.k-grid').each(function () {
-            $(this).data('kendoGrid').resize();
-            calcKendoGridPageSize(true);
-        });
-    });
-
-
-    function calcKendoGridPageSize(force) {
-        $('.k-grid').each(function (a, b) {
-            var grid = $(this).data('kendoGrid');
-            grid = $(b).data('kendoGrid');
-            debugger;
-            if ((force != undefined && force == true) || (typeof grid.calcPageSize === 'undefined' && grid.options.pageable != false)) {
-                var dom = grid.element;
-                var dataSource = grid.dataSource;
-                var h = $(dom).find('.k-grid-content').height();
-                if (grid.options.editable == false)
-                    dataSource.pageSize(Math.floor(h / 28));
-                else
-                    dataSource.pageSize(Math.floor(h / 31));
-                grid.pager.refresh();
-                dataSource.read();
-                grid.calcPageSize = 'Y';
-            }
-        });
-    }
-
-    $(document).ready(function () {
-        debugger;
-        calcKendoGridPageSize();
-    });
 
     $(document).ajaxComplete(function (event, xhr, settings) {
         if (xhr.status == 403) {
@@ -412,120 +180,6 @@
             dd.css('border-color', 'red');
             dd.attr('title', errors[0]);
         }
-    }
-
-    function prtnedit(e) {
-        var dom = $('#gedit');
-        var v = $(dom).find('#Vrsta').val();
-
-        var isp = $(dom).find('#StrProperty2');
-        var ispv = $(isp).closest('div');
-        var ispl = $(ispv).prev();
-
-        var vld = $(dom).find('#LDVrsta');
-        var vldv = $(vld).closest('div');
-        var vldl = $(vldv).prev();
-
-        var bld = $(dom).find('#LDBroj');
-        var bldv = $(bld).closest('div');
-        var bldl = $(bldv).prev();
-
-        var vsb = $(ispv).css('display');
-
-        skew = 0;
-
-        if (v == "DP") {
-            ispv.show();
-            ispl.show();
-            bldv.hide();
-            bldl.hide();
-            vldv.hide();
-            vldl.hide();
-            skew = 1;
-        }
-        else if (v == "FL") {
-            ispv.hide();
-            ispl.hide();
-            bldv.show();
-            bldl.show();
-            vldv.show();
-            vldl.show();
-            skew = 2;
-        }
-        else {
-            ispv.hide();
-            ispl.hide();
-            bldv.hide();
-            bldl.hide();
-            vldv.hide();
-            vldl.hide();
-            skew = -3;
-        }
-
-        $(ispv).nextAll('div').each(function () {
-            var d = $(this);
-            var ix = Number($(d).css('grid-row-start'));
-            $(d).css('grid-row-start', (ix + skew).toString());
-        });
-    }
-
-    function prtntypchng(e) {
-        var val = $(e.target).val();
-        var dom = $(e.target).closest('div#gedit');
-
-        var isp = $(dom).find('#StrProperty2');
-        var ispv = $(isp).closest('div');
-        var ispl = $(ispv).prev();
-
-        var vld = $(dom).find('#LDVrsta');
-        var vldv = $(vld).closest('div');
-        var vldl = $(vldv).prev();
-
-        var bld = $(dom).find('#LDBroj');
-        var bldv = $(bld).closest('div');
-        var bldl = $(bldv).prev();
-
-        $(ispv).nextAll('div').each(function () {
-            var d = $(this);
-            var ix = Number($(d).css('grid-row-start'));
-            $(d).css('grid-row-start', (ix - skew).toString());
-        });
-
-        skew = 0;
-
-        if (val == "DP") {
-            ispv.show();
-            ispl.show();
-            bldv.hide();
-            bldl.hide();
-            vldv.hide();
-            vldl.hide();
-            skew = -2;
-        }
-        else if (val == "FL") {
-            ispv.hide();
-            ispl.hide();
-            bldv.show();
-            bldl.show();
-            vldv.show();
-            vldl.show();
-            skew = -1;
-        }
-        else {
-            ispv.hide();
-            ispl.hide();
-            bldv.hide();
-            bldl.hide();
-            vldv.hide();
-            vldl.hide();
-            skew = -3;
-        }
-
-        $(ispv).nextAll('div').each(function () {
-            var d = $(this);
-            var ix = Number($(d).css('grid-row-start'));
-            $(d).css('grid-row-start', (ix + skew).toString());
-        });
     }
 
 </script>

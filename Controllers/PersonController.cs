@@ -9,15 +9,13 @@ using Oblak.Models;
 using Oblak.Models.Api;
 using Oblak.Services;
 using Oblak.Services.MNE;
-<<<<<<< HEAD
 using Oblak.Services.Reporting;
 using Oblak.Services.SRB;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using static SQLite.SQLite3;
 
-namespace RegBor.Controllers
+namespace Oblak.Controllers
 {
     public class PersonController : Controller
     {
@@ -46,33 +44,6 @@ namespace RegBor.Controllers
             _mapper = mapper;
             _reporting = reporting;
             _env = env;
-=======
-using Oblak.Services.SRB;
-
-namespace RegBor.Controllers
-{
-	public class PersonController : Controller
-	{
-        private readonly Register _registerClient;        
-		private readonly ApplicationDbContext _db;
-		private readonly ILogger<PersonController> _logger;
-		private readonly IMapper _mapper;
-		private readonly ApplicationUser _appUser;
-		private readonly int _legalEntityId;
-		
-
-		public PersonController(
-			IServiceProvider serviceProvider,
-            IHttpContextAccessor httpContextAccessor,            
-			ApplicationDbContext db,
-			IMapper mapper,
-			ILogger<PersonController> logger
-			)
-		{
-			_db = db;			
-			_logger = logger;
-			_mapper = mapper;
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
             var username = httpContextAccessor.HttpContext?.User?.Identity?.Name;
             if (username != null)
@@ -83,15 +54,8 @@ namespace RegBor.Controllers
                 if (_appUser.LegalEntity.Country == Country.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>();
             }
         }
-<<<<<<< HEAD
-
 
         [HttpGet]
-=======
-		
-
-		[HttpGet]
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         [Route("groupPersons", Name = "GroupPersons")]
         public async Task<ActionResult> GroupPersons(int groupId)
         {
@@ -109,11 +73,7 @@ namespace RegBor.Controllers
             {
                 codeLists = codeLists.Where(a => a.Country == "SRB").ToList();
 
-<<<<<<< HEAD
                 var srbViewModel = new CodeListViewModel
-=======
-                var srbViewModel = new PersonViewModel
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
                 {
                     GenderCodeList = codeLists.Where(x => x.Type == "Gender").ToList(),
                     CountryCodeList = codeLists.Where(x => x.Type == "Country").ToList(),
@@ -133,15 +93,8 @@ namespace RegBor.Controllers
 
             if (_appUser.LegalEntity.Country == Country.MNE)
             {
-<<<<<<< HEAD
                 codeLists = codeLists.Where(a => a.Country == "MNE").ToList();
-
                 var model = new CodeListViewModel
-=======
-                codeLists = codeLists.Where(a => a.Country == "SRB").ToList();
-
-                var model = new PersonViewModel
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
                 {
                     GenderCodeList = codeLists.Where(x => x.Type == "pol").ToList(),
                     CountryCodeList = codeLists.Where(x => x.Type == "drzava").ToList(),
@@ -157,7 +110,6 @@ namespace RegBor.Controllers
             return View();
         }
 
-<<<<<<< HEAD
         [HttpGet]
         [Route("persons", Name = "Persons")]
         public async Task<ActionResult> Persons(int? groupId)
@@ -181,28 +133,7 @@ namespace RegBor.Controllers
                 properties = _db.Properties.Where(a => a.LegalEntityId == legalEntityId).ToList()
                     .Select(a => _mapper.Map<Property, PropertyDto>(a)).ToList();
             }
-=======
-		[HttpGet]
-		[Route("persons", Name = "Persons")]
-		public async Task<ActionResult> Persons()
-		{
-			var isPropertyAdmin = User.IsInRole("PropertyAdmin");
-			var legalEntityId = _appUser!.LegalEntityId;
 
-			List<PropertyDto> properties = null;
-
-			if (isPropertyAdmin)
-			{
-				var ids = _db.LegalEntities.Where(a => a.AdministratorId == legalEntityId).Select(a => a.Id).ToList();
-				properties = _db.Properties.Where(a => ids.Contains(a.LegalEntityId)).ToList()
-					.Select(a => _mapper.Map<Property, PropertyDto>(a)).ToList();
-			}
-			else
-			{
-				properties = _db.Properties.Where(a => a.LegalEntityId == legalEntityId).ToList()
-					.Select(a => _mapper.Map<Property, PropertyDto>(a)).ToList();
-			}
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
             ViewBag.Properties = properties;
 
@@ -210,7 +141,7 @@ namespace RegBor.Controllers
             {
                 return View("SrbPersons");
             }
-<<<<<<< HEAD
+
             else if (_appUser.LegalEntity.Country == Country.MNE)
             {
                 return View("MnePersons");
@@ -245,37 +176,19 @@ namespace RegBor.Controllers
             }
             catch (Exception ex) { }
 
-=======
-            else if(_appUser.LegalEntity.Country == Country.MNE)
-            {
-                return View("MnePersons");
-            }
-            return View("");
-		}
-
-        public async Task<ActionResult> Get(int? person)
-        {
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             var codeLists = await _db.CodeLists
                 .Where(a => a.Country == _appUser.LegalEntity.Country.ToString())
                 .ToListAsync();
 
-<<<<<<< HEAD
             ViewBag.Group = group;
 
-=======
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             if (_appUser.LegalEntity.Country == Country.SRB)
             {
                 SrbPersonEnrichedDto dto = null;
                 if (person == null) dto = new SrbPersonEnrichedDto();
                 else dto = dto;
 
-<<<<<<< HEAD
                 var srbViewModel = new CodeListViewModel
-=======
-                var srbViewModel = new PersonViewModel
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
                 {
                     GenderCodeList = codeLists.Where(x => x.Type == "Gender").ToList(),
                     CountryCodeList = codeLists.Where(x => x.Type == "Country").ToList(),
@@ -297,7 +210,6 @@ namespace RegBor.Controllers
             if (_appUser.LegalEntity.Country == Country.MNE)
             {
                 MnePersonEnrichedDto dto = null;
-<<<<<<< HEAD
                 if (person == 0)
                 {
                     dto = new MnePersonEnrichedDto();
@@ -363,14 +275,6 @@ namespace RegBor.Controllers
                 codeLists = codeLists.Where(a => a.Country == "MNE").ToList();
 
                 var model = new CodeListViewModel
-=======
-                if (person == null) dto = new MnePersonEnrichedDto();
-                else dto = dto;
-
-                codeLists = codeLists.Where(a => a.Country == "MNE").ToList();
-
-                var model = new PersonViewModel
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
                 {
                     GenderCodeList = codeLists.Where(x => x.Type == "pol").ToList(),
                     CountryCodeList = codeLists.Where(x => x.Type == "drzava").ToList(),
@@ -378,7 +282,6 @@ namespace RegBor.Controllers
                     EntryPointCodeList = codeLists.Where(x => x.Type == "prelaz").ToList(),
                     PersonTypeCodeList = codeLists.Where(x => x.Type == "gost").ToList(),
                     VisaTypeCodeList = codeLists.Where(x => x.Type == "viza").ToList(),
-<<<<<<< HEAD
                     ResTaxPaymentTypes = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId).ToDictionary(a => a.Id.ToString(), b => b.Description),
                     ResTaxTypes = _db.ResTaxTypes.Where(a => a.PartnerId == _appUser.PartnerId).ToDictionary(a => a.Id.ToString(), b => b.Description)
 
@@ -399,19 +302,12 @@ namespace RegBor.Controllers
                         if (dto.ExternalId != null) ViewBag.Disabled = true;                        
                     }
                 }
-
-=======
-                };
-
-                ViewBag.Dto = dto;
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
                 return PartialView("MnePerson", model);
             }
 
             return PartialView();
         }
 
-<<<<<<< HEAD
         public ActionResult ResTax(int property, int? resType, int? payType, string birthDate, string checkIn, string checkOut)
         {
             var p = _db.Properties.Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == property);
@@ -472,9 +368,6 @@ namespace RegBor.Controllers
         }
 
         public async Task<ActionResult> ReadMnePersons([DataSourceRequest] DataSourceRequest request, int groupId)
-=======
-		public async Task<ActionResult> ReadMnePersons([DataSourceRequest] DataSourceRequest request, int groupId)
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         {
             var codeLists = await _db.CodeLists
                 .Where(a => a.Country == _appUser.LegalEntity.Country.ToString())
@@ -489,7 +382,6 @@ namespace RegBor.Controllers
                 .Where(x => x.Type == "isprava")
                 .ToDictionary(x => x.ExternalId, x => x.Name);
 
-<<<<<<< HEAD
             var query = _db.MnePersons.Include(a => a.Property)
                 .Where(a => a.LegalEntityId == _legalEntityId);
 
@@ -503,12 +395,6 @@ namespace RegBor.Controllers
             }
 
             var data = query
-=======
-            var data = _db.MnePersons
-                .Where(a => a.LegalEntityId == _legalEntityId)
-                .Where(x => x.GroupId == groupId)
-                .Include(a => a.Property)
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
                 .OrderByDescending(x => x.Id)
                 .Select(a => new MnePersonEnrichedDto
                 {
@@ -540,20 +426,16 @@ namespace RegBor.Controllers
                     VisaNumber = a.VisaNumber,
                     VisaIssuePlace = a.VisaIssuePlace,
                     VisaValidFrom = a.VisaValidFrom,
-<<<<<<< HEAD
                     VisaValidTo = a.VisaValidTo,
                     Registered = a.ExternalId != null,
                     Deleted = a.IsDeleted
-=======
-                    VisaValidTo = a.VisaValidTo
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
+
                 });
 
             return Json(await data.ToDataSourceResultAsync(request));
         }
 
         [HttpPost]
-<<<<<<< HEAD
         [Route("save-mne-person")]
         public async Task<ActionResult> CreateMnePerson([FromForm] MnePersonDto guestDto, [DataSourceRequest] DataSourceRequest request)
         {
@@ -571,21 +453,11 @@ namespace RegBor.Controllers
                 var newGuest = _mapper.Map<MnePersonDto, MnePerson>(guestDto);
                 var property = _db.Properties.Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == guestDto.PropertyId);
                 //newGuest.LegalEntityId = property.LegalEntityId;
-=======
-        public async Task<ActionResult> CreateMnePerson(MnePersonDto newGuestDto, [DataSourceRequest] DataSourceRequest request)
-        {
-            try
-            {
-                var newGuest = _mapper.Map<MnePersonDto, MnePerson>(newGuestDto);
-                var property = _db.Properties.FirstOrDefault(a => a.Id == newGuestDto.PropertyId);
-                newGuest.LegalEntityId = property.LegalEntityId;
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
                 var validation = _registerClient.Validate(newGuest, newGuest.CheckIn, newGuest.CheckOut);
 
                 if (validation.ValidationErrors.Any())
                 {
-<<<<<<< HEAD
                     return Json(new BasicDto() { info = "", error = "", errors = validation.ValidationErrors });
                 }
 
@@ -594,15 +466,6 @@ namespace RegBor.Controllers
                 await _registerClient.Person(guestDto);
 
                 return Json(new BasicDto() { info = "Uspješno sačuvan gost", error = "" });
-=======
-                    return Json(new { success = false, errors = validation.ValidationErrors });
-                }
-
-                await _db.MnePersons.AddAsync(newGuest);
-                await _db.SaveChangesAsync();
-
-                return Json(new { success = true });
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             }
             catch (Exception ex)
             {
@@ -801,7 +664,6 @@ namespace RegBor.Controllers
 
             return Json(codeLists);
         }
-<<<<<<< HEAD
 
         [HttpGet]
         [Route("post-office")]
@@ -891,7 +753,5 @@ namespace RegBor.Controllers
 
             return File(result, "application/pdf");
         }
-=======
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
     }
 }

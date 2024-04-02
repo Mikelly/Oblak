@@ -7,7 +7,6 @@ using System.Security.Cryptography;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Oblak.Models;
-<<<<<<< HEAD
 using EllipticCurve.Utils;
 using Oblak.Models.Api;
 using System.IO.Compression;
@@ -16,8 +15,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.IO;
 using SkiaSharp;
-=======
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
+
 
 namespace Oblak.Controllers
 {
@@ -31,16 +29,12 @@ namespace Oblak.Controllers
         public LegalEntityController(
             ApplicationDbContext db, 
             ILogger<LegalEntityController> logger,
-<<<<<<< HEAD
             IHttpContextAccessor httpAccessor,
-=======
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             IMapper mapper)
         {
             _db = db;
             _logger = logger;
             _mapper = mapper;
-<<<<<<< HEAD
             _context = httpAccessor.HttpContext;
         }
 
@@ -101,8 +95,6 @@ namespace Oblak.Controllers
             }
 
             return Json(new BasicDto() { error = "", info = "Sve ok" });
-=======
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         }
 
         [HttpGet("clients")]
@@ -121,7 +113,6 @@ namespace Oblak.Controllers
             return View();
         }
 
-<<<<<<< HEAD
         [HttpPost("legal-entity-read")]
         public async Task<IActionResult> Read([DataSourceRequest] DataSourceRequest request)
         {
@@ -129,98 +120,15 @@ namespace Oblak.Controllers
             var appUser = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username);
 
             var data = await _db.LegalEntities.Where(x => x.PartnerId == appUser.PartnerId).OrderByDescending(x => x.Id).ToListAsync();
-=======
-        public async Task<IActionResult> Read([DataSourceRequest] DataSourceRequest request)
-        {
-            var data = await _db.LegalEntities.OrderByDescending(x => x.Id).ToListAsync();
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
+
 
             var legalEntities = _mapper.Map<List<LegalEntityViewModel>>(data);
 
             return Json(await legalEntities.ToDataSourceResultAsync(request));
         }
 
-<<<<<<< HEAD
         [HttpPost("legal-entity-create")]
         public async Task<ActionResult> Create(LegalEntityViewModel input, [DataSourceRequest] DataSourceRequest request)
-=======
-        [HttpPost]
-        public async Task<ActionResult> Create(LegalEntityViewModel input, [DataSourceRequest] DataSourceRequest request)
-        {
-            try
-            {
-                var legalEntity = _mapper.Map<LegalEntityViewModel, LegalEntity>(input);
-
-                //var validation = _registerClient.Validate(newGuest, newGuest.CheckIn, newGuest.CheckOut);
-
-                //if (validation.ValidationErrors.Any())
-                //{
-                //    return Json(new { success = false, errors = validation.ValidationErrors });
-                //}
-
-                await _db.LegalEntities.AddAsync(legalEntity);
-                await _db.SaveChangesAsync();
-
-                return Json(new { success = true });
-            }
-            catch (Exception ex)
-            {
-                return Json(new DataSourceResult { Errors = ex.Message });
-            }
-        }
-
-        [HttpPost("clients")]
-        public async Task<ActionResult> Update(LegalEntityViewModel input, [DataSourceRequest] DataSourceRequest request)
-        {
-            try
-            {
-                var existingEntity = await _db.LegalEntities.FindAsync(input.Id);
-
-                if (existingEntity == null)
-                {
-                    return Json(new DataSourceResult { Errors = "Entity not found." });
-                }
-
-                _mapper.Map(input, existingEntity);
-
-                // validation
-
-                await _db.SaveChangesAsync();
-
-                return Json(new[] { _mapper.Map(existingEntity, input) }.ToDataSourceResult(request, ModelState));
-            }
-            catch (Exception ex)
-            {
-                return Json(new DataSourceResult { Errors = ex.Message });
-            }
-        }
-
-        [HttpGet]
-        [Route("srb-cred", Name = "SrbCred")]
-        public IActionResult SrbCred(int legalEntity)
-        {
-            var firma = _db.LegalEntities.FirstOrDefault(a => a.Id == legalEntity);
-            ViewBag.LegalEntity = legalEntity;
-            ViewBag.Password = firma.SrbRbPassword;
-            ViewBag.UserName = firma.SrbRbUserName;
-            return PartialView();
-        }
-
-        [HttpPost]
-        [Route("srb-cred", Name = "SrbCred")]
-        public IActionResult SrbCred(int legalEntity, string username, string password)
-        {
-            var firma = _db.LegalEntities.FirstOrDefault(a => a.Id == legalEntity);
-            firma.SrbRbPassword = password;
-            firma.SrbRbUserName = username;
-            _db.SaveChanges();
-            return View();
-        }
-
-        [HttpGet]
-		[Route("upload-cert", Name = "UploadCertGet")]
-		public IActionResult UploadCert(string type, int legalEntity)
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         {
             try
             {

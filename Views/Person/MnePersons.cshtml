@@ -1,25 +1,17 @@
 ﻿@using Oblak.Models.Api;
-<<<<<<< HEAD
 @using Oblak.Models.EFI;
-=======
-@using Oblak.Models.rb90;
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
 @{
     ViewBag.Title = "Prijave gostiju";
     Layout = "~/Views/Shared/_LayoutINV.cshtml";
 }
 
-<<<<<<< HEAD
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
 
 <script type="text/javascript">
     
     var group = '@(ViewBag.Group ?? 0)';
     
-=======
-<script type="text/javascript">
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
     $(document).ready(function () {
 
         setTimeout(function () {
@@ -27,7 +19,6 @@
             window.postMessage({ type: "FROM_PAGE", message: { type: "Initialize" } }, "*");
         }, 500);    
 
-<<<<<<< HEAD
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/messageHub")
             .configureLogging(signalR.LogLevel.Information)
@@ -202,15 +193,6 @@
             type: 'POST',
             data: { mrz: '' },
             success: function (data, status, xhr) {
-=======
-    });
-
-    function newGuest() {
-        $.ajax({
-            url: '/person/get',
-            type: 'GET',
-            success: function (data, status, xhr) {
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
                 var wnd = $("#wndGuest").data("kendoWindow");
                 wnd.content(data);
                 wnd.setOptions({
@@ -218,20 +200,16 @@
                     height: $(window).height() * 0.95
                 });
                 wnd.center().open();
-<<<<<<< HEAD
 
                 if (person != 0) {
                     var grid = $('#mnePersonGrid').data('kendoGrid');
                     var item = grid.dataItem(grid.select());                    
                     wnd.title(`Izmjena prijave: ${item.FullName}`);
                 }
-=======
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             }
         });
     }
 
-<<<<<<< HEAD
     function virmanfoo(id) {
 
         $.ajax({
@@ -503,64 +481,6 @@
 <div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
     @(Html.Kendo().Grid<MnePersonEnrichedDto>()
         .Name("mnePersonGrid")
-=======
-
-</script>
-
-<div>
-    <div style="display:inline-block; float:left; margin-top:10px;">
-        <div style="display: inline-block; margin-right: 35px; margin-left:20px; text-align:center;">
-            @(Html.Kendo().Button().Name("btnNewGuest")
-                .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-1px; left:1px;' src='/Content/Icons/new_contact_plus.png'></img>")
-                .HtmlAttributes(new { onclick = "newGuest()", style = "width:80px; height:80px; border-radius:50%;" })
-                )
-            <div style="margin-top:3px;"><b>Novi gost</b></div>
-        </div>
-        <div style="display: inline-block; margin-right: 35px; text-align:center;">
-            @(Html.Kendo().Button().Name("btnOpenGuest")
-                .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-2px; left:2px;' src='/Content/Icons/view_glass.png'></img>")
-                .HtmlAttributes(new { onclick = "showGuest(event)", style = "width:80px; height:80px; border-radius:50%;" })
-                )
-            <div style="margin-top:3px;"><b>Prikaži detalje gosta</b></div>
-        </div>
-        <div style="display: inline-block; margin-right: 35px; text-align:center;">
-            @(Html.Kendo().Button().Name("btnDeleteGuest")
-                .Content("<img style='width:58px;height:58px;text-align:center; position:relative; top:-1px;' src='/Content/Icons/remove.png'></img>")
-                .HtmlAttributes(new { onclick = "deleteGuest(event)", style = "width:80px; height:80px; border-radius:50%;" })
-                )
-            <div style="margin-top:3px;"><b>Obriši gosta</b></div>
-        </div>
-    </div>
-
-    <div style="display:inline-block; float:right; margin-top:10px;">
-        <div style="display: inline-block; margin-right:35px; text-align:center;">
-            @(Html.Kendo().Button().Name("btnSignIn")
-                .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-7px;' src='/Content/Icons/police.png'></img><img style='filter: drop-shadow(0px 0px 1px #222); width:30px;height:30px;text-align:center; position:absolute; top:46px; left:26px' src='/Content/Icons/plus2.png'></img>")
-                .HtmlAttributes(new { onclick = "showMUP(event, 'p')", style = "width:80px; height:80px; border-radius:50%;" })
-                )
-            <div style="margin-top:3px;"><b>Prijavi sve MUP-u</b></div>
-        </div>
-        <div style="display: inline-block; margin-right: 35px; text-align:center;">
-            @(Html.Kendo().Button().Name("btnSignOut")
-                .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-7px;' src='/Content/Icons/police.png'></img><img style='filter: drop-shadow(0px 0px 1px #222); width:30px;height:30px;text-align:center; position:absolute; top:46px; left:26px' src='/Content/Icons/minus2.png'></img>")
-                .HtmlAttributes(new { onclick = "showMUP(event, 'o')", style = "width:80px; height:80px; border-radius:50%;" })
-                )
-            <div style="margin-top:3px;"><b>Odjavi sve iz MUP-a</b></div>
-        </div>
-        <div style="display: inline-block; margin-right: 35px; text-align:center;">
-            @(Html.Kendo().Button().Name("btnCert")
-                .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:0px;left:-1px;' src='/Content/Icons/licence_color.png'></img></img>")
-                .HtmlAttributes(new { onclick = "sendCert(event)", style = "width:80px; height:80px; border-radius:50%;" })
-                )
-            <div style="margin-top:3px;"><b>Potvrde o prijavi</b></div>
-        </div>
-    </div>
-</div>
-
-<div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
-    @(Html.Kendo().Grid<SrbPersonEnrichedDto>()
-        .Name("srbPersonGrid")
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         .Columns(columns =>
         {
             // First Level Header
@@ -571,11 +491,7 @@
             {
                 col.Bound(g => g.PropertyName).Title("Smještajni objekat").Width(250);
                 col.Bound(g => g.FullName).Title("Ime i prezime").Width(250);
-<<<<<<< HEAD
                 col.Bound(g => g.PersonType).Title("Tip gosta").Width(250).ClientTemplate("#= PersonType == 1 ? 'Domaći gost' : 'Strani gost' #");
-=======
-                col.Bound(g => g.IsDomestic).Title("Tip gosta").Width(250).ClientTemplate("#= IsDomestic ? 'Domaći gost' : 'Strani gost' #");
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
                 col.Bound(g => g.CheckIn).Title("Prijava").Format("{0:dd.MM.yyyy}").Width(100);
                 col.Bound(g => g.CheckOut).Title("Odjava").Format("{0:dd.MM.yyyy}").Width(100);
             })
@@ -589,11 +505,7 @@
             {
                 col.Bound(g => g.DocumentType).Title("Vrsta").Width(150);
                 col.Bound(g => g.DocumentNumber).Title("Broj").Width(100);
-<<<<<<< HEAD
                 col.Bound(g => g.DocumentValidTo).Title("Rok važenja").Format("{0:dd.MM.yyyy}").Width(100);
-=======
-                col.Bound(g => g.DocumentIssueDate).Title("Datum izdavanja").Format("{0:dd.MM.yyyy}").Width(100);
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             })
             );
 
@@ -604,15 +516,9 @@
             .Columns(col =>
             {
                 // Display boolean fields as non-clickable checkboxes using Kendo UI elements
-<<<<<<< HEAD
                 col.Bound(g => g.Registered).Title("Prijavljen").Width(100).ClientTemplate("#= Registered ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
                 //col.Bound(g => g.Locked).Title("Zaključan").Width(100).ClientTemplate("#= Locked ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
                 col.Bound(g => g.Deleted).Title("Obrisan").Width(100).ClientTemplate("#= Deleted ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
-=======
-                col.Bound(g => g.Registered).Title("Prijavljen").Width(100).ClientTemplate("#= Registered ? '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' #");
-                col.Bound(g => g.Locked).Title("Zaključan").Width(100).ClientTemplate("#= Locked ? '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' #");
-                col.Bound(g => g.Deleted).Title("Obrisan").Width(100).ClientTemplate("#= Deleted ? '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' #");
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             })
             );
         })
@@ -626,37 +532,22 @@
         .PageSize(20)
         .Model(m =>
         {
-<<<<<<< HEAD
             m.Id(g => g.Id);
             m.Field(g => g.Id);
             m.Field(g => g.FullName);
             m.Field(g => g.PropertyName);
             m.Field(g => g.PersonType);
-=======
-            m.Field(g => g.Id);
-            m.Field(g => g.FullName);
-            m.Field(g => g.PropertyName);
-            m.Field(g => g.IsDomestic);
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             m.Field(g => g.CheckIn);
             m.Field(g => g.CheckOut);
             m.Field(g => g.DocumentType);
             m.Field(g => g.DocumentNumber);
-<<<<<<< HEAD
             m.Field(g => g.DocumentValidTo);
-=======
-            m.Field(g => g.DocumentIssueDate);
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             m.Field(g => g.Registered);
             m.Field(g => g.Locked);
             
             m.Field(g => g.Deleted);
         })
-<<<<<<< HEAD
         .Read(read => read.Action("ReadMnePersons", "Person", new { groupId = ViewBag.Group }))
-=======
-        .Read(read => read.Action("ReadSrbPersons", "Person").Data("function() { return { groupId: 0 }; }"))
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         ))
 </div>
 
@@ -667,7 +558,6 @@
     .Draggable(false)
     .Width(1200)
     .Height(700)        
-<<<<<<< HEAD
     .HtmlAttributes(new { style = "padding:20px; position:absolute; top:50px; bottom:0px; right:0px; left:0px;" })        
 )
 
@@ -679,8 +569,4 @@
     .Width(800)
     .Height(550)
     .HtmlAttributes(new { style = "padding:20px;" })
-=======
-    .HtmlAttributes(new { style = "padding:20px; position:absolute; top:50px; bottom:0px; right:0px; left:0px;" })    
-    
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 )

@@ -20,12 +20,8 @@ namespace Oblak.Data
         [StringLength(450)]
         public string? TIN { get; set; }
 
-<<<<<<< HEAD
         [StringLength(450)]
         public PartnerType? PartnerType { get; set; }
-
-        [StringLength(2000)]
-        public string? Address { get; set; }
 
         [StringLength(450)]
         public string? ResidenceTaxAccount { get; set; }
@@ -38,15 +34,11 @@ namespace Oblak.Data
 
         public byte[]? Logo { get; set; }
 
-        [StringLength(450)]
-        public string? Reference { get; set; } = Guid.NewGuid().ToString();
-=======
         [StringLength(2000)]
         public string? Address { get; set; }
 
         [StringLength(2000)]
         public string? Reference { get; set; }
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
         public List<LegalEntity> LegalEntities { get; set; }
 

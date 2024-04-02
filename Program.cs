@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-=======
-using Coravel;
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 using Hangfire;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -28,13 +24,10 @@ using Microsoft.AspNetCore.Builder.Extensions;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Oblak.Services.FCM;
-<<<<<<< HEAD
 using Serilog;
 using Microsoft.AspNetCore.Localization;
 using System.Globalization;
 using Oblak.Services.Reporting;
-=======
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -145,12 +138,8 @@ builder.Services
         options.JsonSerializerOptions.PropertyNamingPolicy = null;
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());    
     });
-<<<<<<< HEAD
 
 builder.Services.AddLocalization();
-=======
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
-
 builder.Services.AddKendo();
 builder.Services.AddSignalR();
 //builder.Services.AddScoped<IHubContext>();
@@ -181,10 +170,6 @@ builder.Services.AddHangfire(configuration => configuration
 
 builder.Services.AddHangfireServer();
 
-<<<<<<< HEAD
-=======
-builder.Services.AddScheduler();
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 //builder.Services.AddTransient<RB90Scheduler>();
 builder.Services.AddTransient<SelfRegisterService>();
 builder.Services.AddTransient<eMailService>();
@@ -250,13 +235,9 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-<<<<<<< HEAD
 var supportedCultures = new[] { new CultureInfo("sr-Latn-ME")/*, new CultureInfo("en-US")*/ };
 
 app.UseRequestLocalization(new RequestLocalizationOptions
-=======
-app.Services.UseScheduler(scheduler =>
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 {
     DefaultRequestCulture = new RequestCulture("sr-Latn-ME"),    
     SupportedCultures = supportedCultures,    
@@ -287,25 +268,20 @@ app.MapControllerRoute(
 
 app.UseHangfireDashboard("/dashboard", new DashboardOptions
 {
-<<<<<<< HEAD
 	Authorization = new[] { new DashboardAuthFilter() },
     IgnoreAntiforgeryToken = true
-=======
-	Authorization = new[] { new DashboardAuthFilter() }
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 });
 
 app.MapHangfireDashboard();
 
-<<<<<<< HEAD
+
 
 if (!app.Environment.IsDevelopment())
 {
     RecurringJob.AddOrUpdate<SrbScheduler>("HourlyCheckOutSrb", a => a.HourlyCheckOut(), builder.Configuration["SRB:Schedulers:HourlyCheckOut"]);
 }
-=======
+
 RecurringJob.AddOrUpdate<SrbScheduler>("HourlyCheckOutSrb", a => a.HourlyCheckOut(), builder.Configuration["SRB:Schedulers:HourlyCheckOut"]);
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 
 app.MapHub<MessageHub>("/messageHub");
 

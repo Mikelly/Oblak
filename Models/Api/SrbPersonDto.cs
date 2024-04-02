@@ -89,7 +89,6 @@ public class SrbPersonDto
     [NotMapped]
     public bool? CheckedOut { get; set; }
     #endregion
-<<<<<<< HEAD
 
     public void SetEntity(SrbPerson srb)
     {
@@ -142,8 +141,6 @@ public class SrbPersonDto
         srb.VisaIssuingPlace = this.VisaIssuingPlace;
         srb.VisaType = this.VisaType;
     }
-=======
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 }
 
 public class SrbPersonEnrichedDto : SrbPersonDto
@@ -156,9 +153,4 @@ public class SrbPersonEnrichedDto : SrbPersonDto
     public string? NationalityExternalId { get; set; }
     public string? BirthCountryExternalId { get; set; }
     public string? ResidenceCountryExternalId { get; set; }
-<<<<<<< HEAD
-
-
-=======
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
 }

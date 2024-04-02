@@ -14,7 +14,8 @@
       "launchBrowser": true,
       "applicationUrl": "http://localhost:5199",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "SendGrid:ApiKey": "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"
       }
     },
     "IIS Express": {

@@ -20,13 +20,16 @@ using Oblak.Data.Enums;
 using RB90;
 using Oblak.Filters;
 using Oblak.Services.FCM;
+using Oblak.Services.Payten;
 
 namespace Oblak.Controllers
 {
     [ApiController]
     [Route("api")]
     public class ApiController : Controller
-    {        
+    {
+        private const string _currencyCode = "EUR";
+
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly UserManager<IdentityUser> _userManager;
         private readonly ILogger<ApiController> _logger;        
@@ -41,6 +44,8 @@ namespace Oblak.Controllers
         private readonly LegalEntity _legalEntity;
         private ApplicationUser _appUser;   
         private readonly FcmService _fcmService;
+        private readonly ApiService _paytenService;
+        private readonly IConfiguration _configuration;
 
         public ApiController(   
             IServiceProvider serviceProvider,
@@ -57,7 +62,9 @@ namespace Oblak.Controllers
             EfiClient efiClient,
             DocumentService documentService,
             FcmService fcmService,
-            IMapper mapper
+            IMapper mapper,
+            ApiService paytenService, 
+            IConfiguration configuration
             )
         {             
             _signInManager = signInManager;
@@ -71,6 +78,9 @@ namespace Oblak.Controllers
             _efiClient = efiClient;
             _documentService = documentService;
             _fcmService = fcmService;
+            _paytenService = paytenService;
+            _configuration = configuration;
+
             var username = httpContextAccessor.HttpContext?.User?.Identity?.Name;
             if (username != null)
             {
@@ -855,7 +865,7 @@ namespace Oblak.Controllers
 
 
         #endregion
-               
+
 
 
 
@@ -1042,6 +1052,142 @@ namespace Oblak.Controllers
         {
             await _fcmService.SendFcmMessage(message);
             return Ok();
+        }
+
+        [HttpPost]
+        [Route("initiatePosPaymentSession")]
+        public async Task<ActionResult<InitiatePosPaymentSessionOutput>> InitiatePosPaymentSession(InitiatePosPaymentSessionInput input)
+        {
+            // check if requested transaction type is allowed
+            if (!Enum.TryParse(input.TransactionType, out PaytenTransactionTypes transactionType) ||
+               !Enum.IsDefined(typeof(PaytenTransactionTypes), transactionType))
+            { 
+                Response.StatusCode = 400;
+                return Json(new { info = "", error = "Nedozvoljeni tip transakcije!" });
+            }
+
+            // fetch document from database
+            var document = db.Documents.Include(x => x.LegalEntity)
+                .Include(x => x.Property)
+                .Where(x => x.Id == input.DocumentId && x.LegalEntityId == _legalEntity.Id)
+                .FirstOrDefault();
+
+            if (document == null)
+            {
+                Response.StatusCode = 400;
+                return Json(new { info = "", error = "Nepostojeći račun!" });
+            }
+
+            // set user id from property or legalentity
+            var userId = document.Property?.PaytenUserId ?? document.LegalEntity.PaytenUserId;
+
+            if (userId == null)
+            {
+                Response.StatusCode = 400;
+                return Json(new { info = "", error = "Nije pronađen ID korisnika!" });
+            }
+
+            // authorize - get bearer token
+            var applicationLoginId = _configuration["PAYTEN:ApplicationLoginID"];
+            var password = _configuration["PAYTEN:Password"];
+            var authorizeResult = await _paytenService.Authorize(new AuthorizeRequest () 
+            { 
+                ApplicationLoginID = applicationLoginId, 
+                Password = password
+            });
+            if (authorizeResult.Item1 == null)
+            {
+                Response.StatusCode = 500;
+                return Json(new { info = "", error = "Neuspjela autorizacija!" });
+            }
+            var bearerToken = authorizeResult.Item1.Token;
+
+            // create payment session token based on transaction type
+            var callBackUrl = _configuration["PAYTEN:CallBackURL"];
+            var paymentSessionTokenResult = new Tuple<CreatePaymentSessionTokenResponse, Error>(null, null);
+
+            if (transactionType == PaytenTransactionTypes.Sale) 
+            {
+                paymentSessionTokenResult = await _paytenService.CreatePaymentSessionToken(new CreatePaymentSessionTokenRequest()
+                {
+                    UserHash = userId,
+                    Amount = document.Amount,
+                    CurrencyCode = _currencyCode,
+                    OrderID = document.PaytenOrderId.ToString(),
+                    TransactionType = input.TransactionType,
+                    CallBackURL = callBackUrl
+
+                }, bearerToken);
+            }
+            else if  (transactionType == PaytenTransactionTypes.Void)
+            {
+                paymentSessionTokenResult = await _paytenService.CancelPaymentSessionToken(new CancelPaymentSessionTokenRequest()
+                {
+                    UserHash = userId,
+                    OrderID = document.PaytenOrderId.ToString(),
+                    TransactionType = input.TransactionType,
+                    CallBackURL = callBackUrl
+
+                }, bearerToken);
+            }
+
+            if (paymentSessionTokenResult.Item1 == null)
+            {
+                Response.StatusCode = 500;
+                return Json(new { info = "", error = "Neuspjela sesija!" });
+            }
+            var paymentSessionToken = paymentSessionTokenResult.Item1.PaymentSessionToken;
+
+            // create transaction in database
+            var transaction = await db.PosTransactions.AddAsync(new PosTransaction
+            {
+                DocumentId = document.Id,
+                LegalEntityId = document.LegalEntityId,
+                PropertyId = document.PropertyId,
+                PaymentSessionToken = paymentSessionToken,
+                TransactionType = input.TransactionType,
+                Amount = document.Amount,
+                StartedAt = DateTime.UtcNow,
+                UserCreated = _legalEntity.Name,
+                UserCreatedDate = DateTime.UtcNow
+            });
+
+            await db.SaveChangesAsync();
+
+            // return payment token and transaction id
+            return Json(new InitiatePosPaymentSessionOutput
+            {
+                PaymentSessionToken = paymentSessionToken,
+                TransactionId = transaction.Entity.Id
+            });
+        }
+
+        [HttpPost]
+        [Route("storePosPaymentResult")]
+        public async Task<ActionResult<bool>> StorePosPaymentResult(StorePosPaymentResultInput input)
+        {
+            // fetch transaction from database
+            var transaction = await db.PosTransactions
+                .Where(x => x.Id == input.TransactionId && x.LegalEntityId == _legalEntity.Id)
+                .FirstOrDefaultAsync();
+
+            if (transaction == null)
+            {
+                Response.StatusCode = 400;
+                return Json(new { info = "", error = "Nepostojeća transakcija!" });
+            }
+
+            // update transaction with payment result
+            transaction.Status = input.Status;
+            transaction.Success = input.Success;
+            transaction.CompletedAt = input.TransactionDate;
+            transaction.UserModified = _legalEntity.Name;
+            transaction.UserModifiedDate = DateTime.UtcNow;
+
+            // save changes
+            await db.SaveChangesAsync();
+
+            return Json(new { info = "Rezultat transakcije je uspješno sačuvan!", error = "" });
         }
     }
 }

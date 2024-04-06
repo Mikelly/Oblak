@@ -59,6 +59,24 @@ namespace Oblak.Services.Payten
             }
         }
 
+        public async Task<Tuple<CreatePaymentSessionTokenResponse, Error>> CancelPaymentSessionToken(CancelPaymentSessionTokenRequest request, string token)
+        {
+            var restRequest = new RestRequest("/createpaymentsessiontoken", Method.Post).AddJsonBody(request);
+            restRequest.AddHeader("Authorization", $"Bearer {token}");
+
+            var response = await _client.ExecutePostAsync(restRequest);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var tokenReponse = JsonSerializer.Deserialize<CreatePaymentSessionTokenResponse>(response.Content);
+                return new Tuple<CreatePaymentSessionTokenResponse, Error>(tokenReponse, null);
+            }
+            else
+            {
+                var authError = JsonSerializer.Deserialize<Error>(response.Content);
+                return new Tuple<CreatePaymentSessionTokenResponse, Error>(null, authError);
+            }
+        }
 
         public async Task<GetPaymentSessionStatusResponse> GetPaymentSessionStatus(GetPaymentSessionStatusRequest request)
         {

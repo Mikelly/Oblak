@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oblak.Data;
 
@@ -11,9 +12,11 @@ using Oblak.Data;
 namespace Oblak.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240406175925_added_pos_transactions_table_and_payten_columns")]
+    partial class added_pos_transactions_table_and_payten_columns
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -282,7 +285,7 @@ namespace Oblak.Migrations
 
                     b.HasIndex("PartnerId");
 
-                    b.ToTable("CheckInPoints", (string)null);
+                    b.ToTable("CheckInPoints");
                 });
 
             modelBuilder.Entity("Oblak.Data.CodeList", b =>
@@ -331,7 +334,7 @@ namespace Oblak.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CodeLists", (string)null);
+                    b.ToTable("CodeLists");
                 });
 
             modelBuilder.Entity("Oblak.Data.Document", b =>
@@ -496,7 +499,7 @@ namespace Oblak.Migrations
 
                     b.HasIndex("PropertyId");
 
-                    b.ToTable("Documents", (string)null);
+                    b.ToTable("Documents");
                 });
 
             modelBuilder.Entity("Oblak.Data.DocumentItem", b =>
@@ -581,7 +584,7 @@ namespace Oblak.Migrations
 
                     b.HasIndex("ItemId");
 
-                    b.ToTable("DocumentItems", (string)null);
+                    b.ToTable("DocumentItems");
                 });
 
             modelBuilder.Entity("Oblak.Data.DocumentPayment", b =>
@@ -607,7 +610,7 @@ namespace Oblak.Migrations
 
                     b.HasIndex("DocumentId");
 
-                    b.ToTable("DocumentPayments", (string)null);
+                    b.ToTable("DocumentPayments");
                 });
 
             modelBuilder.Entity("Oblak.Data.FiscalEnu", b =>
@@ -686,7 +689,7 @@ namespace Oblak.Migrations
 
                     b.HasIndex("PropertyId");
 
-                    b.ToTable("FiscalEnu", (string)null);
+                    b.ToTable("FiscalEnu");
                 });
 
             modelBuilder.Entity("Oblak.Data.FiscalRequest", b =>
@@ -774,7 +777,7 @@ namespace Oblak.Migrations
 
                     b.HasIndex("LegalEntityId");
 
-                    b.ToTable("FiscalRequests", (string)null);
+                    b.ToTable("FiscalRequests");
                 });
 
             modelBuilder.Entity("Oblak.Data.Group", b =>
@@ -873,7 +876,7 @@ namespace Oblak.Migrations
 
                     b.HasIndex("ResTaxTypeId");
 
-                    b.ToTable("Groups", (string)null);
+                    b.ToTable("Groups");
                 });
 
             modelBuilder.Entity("Oblak.Data.Item", b =>
@@ -926,7 +929,7 @@ namespace Oblak.Migrations
 
                     b.HasIndex("LegalEntityId");
 
-                    b.ToTable("Items", (string)null);
+                    b.ToTable("Items");
                 });
 
             modelBuilder.Entity("Oblak.Data.LegalEntity", b =>
@@ -1040,7 +1043,7 @@ namespace Oblak.Migrations
 
                     b.HasIndex("PassThroughId");
 
-                    b.ToTable("LegalEntities", (string)null);
+                    b.ToTable("LegalEntities");
                 });
 
             modelBuilder.Entity("Oblak.Data.Municipality", b =>
@@ -1080,7 +1083,7 @@ namespace Oblak.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Municipality", (string)null);
+                    b.ToTable("Municipality");
                 });
 
             modelBuilder.Entity("Oblak.Data.Partner", b =>
@@ -1148,7 +1151,7 @@ namespace Oblak.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Partners", (string)null);
+                    b.ToTable("Partners");
                 });
 
             modelBuilder.Entity("Oblak.Data.Person", b =>
@@ -1435,7 +1438,7 @@ namespace Oblak.Migrations
 
                     b.HasIndex("MunicipalityId");
 
-                    b.ToTable("Properties", (string)null);
+                    b.ToTable("Properties");
                 });
 
             modelBuilder.Entity("Oblak.Data.PropertyUnit", b =>
@@ -1480,7 +1483,7 @@ namespace Oblak.Migrations
 
                     b.HasIndex("LegalEntityId");
 
-                    b.ToTable("PropertyUnits", (string)null);
+                    b.ToTable("PropertyUnits");
                 });
 
             modelBuilder.Entity("Oblak.Data.Report", b =>
@@ -1517,7 +1520,7 @@ namespace Oblak.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Reports", (string)null);
+                    b.ToTable("Reports");
                 });
 
             modelBuilder.Entity("Oblak.Data.ResTaxCalc", b =>
@@ -1572,7 +1575,7 @@ namespace Oblak.Migrations
 
                     b.HasIndex("PropertyId");
 
-                    b.ToTable("ResTaxCalc", (string)null);
+                    b.ToTable("ResTaxCalc");
                 });
 
             modelBuilder.Entity("Oblak.Data.ResTaxCalcItem", b =>
@@ -1628,7 +1631,7 @@ namespace Oblak.Migrations
 
                     b.HasIndex("ResTaxID");
 
-                    b.ToTable("ResTaxCalcItems", (string)null);
+                    b.ToTable("ResTaxCalcItems");
                 });
 
             modelBuilder.Entity("Oblak.Data.ResTaxFee", b =>
@@ -1685,7 +1688,7 @@ namespace Oblak.Migrations
 
                     b.HasIndex("ResTaxPaymentTypeId");
 
-                    b.ToTable("ResTaxFees", (string)null);
+                    b.ToTable("ResTaxFees");
                 });
 
             modelBuilder.Entity("Oblak.Data.ResTaxPaymentType", b =>
@@ -1731,7 +1734,7 @@ namespace Oblak.Migrations
 
                     b.HasIndex("PartnerId");
 
-                    b.ToTable("ResTaxPaymentTypes", (string)null);
+                    b.ToTable("ResTaxPaymentTypes");
                 });
 
             modelBuilder.Entity("Oblak.Data.ResTaxType", b =>
@@ -1782,7 +1785,7 @@ namespace Oblak.Migrations
 
                     b.HasIndex("PartnerId");
 
-                    b.ToTable("ResTaxTypes", (string)null);
+                    b.ToTable("ResTaxTypes");
                 });
 
             modelBuilder.Entity("Oblak.Data.SelfRegisterToken", b =>
@@ -1841,7 +1844,7 @@ namespace Oblak.Migrations
 
                     b.HasIndex("PropertyId");
 
-                    b.ToTable("SelfRegisterTokens", (string)null);
+                    b.ToTable("SelfRegisterTokens");
                 });
 
             modelBuilder.Entity("Oblak.Data.UserDevice", b =>
@@ -1872,7 +1875,7 @@ namespace Oblak.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("UserDevices", (string)null);
+                    b.ToTable("UserDevices");
                 });
 
             modelBuilder.Entity("Oblak.Data.ApplicationUser", b =>

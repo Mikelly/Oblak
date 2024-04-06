@@ -41,6 +41,7 @@ namespace Oblak.Data
 
 		public bool Test { get; set; }
 
+        public string PaytenUserId { get; set; }
 
 		#region MNE EFI
 

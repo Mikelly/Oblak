@@ -190,6 +190,12 @@ namespace Oblak.Data
             modelBuilder.Entity<FiscalRequest>().HasOne(a => a.LegalEntity);
             modelBuilder.Entity<FiscalRequest>().Property(a => a.Amount).HasPrecision(18, 4);
             modelBuilder.Entity<FiscalRequest>().Property(a => a.RequestType).HasConversion(new EnumToStringConverter<FiscalRequestType>());
+            
+            modelBuilder.Entity<PosTransaction>().ToTable("PosTransactions");
+            modelBuilder.Entity<PosTransaction>().HasOne(a => a.Document);
+            modelBuilder.Entity<PosTransaction>().HasOne(a => a.LegalEntity);
+            modelBuilder.Entity<PosTransaction>().HasOne(a => a.Property);
+            modelBuilder.Entity<PosTransaction>().Property(a => a.Amount).HasPrecision(18, 2);
 
             modelBuilder
                 .HasDbFunction(typeof(ApplicationDbContext).GetMethod(nameof(GuestList), new[] { typeof(int) })!)
@@ -233,6 +239,7 @@ namespace Oblak.Data
 		public DbSet<ResTaxFee> ResTaxFees { get; set; }
 		public DbSet<UserDevice> UserDevices { get; set; }
         public DbSet<Report> Reports { get; set; }
+        public DbSet<PosTransaction> PosTransactions { get; set; }
 
         public string GuestList(int id) => throw new NotImplementedException();
         public string GroupDesc(int id) => throw new NotImplementedException();

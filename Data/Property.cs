@@ -87,6 +87,8 @@ namespace Oblak.Data
         
         public DateTime? UserModifiedDate { get; set; }
 
+        public string PaytenUserId { get; set; }
+
         [JsonIgnore]
         public List<Group> Groups { get; set; }
         [JsonIgnore]

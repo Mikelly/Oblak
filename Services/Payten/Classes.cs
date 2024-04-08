@@ -37,12 +37,20 @@
     public class CreatePaymentSessionTokenRequest
     {
         public string UserHash { get; set; }
-        public object Amount { get; set; }
+        public decimal Amount { get; set; }
         public string OrderID { get; set; }
         public string CurrencyCode { get; set; }
         public string TransactionType { get; set; }
         public string CallBackURL { get; set; }
         public Additionalamount[] AdditionalAmounts { get; set; }
+    }
+
+    public class CancelPaymentSessionTokenRequest
+    {
+        public string UserHash { get; set; }
+        public string OrderID { get; set; }
+        public string TransactionType { get; set; }
+        public string CallBackURL { get; set; }
     }
 
     public class Additionalamount

@@ -1,0 +1,1222 @@
+﻿@{
+    Layout = "~/Views/Shared/_LayoutINV.cshtml";
+    ViewBag.Title = "Faktura";
+    var enable = (bool)ViewBag.Enable;
+    var doc = ViewBag.Doc as Document;
+    var prtn = doc.PartnerName;
+    var info = prtn != null ? (prtn.PIB != null ? "PIB: + " + doc.PartnerRef.PIB : "") : "";
+    var ojinfo = "Šifra: " + doc.BusinessUnitCode;
+    var url = "/inv/" + ((doc.VrstaDokumenta == "RGINV" || doc.VrstaDokumenta == "RGPROINV") ? "r" : (doc.VrstaDokumenta == "FGREC" || doc.VrstaDokumenta == "FGPROREC") ? "f" : "c") + "/" + doc.IdEncrypted;
+    var oslobodjenja = new SelectList(new Dictionary<string, string>() { { "", "" }, { "VAT_CL17", "čl. 17 - Mjesto prometa usluga" }, { "VAT_CL20", "čl. 20 - Poreska osnovica i ispravka poreske osnovice" }, { "VAT_CL26", "čl. 26 - Oslobođenja od javnog interesa" }, { "VAT_CL27", "čl. 27 - Ostala oslobođenja" }, { "VAT_CL28", "čl. 28 - Oslobođenja kod uvoza proizvoda" }, { "VAT_CL29", "čl. 29 - Oslobođenja kod privremenog uvoza proizvoda" }, { "VAT_CL30", "čl. 30 - Posebna oslobođenja" }, { "VAT_CL44", "čl. 44 - Poseban postupak oporezivanja" } }, "Key", "Value", doc.Porez);
+    var docTypes = new SelectList(new Dictionary<string, string>() { { "1", "Redovna faktura" }, { "5", "Avansna faktura" }, { "8", "Faktura na osnovu avansa" } }, "Key", "Value", "1");
+
+
+    if (doc.IntProperty3 == 4)
+    {
+        docTypes = new SelectList(new Dictionary<string, string>() { { "4", "Sumarna faktura" } }, "Key", "Value", doc.IntProperty4.ToString());
+    }
+    if (doc.IntProperty3 == 3)
+    {
+        docTypes = new SelectList(new Dictionary<string, string>() { { "3", "Korektivna faktura" }, { "6", "Knjižno odobrenje" }, { "9", "Storno knjižnog odobrenja" } }, "Key", "Value", doc.IntProperty4.ToString());
+    }
+    if (doc.IntProperty3 == 2)
+    {
+        docTypes = new SelectList(new Dictionary<string, string>() { { "2", "Storno faktura" } }, "Key", "Value", doc.IntProperty4.ToString());
+    }
+
+    var exch = Html.Kendo().NumericTextBox().Name("ExchangeRate").ToHtmlString();
+
+    var test = 0;
+}
+
+<script>
+    var gridElement = $("#INVGRID");
+
+    function printDoc() {
+        $('#printpdfform').submit();
+    }
+
+    function formError(args) {
+        if (args.Errors) {
+
+            var gridElement = $('#windowForm #gedit');
+            validationMessageTemplate = kendo.template($("#kendo_error_message_form").html());
+
+            map = new Object();
+
+            if (args.Errors.MODEL) {
+                Swal.fire({ icon: 'error', title: args.errors.MODEL.errors, confirmButtonText: `U redu` });
+                //$('#mydialog').data('kendoDialog').title('Info').content(args.errors.MODEL.errors).open();
+            }
+
+            var top = $(gridElement).offset().top;
+            var bot = top + $(gridElement).height();
+
+            $.each(args.Errors, function (key, value) {
+                debugger;
+                if (value.errors) {
+                    gridElement.find("[data-valmsg-for=" + key + "],[data-val-msg-for=" + key + "]")
+                        .replaceWith(validationMessageTemplate({ field: key, message: value.errors[0] }));
+                    gridElement.find("input[name=" + key + "]").focus();
+                    if ($(gridElement).hasClass('k-grid-edit-row') == false) {
+                        var i = $('#' + key);
+                        var wdgt = i.parentsUntil(gridElement, '.k-widget');
+                        if (wdgt.length == 1) i = wdgt;
+                        var pos = i.offset();
+                        var tt = gridElement.find('#' + key + '_validationMessage');
+                        tt.css('position', 'fixed');
+                        pos.left = pos.left + 12 + i.width();
+                        pos.top = pos.top + i.outerHeight() / 2 - tt.outerHeight() / 2;
+                        tt.offset(pos);
+                        setTimeout(
+                            function () {
+                                pos.top = pos.top + i.outerHeight() / 2 - tt.outerHeight() / 2;
+                                tt.offset(pos);
+                                if (pos.top > bot) $(tt).replaceWith('<div data-forr=' + key + '><div>');
+                            }, 0);
+                        map[key] = tt;
+                    }
+                }
+            });
+
+            for (var error in args.Errors) {
+                showError(gridElement, error, args.Errors[error].errors);
+            }
+        }
+    }
+
+    function noviZapis() {
+        $('#INVGRID').data('kendoGrid').addRow();
+        setTimeout(function () { $('#StrProperty1').focus(); });
+    }
+
+    function resizeGrid() {
+        $('#INVGRID').data("kendoGrid").resize();
+    }
+
+    function totals() {
+        $.ajax({
+            url: '@Url.Content("~/inv/totals/")' + @doc.Id,
+            type: 'POST',
+            success: function (data) {
+                $('#total').data('kendoNumericTextBox').value(data.total);
+                $('#izpdv').data('kendoNumericTextBox').value(data.izpdv);
+                $('#bzpdv').data('kendoNumericTextBox').value(data.bzpdv);
+                $('#rabat').data('kendoNumericTextBox').value(data.rabat);
+                $('#iznos').data('kendoNumericTextBox').value(data.iznos);
+            }
+        });
+    }
+
+    function fiscDoc() {
+
+        var doc = '@doc.Id';
+        var url = '@url';
+
+        $.ajax({
+            url: '@Url.Content("~/inv/fisc/")' + doc,
+            type: 'POST',
+            success: function (data) {
+                if (data.info != "") {
+                    Swal.fire({ icon: 'info', title: data.info, confirmButtonText: `U redu` });
+                    window.location = url;
+                }
+                if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+                if (data.subsq != "") {
+
+                    Swal.fire({
+                        title: 'Naknadna fiskalizacija',
+                        confirmButtonText: 'FISKALIZUJ',
+                        focusConfirm: false,
+                        html: '<label for="latefisc" class="swal2-input-label">Faktura koju želite fiskalizovati je iz prethodnog perioda, izaberite razlog naknadne fiskalizacije:</label><select onchange="ul()" style="text-align:center!important" class="swal2-select" id="latefisc" style="display:flex"><option value="">Izaberite razlog</option><option value="NOINTERNET">Nedostatak internet konekcije</option><option value="TECHICALERROR">Tehnička greška</option><option value="BUSINESSNEEDS">Poslovna potreba</option></option><option value="PARAGON">Paragon blok</option></select><div id="PW" style="display:none; margin-top:30px;"><label for="paragonNo">Unesite broj paragon bloka<label><input onchange="up()" id="paragonNo" style="font-size:0.8em" class="swal2-input"><div>',
+                        preConfirm: () => {
+                            var late = document.getElementById('latefisc').value;
+                            var paragon = document.getElementById('paragonNo').value;
+                            if (late == "") Swal.showValidationMessage("Morate izabrati razlog prije fiskalizacije");
+                            else if (late == "PARAGON" && paragon == "") Swal.showValidationMessage("Morate unijeti broj paragon bloka");
+                            else $('#swal2-validation-message').hide();
+                            return [late, paragon]
+                        }
+                    }).then(function (val) {
+
+                        if (val.isConfirmed) {
+
+                            kendo.ui.progress($(body), true);
+
+                            $.ajax({
+                                url: '/inv/fisc/' + doc + '?late=' + val.value[0] + '&prgn=' + val.value[1],
+                                type: 'POST',
+                                success: function (data1) {
+                                    if (data1.info != "") {
+                                        Swal.fire({ icon: 'info', title: data1.info, confirmButtonText: `U redu` });
+                                        window.location = url;
+                                    }
+                                    if (data1.error != "") {
+                                        Swal.fire({ icon: 'error', title: data1.error, confirmButtonText: `U redu` });
+                                    }
+                                },
+                                complete: function () {
+                                    kendo.ui.progress($(body), false);
+                                }
+                            })
+                        }
+                    })
+                }
+            }
+        });
+    }
+
+
+    function period() {
+
+        var doc = '@doc.Id';
+        var url = '@url';
+
+        $.ajax({
+            url: '@Url.Content("~/inv/period/")' + doc,
+            type: 'POST',
+            success: function (data) {
+
+                Swal.fire({
+                    title: 'Obračunski period',
+                    confirmButtonText: 'SAČUVAJ',
+                    focusConfirm: true,
+                    html: '<div id="dtmOd" style="margin-top:25px;margin-bottom:10px;"><span style="margin-right:10px;">OD:</span><input style="font-family:Roboto Mono;" id="datumOd" name="datumOd" type="text" /></div><div id="dtmOd" style="margin-top:15px;margin-bottom:10px;"><span style="margin-right:10px;">DO:</span><input style="font-family:Roboto Mono;" id="datumDo" name="datumDo" type="text" /><div>',
+                    didRender: (e) => {
+                        $("#datumOd").kendoDatePicker({ enable: true, format: 'dd.MM.yyyy', value: data.DatumOd });
+                        $("#datumDo").kendoDatePicker({ enable: true, format: 'dd.MM.yyyy', value: data.DatumDo });
+                    },
+                    preConfirm: () => {
+                        var dod = document.getElementById('datumOd').value;
+                        var ddo = document.getElementById('datumDo').value;
+                        debugger;
+                        if (ddo != "" || dod != "") Swal.showValidationMessage("Morate unijeti oba datuma");
+                        else $('#swal2-validation-message').hide();
+                        return [dod, ddo]
+                    }
+                })
+                    .then(function (val) {
+
+                        if (val.isConfirmed) {
+
+                            kendo.ui.progress($(body), true);
+
+                            $.ajax({
+                                url: '/inv/setperiod/' + doc + '?datumOd=' + val.value[0] + '&datumDo=' + val.value[1].replace(',', '.'),
+                                type: 'POST',
+                                success: function (data1) {
+                                    if (data1.info != "") {
+                                        Swal.fire({ icon: 'info', title: data1.info, confirmButtonText: `U redu` });
+                                    }
+                                    if (data1.error != "") {
+                                        Swal.fire({ icon: 'error', title: data1.error, confirmButtonText: `U redu` });
+                                    }
+                                },
+                                complete: function () {
+                                    kendo.ui.progress($(body), false);
+                                }
+                            })
+                        }
+                    });
+            }
+        });
+    }
+
+
+    function location1() {
+
+        var doc = '@doc.Id';
+        var url = '@url';
+
+        $.ajax({
+            url: '@Url.Content("~/inv/location/")' + doc,
+            type: 'POST',
+            success: function (data) {
+
+                Swal.fire({
+                    title: 'Mjesto isporuke',
+                    confirmButtonText: 'SAČUVAJ',
+                    focusConfirm: true,
+                    html: '<div style="margin-top:25px;margin-bottom:10px;"><textarea style="width:300px; height:100px" id="loc" name="loc" /><div>',
+                    didRender: (e) => {
+                        $("#loc").val(data.location);
+                    },
+                    preConfirm: () => {
+                        var loc = document.getElementById('location').value;
+                        return [loc];
+                    }
+                })
+                    .then(function (val) {
+
+                        if (val.isConfirmed) {
+
+                            kendo.ui.progress($(body), true);
+
+                            $.ajax({
+                                url: '/inv/setlocation?location=' + val.value[0],
+                                type: 'POST',
+                                success: function (data1) {
+                                    if (data1.info != "") {
+                                        Swal.fire({ icon: 'info', title: data1.info, confirmButtonText: `U redu` });
+                                    }
+                                    if (data1.error != "") {
+                                        Swal.fire({ icon: 'error', title: data1.error, confirmButtonText: `U redu` });
+                                    }
+                                },
+                                complete: function () {
+                                    kendo.ui.progress($(body), false);
+                                }
+                            })
+                        }
+                    });
+            }
+        });
+    }
+
+
+    function currency() {
+
+        var doc = '@doc.Id';
+
+        $.ajax({
+            url: '@Url.Content("~/inv/curr/")' + doc,
+            type: 'POST',
+            success: function (data) {
+
+                Swal.fire({
+                    title: 'Valuta i kurs valute',
+                    confirmButtonText: 'SAČUVAJ',
+                    focusConfirm: true,
+                    html: '<label for="latefisc" class="swal2-input-label">Izaberite valutu</label><select style="text-align:center!important; margin-top:0px; border: solid rgb(180, 180, 180) 1px; border-radius:3px; width:225px; height:36px; padding-top:5px" class="swal2-select" id="currency" stylee="display:flex; "><option value="EUR">EURO</option><option value="USD">Američki dolar</option><option value="GBP">Britanska funta</option></select><div id="PW" style="margin-top:15px;margin-bottom:15px;"><label for="exchangeRate" class="swal2-input-label">Unesite kurs valute</label><input style="font-family:Roboto Mono;" id="exRate" name="exRate" type="text" /><div>',
+                    didRender: (e) => {
+                        $("#exRate").kendoNumericTextBox({ enable: true, decimals: 4, format: '{0:n4}', value: data.ExchangeRate, step: 0.0001 });
+                        $("#currency").val(data.Currency);
+                    },
+                    preConfirm: () => {
+                        var cur = document.getElementById('currency').value;
+                        var exc = document.getElementById('exRate').value;
+                        if (cur == "") Swal.showValidationMessage("Morate izabrati valutu");
+                        else if (exc == "") Swal.showValidationMessage("Morate unijeti kurs valute");
+                        else $('#swal2-validation-message').hide();
+                        return [cur, exc]
+                    }
+                })
+                    .then(function (val) {
+
+                        if (val.isConfirmed) {
+
+                            kendo.ui.progress($(body), true);
+
+                            $.ajax({
+                                url: '/inv/setcurr/' + doc + '?curr=' + val.value[0] + '&exch=' + val.value[1].replace(',', '.'),
+                                type: 'POST',
+                                success: function (data1) {
+                                    if (data1.info != "") {
+                                        Swal.fire({ icon: 'info', title: data1.info, confirmButtonText: `U redu` });
+                                    }
+                                    if (data1.error != "") {
+                                        Swal.fire({ icon: 'error', title: data1.error, confirmButtonText: `U redu` });
+                                    }
+                                },
+                                complete: function () {
+                                    kendo.ui.progress($(body), false);
+                                }
+                            })
+                        }
+                    });
+            }
+        });
+    }
+
+
+    function reflinks() {
+
+        var doc = '@doc.Id';
+        var prtn = $('#dokumentVM_Partner').val();
+
+        $.ajax({
+            url: '@Url.Content("~/inv/links?doc=")' + doc + '&partner=' + prtn,
+            type: 'POST',
+            success: function (data) {
+                $('#LinksWindow').data('kendoWindow').content(data);
+                $('#LinksWindow').data('kendoWindow').center();
+                $('#LinksWindow').data('kendoWindow').open();
+            }
+        });
+    }
+
+
+    function postDoc() {
+        $.ajax({
+            url: '@Url.Content("~/inv/post/")' + @doc.Id,
+            type: 'POST',
+            success: function (data) {
+                if (data.info != "") {
+                    Swal.fire({ icon: 'info', title: data.info, confirmButtonText: `U redu` });
+                    window.location = '@url';
+                }
+                if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+            }
+        });
+    }
+
+    function send() {
+
+    }
+
+    function sendDoc() {
+
+        kendo.ui.progress($(body), true);
+
+        $.ajax({
+            url: '@Url.Content("~/inv/send/")' + @doc.Id,
+            type: 'POST',
+            success: function (data) {
+                if (data.info != "") {
+                    Swal.fire({ icon: 'info', title: data.info, confirmButtonText: `U redu` });
+                }
+                if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+                if (data.email == "") {
+                    Swal.fire({
+                        title: 'Unesite e-mail adresu',
+                        input: 'email',
+                        inputLabel: 'Odredišna e-mail adresa',
+                        inputPlaceholder: 'Unesite e-mail adresu',
+                        confirmButtonText: 'Pošalji'
+                    }).then((val) => {
+
+                        kendo.ui.progress($(body), true);
+
+                        $.ajax({
+                            url: '@Url.Content("~/inv/send/")' + @doc.Id + '?email=' + val.value,
+                            type: 'POST',
+                            success: function (data) {
+                                if (data.info != "") {
+                                    Swal.fire({ icon: 'info', title: data.info, confirmButtonText: `U redu` });
+                                }
+                                if (data.error != "") {
+                                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                                }
+                            },
+                            complete: function (data) {
+                                kendo.ui.progress($(body), false);
+                            }
+                        });
+
+                    });
+                }
+            },
+            complete: function (data) {
+                kendo.ui.progress($(body), false);
+            }
+        });
+    }
+
+    function saveDoc() {
+        $.ajax({
+            url: '@Url.Content("~/INV/Save/")' + @doc.Id,
+            type: 'POST',
+            data: $('#invForm').serialize(),
+            success: function (data) {
+            }
+        });
+    }
+
+    function itemBound(e) {
+        totals();
+    }
+
+    function itemEdit(e) {
+
+        genericKendoEdit(e);
+
+        var form = $(e.container);
+        //$(form).find("td[field=JedinicaMjere]").text('');
+
+        e.model.bind("change", function (j) {
+            var data = j.sender.source;
+            debugger;
+            var pdv = data.Porez;
+            var rabat = data.Rabat;
+            var kol = data.Kolicina;
+            var num1 = data.NumProperty1 ?? 0;
+            var num2 = data.NumProperty2 ?? 0;
+            var num3 = data.NumProperty3 ?? 0;
+            var num4 = data.NumProperty4 ?? 0;
+
+            var osnbezpdv = e.container.find("input[name=NumProperty1]").data("kendoNumericTextBox");
+            var osnsapdv = e.container.find("input[name=NumProperty4]").data("kendoNumericTextBox");
+            var bezpdv = e.container.find("input[name=NumProperty2]").data("kendoNumericTextBox");
+            var sapdv = e.container.find("input[name=NumProperty3]").data("kendoNumericTextBox");
+
+            var ukupanbezpdv = e.container.find("td[field=NumProperty7]");
+            var ukupanrabat = e.container.find("td[field=NumProperty8]");
+            var ukupanpdv = e.container.find("td[field=NumProperty9]");
+            var ukupaniznos = e.container.find("td[field=NumProperty10]");
+
+            debugger;
+
+            var work = true;
+
+            if (typeof j.field == "string") {
+
+                if ((j.field == 'NumProperty1' || j.field == "Rabat" || j.field == "Kolicina") && work) {
+                    num2 = num1 * (100.00 - (rabat ?? 0.00)) / 100.00;
+                    num3 = num1 * (100.00 - (rabat ?? 0.00)) / 100.00 * (100.00 + (pdv ?? 0.00)) / 100.00;
+                    num4 = num1 * (100.00 + (pdv ?? 0.00)) / 100.00;
+
+                    bezpdv.value(num2); data.NumProperty2 = num2;
+                    sapdv.value(num3); data.NumProperty3 = num3;
+                    osnsapdv.value(num4); data.NumProperty4 = num4;
+                }
+                if ((j.field == 'NumProperty2' || j.field == "Porez") && work) {
+                    num1 = num2 * 100.00 / (100.00 - (rabat ?? 0.00));
+                    num3 = num2 * (100.00 + (pdv ?? 0.00)) / 100.00;
+                    num4 = num1 * (100.00 + (pdv ?? 0.00)) / 100.00;
+
+                    osnbezpdv.value(num1); data.NumProperty1 = num1;
+                    sapdv.value(num3); data.NumProperty3 = num3;
+                    osnsapdv.value(num4); data.NumProperty4 = num4;
+                }
+                if (j.field == 'NumProperty3' && work) {
+                    num1 = num3 * 100.00 / (100.00 + (pdv ?? 0.00)) * 100.00 / (100.00 - (rabat ?? 0.00));
+                    num2 = num3 * 100.00 / (100.00 + (pdv ?? 0.00));
+                    num4 = num1 * (100.00 + (pdv ?? 0.00)) / 100.00;
+
+                    osnbezpdv.value(num1); data.NumProperty1 = num1;
+                    bezpdv.value(num2); data.NumProperty2 = num2;
+                    osnsapdv.value(num4); data.NumProperty4 = num4;
+                }
+                if (j.field == 'NumProperty4' && work) {
+                    num1 = num4 * 100 / (100.00 + (pdv ?? 0.00));
+                    num2 = num1 * (100.00 - (rabat ?? 0.00)) / 100.00;
+                    num3 = num1 * (100.00 - (rabat ?? 0.00)) / 100.00 * (100.00 + (pdv ?? 0.00)) / 100.00;
+
+                    osnbezpdv.value(num1); data.NumProperty1 = num1;
+                    bezpdv.value(num2); data.NumProperty2 = num2;
+                    sapdv.value(num3); data.NumProperty3 = num3;
+                }
+
+                if (work) {
+                    var iznpdv = num2 * (pdv ?? 0) / 100;
+
+                    $(ukupanbezpdv).text(kendo.toString(kol * num2, 'n'))
+                    $(ukupanrabat).text(kendo.toString(kol * (num2 - num1), 'n'))
+                    $(ukupanpdv).text(kendo.toString(kol * iznpdv, 'n'))
+                    $(ukupaniznos).text(kendo.toString(kol * num3, 'n'))
+                }
+
+                work = false;
+            }
+            debugger;
+        });
+    }
+
+
+    function taxEdit(e) {
+
+        genericKendoEdit(e);
+
+        var form = $(e.container);
+
+        e.model.bind("change", function (j) {
+            var data = j.sender.source;
+            debugger;
+            var pdv = data.Porez;
+            var num1 = data.NumProperty1 ?? 0;
+            var num2 = data.NumProperty2 ?? 0;
+            var num3 = data.NumProperty3 ?? 0;
+            var num4 = data.NumProperty4 ?? 0;
+
+            var popbezpdv = e.container.find("input[name=NumProperty1]").data("kendoNumericTextBox");
+            var popsapdv = e.container.find("input[name=NumProperty3]").data("kendoNumericTextBox");
+            var povbezpdv = e.container.find("input[name=NumProperty2]").data("kendoNumericTextBox");
+            var povsapdv = e.container.find("input[name=NumProperty4]").data("kendoNumericTextBox");
+
+            povbezpdv.max(0); povsapdv.max(0); popbezpdv.max(0); popsapdv.max(0);
+
+            var ukupanpdv = e.container.find("td[field=NumProperty9]");
+            var ukupaniznos = e.container.find("td[field=NumProperty10]");
+
+            debugger;
+
+            var work = true;
+
+            if (typeof j.field == "string") {
+
+                debugger;
+
+                if ((j.field == 'NumProperty1' || j.field == "Porez") && work) {
+                    num3 = num1 * (100.00 + (pdv ?? 0.00)) / 100.00;
+                    popsapdv.value(num3); data.NumProperty3 = num3;
+                }
+                if ((j.field == 'NumProperty3') && work) {
+                    num1 = num3 * 100.00 / (100.00 + (pdv ?? 0.00));
+                    popbezpdv.value(num1); data.NumProperty1 = num1;
+                }
+                if ((j.field == 'NumProperty2' || j.field == "Porez") && work) {
+                    num4 = num2 * (100.00 + (pdv ?? 0.00)) / 100.00;
+                    povsapdv.value(num4); data.NumProperty4 = num4;
+                }
+                if ((j.field == 'NumProperty4') && work) {
+                    num2 = num4 * 100.00 / (100.00 + (pdv ?? 0.00));
+                    povbezpdv.value(num2); data.NumProperty2 = num2;
+                }
+
+                if (work) {
+                    $(ukupaniznos).text(kendo.toString((num3 + num4), 'n'))
+                    $(ukupanpdv).text(kendo.toString(num3 - num1 + num4 - num2, 'n'))
+                }
+
+                work = false;
+            }
+            debugger;
+        });
+    }
+
+
+    function noviPartner() {
+        var p = $('#dokumentVM_Partner').val();
+        $.ajax({
+            url: '@Url.Content("~/inv/window/")',
+            success: function (data) {
+                $('#AddPartner').data('kendoWindow').title('Podaci o partneru');
+                $('#AddPartner').data('kendoWindow').content(data);
+                $('#AddPartner').data('kendoWindow').center();
+                $('#AddPartner').data('kendoWindow').open();
+
+                setTimeout(() => { prtnedit(); }, 100);
+            }
+        });
+    }
+
+
+    function editPartner() {
+        var p = $('#dokumentVM_Partner').val();
+        $.ajax({
+            url: '@Url.Content("~/inv/window/")' + p,
+            success: function (data) {
+                $('#AddPartner').data('kendoWindow').title('Podaci o partneru');
+                $('#AddPartner').data('kendoWindow').content(data);
+                $('#AddPartner').data('kendoWindow').center();
+                $('#AddPartner').data('kendoWindow').open();
+            }
+        });
+    }
+
+    function savePartner() {
+        $.ajax({
+            url: '@Url.Content("~/inv/addprtn?doc=")' + @doc.Id,
+            data: $('#windowForm').serialize(),
+            type: 'POST',
+            success: function (data) {
+                debugger;
+                if ('Errors' in data && data.Errors != null) {
+                    formError(data)
+                }
+                else {
+                    $('#dokumentVM_Partner').data('kendoMultiColumnComboBox').dataSource.insert(0, { IdPartner: data.Data[0].IdPartner, Naziv: data.Data[0].Naziv })
+                    $('#dokumentVM_Partner').data('kendoMultiColumnComboBox').value(data.Data[0].IdPartner);
+                    $('#prtnInfo').text((data.Data[0].PIB != null ? 'PIB: ' + data.Data[0].PIB + ', ' : '') + 'Adresa: ' + data.Data[0].Adresa);
+                    $('#AddPartner').data('kendoWindow').close();
+                }
+            }
+        });
+    }
+
+    $(window).resize(function () {
+        resizeGrid();
+    });
+
+    totals();
+
+    function itemInfo(e) {
+
+        //alert($(this).attr('id'));
+
+        var input = $(e.target);
+        var tr = $(input).closest('tr');
+        var form = $(tr);
+
+        debugger;
+
+        setTimeout(function () {
+            var grid = $('#INVGRID').data('kendoGrid');
+            var item = grid.dataItem(tr);
+
+            $.ajax({
+                url: '@Url.Content("~/inv/iteminfo?doc=")' + @doc.Id + '&item=' + item.Artikal,
+                type: 'POST',
+                success: function (data) {
+                    var porez = data.Porez;
+                    var fkPorez = data.FkPorez;
+                    var JM = data.JM;
+                    var Rabat = data.rabat;
+                    var bezPDV = data.CijenaBezPDV;
+                    var saPDV = data.CijenaSaPDV;
+
+                    var osnbezpdv = $(form).find("input[name=NumProperty1]").data("kendoNumericTextBox");
+                    var osnsapdv = $(form).find("input[name=NumProperty4]").data("kendoNumericTextBox");
+
+                    var ddpdv = $(form).find("input[name=FkPorez]").data("kendoDropDownList");
+                    var stopa = $(form).find("td[field=Porez]");
+                    var jm = $(form).find("td[field=JedinicaMjere]");
+                    var rabat = $(form).find("input[name=Rabat]").data("kendoNumericTextBox");
+
+                    debugger;
+
+                    osnbezpdv.value(bezPDV);
+                    osnsapdv.value(saPDV);
+
+                    item.Porez = porez;
+                    item.JedinicaMjere = JM;
+                    item.Rabat = Rabat;
+                    $(jm).text(JM);
+                    rabat.value(Rabat);
+                    ddpdv.value(fkPorez);
+                    item.FkPorez = fkPorez;
+                    $(stopa).text(kendo.toString(porez, 'n'))
+
+                    osnbezpdv.trigger('change');
+                }
+            });
+
+        }, 10);
+    }
+
+
+    function taxInfo(e) {
+
+        var input = $(e.target);
+        var tr = $(input).closest('tr');
+        var form = $(tr);
+
+        debugger;
+
+        setTimeout(function () {
+            var grid = $('#INVGRID').data('kendoGrid');
+            var item = grid.dataItem(tr);
+
+            $.ajax({
+                url: '@Url.Content("~/inv/taxinfo?doc=")' + '@doc.Id' + '&tax=' + item.FkPorez,
+                type: 'POST',
+                success: function (data) {
+                    var porez = data.Porez;
+                    var fkPorez = data.FkPorez;
+
+                    var popbezpdv = $(form).find("input[name=NumProperty1]").data("kendoNumericTextBox");
+                    var popsapdv = $(form).find("input[name=NumProperty3]").data("kendoNumericTextBox");
+                    var povbezpdv = $(form).find("input[name=NumProperty2]").data("kendoNumericTextBox");
+                    var povsapdv = $(form).find("input[name=NumProperty4]").data("kendoNumericTextBox");
+
+                    var num1 = $(form).find("input[name=NumProperty1]").data("kendoNumericTextBox").value() ?? 0;
+                    var num2 = $(form).find("input[name=NumProperty2]").data("kendoNumericTextBox").value() ?? 0;
+                    var num3 = 0;
+                    var num4 = 0;
+
+                    var ddpdv = $(form).find("input[name=FkPorez]").data("kendoDropDownList");
+                    var stopa = $(form).find("td[field=Porez]");
+
+                    item.Porez = porez;
+                    $(stopa).text(kendo.toString(porez, 'n'));
+
+                    debugger;
+
+                    work = false;
+
+                    num3 = num1 * (100.00 + (porez ?? 0.00)) / 100.00;
+                    popsapdv.value(num3); item.NumProperty3 = num3;
+
+                    num4 = num2 * (100.00 + (porez ?? 0.00)) / 100.00;
+                    povsapdv.value(num4); item.NumProperty4 = num4;
+
+                    var num9 = num3 + num4;
+                    var num10 = num3 - num1 + num4 - num2;
+
+                    var ukupanpdv = $(form).find("td[field=NumProperty9]");
+                    var ukupaniznos = $(form).find("td[field=NumProperty10]");
+
+                    $(ukupaniznos).text(kendo.toString(num9, 'n')); item.NumProperty9 = num9;
+                    $(ukupanpdv).text(kendo.toString(num10, 'n')); item.NumProperty10 = num10;
+
+                    work = true;
+                }
+            });
+
+        }, 10);
+    }
+
+
+    function dsetv(e) {
+        debugger;
+        var v = $(e.target).val();
+        var n = $(e.target).attr('name');
+        var s = $('#invForm').serialize();
+        s = s + "&dokumentVM.Napomena=" + $('#dokumentVM_Napomena').val();
+        s = s + "&dokumentVM.DocDesc=" + $('#dokumentVM_DocDesc').val();
+        s = s + "&dokumentVM.Porez=" + $('#dokumentVM_Porez').val();
+
+        $.ajax({
+            url: '@Url.Content("~/INV/dsetv/")' + '@doc.Id' + '?name=' + n + '&val=' + v,
+            type: 'POST',
+            //data: $('#invForm').serialize(),
+            data: s,
+            success: function (data) {
+                debugger;
+                if (data.error != "") {
+                    //alert(data.error);
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+                else if (data.js != "") {
+                    eval(data.js);
+                }
+                else if (data.text != "") {
+                    if (n == 'dokumentVM.Partner') {
+                        $('#prtnInfo').text(data.text);
+                    }
+                }
+
+                if ('valuta' in data) {
+                    $('#dokumentVM_Valuta').data('kendoDatePicker').value(data.valuta);
+                }
+                if ('refresh' in data) {
+                    $('#INVGRID').data('kendoGrid').dataSource.read();
+                }
+            }
+        });
+    }
+
+    function ssetv(e) {
+        debugger;
+        var v = $(e.target).val();
+        var n = $(e.target).attr('name');
+        var s = $('#inv1Form').serialize();
+        s = s + "&dokumentVM.Opis=" + $('#dokumentVM_Opis').val();
+
+        $.ajax({
+            url: '@Url.Content("~/INV/ssetv/")' + '@doc.Id' + '?name=' + n + '&val=' + v,
+            type: 'POST',
+            data: s,
+            success: function (data) {
+                debugger;
+                if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+            }
+        });
+    }
+
+
+    function sdesc(e) {
+        debugger;
+        var v = $(e.target).val();
+        var n = $(e.target).attr('name');
+
+        var tr = $('input#StrProperty1').closest('tr');
+        var grid = $('#INVGRID').data('kendoGrid');
+        var item = grid.dataItem(tr);
+        item.Opis = v;
+
+        item.Opis.trigger('change');
+    }
+
+    function savedesc() {
+        var v = $('#StavkaDokumentaVM_Opis').val();
+        var tr = $('input#StrProperty1').closest('tr');
+        var grid = $('#INVGRID').data('kendoGrid');
+        var item = grid.dataItem(tr);
+        item.Opis = v;
+        item.dirty = true;
+        debugger;
+        $('#ItemDesc').data('kendoWindow').close();
+    }
+
+
+    $("body").keydown(function (e) {
+        //well you need keep on mind that your browser use some keys
+        //to call some function, so we'll prevent this
+        //e.preventDefault();
+
+        //now we caught the key code, yabadabadoo!!
+        var keyCode = e.keyCode || e.which;
+
+        //your keyCode contains the key code, F1 to F12
+        //is among 112 and 123. Just it.
+        console.log(keyCode);
+    });
+
+    function ctxMenuOpen(e) {
+        var path = e.event.originalEvent.path;
+        var len = path.length;
+        var grid = $('#INVDGRID').data('kendoGrid');
+
+        $('#ctxMenu .k-menu-item').show();
+        $('#ctxMenu .k-separator').show();
+
+        for (var i = 0; i < len; i++) {
+            var item = path[i];
+            if (item.tagName == "TR") {
+                var item = grid.dataItem(item);
+                ctxitem = item;
+                $('#ctxMenu .k-menu-item').show();
+                $('#ctxMenu .k-separator').show();
+
+                alert(ctxitem.IdStavkaDokumenta)
+            }
+        }
+    }
+
+    function itemdesc(e) {
+        var grid = $('#INVGRID').data('kendoGrid');
+        var row = $(e.target).closest("tr");
+        var item = grid.dataItem(row);
+
+        if (row.hasClass('k-grid-edit-row')) {
+            $('#StavkaDokumentaVM_Opis').val(item.Opis);
+
+            $('#ItemDesc').data('kendoWindow').center();
+            $('#ItemDesc').data('kendoWindow').open();
+        }
+    }
+
+    function przchng(e) {
+        var dd = $('#dokumentVM_Porez').data('kendoDropDownList');
+        if (e.checked) {
+            dd.enable();
+        }
+        else {
+            dd.value("");
+            $('#dokumentVM_Porez').trigger("change");
+            dd.enable(false);
+        }
+    }
+
+    function showQR() {
+        $('#QRWindow').data('kendoWindow').center();
+        $('#QRWindow').data('kendoWindow').open();
+    }
+
+
+    $(document).ready(function () {
+    @if (enable)
+    {
+        <text>
+                setTimeout(function () {
+                    var btn = '<button id="btnNovi1Row" onclick="noviZapis()" style="height:50px; width:50px;padding:0px;" type="button" data-role="button" class="k-button" role="button" aria-disabled="false" tabindex="0"><div style="width:100%;height:100%;text-align:center;padding:0px;"><img style="width:55px;height:55px;text-align:center;" src="/Content/Icons/add_new_color.png"></div></button>';
+                    btn = '<button id="btnNovi1Row" onclick="noviZapis()" style="height:45px; width:45px;padding:0px;border:0px;margin:0px; margin-left:3px;" type="button" data-role="button" class="k-button" role="button" aria-disabled="false" tabindex="0"><img style="width:44px;height:44px;text-align:center;position:relative; left:1px; top:-1px;" src="/Content/Icons/add_new_color.png"></button>';
+                    $('#INVGRID').find('thead th:first').html(btn);
+                }, 20);
+        </text>
+    }
+
+            var height = window.innerHeight;
+        var width = window.innerWidth;
+
+        if (width <= 1366) {
+            $('.nap').css('width', '230px');
+            $('.napt').css('width', '218px');
+            //$('.obr').hide();
+            $('#DashInput').hide();
+        }
+        else if (width <= 1440) {
+            $('.nap').css('width', '270px');
+            $('.napt').css('width', '258px');
+            //$('.obr').hide();
+        }
+        else if (width <= 1700) {
+            $('.nap').css('width', '350px');
+            $('.napt').css('width', '338px');
+            $('.obr').show();
+        }
+        else {
+            $('.nap').css('width', '400px');
+            $('.napt').css('width', '388px');
+            //$('.obr').show();
+        }
+    });
+
+
+    function openQR(url) {
+        window.open(url);
+    }
+
+
+</script>
+
+<style>
+    textarea {
+        font-size: 12px;
+    }
+
+    .k-checkbox-label {
+        top: 1.5px;
+    }
+
+    .totals .k-input {
+        text-align: right;
+        font-family: 'Roboto Mono';
+        padding-right: 5px;
+    }
+
+    body {
+        min-height: 768px !important;
+        min-width: 1366px !important;
+    }
+
+    .v-generated-body {
+        min-width: 1000px;
+        overflow: auto;
+    }
+
+    /*.k-header .k-link {
+            padding-top: 4px!important;
+            padding-bottom: 2.8px!important;
+        }*/
+
+    .k-textbox input {
+        border: 0px none white;
+        padding-top: 3px;
+        padding-bottom: 1px;
+        background: none !important;
+        padding-left: 0px !important;
+    }
+
+    #divPorezxxx .k-dropdown {
+        width: 300px !important;
+    }
+</style>
+
+<form id="printpdfform" target="_blank" action="/inv/printpdf">
+    <input name="doc" type="hidden" value="@doc.IdEncrypted" />
+</form>
+
+<div id="invtop" style="height:105px; margin-top:0px; min-width:768px;">
+    <form id="invForm" spellcheck="false">
+        @Html.Hidden("dokumentVM.IdDokument", doc.Id)
+        @Html.Hidden("dokumentVM.VrstaDokumenta", doc.VrstaDokumenta)        
+        @Html.Hidden("dokumentVM.Status", doc.Status)
+        @Html.Hidden("dokumentVM.Currency", doc.CurrencyCode)
+        @Html.Hidden("dokumentVM.ExchangeRate", doc.ExchangeRate)
+        
+
+        <div style="width:calc(100% - 320px); display:inline-block; min-width:200px;">
+            <div class="mbox" style="width:202px;">
+                <div class="mribbon">PRODAJNO MJESTO</div>
+                <div style="position:relative; top:-9px;">
+                    <div style="display:inline-block; margin-right:5px;">
+                        @(Html.Kendo().DropDownList().Name("dokumentVM.OrgJed").Enable(enable).BindTo(new SelectList(ViewBag.OJs as List<SelectListItem>, "Value", "Text")).Value(doc.OrgJed.ToString()).HtmlAttributes(new { style = "width:200px;", onchange = "dsetv(event)" }))
+                    </div>
+                    <div style="display:inline-block; margin-right:5px; margin-top:7px;">
+                        @(Html.Kendo().DropDownList().Name("dokumentVM.IntProperty4").Enable(enable).BindTo(new SelectList(docTypes, "Value", "Text")).Value((doc.IntProperty4 ?? 1).ToString()).HtmlAttributes(new { style = "width:200px;", onchange = "dsetv(event)" }))
+                    </div>
+                </div>
+            </div>
+
+            <div class="mbox" style="width:360px; min-width:360px;">
+                <div class="mribbon">@(ViewBag.Vrsta == "f" ? "FAKTURA" : "ODOBRENJE")</div>
+                <div style="position:relative; top:-9px;">
+                    <div style="display:inline-block; margin-right:15px;">
+                        <div style="margin-bottom:5px;">
+                            <div style="display:inline-block; width: 50px">Datum</div>@Html.Kendo().DatePicker().Name("dokumentVM.Datum").Value(doc.Datum).HtmlAttributes(new { style = "width:120px;", onchange = "dsetv(event)" }).Enable(enable)<br />
+                        </div>
+                        <div>
+                            <div style="display:inline-block; width: 50px">Valuta</div>@Html.Kendo().DatePicker().Name("dokumentVM.Valuta").Value(doc.Valuta).HtmlAttributes(new { style = "width:120px;", onchange = "dsetv(event)", id = "dokumentVM_Valuta" }).Enable(enable)<br />
+                        </div>
+                    </div>
+                    <div style="display:inline-block;">
+                        <div style="margin-bottom:5px;">
+                            <div style="display:inline-block; width: 45px">Int. broj</div>
+                            @Html.Kendo().IntegerTextBox().Spinners(false).Name("dokumentVM.Broj").Value(doc.Broj).HtmlAttributes(new { style = "width:120px;", onchange = "dsetv(event)" }).Enable(enable)<br />
+                        </div>
+                        <div>
+                            <div style="display:inline-block; width: 45px">Ext. broj</div>
+                            @Html.Kendo().TextBox().Name("dokumentVM.BrojText").Value(doc.BrojText).Enable(true).HtmlAttributes(new { style = "width:120px;", @readonly = "readonly" }).Enable(enable)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mbox" style="width:25%;">
+                <div class="mribbon">KUPAC</div>
+                <div style="width:100%; display:inline-block; position:relative; top:-9px;">
+                    @(Html.Kendo().MultiColumnComboBox()
+                        .Name("dokumentVM.Partner")
+                        .Placeholder("Izaberite kupca")
+                        .DataTextField("Naziv")
+                        .DataValueField("IdPartner")
+                        .Enable(enable)
+                        .Columns(columns =>
+                        {
+                            columns.Add().Field("IdPartner").Title("Šifra").Width("80");
+                            columns.Add().Field("Naziv").Title("Naziv").Width("calc(120% - 5px)");
+                            columns.Add().Field("PIB").Title("PIB").Width("80");
+                        })
+                        .HtmlAttributes(new { id = "dokumentVM_Partner", onchange = "dsetv(event)", style = "width:calc(100% - 30px); font-weight:bold; font-size:12px;", autocomplete = "off", autocorrect = "off", autocapitalize = "off", spellcheck = "false" })
+                        .DropDownWidth(400)
+                        .Messages(m => m.NoData("Nema podataka").Clear("Poništi"))
+                        .Filter("contains").FilterFields(new string[] { "Opis", "ID" })
+                        .AutoBind(false)
+                        .MinLength(1)
+                        .ValuePrimitive(true)
+                        .Value(prtn == null ? "" : doc.Partner.ToString())
+                        .Text(prtn == null ? "" : doc.PartnerRef.Naziv)
+                        .DataSource(source => { source.Read(read => { read.Action("InvPartnerRead", "inv"); }).ServerFiltering(true); })
+                        //.Events(e => e.Select("item_changed"))
+                        )
+                    @Html.Kendo().Button().Name("btnNoviPartner").HtmlAttributes(new { type = "button", onclick = "noviPartner()", style = "height:25px; width:25px;" }).Content("<img style='position:relative; left:0px; top:0px; width:22px;height:22px;text-align:center;' src='/Content/Icons/plus1.png'/>").Enable(enable)
+                    <div style="margin-top:5px; margin-left:3px; max-height:30px;" id="prtnInfo">
+                        @info
+                    </div>
+                </div>
+            </div>
+
+            @if ((string)ViewBag.Vrsta == "f")
+            {
+                <div style="display:inline-block;width:50px;">
+                    @Html.Kendo().Button().Name("btnPeriod").HtmlAttributes(new { type = "button", title = "Obračunski period", onclick = "period()", style = "height:44px; width:45px;margin-top:1px;" }).Content("<div style='width:100%;height:100%;text-align:center; padding-left:0px;'><img style='width:36px;height:36px;text-align:center;position:relative;left:-4px;top:-1px' src='/Content/Icons/date_span.png'/></div>").Enable(enable)
+                    <br />
+                    @Html.Kendo().Button().Name("btnCurrency").HtmlAttributes(new { type = "button", title = "Valuta", onclick = "currency()", style = "height:44px; width:45px; margin-top:7px;" }).Content("<div style='width:100%;height:100%;text-align:center; padding-left:0px;'><img style='width:35px;height:35px;text-align:center;position:relative;left:-4px;top:-1px' src='/Content/Icons/dollar_euro_exchange.png'/></div>").Enable(enable)
+                </div>
+                <div style="display:inline-block;width:50px;">
+                    @Html.Kendo().Button().Name("btnLocation").HtmlAttributes(new { type = "button", title = "Mjesto isporuke", onclick = "location1()", style = "height:44px; width:45px;margin-top:1px;" }).Content("<div style='width:100%;height:100%;text-align:center; padding-left:0px;'><img style='width:36px;height:36px;text-align:center;position:relative;left:-4px;top:-1px' src='/Content/Icons/route.png'/></div>").Enable(enable)
+                    <br />
+                    @Html.Kendo().Button().Name("btnLink").HtmlAttributes(new { type = "button", title = "Vezani računi", onclick = "reflinks()", style = "height:44px; width:45px; margin-top:7px;" }).Content("<div style='width:100%;height:100%;text-align:center; padding-left:0px;'><img style='width:37px;height:37px;text-align:center;position:relative;left:-5px;top:-1px' src='/Content/Icons/add_link.png'/></div>").Enable(enable)
+                </div>
+            }
+            else if ((string)ViewBag.Vrsta == "c")
+            {
+                <div style="display:inline-block;width:50px;">
+                    @Html.Kendo().Button().Name("btnLink").HtmlAttributes(new { type = "button", title = "Vezani računi", onclick = "reflinks()", style = "height:44px; width:45px;margin-top:1px;" }).Content("<div style='width:100%;height:100%;text-align:center; padding-left:0px;'><img style='width:37px;height:37px;text-align:center;position:relative;left:-5px;top:-1px' src='/Content/Icons/add_link.png'/></div>").Enable(enable)
+                    <br />
+                    @Html.Kendo().Button().Name("btnCurrency").HtmlAttributes(new { type = "button", title = "Valuta", onclick = "currency()", style = "height:44px; width:45px; margin-top:7px;" }).Content("<div style='width:100%;height:100%;text-align:center; padding-left:0px;'><img style='width:35px;height:35px;text-align:center;position:relative;left:-4px;top:-1px' src='/Content/Icons/dollar_euro_exchange.png'/></div>").Enable(enable)
+                </div>
+            }
+
+        </div>
+        <div style="display:inline-block; float:right;">
+            @if ((bool)ViewBag.Faktura)
+            {
+                if (doc.StatusM == "N" || doc.StatusM == "F")
+                {
+                    var u = "/QR/" + doc.IdDokument.ToString() + ".bmp";
+                    var img = "<img style = 'height:94px;width:94px;' src ='" + u + "'>";
+
+                    @Html.Kendo().Button().Name("QR").HtmlAttributes(new { type = "button", ondblclick = "showQR()", style = "height:95px; width:95px; margin-left:5px; background-color:white; border:none;" }).Content(img)
+                }
+                if (enable)
+                {
+                    @Html.Kendo().Button().Name("btnNoviRow").HtmlAttributes(new { type = "button", onclick = "noviZapis()", style = "height:95px; width:95px;padding-left:4px;padding-right:4px;" }).Content("<div style='width:100%;height:100%;text-align:center; padding-left:3px;'><img style='width:55px;height:55px;text-align:center;' src='/Content/Icons/add_new_color.png'/><span style='font-weight:bold;display:inline-block;position:relative;top:0px;line-height:110%; font-size:11.5px;'>NOVA STAVKA<br/>" + (ViewBag.Vrsta == "f" || ViewBag.Vrsta == "r" ? "FAKTURE" : "ODOBRENJA") + "<span></div>")
+                }
+
+                @Html.Kendo().Button().Name("btnSaveDoc").HtmlAttributes(new { type = "button", onclick = "saveDoc()", style = "display:none; height:95px; width:95px;" }).Content("<div style='width:100%;height:100%;text-align:center; padding-left:3px;'><img style='width:55px;height:55px;text-align:center;' src='/Content/Icons/save_color.png'/><span style='font-weight:bold;display:inline-block;position:relative;top:0px;line-height:110%;'>Sačuvaj izmjene<span></div>")
+                @Html.Kendo().Button().Name("btnPrint").HtmlAttributes(new { type = "button", onclick = "printDoc()", style = "height:95px; width:95px; margin-left:10px;" }).Content("<div style='width:100%;height:100%;text-align:center; padding-left:3px;'><img style='width:55px;height:55px;text-align:center;' src='/Content/Icons/print_invoice_color.png'/><span style='font-weight:bold;display:inline-block;position:relative;top:0px;line-height:110%; font-size:11.5px;'>ŠTAMPAJ " + (ViewBag.Vrsta == "f" || ViewBag.Vrsta == "r" ? "FAKTURU" : "ODOBRENJE") + "<span></div>")
+
+                if (enable || doc.StatusM == "N")
+                {
+                    @Html.Kendo().Button().Name("btnFiscDoc").HtmlAttributes(new { type = "button", onclick = "fiscDoc()", style = "height:95px; width:95px; margin-left:5px;" }).Content("<div style='width:100%;height:100%;text-align:center; padding-left:3px;'><img style='width:55px;height:55px;text-align:center;' src='/Content/Icons/data_transfer_color.png'/><span style='font-weight:bold;display:inline-block;position:relative;top:0px;line-height:110%; font-size:11.5px;'>FISKALIZUJ " + (ViewBag.Vrsta == "f" || ViewBag.Vrsta == "r" ? "FAKTURU" : "ODOBRENJE") + "<span></div>")
+                }
+                if (doc.StatusM == "N" || doc.StatusM == "F")
+                {
+                    @Html.Kendo().Button().Name("btnSendDoc").HtmlAttributes(new { type = "button", onclick = "sendDoc()", style = "height:95px; width:95px; margin-left:5px;" }).Content("<div style='width:100%;height:100%;text-align:center; padding-left:0px;'><img style='width:55px;height:55px;text-align:center;' src='/Content/Icons/send_email.png'/><span style='font-weight:bold;display:inline-block;position:relative;top:0px;line-height:110%; font-size:11.5px;'>POŠALJI NA<br/>E-MAIL<span></div>")
+                }
+                @*Html.Kendo().Button().Name("btnChangeDoc").HtmlAttributes(new { type = "button", onclick = "changeDoc()", style = "height:95px; width:95px;padding-left:3px;padding-right:5px; margin-left:5px;" }).Content("<div style='width:100%;height:100%;text-align:center; padding-left:3px;'><img style='width:55px;height:55px;text-align:center;' src='/Content/Icons/eraser_color.png'/><span style='font-weight:bold;display:inline-block;position:relative;top:0px;line-height:110%;font-size:11.5px;'>KORIGUJ FISK. FAKTURU<span></div>")*@
+            }
+            else
+            {
+                if (enable)
+                {
+                    @Html.Kendo().Button().Name("btnNoviRow").HtmlAttributes(new { type = "button", onclick = "noviZapis()", style = "height:95px; width:95px;padding-left:4px;padding-right:4px;" }).Content("<div style='width:100%;height:100%;text-align:center; padding-left:3px;'><img style='width:55px;height:55px;text-align:center;' src='/Content/Icons/add_new_color.png'/><span style='font-weight:bold;display:inline-block;position:relative;top:0px;line-height:110%; font-size:11.5px;'>NOVA STAVKA<br/>PROFAKTURE<span></div>")
+                }
+                @Html.Kendo().Button().Name("btnPrint").HtmlAttributes(new { type = "button", onclick = "printDoc()", style = "height:95px; width:95px; margin-left:10px;" }).Content("<div style='width:100%;height:100%;text-align:center; padding-left:3px;'><img style='width:55px;height:55px;text-align:center;' src='/Content/Icons/print_invoice_color.png'/><span style='font-weight:bold;display:inline-block;position:relative;top:0px;line-height:110%; font-size:11.5px;'>ŠTAMPAJ PROFAKTURU<span></div>")
+                if (doc.Status != "P")
+                {
+                    @Html.Kendo().Button().Name("btnPostDoc").HtmlAttributes(new { type = "button", onclick = "postDoc()", style = "height:95px; width:95px; margin-left:5px;" }).Content("<div style='width:100%;height:100%;text-align:center; padding-left:3px;'><img style='width:55px;height:55px;text-align:center;' src='/Content/Icons/check_file_color.png'/><span style='font-weight:bold;display:inline-block;position:relative;top:0px;line-height:110%; font-size:11.5px;'>ZAKLJUČI PROFAKTURU<span></div>")
+                }
+                if (doc.Status == "P")
+                {
+                    @Html.Kendo().Button().Name("btnSendDoc").HtmlAttributes(new { type = "button", onclick = "sendDoc()", style = "height:95px; width:95px; margin-left:5px;" }).Content("<div style='width:100%;height:100%;text-align:center; padding-left:0px;'><img style='width:55px;height:55px;text-align:center;' src='/Content/Icons/send_email.png'/><span style='font-weight:bold;display:inline-block;position:relative;top:0px;line-height:110%; font-size:11.5px;'>POŠALJI NA<br/>E-MAIL<span></div>")
+                    @Html.Kendo().Button().Name("btnUnpostDoc").HtmlAttributes(new { type = "button", onclick = "unpostDoc()", style = "height:95px; width:95px; margin-left:5px;" }).Content("<div style='width:100%;height:100%;text-align:center; padding-left:1px;'><img style='width:55px;height:55px;text-align:center;' src='/Content/Icons/filedelete_color.png'/><span style='font-weight:bold;display:inline-block;position:relative;top:0px;line-height:110%; font-size:11.5px;'>OTKLJUČAJ PROFAKTURU<span></div>")
+                }
+                @*Html.Kendo().Button().Name("btnInvoiceDoc").HtmlAttributes(new { type = "button", onclick = "invoiceDoc()", style = "height:95px; width:95px;padding-left:3px;padding-right:5px;margin-left:5px;" }).Content("<div style='width:100%;height:100%;text-align:center; padding-left:3px;'><img style='width:55px;height:55px;text-align:center;' src='/Content/Icons/create_document_color.png'/><span style='font-weight:bold;display:inline-block;position:relative;top:0px;line-height:110%;font-size:11.5px;'>KREIRAJ FAKTURU<span></div>")*@
+            }
+        </div>
+    </form>
+</div>
+
+<div id="invmiddle" style="height:calc(100% - 225px);" class="grid-wrapper">
+    @if (ViewBag.Vrsta == "r")
+    {
+        @(Html.Kendo().Grid<SISTEM.Models.ViewModels.INVRVM>().Name("INVGRID")
+            .HtmlAttributes(new { style = "height:calc(100% - 3px); border: 1px solid lightgray; border-radius:5px; box-shadow: 2px 2px 5px lightgrey;" })
+            .DataSource(ds => SISTEM.Models.KendoConfig.DataSourceConfig(ds, ViewBag.Settings as List<SISTEM.Models.DisplaySetting>, "inv", new { dokument = doc.IdDokument, Vrsta = ViewBag.Vrsta }))
+            .Columns(c => SISTEM.Models.KendoConfig.ColumnConfig(c, ViewBag.Settings as List<SISTEM.Models.DisplaySetting>, enable ? SISTEM.Models.KendoConfig.GridFlags.All : SISTEM.Models.KendoConfig.GridFlags.Filterable | SISTEM.Models.KendoConfig.GridFlags.Sortable)).ColumnMenu(m => m.Enabled(false))
+            .Filterable().Selectable().Pageable(p => p.Enabled(true)).Sortable().Scrollable()
+            .Events(e => e.Edit("itemEdit").DataBound("itemBound")))
+    }
+    else if (ViewBag.Vrsta == "f")
+    {
+        @(Html.Kendo().Grid<SISTEM.Models.ViewModels.INVFVM>().Name("INVGRID")
+            .HtmlAttributes(new { style = "height:calc(100% - 3px); border: 1px solid lightgray; border-radius:5px; box-shadow: 2px 2px 5px lightgrey;" })
+            .DataSource(ds => SISTEM.Models.KendoConfig.DataSourceConfig(ds, ViewBag.Settings as List<SISTEM.Models.DisplaySetting>, "inv", new { dokument = doc.IdDokument, Vrsta = ViewBag.Vrsta }))
+            .Columns(c => SISTEM.Models.KendoConfig.ColumnConfig(c, ViewBag.Settings as List<SISTEM.Models.DisplaySetting>, enable ? SISTEM.Models.KendoConfig.GridFlags.All : SISTEM.Models.KendoConfig.GridFlags.Filterable | SISTEM.Models.KendoConfig.GridFlags.Sortable)).ColumnMenu(m => m.Enabled(false))
+            .Filterable().Selectable().Pageable(p => p.Enabled(true)).Sortable().Scrollable()
+            .Events(e => e.Edit("itemEdit").DataBound("itemBound")))
+    }
+    else if (ViewBag.Vrsta == "c")
+    {
+        @(Html.Kendo().Grid<SISTEM.Models.ViewModels.INVCVM>().Name("INVGRID")
+            .HtmlAttributes(new { style = "height:calc(100% - 3px); border: 1px solid lightgray; border-radius:5px; box-shadow: 2px 2px 5px lightgrey;" })
+            .DataSource(ds => SISTEM.Models.KendoConfig.DataSourceConfig(ds, ViewBag.Settings as List<SISTEM.Models.DisplaySetting>, "inv", new { dokument = doc.IdDokument, Vrsta = ViewBag.Vrsta }))
+            .Columns(c => SISTEM.Models.KendoConfig.ColumnConfig(c, ViewBag.Settings as List<SISTEM.Models.DisplaySetting>, enable ? SISTEM.Models.KendoConfig.GridFlags.All : SISTEM.Models.KendoConfig.GridFlags.Filterable | SISTEM.Models.KendoConfig.GridFlags.Sortable)).ColumnMenu(m => m.Enabled(false))
+            .Filterable().Selectable().Pageable(p => p.Enabled(true)).Sortable().Scrollable()
+            .Events(e => e.Edit("taxEdit").DataBound("itemBound")))
+    }
+</div>
+
+<div id="invbottom" style="height:100px; margin-top:10px;">
+    <form spellcheck="false">
+        <div class="mbox nap" style="width:230px; height:82px;">
+            <div class="mribbon" style="margin-bottom:0px;">NAPOMENA (prikazuje se na računu)</div>
+            <div style="display:inline-block; position:relative; top:-13px;">
+                <textarea class="napt" onchange="dsetv(event)" style="width:219px; height:60px; resize:none;" spellcheck="false" id="dokumentVM_Napomena" @(enable ? "" : "readonly") name="dokumentVM.Napomena">@doc.Napomena</textarea>
+            </div>
+        </div>
+        <div class="mbox nap" style="width:230px; height:82px;">
+            <div class="mribbon" style="margin-bottom:0px;">NAPOMENA (za internu evidenciju)</div>
+            <div style="display:inline-block; position:relative; top:-13px;">
+                <textarea class="napt" onchange="dsetv(event)" style="width:219px; height:60px; resize:none;" spellcheck="false" id="dokumentVM_DocDesc" @(enable ? "" : "readonly") name="dokumentVM.DocDesc">@doc.DocDesc</textarea>
+            </div>
+        </div>
+        <div class="mbox" style="width:200px; height:82px;@(ViewBag.Vrsta == "c" ? "display:none;" : "")">
+            <div class="mribbon" style="margin-bottom:0px;">Oslobođeno PDV-a</div>
+            <div id="divPorez" style="display:inline-block; position:relative; top:-13px; width:100%;">
+                @Html.Kendo().Switch().Name("dokumentVM.Porezz").Checked(doc.Porez != null).Messages(m => m.Checked("Da").Unchecked("Ne")).HtmlAttributes(new { style = "font-size:10px; position:relative; left:5px;" }).Events(e => e.Change("przchng")).Enabled(enable)
+                <div style="margin-top:8px;">Vrsta oslobođenja</div>
+                @Html.Kendo().DropDownList().Name("dokumentVM.Porez").BindTo(oslobodjenja).Value(doc.Porez).HtmlAttributes(new { id = "dokumentVM_Porez", onchange = "dsetv(event)", style = "width:100%; margin-top:0px; margin-bottom:0px;" }).Enable(enable && doc.Porez != null)
+            </div>
+        </div>
+        <div class="totals" style="display:inline-block; float:right; vertical-align:top; margin-right:0px; margin-top:4px; border: 1px solid lightgray; border-radius:5px; padding:10px; padding-right:5px; padding-top:2px; width:250px; height:92px; box-shadow: 2px 2px 5px lightgrey;">
+            <div style="margin-top:7px;"><div style="width:90px; display:inline-block; text-align:right; margin-right:5px;">Iznos bez PDV-a:</div>@Html.Kendo().NumericTextBox().Name("bzpdv").Spinners(false).HtmlAttributes(new { @readonly = "readonly" })</div>
+            <div style="margin-top:5px;"><div style="width:90px; display:inline-block; text-align:right; margin-right:5px;">Iznos PDV-a:</div>@Html.Kendo().NumericTextBox().Name("izpdv").Spinners(false).HtmlAttributes(new { @readonly = "readonly" })</div>
+            <div style="margin-top:5px;"><div style="width:90px; display:inline-block; text-align:right; margin-right:5px;">ZA PLAĆANJE:</div>@Html.Kendo().NumericTextBox().Name("total").Spinners(false).HtmlAttributes(new { style = "font-weight:bold;", @readonly = "readonly" })</div>
+        </div>
+        <div class="totals" style="display:@(ViewBag.Vrsta == "c" ? "none" : "inline-block"); float:right; vertical-align:top; margin-right:10px; border: 1px solid lightgray; margin-top:4px; border-radius:5px; padding:10px; padding-top:2px; width:230px; height:92px; box-shadow: 2px 2px 5px lightgrey;">
+            <div style="margin-top:7px;"><div style="width:70px; display:inline-block; text-align:right; margin-right:5px;">Iznos:</div>@Html.Kendo().NumericTextBox().Name("iznos").Spinners(false).HtmlAttributes(new { @readonly = "readonly" })</div>
+            <div style="margin-top:5px;"><div style="width:70px; display:inline-block; text-align:right; margin-right:5px;">Iznos rabata:</div>@Html.Kendo().NumericTextBox().Name("rabat").Spinners(false).HtmlAttributes(new { @readonly = "readonly" })</div>
+        </div>
+    </form>
+</div>
+
+@Html.Kendo().Window().Name("AddPartner").Title("Novi partner").LoadContentFrom("window", "inv", new { id = doc.Partner }).Visible(false).Modal(true).Draggable(true).Width(500).HtmlAttributes(new { style = "padding:0px; padding-top:5px; padding-bottom:5px;" })
+
+@Html.Kendo().Window().Name("ItemDesc").Title("Detaljni opis stavke fakture").Visible(false).Modal(true).Draggable(true).Width(650).Content("<div style='display: block; padding: 10px; padding-left:15px; padding-top:13px;'><textarea style='width:610px!important; height:250px; resize:none;' id='StavkaDokumentaVM_Opis' spellcheck='false'></textarea><div style='float:right;'><img onclick='savedesc()' style='height:48px;width:48px;position:relative;top:-3px;cursor:pointer' src='/Content/Icons/save_close.png'><div></div>").HtmlAttributes(new { style = "padding:0px; padding-top:0px; padding-bottom:0px;" })
+
+@Html.Kendo().Window().Name("QRWindow").Title("QR kod").Visible(false).Modal(true).Draggable(true).Content("<div><img onclick=\"openQR('" + doc.StrProperty3 + "')\" style = 'height:220px;width:220px;cursor:pointer;' src='/QR/" + doc.IdDokument.ToString() + ".bmp' /></div>")
+
+@Html.Kendo().Window().Name("LinksWindow").Title("Vezane fakture").Visible(false).Modal(true).Draggable(true).Width(1300).Height(585)

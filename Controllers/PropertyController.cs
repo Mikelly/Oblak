@@ -21,19 +21,18 @@ namespace Oblak.Controllers
         private readonly IMapper _mapper;
         private readonly ApplicationUser _appUser;
         private readonly int _legalEntityId;
-        private readonly Register _registerClient;        
+        private readonly Register _registerClient;
         private LegalEntity _legalEntity;
 
-
         public PropertyController(
-            ILogger<PropertyController> logger, 
-            ApplicationDbContext db, 
+            ILogger<PropertyController> logger,
+            ApplicationDbContext db,
             IMapper mapper,
             IServiceProvider serviceProvider,
             IHttpContextAccessor httpContextAccessor
             )
         {
-            _logger = logger;            
+            _logger = logger;
             _db = db;
             _mapper = mapper;
 
@@ -61,7 +60,7 @@ namespace Oblak.Controllers
             if (_appUser.LegalEntity.Country == Country.MNE)
             {
                 municipalityList = codeLists.Where(x => x.Type == "opstina").ToList();
-                typeList = codeLists.Where(x => x.Type == "vrstaobjekta").ToList();               
+                typeList = codeLists.Where(x => x.Type == "vrstaobjekta").ToList();
             }
             else if (_appUser.LegalEntity.Country == Country.SRB)
             {
@@ -71,7 +70,7 @@ namespace Oblak.Controllers
 
             var municipalistySelectList = new SelectList(municipalityList, "ExternalId", "Name");
             var typeSelectList = new SelectList(typeList, "ExternalId", "Name");
-            
+
             ViewBag.MunicipalityCodeList = municipalistySelectList;
             ViewBag.TypeCodeList = typeSelectList;
 
@@ -93,26 +92,20 @@ namespace Oblak.Controllers
         public async Task<IActionResult> Read([DataSourceRequest] DataSourceRequest request, int? legalEntity)
         {
             if (legalEntity.HasValue)
-            { 
+            {
                 _legalEntity = await _db.LegalEntities.FindAsync(legalEntity.Value);
             }
 
             await _registerClient.Initialize(_legalEntity);
             var properties = await _registerClient.GetProperties();
-            return View();
-        }
 
-        public async Task<IActionResult> Read([DataSourceRequest] DataSourceRequest request)
-        {
-            await _registerClient.Initialize(_legalEntity);
-            var properties = await _registerClient.GetProperties();
             var data = _mapper.Map<List<PropertyEnrichedDto>>(properties);
+
             return Json(await data.ToDataSourceResultAsync(request));
         }
 
-
         [HttpPost]
-        public async Task<ActionResult> Update(PropertyEnrichedDto input, [DataSourceRequest] DataSourceRequest request, [FromQuery]int? legalEntity)
+        public async Task<ActionResult> Update(PropertyEnrichedDto input, [DataSourceRequest] DataSourceRequest request, [FromQuery] int? legalEntity)
         {
             try
             {
@@ -122,17 +115,17 @@ namespace Oblak.Controllers
                 {
                     return Json(new DataSourceResult { Errors = "Entity not found." });
                 }
-
                 var dto = (PropertyDto)input;
 
                 _mapper.Map(dto, existingEntity);
 
                 existingEntity.PropertyName = existingEntity.Name;
 
+                // validation
+
                 await _db.SaveChangesAsync();
 
                 return Json(new[] { input }.ToDataSourceResult(request, ModelState));
-
             }
             catch (Exception ex)
             {
@@ -156,7 +149,7 @@ namespace Oblak.Controllers
                     _legalEntity = await _db.LegalEntities.FindAsync(legalEntity.Value);
                 }
 
-                property.LegalEntityId = _legalEntity.Id;                
+                property.LegalEntityId = _legalEntity.Id;
 
                 // validation
 
@@ -227,12 +220,12 @@ namespace Oblak.Controllers
                 .Select(a => {
                     var mapped = _mapper.Map<Property, PropertyEnrichedDto>(a);
                     mapped.PropertyName = a.Name;
-                    mapped.LegalEntity = a.LegalEntity.Name; 
+                    mapped.LegalEntity = a.LegalEntity.Name;
                     return mapped;
-                    })
+                })
                 .ToList();
 
-            return Json(data);            
+            return Json(data);
         }
     }
 }

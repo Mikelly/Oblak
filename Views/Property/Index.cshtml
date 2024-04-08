@@ -1,5 +1,6 @@
 ﻿@using Oblak.Models.Api;
 @using Oblak.Models.EFI;
+
 @{
     var sl = ViewBag.MunicipalityCodeList as SelectList;
     var tl = ViewBag.TypeCodeList as SelectList;
@@ -21,9 +22,6 @@
     function loadProperties() {
         $.ajax({
             url: `/Property/FetchPropertiesExternal?legalEntity=${le}`,
-
-        $.ajax({
-            url: '/Property/FetchPropertiesExternal',
             type: 'GET',
             dataType: 'json',
             success: function (data) {

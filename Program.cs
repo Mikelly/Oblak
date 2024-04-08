@@ -28,6 +28,7 @@ using Serilog;
 using Microsoft.AspNetCore.Localization;
 using System.Globalization;
 using Oblak.Services.Reporting;
+using Oblak.Services.Payten;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -183,6 +184,7 @@ builder.Services.AddScoped<SrbClient>();
 builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<ReportingService>();
 builder.Services.AddScoped<EfiClient>();
+builder.Services.AddScoped<ApiService>();
 
 builder.Services.AddTransient<SrbScheduler>();
 builder.Services.AddTransient<FcmService>();

@@ -92,6 +92,7 @@ namespace Oblak.Data
         
         public decimal ExchangeRate { get; set; } = decimal.One;
 
+        public Guid PaytenOrderId { get; set; } = Guid.NewGuid();
 
         #region Audit Properties
 

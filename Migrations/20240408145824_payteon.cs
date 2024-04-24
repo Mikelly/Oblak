@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Oblak.Migrations
 {
     /// <inheritdoc />
-    public partial class added_pos_transactions_table_and_payten_columns : Migration
+    public partial class payteon : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -14,14 +14,27 @@ namespace Oblak.Migrations
             migrationBuilder.AddColumn<string>(
                 name: "PaytenUserId",
                 table: "Properties",
-                type: "nvarchar(max)",
+                type: "nvarchar(450)",
+                maxLength: 450,
                 nullable: false,
                 defaultValue: "");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Reference",
+                table: "Partners",
+                type: "nvarchar(2000)",
+                maxLength: 2000,
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(450)",
+                oldMaxLength: 450,
+                oldNullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "PaytenUserId",
                 table: "LegalEntities",
-                type: "nvarchar(max)",
+                type: "nvarchar(450)",
+                maxLength: 450,
                 nullable: false,
                 defaultValue: "");
 
@@ -29,16 +42,8 @@ namespace Oblak.Migrations
                 name: "PaytenOrderId",
                 table: "Documents",
                 type: "uniqueidentifier",
-                nullable: true);
-
-            migrationBuilder.Sql("UPDATE dbo.Documents SET PaytenOrderId = NEWID() WHERE PaytenOrderId IS NULL");
-
-            migrationBuilder.AlterColumn<Guid>(
-                name: "PaytenOrderId",
-                table: "Documents",
                 nullable: false,
-                oldClrType: typeof(Guid),
-                oldNullable: true);
+                defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
 
             migrationBuilder.CreateTable(
                 name: "PosTransactions",
@@ -49,10 +54,10 @@ namespace Oblak.Migrations
                     DocumentId = table.Column<int>(type: "int", nullable: false),
                     LegalEntityId = table.Column<int>(type: "int", nullable: true),
                     PropertyId = table.Column<int>(type: "int", nullable: true),
-                    PaymentSessionToken = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TransactionType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PaymentSessionToken = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    TransactionType = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
                     Success = table.Column<bool>(type: "bit", nullable: true),
                     StartedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -115,6 +120,17 @@ namespace Oblak.Migrations
             migrationBuilder.DropColumn(
                 name: "PaytenOrderId",
                 table: "Documents");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Reference",
+                table: "Partners",
+                type: "nvarchar(450)",
+                maxLength: 450,
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(2000)",
+                oldMaxLength: 2000,
+                oldNullable: true);
         }
     }
 }

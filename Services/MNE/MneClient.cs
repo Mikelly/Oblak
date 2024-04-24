@@ -186,7 +186,7 @@ namespace Oblak.Services.MNE
 
             try
             {
-                var (user, so, cert) = ((user, smjestajniObjekat[], X509Certificate2))await Authenticate(mnePerson.Property.LegalEntity);
+                var (user, so, cert) = ((user, smjestajniObjekat[], X509Certificate2))await Authenticate(mnePerson.LegalEntity);
                 await Task.Delay(100);
             }
             catch (Exception e)

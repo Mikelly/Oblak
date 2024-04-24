@@ -211,12 +211,13 @@ namespace Oblak.Controllers
         }
 
 
-        public async Task<IActionResult> ReadAdmin()
+        public async Task<IActionResult> ReadAdmin(string text)
         {
             await _registerClient.Initialize(_legalEntity);
             var properties = await _registerClient.GetProperties();
 
             List<PropertyEnrichedDto> data = properties
+                .Where(a => a.Name.ToLower().Contains(text) || a.LegalEntity.Name.ToLower().Contains(text))
                 .Select(a => {
                     var mapped = _mapper.Map<Property, PropertyEnrichedDto>(a);
                     mapped.PropertyName = a.Name;

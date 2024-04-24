@@ -9,9 +9,9 @@ namespace Oblak.Data
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-        
+
         public int ExternalId { get; set; }
-        
+
         public int LegalEntityId { get; set; }
 
         [JsonIgnore]
@@ -19,7 +19,7 @@ namespace Oblak.Data
 
         [StringLength(450)]
         public string? RegNumber { get; set; }
-        
+
         public DateTime? RegDate { get; set; }
 
         [StringLength(450)]
@@ -42,21 +42,21 @@ namespace Oblak.Data
 
         [StringLength(450)]
         public int? MunicipalityId { get; set; }
-        
+
         public decimal? GeoLon { get; set; }
-        
+
         public decimal? GeoLat { get; set; }
-        
+
         public decimal? Price { get; set; }
 
         [StringLength(450)]
         public string? PaymentType { get; set; }
-        
+
         public decimal? ResidenceTax { get; set; }
-        
+
         // samo za MNE klijenta
         public bool? ResidenceTaxYN { get; set; }
-        
+
         public int? Capacity { get; set; }
 
         [StringLength(450)]
@@ -74,26 +74,30 @@ namespace Oblak.Data
         public string? DefaultEntryPoint { get; set; }
 
         public bool AutoCheckOut { get; set; }
-        
+
         public TimeSpan? AutoCheckOutTime { get; set; }
 
         [StringLength(450)]
         public string? UserCreated { get; set; }
-        
+
         public DateTime? UserCreatedDate { get; set; }
-        
+
         [StringLength(450)]
         public string? UserModified { get; set; }
-        
+
         public DateTime? UserModifiedDate { get; set; }
 
-        public string PaytenUserId { get; set; }
+        [StringLength(450)]
+        public string? PaytenUserId { get; set; }
 
         [JsonIgnore]
         public List<Group> Groups { get; set; }
+        
         [JsonIgnore]
         public List<Person> Persons { get; set; }
+        
         public List<SelfRegisterToken> GuestTokens { get; set; }
+
         public List<ResTaxCalc> ResTaxes { get; set; }
 
         public Municipality Municipality { get; set; }

@@ -32,6 +32,8 @@ using Oblak.Services.Payten;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddHttpContextAccessor();
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
 
@@ -131,6 +133,8 @@ builder.Services.Configure<IdentityOptions>(options =>
 
 */
 
+
+
 // Add framework services.
 builder.Services
     .AddControllersWithViews()
@@ -144,7 +148,6 @@ builder.Services.AddLocalization();
 builder.Services.AddKendo();
 builder.Services.AddSignalR();
 //builder.Services.AddScoped<IHubContext>();
-builder.Services.AddHttpContextAccessor();
 builder.Services.AddSwaggerGen();
 builder.Services.AddEndpointsApiExplorer();
 

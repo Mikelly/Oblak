@@ -15,9 +15,12 @@ namespace Oblak.Data
         public LegalEntity LegalEntity { get; set; }
         public int? PropertyId { get; set; }
         public Property Property { get; set; }
+        [StringLength(450)]
         public string PaymentSessionToken { get; set; }
+        [StringLength(450)]
         public string TransactionType { get; set; }
         public decimal Amount { get; set; } = decimal.Zero;
+        [StringLength(450)]
         public string? Status { get; set; }
         public bool? Success { get; set; }
         public DateTime StartedAt { get; set; }

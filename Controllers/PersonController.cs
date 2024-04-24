@@ -441,7 +441,7 @@ namespace Oblak.Controllers
         {
             try
             {
-                if (User.IsInRole("TouristOrgOperator"))
+                if (User.IsInRole("TouristOrgOperator") || User.IsInRole("TouristOrgAdmin") || User.IsInRole("TouristController"))
                 {
                     var g = _db.MnePersons.FirstOrDefault(a => a.Id == guestDto.Id);
                     if (g != null && (g.ExternalId ?? 0) != 0)
@@ -452,16 +452,33 @@ namespace Oblak.Controllers
 
                 var newGuest = _mapper.Map<MnePersonDto, MnePerson>(guestDto);
                 var property = _db.Properties.Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == guestDto.PropertyId);
-                //newGuest.LegalEntityId = property.LegalEntityId;
+				//newGuest.LegalEntityId = property.LegalEntityId;
 
-                var validation = _registerClient.Validate(newGuest, newGuest.CheckIn, newGuest.CheckOut);
+				if (User.IsInRole("TouristOrgOperator") || User.IsInRole("TouristOrgAdmin") || User.IsInRole("TouristController"))
+				{
+
+                }
+
+				var validation = _registerClient.Validate(newGuest, newGuest.CheckIn, newGuest.CheckOut);
 
                 if (validation.ValidationErrors.Any())
                 {
                     return Json(new BasicDto() { info = "", error = "", errors = validation.ValidationErrors });
                 }
 
-                await _registerClient.Initialize(property.LegalEntity);
+                if (User.IsInRole("TouristOrgOperator") || User.IsInRole("TouristOrgAdmin") || User.IsInRole("TouristController"))
+                {
+					var pass = property.LegalEntity.PassThroughId;
+					if (pass.HasValue)
+					{
+                        var passLegalEntity = _db.LegalEntities.FirstOrDefault(a => a.Id == pass.Value);
+						await _registerClient.Initialize(passLegalEntity);
+					}
+				}
+                else
+                {
+                    await _registerClient.Initialize(property.LegalEntity);
+                }
 
                 await _registerClient.Person(guestDto);
 

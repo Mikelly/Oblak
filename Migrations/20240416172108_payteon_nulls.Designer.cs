@@ -12,8 +12,8 @@ using Oblak.Data;
 namespace Oblak.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240406175925_added_pos_transactions_table_and_payten_columns")]
-    partial class added_pos_transactions_table_and_payten_columns
+    [Migration("20240416172108_payteon_nulls")]
+    partial class payteon_nulls
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -982,8 +982,8 @@ namespace Oblak.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("PaytenUserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<byte[]>("Rb90CertData")
                         .HasColumnType("varbinary(max)");
@@ -1116,8 +1116,8 @@ namespace Oblak.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Reference")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<string>("ResidenceTaxAccount")
                         .HasMaxLength(450)
@@ -1257,6 +1257,7 @@ namespace Oblak.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("CompletedAt")
@@ -1270,7 +1271,8 @@ namespace Oblak.Migrations
 
                     b.Property<string>("PaymentSessionToken")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int?>("PropertyId")
                         .HasColumnType("int");
@@ -1279,14 +1281,16 @@ namespace Oblak.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<bool?>("Success")
                         .HasColumnType("bit");
 
                     b.Property<string>("TransactionType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("UserCreated")
                         .IsRequired()
@@ -1379,8 +1383,8 @@ namespace Oblak.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("PaytenUserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Place")
                         .HasMaxLength(450)

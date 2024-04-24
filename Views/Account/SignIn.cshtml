@@ -1,6 +1,8 @@
 ﻿@{
 	Layout = null;
+	var baseurl = (string)ViewBag.BaseUrl ?? "";
 }
+
 
 <html class="no-js" lang="">
 <head>
@@ -35,7 +37,12 @@
 					<div class="fxt-header">
 						<div class="fxt-top-content">
 							<div class="fxt-transformY-50 fxt-transition-delay-1">
-								<a href="login-25.html" class="fxt-logo"><img src="img/logo-25.png" alt="Logo"></a>
+								<a href="login-25.html" class="fxt-logo">
+									@if (baseurl.Contains("tobar"))
+									{
+										<img src="~/content/images/tobar.jpg" alt="Logo">
+									}
+								</a>
 							</div>
 							<div class="fxt-transformY-50 fxt-transition-delay-2">
 								<h1>Dobrodošli u OBLAK</h1>

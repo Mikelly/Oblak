@@ -94,6 +94,8 @@ namespace Oblak.Controllers
         {
             var model = new SignInViewModel();
 
+            ViewBag.BaseUrl = HttpContext.Request.BaseUrl();
+
             ViewData["ReturnUrl"] = returnUrl;
             ViewBag.Error = "";
 
@@ -121,7 +123,7 @@ namespace Oblak.Controllers
                         return RedirectToRoute("CompanyResendVerification", new { id = user.Id });
                     }
 
-                    var checkPassword = await _signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: true);
+                    var checkPassword = await _signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: false);
 
                     if (checkPassword.Succeeded)
                     {

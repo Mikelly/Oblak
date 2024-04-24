@@ -115,10 +115,10 @@ namespace Oblak.Models.Api
             var enriched = new MnePersonEnrichedDto()
             {
                 Id = mnePerson.Id,
-                LegalEntityId = mnePerson.Property.LegalEntity.Id,
+                LegalEntityId = mnePerson.LegalEntity.Id,
                 ExternalId = mnePerson.ExternalId,
                 Guid = mnePerson.Guid,
-                LegalEntityName = mnePerson.Property.LegalEntity.Name,
+                LegalEntityName = mnePerson.LegalEntity.Name,
                 PropertyName = mnePerson.Property.Name,
                 PropertyExternalId = mnePerson.Property.ExternalId,
                 PropertyId = mnePerson.PropertyId,

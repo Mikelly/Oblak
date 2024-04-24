@@ -74,12 +74,25 @@ namespace Oblak.Controllers
             if (isAdministered) newLegalEntity.AdministratorId = legalEntity.Id;
             if (isPassThrough) newLegalEntity.PassThroughId = legalEntity.Id;
 
+            var prop = (Property)null;
+
             if (string.IsNullOrEmpty(propertyName) == false)
             {
+				prop = new Property();				
+
                 if (string.IsNullOrEmpty(propertyAddress)) errors += "Morate unijeti adresu objekta!" + Environment.NewLine;
-                if(isPassThrough == false) if (string.IsNullOrEmpty(propertyExternalId)) errors += "Morate unijeti eksternu šifru objekta!" + Environment.NewLine;
+                if (isPassThrough == false) 
+                { 
+                    if (string.IsNullOrEmpty(propertyExternalId)) errors += "Morate unijeti eksternu šifru objekta!" + Environment.NewLine;
+					prop.ExternalId = int.Parse(propertyExternalId);
+				}
                 //if (string.IsNullOrEmpty(propertyType)) errors += "Morate unijeti vrstu objekta!" + Environment.NewLine;
-            }
+
+				prop.PropertyName = propertyName;
+                prop.Name = propertyName;
+				prop.Address = propertyAddress;				
+				prop.Type = propertyType;
+			}
 
             if (errors != string.Empty) return Json(new BasicDto() { error = errors, info = "" });
 
@@ -87,6 +100,13 @@ namespace Oblak.Controllers
             {
                 _db.LegalEntities.Add(newLegalEntity);
                 _db.SaveChanges();
+
+                if (prop != null)
+                {
+					prop.LegalEntityId = newLegalEntity.Id;
+					_db.Properties.Add(prop);
+                    _db.SaveChanges(true);
+                }
             }
             catch (Exception ex)
             {

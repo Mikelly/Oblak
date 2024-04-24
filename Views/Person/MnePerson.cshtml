@@ -299,7 +299,7 @@
             <fieldset class="fieldset">
                 <div class="one">
                     <label for="CheckIn">Datum prijave<span style="color: red;">*</span></label>
-                    @(Html.Kendo().DatePicker().Value(dto.CheckIn)
+                    @(Html.Kendo().DatePicker().Value(dto.CheckIn.Date)
                         .Name("CheckIn")
                         .Format("dd.MM.yyyy")
                         .Max(DateTime.Now.Date)

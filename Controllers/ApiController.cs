@@ -1079,9 +1079,9 @@ namespace Oblak.Controllers
             }
 
             // set user id from property or legalentity
-            var userId = document.Property?.PaytenUserId ?? document.LegalEntity.PaytenUserId;
+            var userId = !string.IsNullOrEmpty(document.Property.PaytenUserId) ? document.Property.PaytenUserId : document.LegalEntity.PaytenUserId;
 
-            if (userId == null)
+            if (string.IsNullOrEmpty(userId))
             {
                 Response.StatusCode = 400;
                 return Json(new { info = "", error = "Nije pronađen ID korisnika!" });

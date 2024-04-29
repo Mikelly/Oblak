@@ -3,6 +3,7 @@ using Kendo.Mvc.Extensions;
 using Kendo.Mvc.UI;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using NuGet.DependencyResolver;
 using Oblak.Data;
 using Oblak.Data.Enums;
 using Oblak.Models;
@@ -228,6 +229,7 @@ namespace Oblak.Controllers
                     {
                         if (mrz != null)
                         {
+                            var country = codeLists.Where(a => a.Type == "drzava" && a.ExternalId == mrz.DocIssuer).FirstOrDefault();
                             dto.PersonType = mrz.DocIssuer == "MNE" ? "1" : "4";
                             dto.LastName = mrz.HolderNamePrimary;
                             dto.FirstName = mrz.HolderNameSecondary;
@@ -244,6 +246,15 @@ namespace Oblak.Controllers
                             dto.CheckOut = DateTime.Now.AddDays(1);
                             dto.BirthCountry = mrz.DocIssuer;
                             dto.PermanentResidenceCountry = mrz.DocIssuer;
+                            dto.BirthPlace = country.Name;                            
+                            dto.PermanentResidenceAddress = country.Name;
+                            dto.PermanentResidencePlace = country.Name;
+                            dto.DocumentIssuer = country.Name;
+                            var restax = ResTaxFoo(null, null, dto.BirthDate, dto.CheckIn, dto.CheckOut);
+                            dto.ResTaxTypeId = restax.ResType;
+                            dto.ResTaxPaymentTypeId = restax.PayType;
+                            dto.ResTaxAmount = restax.Tax;
+                            dto.ResTaxFee = restax.Fee;
                         }
                         else
                         {
@@ -308,9 +319,9 @@ namespace Oblak.Controllers
             return PartialView();
         }
 
-        public ActionResult ResTax(int property, int? resType, int? payType, string birthDate, string checkIn, string checkOut)
+        public ActionResult ResTax(int? resType, int? payType, string birthDate, string checkIn, string checkOut)
         {
-            var p = _db.Properties.Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == property);
+            /*var p = _db.Properties.Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == property);
             var pid = p.LegalEntity.PartnerId;
             var rt = _db.ResTaxTypes.FirstOrDefault(a => a.Id == resType);
             var pt = _db.ResTaxPaymentTypes.FirstOrDefault(a => a.Id == payType);
@@ -363,11 +374,99 @@ namespace Oblak.Controllers
                     }
                 }
             }
+            */
 
-            return Json(new { tax, fee, resType = rt?.Id, payType = pt?.Id });
+            DateTime? bd = null;
+			DateTime? ci = null;
+			DateTime? co = null;
+
+			if (birthDate != null)
+			{
+				bd = DateTime.ParseExact(birthDate, "dd.MM.yyyy", null);				
+			}
+			if (checkIn != null && checkOut != null)
+			{
+				ci = DateTime.ParseExact(checkIn, "dd.MM.yyyy", null);
+				co = DateTime.ParseExact(checkOut, "dd.MM.yyyy", null);
+			}
+
+			var result = ResTaxFoo(resType, payType, bd, ci, co);
+
+            return Json(new { tax = result.Tax, fee = result.Fee, resType = result.ResType, payType = result.PayType });
         }
 
-        public async Task<ActionResult> ReadMnePersons([DataSourceRequest] DataSourceRequest request, int groupId)
+
+        private class RestTaxResult
+        { 
+            public decimal Tax { get; set; }
+			public decimal Fee { get; set; }
+			public int ResType { get; set; }
+			public int PayType { get; set; }
+		}
+
+
+		private RestTaxResult ResTaxFoo(int? resType, int? payType, DateTime? birthDate, DateTime? checkIn, DateTime? checkOut)
+		{
+            //var p = _db.Properties.Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == property);
+            //var pid = p.LegalEntity.PartnerId;
+            var pid = _appUser.LegalEntity.PartnerId;
+			var rt = _db.ResTaxTypes.FirstOrDefault(a => a.Id == resType);
+			var pt = _db.ResTaxPaymentTypes.FirstOrDefault(a => a.Id == payType);
+
+			DateTime? bd = birthDate;
+			DateTime? ci = checkIn;
+			DateTime? co = checkOut;
+
+			if (birthDate != null)
+			{	
+				{
+					var zero = new DateTime(1, 1, 1);
+					var span = (DateTime.Now.Date - bd.Value.Date);
+					var age = (zero + span).Year - 1;
+
+					rt = _db.ResTaxTypes.Where(a => a.PartnerId == pid).FirstOrDefault(a => a.AgeFrom <= age && age <= a.AgeTo);
+				}
+			}
+
+			int days = 0;
+			decimal tax = 0;
+			decimal fee = 0;
+
+			if (checkIn != null && checkOut != null)
+			{
+				days = (int)(co.Value.Date - ci.Value.Date).TotalDays;
+				if (days < 0) days = 0;
+			}
+
+			if (rt != null)
+			{
+				tax = rt.Amount * days;
+			}
+
+            if (pt == null)
+            {
+                pt = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == pid).Where(a => a.PaymentStatus == ResTaxPaymentStatus.Cash).FirstOrDefault();
+			}
+
+            if (pt != null)
+			{
+				var resTaxFees = _db.ResTaxFees.Where(a => a.ResTaxPaymentTypeId == pt.Id).ToList();
+				if (resTaxFees.Any())
+				{
+					var resTaxFee = resTaxFees.Where(a => a.LowerLimit <= tax && tax <= a.UpperLimit).FirstOrDefault();
+					if (resTaxFee != null)
+					{
+						if (resTaxFee.FeeAmount.HasValue) fee = resTaxFee.FeeAmount.Value;
+						if (resTaxFee.FeePercentage.HasValue) fee = resTaxFee.FeePercentage.Value / 100m * tax;
+					}
+				}
+			}
+
+			return new RestTaxResult { Tax = tax, Fee = fee, ResType = rt?.Id ?? 0, PayType = pt?.Id ?? 0 };
+		}
+
+
+		public async Task<ActionResult> ReadMnePersons([DataSourceRequest] DataSourceRequest request, int groupId)
         {
             var codeLists = await _db.CodeLists
                 .Where(a => a.Country == _appUser.LegalEntity.Country.ToString())
@@ -385,7 +484,13 @@ namespace Oblak.Controllers
             var query = _db.MnePersons.Include(a => a.Property)
                 .Where(a => a.LegalEntityId == _legalEntityId);
 
-            if (groupId != 0)
+			var to = false;
+			if (User.IsInRole("TouristOrgOperator"))
+			{
+				to = true;
+			}
+
+			if (groupId != 0)
             {
                 query = query.Where(a => a.GroupId == groupId);
             }
@@ -393,6 +498,13 @@ namespace Oblak.Controllers
             {
                 query = query.Where(a => a.GroupId == null);
             }
+
+            if (to)
+            {
+                var user = User.Identity.Name;
+                query = query.Where(a => a.UserCreated == user);
+            }
+
 
             var data = query
                 .OrderByDescending(x => x.Id)
@@ -429,7 +541,6 @@ namespace Oblak.Controllers
                     VisaValidTo = a.VisaValidTo,
                     Registered = a.ExternalId != null,
                     Deleted = a.IsDeleted
-
                 });
 
             return Json(await data.ToDataSourceResultAsync(request));

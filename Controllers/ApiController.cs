@@ -1078,6 +1078,12 @@ namespace Oblak.Controllers
                 return Json(new { info = "", error = "Nepostojeći račun!" });
             }
 
+            if (document.Amount == 0m)
+            {
+                Response.StatusCode = 500;
+                return Json(new { info = "", error = "Iznos ne smije biti 0!" });
+            }
+
             // set user id from property or legalentity
             var userId = !string.IsNullOrEmpty(document.Property.PaytenUserId) ? document.Property.PaytenUserId : document.LegalEntity.PaytenUserId;
 

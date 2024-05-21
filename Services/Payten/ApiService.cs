@@ -25,17 +25,41 @@ namespace Oblak.Services.Payten
 
             var response = await _client.ExecutePostAsync(restRequest);
 
-            if (response.IsSuccessStatusCode)
+            if (response.Content == null) 
             {
-                var authReponse = JsonSerializer.Deserialize<AuthorizeResponse>(response.Content);
-                if (_authTokens.ContainsKey(request.ApplicationLoginID)) _authTokens[request.ApplicationLoginID] = authReponse.Token;
-                else _authTokens.Add(request.ApplicationLoginID, authReponse.Token);
-                return new Tuple<AuthorizeResponse, Error>(authReponse, null);
+                Console.WriteLine($"Request: ApplicationLoginID = {request.ApplicationLoginID}, Password = {request.Password}");
+                Console.WriteLine("Response Content is null.");
+                Console.WriteLine($"Full Response: {response}");
             }
-            else
+
+            try
             {
-                var authError = JsonSerializer.Deserialize<Error>(response.Content);
-                return new Tuple<AuthorizeResponse, Error>(null, authError);
+                if (response.IsSuccessStatusCode)
+                {
+                    var authReponse = JsonSerializer.Deserialize<AuthorizeResponse>(response.Content);
+                    if (_authTokens.ContainsKey(request.ApplicationLoginID)) _authTokens[request.ApplicationLoginID] = authReponse.Token;
+                    else _authTokens.Add(request.ApplicationLoginID, authReponse.Token);
+                    return new Tuple<AuthorizeResponse, Error>(authReponse, null);
+                }
+                else
+                {
+                    var authError = JsonSerializer.Deserialize<Error>(response.Content);
+                    return new Tuple<AuthorizeResponse, Error>(null, authError);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception caught in Authorize method: {ex.Message}");
+                Console.WriteLine($"Request: ApplicationLoginID = {request.ApplicationLoginID}, Password = {request.Password}");
+                if (response.Content != null)
+                {
+                    Console.WriteLine($"Response Content: {response.Content}");
+                }
+                else
+                {
+                    Console.WriteLine($"Full Response: {response}");
+                }
+                return new Tuple<AuthorizeResponse, Error>(null, new Error { description = ex.Message });
             }
         }
 

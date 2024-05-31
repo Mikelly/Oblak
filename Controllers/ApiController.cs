@@ -21,6 +21,11 @@ using RB90;
 using Oblak.Filters;
 using Oblak.Services.FCM;
 using Oblak.Services.Payten;
+using System.Text;
+using System.Globalization;
+using RestSharp;
+using Oblak.Services.Payment;
+using DocumentFormat.OpenXml.VariantTypes;
 
 namespace Oblak.Controllers
 {
@@ -46,6 +51,7 @@ namespace Oblak.Controllers
         private readonly FcmService _fcmService;
         private readonly ApiService _paytenService;
         private readonly IConfiguration _configuration;
+        private readonly PaymentService _paymentService;
 
         public ApiController(   
             IServiceProvider serviceProvider,
@@ -64,7 +70,8 @@ namespace Oblak.Controllers
             FcmService fcmService,
             IMapper mapper,
             ApiService paytenService, 
-            IConfiguration configuration
+            IConfiguration configuration,
+            PaymentService paymentService
             )
         {             
             _signInManager = signInManager;
@@ -80,6 +87,7 @@ namespace Oblak.Controllers
             _fcmService = fcmService;
             _paytenService = paytenService;
             _configuration = configuration;
+            _paymentService = paymentService;
 
             var username = httpContextAccessor.HttpContext?.User?.Identity?.Name;
             if (username != null)
@@ -391,7 +399,6 @@ namespace Oblak.Controllers
             var legalEntity = group.LegalEntity;
 
             try
-
             {
                 await _registerClient.Initialize(legalEntity);
                 var result = await _registerClient.RegisterGroup(group, checkInDate, checkOutDate);
@@ -1194,6 +1201,60 @@ namespace Oblak.Controllers
             await db.SaveChangesAsync();
 
             return Json(new { info = "Rezultat transakcije je uspješno sačuvan!", error = "" });
+        }
+
+        [HttpPost]
+        [Route("initiatePayment")]
+        public async Task<ActionResult<InitiatePaymentOutput>> InitiatePayment(InitiatePaymentInput input)
+        {
+            var group = db.Groups.Include(x => x.LegalEntity)
+                .Include(x => x.Property)
+                .Where(x => x.Id == input.GroupId && x.LegalEntityId == _legalEntity.Id)
+                .FirstOrDefault();
+
+            if (group == null)
+            {
+                Response.StatusCode = 400;
+                return Json(new { info = "", error = "Nije pronađen ID grupe!" });
+            }
+
+            //if (group.ResTaxAmount.HasValue)
+            //{
+            //    Response.StatusCode = 500;
+            //    return Json(new { info = "", error = "Iznos ne smije biti 0!" });
+            //}
+
+            var transactionId = Guid.NewGuid().ToString();
+
+            var paymentResponse = await _paymentService.InitiatePaymentAsync(new PaymentServiceRequest
+            {
+                MerchantTransactionId = transactionId,
+                Amount = 10.00m,
+                SurchargeAmount = 0.50m,
+                TransactionToken = input.Token,
+            });
+
+            if (paymentResponse.Success)
+            {
+                return Json(new InitiatePaymentOutput
+                {
+                    RedirectUrl = paymentResponse.RedirectUrl,
+                    RedirectType = paymentResponse.RedirectType
+                });
+            }
+            else
+            {
+                var errors = paymentResponse.Errors?.Select(x => x.AdapterMessage ?? x.ErrorMessage);
+                return Json(new { info = "", error = errors });
+            }
+        }
+
+        [HttpPost]
+        [Route("storePaymentResult")]
+        public async Task<ActionResult<bool>> StorePaymentResult(StorePaymentResultInput input)
+        {
+            _logger.LogError("Payment callback triggered.");
+            return true;
         }
     }
 }

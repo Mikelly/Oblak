@@ -29,6 +29,7 @@ using Microsoft.AspNetCore.Localization;
 using System.Globalization;
 using Oblak.Services.Reporting;
 using Oblak.Services.Payten;
+using Oblak.Services.Payment;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -188,6 +189,7 @@ builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<ReportingService>();
 builder.Services.AddScoped<EfiClient>();
 builder.Services.AddScoped<ApiService>();
+builder.Services.AddScoped<PaymentService>();
 
 builder.Services.AddTransient<SrbScheduler>();
 builder.Services.AddTransient<FcmService>();

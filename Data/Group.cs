@@ -1,5 +1,4 @@
-﻿using Oblak.Data.Enums;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Oblak.Data
@@ -35,7 +34,6 @@ namespace Oblak.Data
         [StringLength(450)]
         public string? Phone { get; set; }
         
-        
         [StringLength(450)]
         public string? Description { get; set; }
         
@@ -66,10 +64,6 @@ namespace Oblak.Data
         public string? UserModified { get; set; }
 
         public DateTime? UserModifiedDate { get; set; }
-
-
-        
-        
         
         #region Navigation Properties
 

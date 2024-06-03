@@ -8,7 +8,16 @@ namespace Oblak.Mappers
     {
         public PropertyDtoMapper() {
             CreateMap<Property, PropertyDto>()
-                .ReverseMap();
+                .ReverseMap()
+                .ForMember(a => a.PropertyName, opt => opt.Ignore())
+                .ForMember(a => a.PaymentType, opt => opt.Ignore())
+                .ForMember(a => a.LegalEntity, opt => opt.Ignore())
+                .ForMember(a => a.Groups, opt => opt.Ignore())
+                .ForMember(a => a.Persons, opt => opt.Ignore())
+                .ForMember(a => a.GuestTokens, opt => opt.Ignore())
+                .ForMember(a => a.ResTaxes, opt => opt.Ignore())
+                .ForMember(a => a.Municipality, opt => opt.Ignore())
+                ;
         }
     }
 
@@ -16,11 +25,17 @@ namespace Oblak.Mappers
     {
         public PropertyEnrichedDtoMapper()
         {
-            CreateMap<PropertyEnrichedDto, Property>()
+            CreateMap<Property, PropertyEnrichedDto>()
                 .ReverseMap()
                 .ForMember(a => a.PropertyName, opt => opt.Ignore())
                 .ForMember(a => a.PaymentType, opt => opt.Ignore())
-                .ForMember(a => a.LegalEntity, opt => opt.Ignore());
+                .ForMember(a => a.LegalEntity, opt => opt.Ignore())
+                .ForMember(a => a.Groups, opt => opt.Ignore())
+                .ForMember(a => a.Persons, opt => opt.Ignore())
+                .ForMember(a => a.GuestTokens, opt => opt.Ignore())
+                .ForMember(a => a.ResTaxes, opt => opt.Ignore())
+                .ForMember(a => a.Municipality, opt => opt.Ignore())
+                ;
         }
     }
 }

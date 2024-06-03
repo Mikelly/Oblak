@@ -70,9 +70,15 @@ namespace Oblak.Controllers
 
             var municipalistySelectList = new SelectList(municipalityList, "ExternalId", "Name");
             var typeSelectList = new SelectList(typeList, "ExternalId", "Name");
+            var statusSelectList = new SelectList(new List<SelectListItem>
+            {
+                new SelectListItem { Value = "A", Text = "Aktivan" },
+                new SelectListItem { Value = "N", Text = "Neaktivan" }
+            }, "Value", "Text");
 
             ViewBag.MunicipalityCodeList = municipalistySelectList;
             ViewBag.TypeCodeList = typeSelectList;
+            ViewBag.StatusList = statusSelectList;
 
             ViewBag.LegalEntity = legalEntity;
 

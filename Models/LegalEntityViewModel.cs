@@ -15,6 +15,12 @@ namespace Oblak.Models
         [Display(Name = "Naziv")]
         public string Name { get; set; }
 
+        [Display(Name = "Ime")]
+        public string FirstName { get; set; }
+
+        [Display(Name = "Prezime")]
+        public string LastName { get; set; }
+
         [Display(Name = "Poreski broj")]
         public string TIN { get; set; }
 

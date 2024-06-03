@@ -565,12 +565,14 @@
 
             columns.Bound(g => g.Id).Title("Id").Width("80px");
             columns.Bound(g => g.Name).Title("Naziv").Width("40%");
+            columns.Bound(g => g.FirstName).Title("Ime").Width("15%");
+            columns.Bound(g => g.LastName).Title("Prezime").Width("25%");
             columns.ForeignKey(g => g.Type, legalEntityTypes).Title("Vrsta").Width("150px");
             if (property_admin) columns.ForeignKey(g => g.AdministratorId, admins).Title("Administrator").Width("250px");
             columns.Bound(g => g.TIN).Title("Poreski broj").Width("150px").HtmlAttributes(new { style = "text-align:center;" });
             columns.Bound(g => g.Address).Title("Adresa").Width("40%");
             columns.Bound(g => g.Country).Title("Država").Width("150px");
-            columns.Bound(g => g.InVat).Title("U PDV-u").Width("100px").ClientTemplate("#= InVat ? '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' #");
+            columns.Bound(g => g.InVat).Title("U PDV-u").Width("100px").ClientTemplate("#= InVat ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
         })
         .Pageable(p => p.Refresh(true))
         .Editable(e => e.Mode(GridEditMode.InLine))

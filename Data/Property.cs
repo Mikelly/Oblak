@@ -14,9 +14,6 @@ namespace Oblak.Data
 
         public int LegalEntityId { get; set; }
 
-        [JsonIgnore]
-        public LegalEntity LegalEntity { get; set; }
-
         [StringLength(450)]
         public string? RegNumber { get; set; }
 
@@ -89,6 +86,10 @@ namespace Oblak.Data
 
         [StringLength(450)]
         public string? PaytenUserId { get; set; }
+
+
+        [JsonIgnore]
+        public LegalEntity LegalEntity { get; set; }
 
         [JsonIgnore]
         public List<Group> Groups { get; set; }

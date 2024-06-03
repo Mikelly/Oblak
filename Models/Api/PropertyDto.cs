@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Oblak.Data;
+using System.ComponentModel.DataAnnotations;
 
 namespace Oblak.Models.Api
 {
@@ -12,7 +13,7 @@ namespace Oblak.Models.Api
         public string Name { get; set; }
         public string? Type { get; set; }
         public string? Address { get; set; }
-        public string? Municipality { get; set; }
+        public Municipality? Municipality { get; set; }
         public decimal? Price { get; set; }
         public string? BusinessUnitCode { get; set; }
         public string? FiscalEnuCode { get; set; }

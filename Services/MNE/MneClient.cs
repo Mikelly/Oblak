@@ -313,7 +313,7 @@ namespace Oblak.Services.MNE
             r += item.drzavaPrebivalista.kod + ",";
             if (item.gradPrebivalista != null) r += item.gradPrebivalista + ",";
             if (item.adresaiBrojPrebivalista != null) r += item.adresaiBrojPrebivalista + ",";
-            r += item.davaocSmjestaja.id.ToString() + ",";            
+            if (item.davaocSmjestaja != null) r += item.davaocSmjestaja.id.ToString() + ",";
             r += user.id.ToString() + ",";
             r += item.obrisan.ToString() + ",";
 
@@ -361,19 +361,24 @@ namespace Oblak.Services.MNE
             if (p.VisaValidTo.HasValue) s.rokVazenjaVizeDo = p.VisaValidTo.Value;
             if (p.EntryPointDate.HasValue) s.datumUlaskaUCG = p.EntryPointDate.Value;
             if (pr != null) { s.mjestoUlaskaUCG = new granicniPrelaz(); s.mjestoUlaskaUCG.id = int.Parse(pr.ExternalId); s.mjestoUlaskaUCG.naziv = pr.Name; } else s.mjestoUlaskaUCG = null;
-            s.opstinaBoravka = null;
-            s.mjestoBoravka = null;
-            s.adresaBoravkaiKucniBroj = null;
-            s.prezimeKorisnikaObjekta = null;
-            s.imeKorisnikaObjekta = null;
-            s.jmbgKorisnikaObjekta = null;
+            if (p.LegalEntity.PassThroughId.HasValue)
+            {
+                s.opstinaBoravka = new opstina(); s.opstinaBoravka.kod = "20010"; s.opstinaBoravka.naziv = "BAR";
+                s.mjestoBoravka = new mjesto(); s.mjestoBoravka.kod = "200026"; s.mjestoBoravka.naziv = "BAR";
+                s.adresaBoravkaiKucniBroj = p.Property.Address;
+                s.prezimeKorisnikaObjekta = p.LegalEntity.LastName ?? "-";
+                s.imeKorisnikaObjekta = p.LegalEntity.FirstName ?? "-";
+                s.jmbgKorisnikaObjekta = p.LegalEntity.TIN;
+            }
+            else
+            {
+                s.davaocSmjestaja = new smjestajniObjekat(); s.davaocSmjestaja.id = so.ExternalId; s.davaocSmjestaja.naziv = so.Name ?? so.Name;
+            }
             s.datumPrijave = p.CheckIn;
             if (p.CheckOut.HasValue) s.datumOdjave = p.CheckOut.Value;
             s.drzavaPrebivalista = new drzava(); s.drzavaPrebivalista.kod = dp.ExternalId; s.drzavaPrebivalista.naziv = dp.Name;;
             s.gradPrebivalista = p.PermanentResidencePlace;
             s.adresaiBrojPrebivalista = p.PermanentResidenceAddress;
-
-            s.davaocSmjestaja = new smjestajniObjekat(); s.davaocSmjestaja.id = so.ExternalId; s.davaocSmjestaja.naziv = so.Name ?? so.Name;
             s.azurirao = user;
             s.obrisan = p.IsDeleted;
 

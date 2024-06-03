@@ -12,7 +12,7 @@ namespace Oblak.Models.Api
         public string Name { get; set; }
         public string? Type { get; set; }
         public string? Address { get; set; }
-        public Municipality? Municipality { get; set; }
+        public int? MunicipalityId { get; set; }
         public decimal? Price { get; set; }
         public string? BusinessUnitCode { get; set; }
         public string? FiscalEnuCode { get; set; }
@@ -28,14 +28,13 @@ namespace Oblak.Models.Api
 
         public Property ToEntity(Property property)
         {
-            object m;
-            Enum.TryParse(typeof(Municipality), this.Municipality, out m);
+            object m;            
             property.ExternalId = this.ExternalId ?? 0;
             property.LegalEntityId = this.LegalEntityId;
             property.Name = this.Name;
             property.Type = this.Type;
             property.Address = this.Address;
-            property.Municipality = m == null ? null : (Municipality)m;
+            property.MunicipalityId = this.MunicipalityId;
             property.Price = this.Price;
             property.BusinessUnitCode = this.BusinessUnitCode;
             property.FiscalEnuCode = this.FiscalEnuCode;

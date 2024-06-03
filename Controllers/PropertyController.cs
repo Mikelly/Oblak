@@ -59,7 +59,7 @@ namespace Oblak.Controllers
             var typeList = new List<CodeList>();
             if (_appUser.LegalEntity.Country == Country.MNE)
             {
-                municipalityList = codeLists.Where(x => x.Type == "opstina").ToList();
+                municipalityList = _db.Municipalities.Where(a => a.Country == _appUser.LegalEntity.Country).Select(a => new CodeList { ExternalId = a.Id.ToString(), Name = a.Name }).ToList();
                 typeList = codeLists.Where(x => x.Type == "vrstaobjekta").ToList();
             }
             else if (_appUser.LegalEntity.Country == Country.SRB)

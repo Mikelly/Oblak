@@ -240,6 +240,7 @@ namespace Oblak.Data
 		public DbSet<UserDevice> UserDevices { get; set; }
         public DbSet<Report> Reports { get; set; }
         public DbSet<PosTransaction> PosTransactions { get; set; }
+        public DbSet<Municipality> Municipalities { get; set; }
 
         public string GuestList(int id) => throw new NotImplementedException();
         public string GroupDesc(int id) => throw new NotImplementedException();

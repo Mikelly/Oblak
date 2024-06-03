@@ -18,6 +18,12 @@
 		<Content Remove="Views\Group\sendLink.cshtml" />
 	</ItemGroup>
 	<ItemGroup>
+	  <_WebToolingArtifacts Remove="Properties\launchSettings.json" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Content Include="Properties\launchSettings.json" />
+	</ItemGroup>
+	<ItemGroup>
 		<PackageReference Include="Azure.Identity" Version="1.10.4" />
 		<PackageReference Include="AutoMapper" Version="13.0.1" />
 		<PackageReference Include="Coravel" Version="5.0.2" />

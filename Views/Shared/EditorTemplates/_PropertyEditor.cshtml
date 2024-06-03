@@ -1,6 +1,6 @@
 ﻿@using Oblak.Models.Api
 @model PropertyDto
-@(Html.Kendo().DropDownListFor(m => m.Municipality)
+@(Html.Kendo().DropDownListFor(m => m.MunicipalityId)
     .DataTextField("Name")
     .DataValueField("ExternalId")
     .DataSource(source =>

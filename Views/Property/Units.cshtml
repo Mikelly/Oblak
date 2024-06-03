@@ -12,7 +12,7 @@
                 columns.Bound(p => p.Address).Width(150);
                 columns.Bound(p => p.AutoCheckOut).Width(150);
                 columns.Bound(p => p.AutoCheckOutTime).Format("{0:HH:mm}").Width(140);
-                columns.Bound(p => p.Municipality).Width(140);
+                columns.Bound(p => p.MunicipalityId).Width(140);
                 columns.Bound(p => p.DefaultEntryPoint).Width(140);
             })
         .Pageable(p => p.Refresh(true))
@@ -34,7 +34,7 @@
                 m.Field(a => a.Address);
                 m.Field(a => a.AutoCheckOut);
                 m.Field(a => a.AutoCheckOutTime);
-                m.Field(a => a.Municipality);
+                m.Field(a => a.MunicipalityId);
                 m.Field(a => a.DefaultEntryPoint);
             })
         )

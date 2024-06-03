@@ -140,13 +140,13 @@ namespace Oblak.Controllers
                 }
                 else
                 {                    
-                    return Ok(new LoginDto() { info = "", error = "Neispravan username i/ili lozinka.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), paym = user.LegalEntity.Partner.ResidenceTaxPaymentRequired , roles = roles });
+                    return Ok(new LoginDto() { info = "", error = "Neispravan username i/ili lozinka.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), paym = user.LegalEntity.Partner.ResidenceTaxPaymentRequired, roles = roles });
                 }                
 
                 if (checkPassword.IsLockedOut)
                 {
                     _logger.LogWarning(2, "User account locked out.");                    
-                    return Ok(new LoginDto() { info = "", error = "User je zaključan.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), paym = user.LegalEntity.Partner.ResidenceTaxPaymentRequired roles = roles });
+                    return Ok(new LoginDto() { info = "", error = "User je zaključan.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), paym = user.LegalEntity.Partner.ResidenceTaxPaymentRequired, roles = roles });
                 }
 
                 //return RedirectToAction("AfterLogin");

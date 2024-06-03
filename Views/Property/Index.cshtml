@@ -151,16 +151,16 @@
                 col.Bound(g => g.RegDate).Title("Rješenje ističe").Width(100);
             })); *@
 
-            columns.Bound(g => g.Id).Title("ID").Width(100).ClientTemplate("#= Id #").HtmlAttributes(new { style = "pointer-events:none;" });
+            columns.Bound(g => g.Id).Title("ID").Width(110).ClientTemplate("#= Id #").HtmlAttributes(new { style = "pointer-events:none;" });
+            columns.Bound(g => g.ExternalId).Title("Šifra").Width(110);
             columns.Bound(g => g.Name).Title("Naziv").Width(250);
+            columns.ForeignKey(g => g.MunicipalityId, sl).Title("Opština").Width(300);
             @* col.Bound(g => g.PropertyName).Title("Naziv objekta").Width(100); *@
             columns.Bound(g => g.Address).Title("Adresa").Width("100%");
             columns.ForeignKey(g => g.Type, tl).Title("Vrsta").Width(250);
-            columns.Bound(g => g.ExternalId).Title("RB90 Šifra").Width(150);
-            columns.ForeignKey(g => g.Municipality, sl).Title("Opština").Width(300);
-            columns.ForeignKey(g => g.Status, ssl).Title("Status").Width(100);
+            columns.ForeignKey(g => g.Status, ssl).Title("Status").Width(110);
 
-            if (cntr == "MNE") columns.Bound(g => g.ResidenceTax).Title("Boravišna taksa").Width(175);
+            //if (cntr == "MNE") columns.Bound(g => g.ResidenceTax).Title("Boravišna taksa").Width(175);
 
 @*             columns.Group(group => group.Title("Osnovni podaci").HeaderHtmlAttributes(new { style = "text-align: center;" })
             .Columns(col =>
@@ -214,7 +214,7 @@
                     m.Field(g => g.Name);
                     m.Field(g => g.PropertyName);
                     m.Field(g => g.Address);
-                    m.Field(g => g.Municipality);
+                    m.Field(g => g.MunicipalityId);
                     m.Field(g => g.PaymentType);
                     m.Field(g => g.Price);
                     m.Field(g => g.Capacity);

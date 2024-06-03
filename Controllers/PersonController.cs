@@ -546,6 +546,8 @@ namespace Oblak.Controllers
                 query = query.Where(a => a.UserCreatedDate >= Od && a.UserCreatedDate <= Do);
             }
 
+            var to = User.IsInRole("TouristOrgOperator");
+
             if (to)
             {
                 var user = User.Identity.Name;

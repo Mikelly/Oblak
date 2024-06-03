@@ -28,6 +28,7 @@ using System.Runtime.CompilerServices;
 using Oblak.Services.Reporting;
 using static SQLite.SQLite3;
 using System.IO;
+using Oblak.Services.Payment;
 
 namespace Oblak.Controllers
 {
@@ -74,6 +75,7 @@ namespace Oblak.Controllers
             IMapper mapper,
             ApiService paytenService, 
             ReportingService reporting,
+            PaymentService paymentService,
             IConfiguration configuration
             )
         {             

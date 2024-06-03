@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using Kendo.Mvc.Extensions;
 using Kendo.Mvc.UI;
 using Microsoft.AspNetCore.Mvc;
@@ -12,8 +13,10 @@ using Oblak.Services.MNE;
 using Oblak.Services.Reporting;
 using Oblak.Services.SRB;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
+using static SQLite.SQLite3;
 
 namespace Oblak.Controllers
 {
@@ -27,6 +30,7 @@ namespace Oblak.Controllers
         private readonly ApplicationUser _appUser;
         private readonly IWebHostEnvironment _env;
         private readonly int _legalEntityId;
+        private readonly LegalEntity _legalEntity;
 
 
         public PersonController(
@@ -50,6 +54,7 @@ namespace Oblak.Controllers
             {
                 _appUser = _db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.Properties).FirstOrDefault(a => a.UserName == username)!;
                 _legalEntityId = _appUser.LegalEntityId;
+                _legalEntity = _appUser.LegalEntity;
                 if (_appUser.LegalEntity.Country == Country.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>();
                 if (_appUser.LegalEntity.Country == Country.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>();
             }
@@ -367,7 +372,44 @@ namespace Oblak.Controllers
             return Json(new { tax, fee, resType = rt?.Id, payType = pt?.Id });
         }
 
-        public async Task<ActionResult> ReadMnePersons([DataSourceRequest] DataSourceRequest request, int groupId)
+        public static void CalcPeriod(DateTime now, string period, string start, string end, out DateTime Od, out DateTime Do)
+        {
+            if (period == "D")
+            {
+                Od = now.Date;
+                Do = now.Date.AddDays(1).AddSeconds(-1);
+            }
+            else if (period == "W")
+            {
+                Od = now.StartOfWeek(DayOfWeek.Monday);
+                Do = now.EndOfWeek(DayOfWeek.Monday);
+            }
+            else if (period == "M")
+            {
+                Od = new DateTime(now.Year, now.Month, 1, 0, 0, 0);
+                Do = Od.AddMonths(1).AddSeconds(-1);
+            }
+            else if (period == "Y")
+            {
+                Od = new DateTime(now.Year, 1, 1, 0, 0, 0);
+                Do = Od.AddMonths(12).AddSeconds(-1);
+            }
+            else if (period == "C")
+            {
+                if ((start ?? "") != "") Od = DateTime.ParseExact(start, "dd.MM.yyyy", CultureInfo.InvariantCulture);
+                else Od = now;
+
+                if ((end ?? "") != "") Do = DateTime.ParseExact(end, "dd.MM.yyyy", CultureInfo.InvariantCulture);
+                else Do = now;
+            }
+            else
+            {
+                Od = now;
+                Do = now;
+            }
+        }
+
+        public async Task<ActionResult> ReadMnePersons([DataSourceRequest] DataSourceRequest request, int groupId, string period = "D", string dtmod = null, string dtmdo = null)
         {
             var codeLists = await _db.CodeLists
                 .Where(a => a.Country == _appUser.LegalEntity.Country.ToString())
@@ -385,16 +427,28 @@ namespace Oblak.Controllers
             var query = _db.MnePersons.Include(a => a.Property)
                 .Where(a => a.LegalEntityId == _legalEntityId);
 
+            if (User.IsInRole("TouristOrgOperator"))
+            {
+                var user = User.Identity.Name;
+                query = query.Where(a => a.UserCreated == user);
+            }
+
             if (groupId != 0)
             {
                 query = query.Where(a => a.GroupId == groupId);
             }
             else
             {
-                query = query.Where(a => a.GroupId == null);
+                DateTime now = DateTime.Now;
+                DateTime Od = now;
+                DateTime Do = now;
+
+                CalcPeriod(now, period, dtmod, dtmdo, out Od, out Do);
+
+                query = query.Where(a => a.UserCreatedDate >= Od && a.UserCreatedDate <= Do);
             }
 
-            var data = query
+            var data = query                
                 .OrderByDescending(x => x.Id)
                 .Select(a => new MnePersonEnrichedDto
                 {
@@ -769,6 +823,94 @@ namespace Oblak.Controllers
             var result = _reporting.RenderReport("Virman", new List<Telerik.Reporting.Parameter>() { new Telerik.Reporting.Parameter("Id", id) }, "PDF");
 
             return File(result, "application/pdf");
+        }
+
+        [HttpGet]
+        [Route("guest-list")]
+        public async Task<ActionResult> GuestList()
+        {
+            await _registerClient.Initialize(_legalEntity);
+            var properties = await _registerClient.GetProperties();
+
+            if (properties.Count == 1)
+            {
+                ViewBag.PropertyId = properties[0].Id.ToString();
+                ViewBag.PropertyName = properties[0].Name;
+            }
+            else
+            {
+                ViewBag.PropertyId = "0";
+                ViewBag.PropertyName = "";
+            }
+
+            ViewBag.Properties = properties.Select(a => { var b = _mapper.Map<Property, PropertyDto>(a); b.LegalEntityName = a.LegalEntity.Name; return b; }).ToList();
+
+            return View();
+        }
+
+        [HttpGet]
+        [Route("guest-list-grid")]
+        public async Task<ActionResult> GuestListGrid(int objekat, string datumod, string datumdo)
+        {
+            ViewBag.Objekat = objekat;
+            ViewBag.DatumOd = datumod;
+            ViewBag.DatumDo = datumdo;
+
+            return PartialView();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> GuestListRead([DataSourceRequest] DataSourceRequest request, int objekat, string datumod, string datumdo)
+        {
+            var obj = _db.Properties.FirstOrDefault(a => a.Id == objekat);
+
+            var OD = DateTime.ParseExact(datumod, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
+            var DO = DateTime.ParseExact(datumdo, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
+
+            if (_registerClient is MneClient)
+            {
+                var sql = $"EXEC PersonListMne {objekat}, '{OD.ToString("dd-MMM-yyyy", CultureInfo.InvariantCulture)}', '{DO.ToString("dd-MMM-yyyy", CultureInfo.InvariantCulture)}'";
+
+                var guestlist = _db.Database
+                                   .SqlQuery<MneGuestListDto>(FormattableStringFactory.Create(sql))
+                                   .ToList();
+
+                return Json(await guestlist.ToDataSourceResultAsync(request));
+            }
+            else if (_registerClient is SrbClient)
+            {
+                var guestlist = _db.Database
+                   .SqlQuery<MneGuestListDto>($"EXEC SrbPersonList {objekat}, {OD.ToString("dd-MMM-yyyy")}, {DO.ToString("dd-MMM-yyyy")}")
+                   .ToList();
+
+                return Json(await guestlist.ToDataSourceResultAsync(request));
+            }
+            else return null;
+        }
+
+        [HttpGet]
+        [Route("guest-list-print")]
+        public async Task<FileResult> GuestListPrint(int objekat, string datumod, string datumdo)
+        {
+            //var OD = DateTime.ParseExact(datumod, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
+            //var DO = DateTime.ParseExact(datumdo, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
+
+            //var result = _reporting.RenderReport("GuestListMne", 
+            //    new List<Telerik.Reporting.Parameter>() { 
+            //            new Telerik.Reporting.Parameter("objekat", objekat),
+            //            new Telerik.Reporting.Parameter("od", OD),
+            //            new Telerik.Reporting.Parameter("do", DO),
+            //        }
+            //    , "PDF");
+
+            //return File(result, "application/pdf");
+
+            var stream = await _registerClient.GuestListPdf(objekat, datumod, datumdo);
+
+            stream.Seek(0, SeekOrigin.Begin);
+            var fsr = new FileStreamResult(stream, "application/pdf");
+            fsr.FileDownloadName = $"KnjigaGostiju.pdf";
+            return fsr;
         }
     }
 }

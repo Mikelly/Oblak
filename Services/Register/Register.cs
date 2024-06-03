@@ -4,6 +4,7 @@ using Oblak.Data;
 using Oblak.Interfaces;
 using Oblak.Models.Api;
 using Oblak.Services.MNE;
+using Oblak.Services.Reporting;
 using Oblak.Services.SRB;
 using Oblak.SignalR;
 using RB90;
@@ -17,6 +18,7 @@ namespace Oblak.Services
         protected HttpContext _context;
         protected ApplicationDbContext _db;        
         protected eMailService _eMailService;
+        protected ReportingService _reporting;
         protected SelfRegisterService _selfRegisterService;
         protected IWebHostEnvironment _env;
         protected IHubContext<MessageHub> _messageHub;
@@ -25,6 +27,7 @@ namespace Oblak.Services
         public Register(            
             IConfiguration configuration,            
             eMailService eMailService,
+            ReportingService reporting,
             SelfRegisterService selfRegisterService,
             IWebHostEnvironment webHostEnvironment,
             IHubContext<MessageHub> messageHub,
@@ -33,6 +36,7 @@ namespace Oblak.Services
             _configuration = configuration;
             _db = db;            
             _eMailService = eMailService;
+            _reporting = reporting;
             _selfRegisterService = selfRegisterService;
             _env = webHostEnvironment;
             _messageHub = messageHub;            
@@ -68,9 +72,13 @@ namespace Oblak.Services
 
         public abstract Task<Stream> ConfirmationPersonPdf(Person person);
 
-		//public abstract Task CertificateMail(Group group, string email);
-        
-  //      public abstract Task<Stream> CertificatePdf(Group group);
+        //public abstract Task CertificateMail(Group group, string email);
+
+        //      public abstract Task<Stream> CertificatePdf(Group group);
+
+        public abstract Task GuestListMail(int objekat, string datumOo, string datumdo, string email);
+
+        public abstract Task<Stream> GuestListPdf(int objekat, string datumOo, string datumdo);
 
         public abstract Task SendGuestToken(int propertyId, int? unitId, string email, string phoneNo, string lang);
 

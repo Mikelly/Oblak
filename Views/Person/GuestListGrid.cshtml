@@ -1,0 +1,55 @@
+﻿@using Oblak.Models.Api;
+@using Oblak.Models.EFI;
+
+@(
+Html.Kendo().Grid<MneGuestListDto>()
+    .Name("GuestListGrid")
+    .Columns(columns =>
+    {
+        columns.Group(g => g.Title("Lični podaci").Columns(c =>
+        {
+            c.Bound(a => a.FirstName).Title("Ime").Width(150);
+            c.Bound(a => a.LastName).Title("Prezime").Width(150);
+            c.Bound(a => a.PersonalNumber).Title("Lični broj").Width(150);
+            c.Bound(a => a.BirthDate).Title("Datum rođenja").Width(100).Format("{0:dd.MM.yyyy}").HtmlAttributes(new { style = "text-align:center" });
+        }));
+
+        columns.Group(g => g.Title("Podaci o boravku").Columns(c =>
+        {
+            c.Bound(a => a.CheckIn).Title("Check in").Width(85).Format("{0:dd.MM.yyyy}").HtmlAttributes(new { style = "text-align:center" });
+            c.Bound(a => a.CheckOut).Title("Check out").Width(85).Format("{0:dd.MM.yyyy}").HtmlAttributes(new { style = "text-align:center" });
+        }));
+
+        columns.Group(g => g.Title("Podaci o boravku").Columns(c =>
+        {
+            c.Bound(a => a.DocumentType).Title("Vrsta").Width(100);
+            c.Bound(a => a.DocumentNumber).Title("Broj").Width(100);
+            c.Bound(a => a.DocumentCountry).Title("Država").Width(150);
+        }));
+    })
+    .Pageable(p => p.Refresh(true))
+    .Sortable()
+    .Selectable()
+    .Scrollable()
+    .Filterable()
+    .HtmlAttributes(new { style = "height:100%;" })
+    .DataSource(ds => ds
+    .Ajax()
+    .PageSize(20)
+    .Model(m =>
+    {
+        m.Id(g => g.ID);
+        m.Field(g => g.ID);
+        m.Field(g => g.FirstName);
+        m.Field(g => g.LastName);
+        m.Field(g => g.PersonalNumber);
+        m.Field(g => g.BirthDate);
+        m.Field(g => g.DocumentCountry);
+        m.Field(g => g.DocumentNumber);
+        m.Field(g => g.DocumentType);
+        m.Field(g => g.CheckIn);
+        m.Field(g => g.CheckOut);
+    })
+    .Read(a => a.Action("GuestListRead", "Person", new { objekat = ViewBag.Objekat, datumod = ViewBag.DatumOd, datumdo = ViewBag.DatumDo }))
+    )
+)

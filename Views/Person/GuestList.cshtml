@@ -1,0 +1,87 @@
+﻿@{
+    ViewBag.Title = "Knjiga gostiju";
+    Layout = "~/Views/Shared/_LayoutINV.cshtml";
+}
+
+@using Oblak.Models.Api;
+@using Oblak.Models.EFI;
+
+<script type="text/javascript">
+
+    function guestListShow() {
+        var datumod = kendo.toString($('#DatumOd').data('kendoDatePicker').value(), 'dd.MM.yyyy');
+        var datumdo = kendo.toString($('#DatumDo').data('kendoDatePicker').value(), 'dd.MM.yyyy');
+        var objekat = $('#Objekat').val();
+        $('#guestListGrid').load(`/guest-list-grid?datumod=${datumod}&datumdo=${datumdo}&objekat=${objekat}`);
+    };
+
+    function guestListPrint() {
+        var datumod = kendo.toString($('#DatumOd').data('kendoDatePicker').value(), 'dd.MM.yyyy');
+        var datumdo = kendo.toString($('#DatumDo').data('kendoDatePicker').value(), 'dd.MM.yyyy');
+        var objekat = $('#Objekat').val();
+        window.open(`/guest-list-print?datumod=${datumod}&datumdo=${datumdo}&objekat=${objekat}`, "_blank");
+    };
+
+</script>
+
+<div style="position:absolute; top:35px; left: 15px; right:15px; display:flex; flex-wrap:wrap; justify-content:space-between; justify-items:center; align-items:end; margin-top:0px;">
+    
+    <div style="flex:0 1 400px">
+        <label for="firstname">Izaberite objekat</label>
+        @(Html.Kendo().MultiColumnComboBox()
+            .Name("Objekat")
+            .Placeholder("Izaberite objekat")
+            .DataTextField("Name")
+            .DataValueField("Id")
+            .Enable(true)
+            .Columns(columns =>
+            {
+                columns.Add().Field("Name").Title("Naziv").Width("200px");
+                columns.Add().Field("Address").Title("Adresa").Width("250px");
+                columns.Add().Field("LegalEntity").Title("Vlasnik").Width("200px");
+            })
+            .HtmlAttributes(new { id = "Objekat", style = "width:100%;", autocomplete = "off", autocorrect = "off", autocapitalize = "off", spellcheck = "false" })
+            .DropDownWidth("400px")
+            .Messages(m => m.NoData("Nema podataka").Clear("Poništi"))
+            .Filter("contains").FilterFields(new string[] { "Name" })
+            .AutoBind(false)
+            .MinLength(1)
+            .ValuePrimitive(true)
+            .Value((string)ViewBag.PropertyId)
+            .Text((string)ViewBag.PropertyName)
+            .DataSource(source => { source.Read(read => { read.Action("ReadAdmin", "Property"); }).ServerFiltering(true); })
+            )
+    </div>
+
+    <div style="flex-basis:20px; height:40px;"></div>
+
+    <div style="width:200px;">
+        Od datuma:
+        @Html.Kendo().DatePicker().Name("DatumOd").Value(new DateTime(DateTime.Now.Year, 1, 1))
+    </div>
+
+    <div style="flex-basis:20px; height:40px;"></div>
+
+    <div style="width:200px;">
+        Do datuma:
+        @Html.Kendo().DatePicker().Name("DatumDo").Value(new DateTime(DateTime.Now.Year, 12, 31))
+    </div>
+
+    <div style="flex-basis:15%; height:40px;"></div>
+
+    @(Html.Kendo().Button().Name("btnGuestList")
+        .Content("<div style='width:200px; display:inline-flex;align-items:center; justify-content:space-between;'><img style='width:38px;height:38px;text-align:center; position:relative; top:0px;' src='/Content/Icons/book.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>PRIKAŽI KNJIGU GOSTIJU</div></div>")
+        .HtmlAttributes(new { onclick = "guestListShow()", type = "button", style = "width:200px; height:50px;" })
+        )
+
+    <div style="flex-basis:20px; height:40px;"></div>
+
+    @(Html.Kendo().Button().Name("btnGuestListPrint")
+        .Content("<div style='width:200px; display:inline-flex;align-items:center; justify-content:space-between;'><img style='width:38px;height:38px;text-align:center; position:relative; top:0px;' src='/Content/Icons/print_invoice_color.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>ŠTAMPAJ KNJIGU GOSTIJU</div></div>")
+        .HtmlAttributes(new { onclick = "guestListPrint()", type = "button", style = "width:200px; height:50px;" })
+        )
+</div>
+
+<div id="guestListGrid" style="position:absolute; top:100px; bottom: 15px; left: 15px; right:15px;">
+    
+</div>

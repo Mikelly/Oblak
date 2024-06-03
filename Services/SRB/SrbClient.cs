@@ -13,6 +13,7 @@ using Oblak.Interfaces;
 using Oblak.Models.Api;
 using Oblak.Models.Srb;
 using Oblak.Services.Payten;
+using Oblak.Services.Reporting;
 using Oblak.Services.SRB.Models;
 using Oblak.SignalR;
 using RB90;
@@ -38,12 +39,13 @@ public class SrbClient : Register
         IConfiguration configuration,
         IMapper mapper,
         eMailService eMailService,
+        ReportingService reporting,
         SelfRegisterService selfRegisterService,
         IWebHostEnvironment webHostEnvironment,
         IHubContext<MessageHub> messageHub,
         ApplicationDbContext db)
         :
-        base(configuration, eMailService, selfRegisterService, webHostEnvironment, messageHub, db)
+        base(configuration, eMailService, reporting, selfRegisterService, webHostEnvironment, messageHub, db)
     {
         _logger = logger;
         _mapper = mapper;
@@ -589,29 +591,33 @@ public class SrbClient : Register
         return await new Pdf().Merge(streams);
     }
 
+    public override async Task<Stream> GuestListPdf(int objekat, string datumod, string datumdo)
+    {
+        var obj = _db.Properties.FirstOrDefault(a => a.Id == objekat);
+
+        var OD = DateTime.ParseExact(datumod, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
+        var DO = DateTime.ParseExact(datumdo, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
+
+        var result = _reporting.RenderReport("GuestListMne",
+            new List<Telerik.Reporting.Parameter>() {
+                        new Telerik.Reporting.Parameter("objekat", objekat),
+                        new Telerik.Reporting.Parameter("od", OD),
+                        new Telerik.Reporting.Parameter("do", DO),
+                }
+            , "PDF");
+
+        return new MemoryStream(result);
+    }
+
+
+    public override async Task GuestListMail(int objekat, string datumod, string datumdo, string email)
+    {
+        throw new NotImplementedException();
+    }
+
     public async Task<List<int>> GetExternalIds(Group group)
     {
-        var ids = new List<int>();
-        foreach (SrbPerson p in group.Persons)
-        {
-            if (p.ExternalId2 != null)
-            {
-                ids.Add(p.ExternalId2.Value);
-                continue;
-            }
-
-            try
-            {
-                await GetExternalId(p);
-                if(p.ExternalId2.HasValue) ids.Add(p.ExternalId2.Value);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError($"ERROR SRB: External Ids  {e.Message}");
-                throw;
-            }
-        }
-        return ids;
+        throw new NotImplementedException();
     }
 
     public async Task GetExternalId(SrbPerson p)

@@ -84,9 +84,8 @@ namespace Oblak.Controllers
 
                 await _db.SaveChangesAsync();
 
-                var items = _db.Items.Where(a => a.LegalEntityId == _legalEntity.Id);
-                var data = _mapper.Map<List<ItemDto>>(items);
-                return Json(await data.ToDataSourceResultAsync(request));
+                dto = _mapper.Map<ItemDto>(item);
+                return Json(new[] { dto }.ToDataSourceResult(request, ModelState));
             }
             catch (Exception ex)
             {
@@ -106,9 +105,8 @@ namespace Oblak.Controllers
                 _db.Add(item);
                 await _db.SaveChangesAsync();
 
-                var items = _db.Items.Where(a => a.LegalEntityId == _legalEntity.Id);
-                var data = _mapper.Map<List<ItemDto>>(items);
-                return Json(await data.ToDataSourceResultAsync(request));
+                dto = _mapper.Map<ItemDto>(item);
+                return Json(new[] { dto }.ToDataSourceResult(request, ModelState));
             }
             catch (Exception ex)
             {
@@ -129,7 +127,7 @@ namespace Oblak.Controllers
                     _db.SaveChanges();
                     var items = _db.Items.Where(a => a.LegalEntityId == _legalEntity.Id);
                     var data = _mapper.Map<List<ItemDto>>(items);
-                    return Json(await data.ToDataSourceResultAsync(request));                    
+                    return Json(new[] { dto }.ToDataSourceResult(request, ModelState));
                 }
                 else
                 {

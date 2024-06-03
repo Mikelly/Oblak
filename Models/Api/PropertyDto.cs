@@ -1,11 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Oblak.Data;
+using System.ComponentModel.DataAnnotations;
 
 namespace Oblak.Models.Api
 {
     public class PropertyDto
     {
         public int Id { get; set; }
-        [UIHint("Integer")]
         public int? ExternalId { get; set; }
         public int LegalEntityId { get; set; }
         public string? LegalEntityName { get; set; }
@@ -25,6 +25,32 @@ namespace Oblak.Models.Api
         public int? Capacity { get; set; }
         public string? RegNumber { get; set; }
         public DateTime? RegDate { get; set; }
+
+        public Property ToEntity(Property property)
+        {
+            object m;
+            Enum.TryParse(typeof(Municipality), this.Municipality, out m);
+            property.ExternalId = this.ExternalId ?? 0;
+            property.LegalEntityId = this.LegalEntityId;
+            property.Name = this.Name;
+            property.Type = this.Type;
+            property.Address = this.Address;
+            property.Municipality = m == null ? null : (Municipality)m;
+            property.Price = this.Price;
+            property.BusinessUnitCode = this.BusinessUnitCode;
+            property.FiscalEnuCode = this.FiscalEnuCode;
+            property.Status = this.Status ?? "A";
+            property.DefaultEntryPoint = this.DefaultEntryPoint;
+            property.AutoCheckOut = this.AutoCheckOut;
+            property.AutoCheckOutTime = this.AutoCheckOutTime;
+            property.ResidenceTax = this.ResidenceTax;
+            property.ResidenceTaxYN = this.ResidenceTaxYN;
+            property.Capacity = this.Capacity;
+            property.RegNumber = this.RegNumber;
+            property.RegDate = this.RegDate;
+
+            return property;
+        }
     }
 
     public class PropertyEnrichedDto : PropertyDto

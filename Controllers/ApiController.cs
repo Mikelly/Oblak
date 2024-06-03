@@ -21,6 +21,13 @@ using RB90;
 using Oblak.Filters;
 using Oblak.Services.FCM;
 using Oblak.Services.Payten;
+using Microsoft.Extensions.Hosting;
+using DocumentFormat.OpenXml.InkML;
+using System.Globalization;
+using System.Runtime.CompilerServices;
+using Oblak.Services.Reporting;
+using static SQLite.SQLite3;
+using System.IO;
 
 namespace Oblak.Controllers
 {
@@ -45,6 +52,7 @@ namespace Oblak.Controllers
         private ApplicationUser _appUser;   
         private readonly FcmService _fcmService;
         private readonly ApiService _paytenService;
+        private readonly ReportingService _reporting;
         private readonly IConfiguration _configuration;
 
         public ApiController(   
@@ -64,6 +72,7 @@ namespace Oblak.Controllers
             FcmService fcmService,
             IMapper mapper,
             ApiService paytenService, 
+            ReportingService reporting,
             IConfiguration configuration
             )
         {             
@@ -79,6 +88,7 @@ namespace Oblak.Controllers
             _documentService = documentService;
             _fcmService = fcmService;
             _paytenService = paytenService;
+            _reporting = reporting;
             _configuration = configuration;
 
             var username = httpContextAccessor.HttpContext?.User?.Identity?.Name;
@@ -527,6 +537,51 @@ namespace Oblak.Controllers
 
 
         [HttpPost]
+        [Route("guestListPdf")]
+        public async Task<ActionResult> GuestListPdf(int objekat, string datumod, string datumdo)
+        {
+            try
+            {
+                var stream = await _registerClient.GuestListPdf(objekat, datumod, datumdo);
+
+                stream.Seek(0, SeekOrigin.Begin);
+                var fsr = new FileStreamResult(stream, "application/pdf");
+                fsr.FileDownloadName = $"KnjigaGostiju.pdf";
+                return fsr;
+            }            
+            catch (Exception e)
+            {
+                Response.StatusCode = 500;
+                return Json(new { info = "", error = Exceptions.StringException(e), id = -1 });
+            }
+        }
+
+
+        [HttpPost]
+        [Route("guestListMail")]
+        public async Task<ActionResult<BasicDto>> GuestListMail(int objekat, string datumod, string datumdo, string email)
+        {
+            try
+            { 
+                if (email == null)
+                {
+                    Response.StatusCode = 400;
+                    return Json(new { info = "", error = "Nije unesena e-mail adresa!" });
+                }
+
+                await _registerClient.GuestListMail(objekat, datumod, datumdo, email);
+
+                return Json(new { info = "Uspješno poslata knjiga gostiju putem e-maila!", error = "" });
+            }
+            catch (Exception e)
+            {
+                Response.StatusCode = 500;
+                return Json(new { info = "", error = Exceptions.StringException(e), id = -1 });
+            }
+        }
+
+
+        [HttpPost]
         [Route("personSrbSave")]
         public async Task<ActionResult<SrbPersonDto>> PersonSrb(SrbPersonDto gost)
         {
@@ -965,36 +1020,6 @@ namespace Oblak.Controllers
                 Response.StatusCode = 500;
                 return Json(new { info = "", error = Exceptions.StringException(e), id = -1 });
             }
-        }
-
-
-        [HttpGet]
-        [Route("resTaxMail")]
-        public async Task<ActionResult> ResTaxMail(int id, string email)
-        {            
-            var tax = db.ResTaxCalc.Where(a => a.Id == id).FirstOrDefault();
-
-            if (tax == null)
-            {
-                Response.StatusCode = 400;
-                return Json(new { info = "", error = "Nepostojeća boravišna taksa!" });
-            }
-
-            if (email == null)
-            {
-                Response.StatusCode = 400;
-                return Json(new { info = "", error = "Nije unesena e-mail adresa!" });
-            }
-
-            var obj = db.Properties.Where(a => a.Id == tax.PropertyId).FirstOrDefault();
-
-            var stream = (_registerClient as MneClient).ResTaxPdf(id);
-
-            var frm = _appUser.LegalEntity.Name;
-
-            await (_registerClient as MneClient).ResTaxEmail(id, _appUser.Email, email);
-
-            return Json(new { info = "Uspješno poslata prijava boravišne takse putem maila!", error = "" });
         }
 
         #endregion

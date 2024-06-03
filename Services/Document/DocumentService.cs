@@ -75,7 +75,7 @@ public class DocumentService
         {
             Item = bor,
             Quant = (int)Math.Round(((a.CheckOut ?? DateTime.Now) - a.CheckIn).TotalDays, 0),
-			Price = g.Property.Price ?? 1m
+			Price = bor.Price
         }).ToList();
 
 		var boravak = boravak_buff.GroupBy(a => new { a.Item, a.Price })
@@ -85,7 +85,7 @@ public class DocumentService
         {
             Item = btax,
             Quant = (int)Math.Round(((a.CheckOut ?? DateTime.Now) - a.CheckIn).TotalDays, 0),            
-            Price = (a.Property.ResidenceTax ?? 1) * ((new DateTime(1, 1, 1) + (DateTime.Now - a.BirthDate)).Year - 1) switch { >= 18 => 1m, >= 12 => 0.5m, _ => 0m }
+            Price = btax.Price * ((new DateTime(1, 1, 1) + (DateTime.Now - a.BirthDate)).Year - 1) switch { >= 18 => 1m, >= 12 => 0.5m, _ => 0m }
         }).Where(a => a.Price != 0).ToList();
         
         var taxes = taxes_buff.GroupBy(a => new { a.Item, a.Price })

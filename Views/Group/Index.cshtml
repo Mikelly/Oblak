@@ -1,16 +1,12 @@
 ﻿@using Oblak.Models.Api;
-<<<<<<< HEAD
 @using Oblak.Models.EFI;
-=======
-@using Oblak.Models.rb90;
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
+
 @{
     ViewBag.Title = "Prijave gostiju";
     Layout = "~/Views/Shared/_LayoutINV.cshtml";
 }
 
 <script type="text/javascript">
-<<<<<<< HEAD
     // $(document).ready(function () {
     //     $("#btnNewGroup").click(function () {
     //         $("#wndNewGroup").data("kendoWindow").center().open();
@@ -103,78 +99,6 @@
         groupDto.CheckOut = formattedCheckOutDate;
         groupDto.PropertyId = propertyId;        
 
-=======
-    $(document).ready(function () {
-        $("#btnNewGroup").click(function () {
-            $("#wndNewGroup").data("kendoWindow").center().open();
-        });
-
-        $("#btnSubmitNewGroup").click(function () {
-            // Gather input values
-            var checkInDate = $("#checkInDate").data("kendoDatePicker").value();
-            var checkOutDate = $("#checkOutDate").data("kendoDatePicker").value();
-            var email = $("#email").val();
-
-            // Create GroupDto object
-            var groupDto = {
-                CheckIn: checkInDate,
-                CheckOut: checkOutDate,
-                Email: email
-            };
-
-            // Call the controller method to save the new group
-            saveNewGroup(groupDto);
-        });
-
-        $(document).ready(function () {
-            var propertyDropdown = $("#propertyDropdown").data("kendoDropDownList");
-            var propertyUnitDropdown = $("#propertyUnitDropdown").data("kendoDropDownList");
-
-            propertyDropdown.bind("change", function () {
-                var propertyId = this.value();
-                if (propertyId) {
-                    // Fetch PropertyUnits based on the selected Property
-                    $.ajax({
-                        url: '@Url.Action("GetPropertyUnits", "Group")',
-                        type: 'GET',
-                        data: { propertyId: propertyId },
-                        success: function (data) {
-                            propertyUnitDropdown.setDataSource(new kendo.data.DataSource({ data: data }));
-                            propertyUnitDropdown.enable(true);
-                        }
-                    });
-                } else {
-                    // Reset and disable PropertyUnit dropdown if no Property is selected
-                    propertyUnitDropdown.value("");
-                    propertyUnitDropdown.enable(false);
-                }
-            });
-        });
-    });
-
-    function saveNewGroup(groupDto) {
-        // Show loading indicator if needed
-        // kendo.ui.progress($("#wndNewGroup"), true);
-
-        // Get selected dates from datepicker inputs
-        var checkInDate = $("#checkInDate").data("kendoDatePicker").value();
-        var checkOutDate = $("#checkOutDate").data("kendoDatePicker").value();
-
-        // Convert the dates to a format that can be safely sent to the server
-        var formattedCheckInDate = kendo.toString(checkInDate, "yyyy-MM-ddTHH:mm:ss");
-        var formattedCheckOutDate = kendo.toString(checkOutDate, "yyyy-MM-ddTHH:mm:ss");
-
-        // Get selected Property and PropertyUnit values from dropdowns
-        var propertyId = $("#propertyDropdown").data("kendoDropDownList").value();
-        var propertyUnitId = $("#propertyUnitDropdown").data("kendoDropDownList").value();
-
-        // Add dates, PropertyId, and PropertyUnitId to the groupDto
-        groupDto.CheckIn = formattedCheckInDate;
-        groupDto.CheckOut = formattedCheckOutDate;
-        groupDto.PropertyId = propertyId;
-        groupDto.UnitId = propertyUnitId;
-
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
         $.ajax({
             url: '@Url.Action("Create", "Group")',
             type: 'POST',
@@ -185,7 +109,6 @@
                 // Handle success if needed
                 console.log(data);
 
-<<<<<<< HEAD
                 window.location = `/persons?groupid=${data}`;
 
                 // Close the window or perform any other actions
@@ -193,13 +116,6 @@
 
                 // Refresh the grid after creating a new group (if needed)
                 //$('#groupGrid').data('kendoGrid').dataSource.read();
-=======
-                // Close the window or perform any other actions
-                $("#wndNewGroup").data("kendoWindow").close();
-
-                // Refresh the grid after creating a new group (if needed)
-                $('#groupGrid').data('kendoGrid').dataSource.read();
->>>>>>> 579dec8aee400fe2cc7b097420fe5d3e419ae144
             },
             error: function (error) {
                 // Handle error if needed

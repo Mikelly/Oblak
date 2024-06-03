@@ -424,6 +424,41 @@
         });
     }
 
+    function periodSelect(e) {
+        var idx = e.indices;
+        if (idx == undefined) idx = 0;
+        var period = idx == 0 ? 'D' : idx == 1 ? 'W' : idx == 2 ? 'M' : idx == 3 ? 'Y' : 'C';
+
+        var cod = '';
+        var cdo = '';
+
+        if (period == 'C') {
+            $('#dtmOd').data('kendoDatePicker').enable(true);
+            $('#dtmDo').data('kendoDatePicker').enable(true);
+            var codval = $('#dtmOd').data('kendoDatePicker').value();
+            if (codval != null) cod = kendo.toString(codval, 'dd.MM.yyyy');
+            var cdoval = $('#dtmDo').data('kendoDatePicker').value();
+            if (cdoval != null) cdo = kendo.toString(cdoval, 'dd.MM.yyyy');
+        }
+        else {
+            $('#dtmOd').data('kendoDatePicker').enable(false);
+            $('#dtmOd').data('kendoDatePicker').value(null);
+            $('#dtmDo').data('kendoDatePicker').enable(false);
+            $('#dtmDo').data('kendoDatePicker').value(null);
+        }
+
+        debugger;
+
+        var grid = $('#mnePersonGrid').data('kendoGrid');
+        grid.dataSource.transport.options.read.url = `/Person/ReadMnePersons?groupId=@ViewBag.Group&period=${period}&dtmod=${cod}&dtmdo=${cdo}`;
+        grid.dataSource.read();
+    }
+
+    function dtmChanged() {
+        //$('#grpPeriod').data('kendoButtonGroup').trigger('select');
+        periodSelect({ indices: 4 });
+    }
+
 </script>
 
 <div style="display:flex; margin-left:15px; margin-top:25px; margin-right:15px;">
@@ -449,18 +484,48 @@
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>OBRIŠI<br/>GOSTA<div>
                 </div>"))
 
-    @(Html.Kendo().Button().Name("btnDeleteGuestRb90")
+@*     @(Html.Kendo().Button().Name("btnDeleteGuestRb90")
         .HtmlAttributes(new { type = "button", onclick = "deleteGuestFromRb90(event)", style = "height:95px; width:95px; cursor:pointer;" })
         .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
                     <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/eraser_color.png'/>
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>OBRIŠI GOSTA<br/>IZ RB90<div>
-                </div>"))
+                </div>")) *@
+
+    <div style="flex-basis:50px"></div>
+
+    @if(ViewBag.Group == null)
+    {
+        <div style="flex-basis:390px;position:relative;top:-2px;">
+            Odaberite period:
+            @(Html.Kendo().ButtonGroup().HtmlAttributes(new { style = "height:30px;" })
+                .Name("grpPeriod")
+                .Items(t =>
+                {
+                    t.Add().Text("Dan").Selected(true);
+                    t.Add().Text("Nedelja");
+                    t.Add().Text("Mjesec");
+                    t.Add().Text("Godina");
+                    t.Add().Text("Proizvoljni period");
+                }).Events(e => e.Select("periodSelect"))
+                )
+
+            <div id="dtmPeriod" style="width:390px; vertical-align:top;">
+                <div style="margin-bottom:10px; margin-top:3px; display:inline-block;">
+                    Od datuma:<br />
+                    @Html.Kendo().DatePicker().Name("dtmOd").HtmlAttributes(new { style = "width:175px;" }).Events(e => e.Change("dtmChanged")).Enable(false)
+                </div>
+                <div style="display:inline-block; margin-left:7px;">
+                    Do datuma:<br />
+                    @Html.Kendo().DatePicker().Name("dtmDo").HtmlAttributes(new { style = "width:175px;" }).Events(e => e.Change("dtmChanged")).Enable(false)
+                </div>
+            </div>
+        </div>
+    }
 
     <div style="flex-grow:1"></div>
 
     @if(ViewBag.Group != null)
     {
-
         @(Html.Kendo().Button().Name("btnRegisterGroup")
             .HtmlAttributes(new { type = "button", onclick = $"registerGroup({@ViewBag.Group})", style = "height:95px; width:95px; margin-right:10px;" })
             .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0; cursor:pointer;'>

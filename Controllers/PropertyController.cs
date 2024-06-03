@@ -109,7 +109,7 @@ namespace Oblak.Controllers
         {
             try
             {
-                var existingEntity = await _db.Properties.FindAsync(input.Id);
+                var existingEntity = _db.Properties.Include(a => a.LegalEntity).Where(a => a.Id == input.Id).FirstOrDefault();
 
                 if (existingEntity == null)
                 {
@@ -117,11 +117,7 @@ namespace Oblak.Controllers
                 }
                 var dto = (PropertyDto)input;
 
-                _mapper.Map(dto, existingEntity);
-
-                existingEntity.PropertyName = existingEntity.Name;
-
-                // validation
+                dto.ToEntity(existingEntity);
 
                 await _db.SaveChangesAsync();
 

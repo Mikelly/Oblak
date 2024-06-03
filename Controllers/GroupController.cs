@@ -193,7 +193,8 @@ namespace RegBor.Controllers
                     CheckIn = a.CheckIn,
                     CheckOut = a.CheckOut,
                     Email = a.Email,
-                    Guests = a.Persons.Any() ? $"{a.Persons.Count}: {string.Join(", ", a.Persons.Select(p => $"{p.FirstName} {p.LastName}"))}" : ""
+                    //Guests = a.Persons.Any() ? $"{a.Persons.Count}: {string.Join(", ", a.Persons.Select(p => $"{p.FirstName} {p.LastName}"))}" : ""
+                    Guests = _db.GuestList(a.Id)
                 });
 
             return Json(data.ToDataSourceResult(request));

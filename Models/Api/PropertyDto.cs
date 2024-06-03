@@ -12,7 +12,7 @@ namespace Oblak.Models.Api
         public string Name { get; set; }
         public string? Type { get; set; }
         public string? Address { get; set; }
-        public string? Municipality { get; set; }
+        public Municipality? Municipality { get; set; }
         public decimal? Price { get; set; }
         public string? BusinessUnitCode { get; set; }
         public string? FiscalEnuCode { get; set; }

@@ -1,7 +1,6 @@
 ﻿using Oblak.Data.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
 
 namespace Oblak.Data
 {
@@ -39,6 +38,8 @@ namespace Oblak.Data
 
         [StringLength(2000)]
         public string? Reference { get; set; }
+
+        public bool ResidenceTaxPaymentRequired { get; set; } = false;
 
         public List<LegalEntity> LegalEntities { get; set; }
 

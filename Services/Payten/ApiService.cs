@@ -25,7 +25,7 @@ namespace Oblak.Services.Payten
 
             var response = await _client.ExecutePostAsync(restRequest);
 
-            if (response.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode && response.Content != null)
             {
                 var authReponse = JsonSerializer.Deserialize<AuthorizeResponse>(response.Content);
                 if (_authTokens.ContainsKey(request.ApplicationLoginID)) _authTokens[request.ApplicationLoginID] = authReponse.Token;
@@ -34,8 +34,8 @@ namespace Oblak.Services.Payten
             }
             else
             {
-                var authError = JsonSerializer.Deserialize<Error>(response.Content);
-                return new Tuple<AuthorizeResponse, Error>(null, authError);
+                _logger.LogError($"Payten response error: {response.ErrorMessage}");
+                return new Tuple<AuthorizeResponse, Error>(null, new Error { description = "Neuspjela autorizacija!" });
             }
         }
 
@@ -47,15 +47,15 @@ namespace Oblak.Services.Payten
 
             var response = await _client.ExecutePostAsync(restRequest);
 
-            if (response.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode && response.Content != null)
             {
                 var tokenReponse = JsonSerializer.Deserialize<CreatePaymentSessionTokenResponse>(response.Content);
                 return new Tuple<CreatePaymentSessionTokenResponse, Error>(tokenReponse, null);
             }
             else
             {
-                var authError = JsonSerializer.Deserialize<Error>(response.Content);
-                return new Tuple<CreatePaymentSessionTokenResponse, Error>(null, authError);
+                _logger.LogError($"Payten response error: {response.ErrorMessage}");
+                return new Tuple<CreatePaymentSessionTokenResponse, Error>(null, new Error { description = "Neuspjela sesija!" });
             }
         }
 

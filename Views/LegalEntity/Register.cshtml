@@ -18,14 +18,6 @@
 
     <div>Podaci o izdavaocu:</div>
     <fieldset style="border: 1px solid #ddd; padding:0px; margin-bottom: 10px; display:flex; flex-wrap:wrap;">
-        <div class="one" style="flex:0 1 calc(33% - 20px)">
-            <label for="firstname">Naziv izdavaoca</label>
-            @(Html.Kendo().TextBox().Name("Name").HtmlAttributes(new { style = "width:100%" }))
-        </div>
-        <div class="one" style="flex:0 1 calc(33% - 20px)">
-            <label for="lastname">Poreski broj</label>
-            @(Html.Kendo().TextBox().Name("TIN").HtmlAttributes(new { style = "width:100%" }))
-        </div>
         <div class="one" style="flex: 0 1 calc(33% - 20px)">
             <label for="gender">Vrsta izdavaoca</label>
             @(Html.Kendo().DropDownList().Name("Type")
@@ -33,6 +25,22 @@
                 .BindTo(legalEntityTypes)
                 .HtmlAttributes(new { style = "width:100%" })
                 )
+        </div>
+        <div class="one" style="flex:0 1 calc(33% - 20px)">
+            <label for="name">Naziv izdavaoca</label>
+            @(Html.Kendo().TextBox().Name("Name").HtmlAttributes(new { style = "width:100%" }))
+        </div>
+        <div class="one" style="flex:0 1 calc(33% - 20px)">
+            <label for="firstname">Ime</label>
+            @(Html.Kendo().TextBox().Name("FirstName").HtmlAttributes(new { style = "width:100%" }))
+        </div>
+        <div class="one" style="flex:0 1 calc(33% - 20px)">
+            <label for="lastname">Prezime</label>
+            @(Html.Kendo().TextBox().Name("LastName").HtmlAttributes(new { style = "width:100%" }))
+        </div>
+        <div class="one" style="flex:0 1 calc(33% - 20px)">
+            <label for="lastname">Poreski broj</label>
+            @(Html.Kendo().TextBox().Name("TIN").HtmlAttributes(new { style = "width:100%" }))
         </div>
         <div class="one" style="flex: 0 1 calc(33% - 20px)">
             <label for="gender">Adresa izdavaoca</label>

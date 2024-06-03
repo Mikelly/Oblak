@@ -54,6 +54,7 @@ namespace Oblak.Controllers
         private readonly ApiService _paytenService;
         private readonly ReportingService _reporting;
         private readonly IConfiguration _configuration;
+        private readonly PaymentService _paymentService;
 
         public ApiController(   
             IServiceProvider serviceProvider,
@@ -90,6 +91,7 @@ namespace Oblak.Controllers
             _paytenService = paytenService;
             _reporting = reporting;
             _configuration = configuration;
+            _paymentService = paymentService;
 
             var username = httpContextAccessor.HttpContext?.User?.Identity?.Name;
             if (username != null)
@@ -136,23 +138,23 @@ namespace Oblak.Controllers
                 }
                 else
                 {                    
-                    return Ok(new LoginDto() { info = "", error = "Neispravan username i/ili lozinka.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), roles = roles });
+                    return Ok(new LoginDto() { info = "", error = "Neispravan username i/ili lozinka.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), paym = user.LegalEntity.Partner.ResidenceTaxPaymentRequired , roles = roles });
                 }                
 
                 if (checkPassword.IsLockedOut)
                 {
                     _logger.LogWarning(2, "User account locked out.");                    
-                    return Ok(new LoginDto() { info = "", error = "User je zaključan.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), roles = roles });
+                    return Ok(new LoginDto() { info = "", error = "User je zaključan.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), paym = user.LegalEntity.Partner.ResidenceTaxPaymentRequired roles = roles });
                 }
 
                 //return RedirectToAction("AfterLogin");
 
                 var cookie = Request.Cookies[".AspNetCore.Identity.Application"];
 
-                return Ok(new LoginDto() { info = "OK", error = "", auth = cookie, sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), roles = roles });
+                return Ok(new LoginDto() { info = "OK", error = "", auth = cookie, sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), paym = user.LegalEntity.Partner.ResidenceTaxPaymentRequired, roles = roles });
             }
 
-            return Ok(new LoginDto() { info = "", error = "", auth = "", sess = "", oper = "", lang = "", cntr = "", roles = roles });
+            return Ok(new LoginDto() { info = "", error = "", auth = "", sess = "", oper = "", lang = "", cntr = "", paym = false, roles = roles });
         }
 
         [HttpPost]
@@ -401,7 +403,6 @@ namespace Oblak.Controllers
             var legalEntity = group.LegalEntity;
 
             try
-
             {
                 await _registerClient.Initialize(legalEntity);
                 var result = await _registerClient.RegisterGroup(group, checkInDate, checkOutDate);
@@ -1103,10 +1104,16 @@ namespace Oblak.Controllers
                 return Json(new { info = "", error = "Nepostojeći račun!" });
             }
 
-            // set user id from property or legalentity
-            var userId = document.Property?.PaytenUserId ?? document.LegalEntity.PaytenUserId;
+            if (document.Amount == 0m)
+            {
+                Response.StatusCode = 500;
+                return Json(new { info = "", error = "Iznos ne smije biti 0!" });
+            }
 
-            if (userId == null)
+            // set user id from property or legalentity
+            var userId = !string.IsNullOrEmpty(document.Property.PaytenUserId) ? document.Property.PaytenUserId : document.LegalEntity.PaytenUserId;
+
+            if (string.IsNullOrEmpty(userId))
             {
                 Response.StatusCode = 400;
                 return Json(new { info = "", error = "Nije pronađen ID korisnika!" });
@@ -1213,6 +1220,60 @@ namespace Oblak.Controllers
             await db.SaveChangesAsync();
 
             return Json(new { info = "Rezultat transakcije je uspješno sačuvan!", error = "" });
+        }
+
+        [HttpPost]
+        [Route("initiatePayment")]
+        public async Task<ActionResult<InitiatePaymentOutput>> InitiatePayment(InitiatePaymentInput input)
+        {
+            var group = db.Groups.Include(x => x.LegalEntity)
+                .Include(x => x.Property)
+                .Where(x => x.Id == input.GroupId && x.LegalEntityId == _legalEntity.Id)
+                .FirstOrDefault();
+
+            if (group == null)
+            {
+                Response.StatusCode = 400;
+                return Json(new { info = "", error = "Nije pronađen ID grupe!" });
+            }
+
+            //if (group.ResTaxAmount.HasValue)
+            //{
+            //    Response.StatusCode = 500;
+            //    return Json(new { info = "", error = "Iznos ne smije biti 0!" });
+            //}
+
+            var transactionId = Guid.NewGuid().ToString();
+
+            var paymentResponse = await _paymentService.InitiatePaymentAsync(new PaymentServiceRequest
+            {
+                MerchantTransactionId = transactionId,
+                Amount = 10.00m,
+                SurchargeAmount = 0.50m,
+                TransactionToken = input.Token,
+            });
+
+            if (paymentResponse.Success)
+            {
+                return Json(new InitiatePaymentOutput
+                {
+                    RedirectUrl = paymentResponse.RedirectUrl,
+                    RedirectType = paymentResponse.RedirectType
+                });
+            }
+            else
+            {
+                var errors = paymentResponse.Errors?.Select(x => x.AdapterMessage ?? x.ErrorMessage);
+                return Json(new { info = "", error = errors });
+            }
+        }
+
+        [HttpPost]
+        [Route("storePaymentResult")]
+        public async Task<ActionResult<bool>> StorePaymentResult(StorePaymentResultInput input)
+        {
+            _logger.LogError("Payment callback triggered.");
+            return true;
         }
     }
 }

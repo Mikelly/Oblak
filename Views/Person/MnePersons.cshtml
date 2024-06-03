@@ -118,6 +118,10 @@
                             height: $(window).height() * 0.95
                         });
                         wnd.center().open();
+                        setTimeout(() => {
+                            $('#PropertyId').data('kendoMultiColumnComboBox').focus();
+                            $('#PropertyId_input').focus();                            
+                        }, 500);
                     }
                 });
             }

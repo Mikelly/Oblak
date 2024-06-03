@@ -360,6 +360,7 @@
                                 .AutoWidth(true)
                                 .Events(e => e.Change("resTaxCalc"))
                                 .BindTo(new SelectList(Model.ResTaxTypes as Dictionary<string, string>, "Key", "Value"))
+                                .Value((dto.ResTaxTypeId ?? 0).ToString())
                                 .HtmlAttributes(new { style = "width:100%" })
                                 )
                     </div>

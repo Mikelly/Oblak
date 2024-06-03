@@ -27,6 +27,12 @@ namespace Oblak.Data
         public string Name { get; set; }
 
         [StringLength(450)]
+        public string? FirstName { get; set; }
+
+        [StringLength(450)]
+        public string? LastName { get; set; }
+
+        [StringLength(450)]
         public string TIN { get; set; }
 
         [StringLength(2000)]

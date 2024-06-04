@@ -368,8 +368,13 @@ namespace Oblak.Services.MNE
                 s.opstinaBoravka = new opstina(); s.opstinaBoravka.kod = "20010"; s.opstinaBoravka.naziv = "BAR";
                 s.mjestoBoravka = new mjesto(); s.mjestoBoravka.kod = "200026"; s.mjestoBoravka.naziv = "BAR";
                 s.adresaBoravkaiKucniBroj = p.Property.Address;
-                s.prezimeKorisnikaObjekta = p.LegalEntity.LastName ?? "-";
-                s.imeKorisnikaObjekta = p.LegalEntity.FirstName ?? "-";
+                var f = "";
+                var l = "";
+                var sp = p.LegalEntity.Name.Split(" ", StringSplitOptions.RemoveEmptyEntries);
+                f = sp[0];
+                if (sp.Length > 1) l = string.Join(" ", sp.Skip(1));
+                s.prezimeKorisnikaObjekta = l;
+                s.imeKorisnikaObjekta = f;
                 s.jmbgKorisnikaObjekta = p.LegalEntity.TIN;
             }
             else

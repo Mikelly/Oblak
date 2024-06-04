@@ -557,13 +557,14 @@
             .Title("Boravak")
             .HeaderHtmlAttributes(new { style = "text-align: center;" })
             .Columns(col =>
-            {
-                col.Bound(g => g.PropertyName).Title("Smještajni objekat").Width(250);
-                col.Bound(g => g.FullName).Title("Ime i prezime").Width(250);
-                col.Bound(g => g.PersonType).Title("Tip gosta").Width(250).ClientTemplate("#= PersonType == 1 ? 'Domaći gost' : 'Strani gost' #");
-                col.Bound(g => g.CheckIn).Title("Prijava").Format("{0:dd.MM.yyyy}").Width(100);
-                col.Bound(g => g.CheckOut).Title("Odjava").Format("{0:dd.MM.yyyy}").Width(100);
-            })
+                {
+                    col.Bound(g => g.PropertyName).Title("Smještajni objekat").Width(250);
+                    col.Bound(g => g.FullName).Title("Ime i prezime").Width(250);
+                    col.Bound(g => g.PersonType).Title("Tip gosta").Width(250).ClientTemplate("#= PersonType == 1 ? 'Domaći gost' : 'Strani gost' #");
+                    col.Bound(g => g.CheckIn).Title("Prijava").Format("{0:dd.MM.yyyy}").Width(100).HtmlAttributes(new { style = "text-align:center;" });
+                    col.Bound(g => g.CheckOut).Title("Odjava").Format("{0:dd.MM.yyyy}").Width(100).HtmlAttributes(new { style = "text-align:center;" });
+                    col.Bound(g => g.Registered).Title("Prijavljen").Width(100).ClientTemplate("#= Registered ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
+                })
             );
 
             // Second Level Header
@@ -571,25 +572,13 @@
             .Title("Lični dokument")
             .HeaderHtmlAttributes(new { style = "text-align: center;" })
             .Columns(col =>
-            {
-                col.Bound(g => g.DocumentType).Title("Vrsta").Width(150);
-                col.Bound(g => g.DocumentNumber).Title("Broj").Width(100);
-                col.Bound(g => g.DocumentValidTo).Title("Rok važenja").Format("{0:dd.MM.yyyy}").Width(100);
-            })
+                {
+                    col.Bound(g => g.DocumentType).Title("Vrsta").Width(150);
+                    col.Bound(g => g.DocumentNumber).Title("Broj").Width(100);
+                    col.Bound(g => g.DocumentValidTo).Title("Rok važenja").Format("{0:dd.MM.yyyy}").Width(100).HtmlAttributes(new { style = "text-align:center;" });;
+                })
             );
-
-            // Third Level Header (Status)
-            columns.Group(group => group
-            .Title("Status")
-            .HeaderHtmlAttributes(new { style = "text-align: center;" })
-            .Columns(col =>
-            {
-                // Display boolean fields as non-clickable checkboxes using Kendo UI elements
-                col.Bound(g => g.Registered).Title("Prijavljen").Width(100).ClientTemplate("#= Registered ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
-                //col.Bound(g => g.Locked).Title("Zaključan").Width(100).ClientTemplate("#= Locked ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
-                col.Bound(g => g.Deleted).Title("Obrisan").Width(100).ClientTemplate("#= Deleted ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
-            })
-            );
+            
         })
         .Pageable(p => p.Refresh(true))
         .Sortable()

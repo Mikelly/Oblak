@@ -27,9 +27,9 @@ namespace Oblak.Services.Payment
                 amount = string.Format(CultureInfo.InvariantCulture, "{0:F2}", input.Amount),
                 surchargeAmount = string.Format(CultureInfo.InvariantCulture, "{0:F2}", input.SurchargeAmount),
                 currency = "EUR",
-                successUrl = _configuration["Payments:SuccessUrl"]!,
-                cancelUrl = _configuration["Payments:CancelUrl"]!,
-                errorUrl = _configuration["Payments:ErrorUrl"]!,
+                successUrl = input.SuccessUrl,
+                cancelUrl = input.CancelUrl,
+                errorUrl = input.ErrorUrl,
                 callbackUrl = _configuration["Payments:Callback"]!,
                 transactionToken = input.TransactionToken
             };

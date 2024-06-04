@@ -1253,6 +1253,9 @@ namespace Oblak.Controllers
                 Amount = 10.00m,
                 SurchargeAmount = 0.50m,
                 TransactionToken = input.Token,
+                SuccessUrl = input.SuccessUrl,
+                CancelUrl = input.CancelUrl,
+                ErrorUrl = input.ErrorUrl
             });
 
             if (paymentResponse.Success)

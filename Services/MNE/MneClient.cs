@@ -485,7 +485,7 @@ namespace Oblak.Services.MNE
         {
             try
             {
-                var obj = _db.Properties.FirstOrDefault(a => a.Id == objekat);
+                var obj = _db.Properties.Include(a => a.Municipality).FirstOrDefault(a => a.Id == objekat);
                 var firma = obj!.LegalEntityId;
                 var last_date = DO;
                 var limit18 = last_date.AddYears(-18);
@@ -505,7 +505,7 @@ namespace Oblak.Services.MNE
                 var lica = data.Count();
                 var noc = data.Select(a => _db.Nights(a.Id, DO)).Sum();
 
-                var iznos_tax = obj.ResidenceTax ?? 0;
+                var iznos_tax = obj.Municipality != null ? obj.Municipality.ResidenceTaxAmount : 1;
 
                 btx.NumberOfGuests = lica;
                 btx.NumberOfNights = noc;
@@ -514,7 +514,7 @@ namespace Oblak.Services.MNE
                 btx.TaxType = vrsta;
                 btx.GuestType = tip_gosta;
 
-                tax.Items = new List<ResTaxCalcItem>();
+                //tax.Items = new List<ResTaxCalcItem>();
                 tax.Items.Add(btx);
 
                 _db.SaveChanges();

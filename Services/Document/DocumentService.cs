@@ -52,6 +52,9 @@ public class DocumentService
         doc.FiscalEnuCode = enu == null ? "" : enu.FiscalEnuCode;
         doc.OperatorCode = enu == null ? "" : enu.OperatorCode;
 
+        var obj = _db.Properties.Include(a => a.Municipality).FirstOrDefault(a => a.Id == g.PropertyId);
+        var btax_amount = obj.Municipality != null ? obj.Municipality.ResidenceTaxAmount : 1;
+
         var person = g.Persons.First() as MnePerson;
 
         if (person != null)
@@ -70,6 +73,10 @@ public class DocumentService
         _db.SaveChanges();
 
         (var bor, var btax) = CheckItems();
+
+        btax.Price = btax_amount;
+
+        _db.SaveChanges();
 
         var boravak_buff = g.Persons.Select(a => a as MnePerson).ToList().Select(a => new
         {

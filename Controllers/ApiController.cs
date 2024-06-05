@@ -140,20 +140,26 @@ namespace Oblak.Controllers
                 }
                 else
                 {                    
-                    return Ok(new LoginDto() { info = "", error = "Neispravan username i/ili lozinka.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), paym = user.LegalEntity.Partner.ResidenceTaxPaymentRequired, roles = roles });
+                    return Ok(new LoginDto() { info = "", error = "Neispravan username i/ili lozinka.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), paym = false, roles = roles });
                 }                
 
                 if (checkPassword.IsLockedOut)
                 {
                     _logger.LogWarning(2, "User account locked out.");                    
-                    return Ok(new LoginDto() { info = "", error = "User je zaključan.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), paym = user.LegalEntity.Partner.ResidenceTaxPaymentRequired, roles = roles });
+                    return Ok(new LoginDto() { info = "", error = "User je zaključan.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), paym = false, roles = roles });
                 }
 
                 //return RedirectToAction("AfterLogin");
 
                 var cookie = Request.Cookies[".AspNetCore.Identity.Application"];
 
-                return Ok(new LoginDto() { info = "OK", error = "", auth = cookie, sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), paym = user.LegalEntity.Partner.ResidenceTaxPaymentRequired, roles = roles });
+                var py = false;
+                if (user.LegalEntity.PartnerId.HasValue)
+                { 
+                    py = db.Partners.FirstOrDefault(a => a.Id == user.LegalEntity.PartnerId).ResidenceTaxPaymentRequired;
+                }
+
+                return Ok(new LoginDto() { info = "OK", error = "", auth = cookie, sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), paym = user.LegalEntity.PartnerId.HasValue ? user.LegalEntity.Partner.ResidenceTaxPaymentRequired : false, roles = roles });
             }
 
             return Ok(new LoginDto() { info = "", error = "", auth = "", sess = "", oper = "", lang = "", cntr = "", paym = false, roles = roles });
@@ -947,6 +953,8 @@ namespace Oblak.Controllers
             tax.DateTo = DO;
             db.ResTaxCalc.Add(tax);
             db.SaveChanges();
+
+            tax.Items = new List<ResTaxCalcItem>();
 
             var rb90Client = _registerClient as MneClient;
 

@@ -324,7 +324,11 @@ namespace Oblak.Controllers
                 Email = a.Email,
                 Date = a.Date,
                 PropertyId = a.Property.Id,
-                NoOfGuests = a.Persons.Count()
+                NoOfGuests = a.Persons.Count(),
+                ResTaxAmount = a.ResTaxAmount ?? 0,
+                ResTaxFee = a.ResTaxFee ?? 0,
+                ResTaxCalculated = a.ResTaxCalculated ?? false,
+                ResTaxPaid = a.ResTaxPaid ?? false
             }).SingleOrDefault(a => a.Id == id);            
 
             return m;
@@ -971,6 +975,26 @@ namespace Oblak.Controllers
             db.SaveChanges();
             
             return Json(ResTaxDto.FromEntity(tax));
+        }
+
+
+        [HttpPost]
+        [Route("resTaxCalcPay")]
+        public async Task<ActionResult> ResTaxCalcPay(int group)
+        {
+
+            try
+            {
+                var g = db.Groups.FirstOrDefault(a => a.Id == group);
+                var rb90Client = _registerClient as MneClient;
+                rb90Client.CalcGroupResTax(g);
+                var result = await GroupGet(group);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                return Json(new BasicDto() { error = ex.Message, info = "" });
+            } 
         }
 
 

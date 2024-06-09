@@ -43,10 +43,6 @@ namespace Oblak.Data
         [StringLength(450)]
         public string Status { get; set; } = "A";
 
-		public int? ResTaxTypeId { get; set; }
-
-		public ResTaxType? ResTaxType { get; set; }
-
 		public int? ResTaxPaymentTypeId { get; set; }
 
 		public ResTaxPaymentType ResTaxPaymentType { get; set; }
@@ -55,7 +51,11 @@ namespace Oblak.Data
 
 		public decimal? ResTaxFee { get; set; }
 
-		[StringLength(450)]
+        public bool? ResTaxCalculated { get; set; }
+
+        public bool? ResTaxPaid { get; set; }
+
+        [StringLength(450)]
         public string? UserCreated { get; set; }
 
         public DateTime? UserCreatedDate { get; set; }

@@ -12,6 +12,11 @@
         public DateTime? CheckOut { get; set; }        
         public string? Email { get; set; }        
         public string? Status { get; set; }
+
+        public decimal ResTaxAmount { get; set; }
+        public decimal ResTaxFee { get; set;}
+        public bool ResTaxCalculated { get; set; }
+        public bool ResTaxPaid {  get; set; }
     }
 
     public class GroupEnrichedDto : GroupDto

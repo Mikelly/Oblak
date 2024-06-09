@@ -99,8 +99,7 @@ namespace Oblak.Data
 
             modelBuilder.Entity<Group>().HasOne(a => a.LegalEntity);
             modelBuilder.Entity<Group>().HasMany(a => a.Persons);
-            modelBuilder.Entity<Group>().HasOne(a => a.Property);
-			modelBuilder.Entity<Group>().HasOne(a => a.ResTaxType);
+            modelBuilder.Entity<Group>().HasOne(a => a.Property);			
 			modelBuilder.Entity<Group>().HasOne(a => a.ResTaxPaymentType);
 			modelBuilder.Entity<Group>().Property(a => a.ResTaxAmount).HasPrecision(18, 2);
 			modelBuilder.Entity<Group>().Property(a => a.ResTaxFee).HasPrecision(18, 2);

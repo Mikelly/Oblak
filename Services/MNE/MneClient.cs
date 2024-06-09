@@ -28,6 +28,7 @@ using Oblak.Data.Enums;
 using Telerik.Documents.Common.Model;
 using Telerik.Windows.Documents.Flow.Model.Styles;
 using Oblak.Services.Reporting;
+using Humanizer;
 
 namespace Oblak.Services.MNE
 {
@@ -759,6 +760,63 @@ namespace Oblak.Services.MNE
             _db.SaveChanges();
 
             return mnePerson;
+        }
+
+
+        public void CalcGroupResTax(Group g, ResTaxPaymentStatus pay = ResTaxPaymentStatus.Card)
+        {
+            var partner = _db.Properties.Include(x => x.LegalEntity).ThenInclude(x => x.Partner).Where(x => x.Id == g.PropertyId).FirstOrDefault().LegalEntity.Partner;
+
+            foreach (MnePerson p in g.Persons)
+            {
+                if (p.CheckOut.HasValue == false) throw new Exception($"Gost {p.FirstName} {p.LastName} nema definisan datum odjave. Molimo unesite datum kako bi ste kompletirali prijavu.");
+
+                var zero = new DateTime(1, 1, 1);
+                var span = (DateTime.Now.Date - p.BirthDate.Date);
+                var age = (zero + span).Year - 1;
+
+                var resTaxType = _db.ResTaxTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.AgeFrom <= age && age <= a.AgeTo);
+                if (resTaxType != null)
+                {
+                    p.ResTaxTypeId = resTaxType.Id;
+                    
+                    var days = (int)(p.CheckOut.Value.Date - p.CheckIn.Date).TotalDays;
+                    if (days < 0) days = 0;
+                    p.ResTaxAmount = resTaxType.Amount * days;                    
+
+                    var resPaymentType = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.PaymentStatus == ResTaxPaymentStatus.Card);
+                    p.ResTaxPaymentTypeId = resPaymentType.Id;
+
+                    p.ResTaxFee = CalcResTaxFee(p.ResTaxAmount ?? 0, partner.Id, p.ResTaxPaymentTypeId ?? 0);
+
+                    _db.SaveChanges();
+                }
+            }
+
+            var payId = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.PaymentStatus == pay);
+
+            g.ResTaxPaymentTypeId = payId.Id;
+            g.ResTaxAmount = _db.MnePersons.Where(a => a.GroupId == g.Id).Select(a => a.ResTaxAmount).Sum();
+            g.ResTaxFee = CalcResTaxFee(g.ResTaxAmount ?? 0, partner.Id, g.ResTaxPaymentTypeId ?? 0);
+            g.ResTaxCalculated = true;
+            g.ResTaxPaid = false;
+
+            _db.SaveChanges();
+        }
+
+        public decimal CalcResTaxFee(decimal amount, int partnerId, int paymentTypeId)
+        {
+            var resTaxPayment = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partnerId).Include(a => a.PaymentFees).FirstOrDefault(a => a.Id == paymentTypeId);
+            if (resTaxPayment.PaymentFees.Any())
+            {
+                var resTaxFee = resTaxPayment.PaymentFees.Where(a => a.LowerLimit <= amount && amount <= a.UpperLimit).FirstOrDefault();
+                if (resTaxFee != null)
+                {
+                    if (resTaxFee.FeeAmount.HasValue) return resTaxFee.FeeAmount.Value;
+                    if (resTaxFee.FeePercentage.HasValue) return resTaxFee.FeePercentage.Value / 100m * amount;
+                }
+            }
+            return 0;
         }
 
         public override async Task<Person> PersonFromMrz(MrzDto mrz)

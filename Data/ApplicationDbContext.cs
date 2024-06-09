@@ -190,11 +190,20 @@ namespace Oblak.Data
             modelBuilder.Entity<FiscalRequest>().Property(a => a.Amount).HasPrecision(18, 4);
             modelBuilder.Entity<FiscalRequest>().Property(a => a.RequestType).HasConversion(new EnumToStringConverter<FiscalRequestType>());
             
-            modelBuilder.Entity<PosTransaction>().ToTable("PosTransactions");
-            modelBuilder.Entity<PosTransaction>().HasOne(a => a.Document);
-            modelBuilder.Entity<PosTransaction>().HasOne(a => a.LegalEntity);
-            modelBuilder.Entity<PosTransaction>().HasOne(a => a.Property);
-            modelBuilder.Entity<PosTransaction>().Property(a => a.Amount).HasPrecision(18, 2);
+            modelBuilder.Entity<PaymentTransaction>().ToTable("PaymentTransactions");
+            modelBuilder.Entity<PaymentTransaction>().HasOne(a => a.Document);
+            modelBuilder.Entity<PaymentTransaction>().HasOne(a => a.Group);
+            modelBuilder.Entity<PaymentTransaction>().HasOne(a => a.LegalEntity);
+            modelBuilder.Entity<PaymentTransaction>().HasOne(a => a.Property);
+            modelBuilder.Entity<PaymentTransaction>().Property(a => a.Amount).HasPrecision(18, 2);
+            modelBuilder.Entity<PaymentTransaction>().Property(a => a.SurchargeAmount).HasPrecision(18, 2);
+            modelBuilder.Entity<PaymentTransaction>()
+                .HasIndex(pt => new { pt.Id, pt.LegalEntityId })
+                .HasDatabaseName("IX_PaymentTransaction_Id_LegalEntityId");
+
+            modelBuilder.Entity<PaymentTransaction>()
+                .HasIndex(pt => new { pt.MerchantTransactionId, pt.LegalEntityId })
+                .HasDatabaseName("IX_PaymentTransaction_MerchantTransactionId_LegalEntityId");
 
             modelBuilder
                 .HasDbFunction(typeof(ApplicationDbContext).GetMethod(nameof(GuestList), new[] { typeof(int) })!)
@@ -238,7 +247,7 @@ namespace Oblak.Data
 		public DbSet<ResTaxFee> ResTaxFees { get; set; }
 		public DbSet<UserDevice> UserDevices { get; set; }
         public DbSet<Report> Reports { get; set; }
-        public DbSet<PosTransaction> PosTransactions { get; set; }
+        public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
         public DbSet<Municipality> Municipalities { get; set; }
 
         public string GuestList(int id) => throw new NotImplementedException();

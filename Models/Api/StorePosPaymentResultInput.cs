@@ -4,7 +4,7 @@
     {
         public int TransactionId { get; set; }
         public DateTime? TransactionDate { get; set; } = DateTime.UtcNow;
-        public string Status { get; set; }
+        public string? Status { get; set; }
         public bool Success { get; set; }
     }
 }

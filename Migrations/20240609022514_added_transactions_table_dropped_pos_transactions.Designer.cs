@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oblak.Data;
 
@@ -11,9 +12,11 @@ using Oblak.Data;
 namespace Oblak.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240609022514_added_transactions_table_dropped_pos_transactions")]
+    partial class added_transactions_table_dropped_pos_transactions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -831,17 +834,14 @@ namespace Oblak.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<bool?>("ResTaxCalculated")
-                        .HasColumnType("bit");
-
                     b.Property<decimal?>("ResTaxFee")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<bool?>("ResTaxPaid")
-                        .HasColumnType("bit");
-
                     b.Property<int?>("ResTaxPaymentTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ResTaxTypeId")
                         .HasColumnType("int");
 
                     b.Property<string>("Status")
@@ -873,6 +873,8 @@ namespace Oblak.Migrations
                     b.HasIndex("PropertyId");
 
                     b.HasIndex("ResTaxPaymentTypeId");
+
+                    b.HasIndex("ResTaxTypeId");
 
                     b.ToTable("Groups");
                 });
@@ -2378,11 +2380,17 @@ namespace Oblak.Migrations
                         .WithMany()
                         .HasForeignKey("ResTaxPaymentTypeId");
 
+                    b.HasOne("Oblak.Data.ResTaxType", "ResTaxType")
+                        .WithMany()
+                        .HasForeignKey("ResTaxTypeId");
+
                     b.Navigation("LegalEntity");
 
                     b.Navigation("Property");
 
                     b.Navigation("ResTaxPaymentType");
+
+                    b.Navigation("ResTaxType");
                 });
 
             modelBuilder.Entity("Oblak.Data.Item", b =>

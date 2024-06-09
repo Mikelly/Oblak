@@ -9,26 +9,15 @@ using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using Oblak.Helpers;
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Authorization;
 using Oblak.Services.SRB;
-using Oblak.Services.SRB.Models;
 using Oblak.Models.Api;
-using SendGrid.Helpers.Mail;
-using Oblak.Interfaces;
-using System.Net;
 using Oblak.Data.Enums;
-using RB90;
 using Oblak.Filters;
 using Oblak.Services.FCM;
 using Oblak.Services.Payten;
-using Microsoft.Extensions.Hosting;
-using DocumentFormat.OpenXml.InkML;
-using System.Globalization;
-using System.Runtime.CompilerServices;
 using Oblak.Services.Reporting;
-using static SQLite.SQLite3;
-using System.IO;
 using Oblak.Services.Payment;
+using Newtonsoft.Json.Linq;
 
 namespace Oblak.Controllers
 {
@@ -56,6 +45,7 @@ namespace Oblak.Controllers
         private readonly ReportingService _reporting;
         private readonly IConfiguration _configuration;
         private readonly PaymentService _paymentService;
+        private readonly GroupService _groupService;
 
         public ApiController(   
             IServiceProvider serviceProvider,
@@ -76,7 +66,8 @@ namespace Oblak.Controllers
             ApiService paytenService, 
             ReportingService reporting,
             PaymentService paymentService,
-            IConfiguration configuration
+            IConfiguration configuration,
+            GroupService groupService
             )
         {             
             _signInManager = signInManager;
@@ -94,6 +85,7 @@ namespace Oblak.Controllers
             _reporting = reporting;
             _configuration = configuration;
             _paymentService = paymentService;
+            _groupService = groupService;
 
             var username = httpContextAccessor.HttpContext?.User?.Identity?.Name;
             if (username != null)
@@ -276,25 +268,37 @@ namespace Oblak.Controllers
             var legalEntities = await _registerClient.GetLegalEntities();
             var ids = legalEntities.Select(a => a.Id).ToArray();
 
-            var grupe = db.Groups.Where(a => ids.Contains(a.LegalEntityId)).OrderByDescending(a => a.Date).Skip((page - 1) * 50).Take(50);//.Select(a => new { a.Id, a.Date, a.PropertyId, a.UnitId, BrojGostiju = db.rb90Persons.Where(b => b.GroupId == a.Id).Count(), Gosti = db.rb90GuestList(a.Id), a.Status }).ToList();
+            var grupe = db.Groups.Where(a => ids.Contains(a.LegalEntityId))
+                .OrderByDescending(a => a.Date)
+                .Skip((page - 1) * 50)
+                .Take(50)
+            //.Select(a => new { a.Id, a.Date, a.PropertyId, a.UnitId, BrojGostiju = db.rb90Persons.Where(b => b.GroupId == a.Id).Count(), Gosti = db.rb90GuestList(a.Id), a.Status }).ToList();
+                .Select(a => new GroupEnrichedDto {
+                    Id = a.Id,
+                    Date = a.Date,
+                    Status = a.Status,
+                    PropertyId = a.PropertyId,
+                    UnitId = a.UnitId,
+                    GUID = a.Guid,
+                    CheckIn = a.CheckIn,
+                    CheckOut = a.CheckOut,
+                    Email = a.Email,                
+                    LegalEntityId = a.LegalEntityId,
+                    PropertyName = a.Property.Name,                
+                    Guests = db.GuestList(a.Id),
+                    NoOfGuests = a.Persons.Count()
+                })
+                .ToList();
 
-            var data = grupe.Select(a => new GroupEnrichedDto {
-                Id = a.Id,
-                Date = a.Date,
-                Status = a.Status,
-                PropertyId = a.PropertyId,
-                UnitId = a.UnitId,
-                GUID = a.Guid,
-                CheckIn = a.CheckIn,
-                CheckOut = a.CheckOut,
-                Email = a.Email,                
-                LegalEntityId = a.LegalEntityId,
-                PropertyName = a.Property.Name,                
-                Guests = db.GuestList(a.Id),
-                NoOfGuests = a.Persons.Count(),
-            });
+            var groupIds = grupe.Select(g => g.Id).ToList();
+            var statuses = await _groupService.GetPaymentStatusForGroupsAsync(groupIds);
 
-            return Json(data);            
+            foreach (var group in grupe)
+            {
+                group.Status = statuses[group.Id];
+            }
+
+            return Json(grupe);            
         }
 
         [HttpPost]
@@ -311,7 +315,7 @@ namespace Oblak.Controllers
         [Route("groupGet")]
         public async Task<ActionResult<GroupEnrichedDto>> GroupGet(int id)
         {
-            var m = db.Groups.Include(a => a.Persons).Select(a => new GroupEnrichedDto() { 
+            var m = await db.Groups.Include(a => a.Persons).Select(a => new GroupEnrichedDto() { 
                 Id = a.Id,
                 CheckIn = a.CheckIn,
                 CheckOut = a.CheckOut,
@@ -1205,15 +1209,14 @@ namespace Oblak.Controllers
             var paymentSessionToken = paymentSessionTokenResult.Item1.PaymentSessionToken;
 
             // create transaction in database
-            var transaction = await db.PosTransactions.AddAsync(new PosTransaction
+            var transaction = await db.PaymentTransactions.AddAsync(new PaymentTransaction
             {
                 DocumentId = document.Id,
                 LegalEntityId = document.LegalEntityId,
                 PropertyId = document.PropertyId,
-                PaymentSessionToken = paymentSessionToken,
-                TransactionType = input.TransactionType,
+                Token = paymentSessionToken,
+                Type = input.TransactionType,
                 Amount = document.Amount,
-                StartedAt = DateTime.UtcNow,
                 UserCreated = _legalEntity.Name,
                 UserCreatedDate = DateTime.UtcNow
             });
@@ -1233,7 +1236,7 @@ namespace Oblak.Controllers
         public async Task<ActionResult<bool>> StorePosPaymentResult(StorePosPaymentResultInput input)
         {
             // fetch transaction from database
-            var transaction = await db.PosTransactions
+            var transaction = await db.PaymentTransactions
                 .Where(x => x.Id == input.TransactionId && x.LegalEntityId == _legalEntity.Id)
                 .FirstOrDefaultAsync();
 
@@ -1246,7 +1249,6 @@ namespace Oblak.Controllers
             // update transaction with payment result
             transaction.Status = input.Status;
             transaction.Success = input.Success;
-            transaction.CompletedAt = input.TransactionDate;
             transaction.UserModified = _legalEntity.Name;
             transaction.UserModifiedDate = DateTime.UtcNow;
 
@@ -1260,10 +1262,10 @@ namespace Oblak.Controllers
         [Route("initiatePayment")]
         public async Task<ActionResult<InitiatePaymentOutput>> InitiatePayment(InitiatePaymentInput input)
         {
-            var group = db.Groups.Include(x => x.LegalEntity)
+            var group = await db.Groups.Include(x => x.LegalEntity)
                 .Include(x => x.Property)
                 .Where(x => x.Id == input.GroupId && x.LegalEntityId == _legalEntity.Id)
-                .FirstOrDefault();
+                .FirstOrDefaultAsync();
 
             if (group == null)
             {
@@ -1271,24 +1273,47 @@ namespace Oblak.Controllers
                 return Json(new { info = "", error = "Nije pronađen ID grupe!" });
             }
 
-            //if (group.ResTaxAmount.HasValue)
-            //{
-            //    Response.StatusCode = 500;
-            //    return Json(new { info = "", error = "Iznos ne smije biti 0!" });
-            //}
+            group.ResTaxAmount = 10.00m; // hard-coded value for testing purposes
+            if (!group.ResTaxAmount.HasValue ||
+                group.ResTaxAmount.Value == 0)
+            {
+                Response.StatusCode = 500;
+                return Json(new { info = "", error = "Iznos ne smije biti 0!" });
+            }
+
+            group.ResTaxFee = await _groupService.CalculateResTaxFee(group);
 
             var transactionId = Guid.NewGuid().ToString();
 
             var paymentResponse = await _paymentService.InitiatePaymentAsync(new PaymentServiceRequest
             {
                 MerchantTransactionId = transactionId,
-                Amount = 10.00m,
-                SurchargeAmount = 0.50m,
+                Amount = group.ResTaxAmount.Value,
+                SurchargeAmount = group.ResTaxFee.Value,
                 TransactionToken = input.Token,
                 SuccessUrl = input.SuccessUrl,
                 CancelUrl = input.CancelUrl,
                 ErrorUrl = input.ErrorUrl
             });
+
+            var now = DateTime.UtcNow;
+            var transaction = await db.PaymentTransactions.AddAsync(new PaymentTransaction
+            {
+                Status = paymentResponse.ReturnType,
+                Success = paymentResponse.Success,
+                MerchantTransactionId = transactionId,
+                GroupId = group.Id,
+                LegalEntityId = group.LegalEntityId,
+                PropertyId = group.PropertyId,
+                Token = input.Token,
+                Type = PaymentTransactionTypes.DEBIT.ToString(),
+                Amount = group.ResTaxAmount.Value,
+                SurchargeAmount = group.ResTaxFee.Value,
+                UserCreated = _legalEntity.Name,
+                UserCreatedDate = now
+            });
+
+            await db.SaveChangesAsync();
 
             if (paymentResponse.Success)
             {
@@ -1307,10 +1332,60 @@ namespace Oblak.Controllers
 
         [HttpPost]
         [Route("storePaymentResult")]
-        public async Task<ActionResult<bool>> StorePaymentResult(StorePaymentResultInput input)
+        public async Task<ActionResult<bool>> StorePaymentResult()
         {
-            _logger.LogError("Payment callback triggered.");
-            return true;
+            try
+            {
+                // Read the request body
+                string requestBody = await new StreamReader(Request.Body).ReadToEndAsync();
+                JObject requestBodyObject = JObject.Parse(requestBody);
+                var apiKey = _configuration["Payments:ApiKey"]!;
+                var requestUri = $"{Request.Path}{Request.QueryString}";
+                var dateHeader = Request.Headers["Date"].FirstOrDefault();
+                var xSignatureHeader = Request.Headers["X-Signature"].FirstOrDefault();
+
+                if (string.IsNullOrEmpty(dateHeader) || string.IsNullOrEmpty(xSignatureHeader))
+                {
+                    return BadRequest("Missing required headers.");
+                }
+
+                bool isValidSignature = _paymentService.ValidateSignature(requestBody, requestUri, dateHeader, xSignatureHeader);
+                if (!isValidSignature)
+                {
+                    return Unauthorized("Invalid signature.");
+                }
+
+                // fetch transaction from database
+                string transactionId = requestBodyObject.SelectToken("merchantTransactionId")?.ToString();
+                var transaction = await db.PaymentTransactions
+                    .Where(x => x.MerchantTransactionId == transactionId)
+                    .FirstOrDefaultAsync();
+
+                if (transaction == null)
+                {
+                    Response.StatusCode = 400;
+                    return NotFound("Transaction not found.");
+                }
+
+                // update transaction with payment result
+                var result = requestBodyObject.SelectToken("result")?.ToString();
+                var success = result == PaymentResponseTypes.OK.ToString();
+                transaction.Status = result;
+                transaction.Success = success;
+                var now = DateTime.UtcNow;
+                transaction.ResponseJson = requestBody;
+                transaction.UserModifiedDate = now;
+
+                // save changes
+                await db.SaveChangesAsync();
+
+                return Ok(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing payment result.");
+                return StatusCode(500, "Internal server error.");
+            }
         }
     }
 }

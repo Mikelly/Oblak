@@ -60,7 +60,6 @@
         flex-basis: calc(100% - 140px);
     }
 
-
 </style>
 
 
@@ -424,21 +423,21 @@
     }
 
     @(Html.Kendo().Button().Name("btnVirmanW")
-        .HtmlAttributes(new { type = "button", onclick = $"virman({dto.Id})", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .HtmlAttributes(new { type = "button", onclick = $"virman()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
         .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
             <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/receipt.png'/>
             <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>ŠTAMPA<br/>UPLATNICE<div>
             </div>"))
 
     @(Html.Kendo().Button().Name("btnVirmanW2")
-        .HtmlAttributes(new { type = "button", onclick = $"virmanfoo({dto.Id})", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .HtmlAttributes(new { type = "button", onclick = $"virmanfoo()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
         .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
             <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/print_invoice_color.png'/>
             <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>ŠTAMPA<br/>UPLATNICE<div>
             </div>"))
 
     @(Html.Kendo().Button().Name("btnCertW2")
-        .HtmlAttributes(new { type = "button", onclick = $"sendCert(0,{dto.Id})", style = "height:95px; width:95px; cursor:pointer;" })
+        .HtmlAttributes(new { type = "button", onclick = $"sendCert()", style = "height:95px; width:95px; cursor:pointer;" })
         .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
                     <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/licence_color.png'/>
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>POTVRDE<br/>O PRIJAVI<div>

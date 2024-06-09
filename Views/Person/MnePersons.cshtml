@@ -214,7 +214,9 @@
         });
     }
 
-    function virmanfoo(id) {
+    function virmanfoo() {
+
+        var id = $('#Id');
 
         $.ajax({
             url: `/virman?id=${id}`,
@@ -245,6 +247,10 @@
             type: 'POST',
             data: $('#mnePersonForm').serialize(),
             success: function (data) {
+                if(data.id != null)
+                {
+                    $('#Id').val(data.id);
+                }
                 if (data.info != "") {
                     var grid = $('#mnePersonGrid').data('kendoGrid');
                     grid.dataSource.read();
@@ -327,6 +333,8 @@
                     Swal.fire({ icon: 'error', title: errorMessages, confirmButtonText: `U redu` });
                 }
                 else {
+                    var grid = $('#mnePersonGrid').data('kendoGrid');
+                    grid.dataSource.read();
                     Swal.fire({ icon: 'success', title: 'Gost je uspješno obrisan iz RB90!', confirmButtonText: `U redu` });
                 }
                 //var wnd = $("#wndGuest").data("kendoWindow");
@@ -334,7 +342,10 @@
         });
     }
 
-    function sendCert(g, p) {    
+    function sendCert() {    
+
+        var g = 0;
+        var p = $('#Id');
 
         var html =
             `<label for="latefisc" class="swal2-input-label">e-Mail adresa na koju želite poslati potvrde:</label>` +
@@ -409,7 +420,10 @@
         }
     }
 
-    function virman(id) {        
+    function virman() {        
+        
+        var id = $('#Id');
+        
         $.ajax({
             url: `/print-direct?id=${id}`,
             type: 'GET',
@@ -464,6 +478,15 @@
     }
 
 </script>
+
+<style type="text/css">
+
+    .k-input-loading-icon
+    {
+        padding:0px!important;
+    }
+
+</style>
 
 <div style="display:flex; margin-left:15px; margin-top:25px; margin-right:15px;">
 

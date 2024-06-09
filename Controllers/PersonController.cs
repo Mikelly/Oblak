@@ -639,9 +639,9 @@ namespace Oblak.Controllers
                     await _registerClient.Initialize(property.LegalEntity);
                 }
 
-                await _registerClient.Person(guestDto);
+                var person = await _registerClient.Person(guestDto);
 
-                return Json(new BasicDto() { info = "Uspješno sačuvan gost", error = "" });
+                return Json(new BasicDto() { info = "Uspješno sačuvan gost", error = "", id = person.Id });
             }
             catch (Exception ex)
             {

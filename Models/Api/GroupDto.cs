@@ -19,5 +19,6 @@
         public string? PropertyName { get; set; }
         public string? Guests { get; set; }
         public int? NoOfGuests { get; set; }
+        public string? PaymentStatus { get; set; }
     }
 }

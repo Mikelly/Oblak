@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Oblak.Data.Enums;
 using RestSharp;
 using System.Globalization;
 using System.Security.Cryptography;
@@ -71,9 +72,20 @@ namespace Oblak.Services.Payment
                 _logger.LogError("Payment request failed {transactionId}: {errorMessage}\n{errorException}", transactionId, errorMessage, errorException);
                 return new PaymentServiceResponse { 
                     Success = false, 
+                    ReturnType = PaymentResponseTypes.ERROR.ToString(),
                     Errors = [new PaymentError { ErrorMessage = response.ErrorMessage }] 
                 };
             }
+        }
+
+        public bool ValidateSignature(string requestBody, string requestUri, string dateHeader, string xSignatureHeader)
+        {
+            var bodyHash = ComputeSHA512Hash(requestBody);
+            var message = $"POST\n{bodyHash}\napplication/json; charset=utf-8\n{dateHeader}\n{requestUri}";
+            var secret = _configuration["Payments:SharedSecret"]!;
+            var computedSignature = GenerateSignature(secret, message);
+
+            return computedSignature == xSignatureHeader;
         }
 
         private static string ComputeSHA512Hash(string input)

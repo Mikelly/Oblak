@@ -190,6 +190,7 @@ builder.Services.AddScoped<ReportingService>();
 builder.Services.AddScoped<EfiClient>();
 builder.Services.AddScoped<ApiService>();
 builder.Services.AddScoped<PaymentService>();
+builder.Services.AddScoped<GroupService>();
 
 builder.Services.AddTransient<SrbScheduler>();
 builder.Services.AddTransient<FcmService>();

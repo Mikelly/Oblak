@@ -8,6 +8,8 @@
         public string lang { get; set; }
         public string cntr { get; set; }
         public bool paym { get; set; }
+        public bool test { get; set; }
+        public int? prtn { get; set; }
         public List<string> roles { get; set; }
     }
 }

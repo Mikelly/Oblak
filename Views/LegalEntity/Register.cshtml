@@ -3,6 +3,14 @@
     var legalEntityTypes = new SelectList(new List<SelectListItem> { new SelectListItem { Text = "Person", Value = "Fizičko lice" }, new SelectListItem { Text = "Company", Value = "Pravno lice" } }, "Text", "Value");
 }
 
+<script type="text/javascript">
+    function filterMjesta() {
+        return {
+            opstina: $("#propertyMunicipality").val()
+        };
+    }
+</script>
+
 
 <style>
 
@@ -10,6 +18,11 @@
         display: inline-block;
         padding: 10px;
         min-width: 0;
+    }
+
+    .k-input-loading-icon
+    {
+        padding:0px!important;
     }
 
 </style>
@@ -88,6 +101,41 @@
             @(Html.Kendo().TextArea().Name("PropertyAddress").HtmlAttributes(new { style = "width:100%; height:100px;" }))
         </div>
         <div class="one" style="display:flex; flex-wrap: wrap;  align-items: center; align-content: space-between; flex: 0 1 calc(33% - 20px)">
+            <label for="opstina">Opština objekta</label>
+            @(Html.Kendo().DropDownList()
+              .Name("propertyMunicipality")
+              .HtmlAttributes(new { style = "width:100%" })
+              .OptionLabel("Izaberite opštinu...")
+              .DataTextField("Name")
+              .DataValueField("ExternalId")
+              .DataSource(source =>
+              {
+                  source.Read(read =>
+                  {
+                      read.Action("Opstine", "Property");
+                  });
+              })
+            )
+
+            <label for="mjesto">Mjesto objekta</label>
+            @(Html.Kendo().DropDownList()
+              .Name("propertyPlace")
+              .HtmlAttributes(new { style = "width:100%" })
+              .OptionLabel("Izaberite mjesto...")
+              .DataTextField("Name")
+              .DataValueField("ExternalId")
+              .DataSource(source =>
+              {
+                  source.Read(read =>
+                  {
+                      read.Action("Mjesta", "Property").Data("filterMjesta");
+                  })
+                  .ServerFiltering(true);
+              })
+              .Enable(false)
+              .AutoBind(false)
+              .CascadeFrom("propertyMunicipality")
+            )
         </div>
         <div class="one" style="display:flex; flex-wrap: wrap;  align-items: center; align-content: center; justify-items:center; justify-content:center; flex: 0 1 calc(33% - 20px)">
             @(Html.Kendo().Button().Name("btnregisterNewClient")
@@ -98,3 +146,4 @@
     </fieldset>
 
 </form>
+

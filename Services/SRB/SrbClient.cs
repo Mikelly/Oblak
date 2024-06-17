@@ -229,7 +229,7 @@ public class SrbClient : Register
                 }
             }
 
-            await GetExternalIds(group);
+            //await GetExternalIds(group);
 
             //await _messageHub.Clients.User(_context.User.Identity!.Name!).SendAsync("status", 100, $"Prijavljivanje završeno");
 
@@ -565,7 +565,10 @@ public class SrbClient : Register
 
     public override async Task<Stream> ConfirmationPersonPdf(Person person)
     {
-        var ids = new int[] { (person as SrbPerson).ExternalId2 ?? 0 };
+        var idd = (person as SrbPerson).ExternalId2 ?? 0;
+        if (idd == 0) await GetExternalId(person as SrbPerson);
+        idd = (person as SrbPerson).ExternalId2 ?? 0;
+        var ids = new int[] { idd };
         var streams = new List<Stream>();
         foreach (int id in ids)
         {
@@ -617,10 +620,16 @@ public class SrbClient : Register
 
     public async Task<List<int>> GetExternalIds(Group group)
     {
-        throw new NotImplementedException();
+        var result = new List<int>();
+        foreach (SrbPerson p in group.Persons)
+        { 
+            var id = await GetExternalId(p);
+            if (id != null) result.Add(id.Value);
+        }
+        return result;
     }
 
-    public async Task GetExternalId(SrbPerson p)
+    public async Task<int?> GetExternalId(SrbPerson p)
     {
 		try
 		{
@@ -650,17 +659,29 @@ public class SrbClient : Register
                     if (result.totalRowsCount == 1)
                     {
                         p.ExternalId2 = result.data.First().turistaId;
+                        _db.SaveChanges();
+                        return p.ExternalId2;
                     }
                     else
                     {
                         var results = result.data.Select(a => a.turistaId).ToList();
                         var existing = _db.SrbPersons.Where(a => a.ExternalId2 != null).Where(a => results.Contains(a.ExternalId2.Value)).Select(a => a.ExternalId2.Value).ToList();
                         var hit = results.Except(existing).FirstOrDefault();
-                        if(hit != null) p.ExternalId2 = hit;
+                        if (hit != null)
+                        {
+                            p.ExternalId2 = hit;
+					        _db.SaveChanges();
+                            return p.ExternalId2;
+                        }
+                        else
+                        {
+                            return null;
+                        }
                     }
-					_db.SaveChanges();
 				}
 			}
+
+            return null;
 		}
 		catch (Exception e)
 		{

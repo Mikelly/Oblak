@@ -48,7 +48,7 @@ namespace Oblak.Controllers
         [HttpPost]
         [Route("register-client", Name = "registerClient")]
         public IActionResult RegisterClient(string name, string type, string address, string tin, bool isInVat, bool isAdministered, bool isPassThrough, 
-            string propertyName, string propertyExternalId, string propertyAddress, string propertyType)
+            string propertyName, string propertyExternalId, string propertyAddress, string propertyType, string propertyMunicipality, string propertyPlace)
         {
             var username = _context.User.Identity.Name;
             var appUser = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username);
@@ -88,10 +88,29 @@ namespace Oblak.Controllers
 				}
                 //if (string.IsNullOrEmpty(propertyType)) errors += "Morate unijeti vrstu objekta!" + Environment.NewLine;
 
-				prop.PropertyName = propertyName;
+                if (isPassThrough == true)
+                {                    
+                    if (string.IsNullOrEmpty(propertyMunicipality)) errors += "Morate unijeti opštinu objekta!" + Environment.NewLine;
+                    if (string.IsNullOrEmpty(propertyPlace)) errors += "Morate unijeti mjesto objekta!" + Environment.NewLine;
+                }
+
+                if (string.IsNullOrEmpty(propertyMunicipality) == false)
+                {
+                    var municipality = _db.Municipalities.Where(a => a.ExternalId == propertyMunicipality).FirstOrDefault();
+                    prop.MunicipalityId = municipality.Id;
+                }
+
+                if (string.IsNullOrEmpty(propertyPlace) == false)
+                {
+                    prop.Place = propertyPlace;
+                }
+
+                prop.PropertyName = propertyName;
                 prop.Name = propertyName;
 				prop.Address = propertyAddress;				
 				prop.Type = propertyType;
+
+
 			}
 
             if (errors != string.Empty) return Json(new BasicDto() { error = errors, info = "" });

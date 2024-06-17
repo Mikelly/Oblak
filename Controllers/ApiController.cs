@@ -132,13 +132,13 @@ namespace Oblak.Controllers
                 }
                 else
                 {                    
-                    return Ok(new LoginDto() { info = "", error = "Neispravan username i/ili lozinka.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), paym = false, roles = roles });
+                    return Ok(new LoginDto() { info = "", error = "Neispravan username i/ili lozinka.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), paym = false, test = false, prtn = null, roles = roles });
                 }                
 
                 if (checkPassword.IsLockedOut)
                 {
                     _logger.LogWarning(2, "User account locked out.");                    
-                    return Ok(new LoginDto() { info = "", error = "User je zaključan.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), paym = false, roles = roles });
+                    return Ok(new LoginDto() { info = "", error = "User je zaključan.", auth = "", sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), paym = false, test = false, prtn = null, roles = roles });
                 }
 
                 //return RedirectToAction("AfterLogin");
@@ -151,10 +151,10 @@ namespace Oblak.Controllers
                     py = db.Partners.FirstOrDefault(a => a.Id == user.LegalEntity.PartnerId).ResidenceTaxPaymentRequired;
                 }
 
-                return Ok(new LoginDto() { info = "OK", error = "", auth = cookie, sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), paym = user.LegalEntity.PartnerId.HasValue ? user.LegalEntity.Partner.ResidenceTaxPaymentRequired : false, roles = roles });
+                return Ok(new LoginDto() { info = "OK", error = "", auth = cookie, sess = "", oper = "", lang = user.LegalEntity.Country.ToString(), cntr = user.LegalEntity.Country.ToString(), paym = user.LegalEntity.PartnerId.HasValue ? user.LegalEntity.Partner.ResidenceTaxPaymentRequired : false, test = user.LegalEntity.Test, prtn = user.LegalEntity.PartnerId, roles = roles });
             }
 
-            return Ok(new LoginDto() { info = "", error = "", auth = "", sess = "", oper = "", lang = "", cntr = "", paym = false, roles = roles });
+            return Ok(new LoginDto() { info = "", error = "", auth = "", sess = "", oper = "", lang = "", cntr = "", paym = false, prtn = null, roles = roles });
         }
 
         [HttpPost]
@@ -315,7 +315,7 @@ namespace Oblak.Controllers
         [Route("groupGet")]
         public async Task<ActionResult<GroupEnrichedDto>> GroupGet(int id)
         {
-            var m = await db.Groups.Include(a => a.Persons).Select(a => new GroupEnrichedDto() { 
+            var m = db.Groups.Include(a => a.Persons).Select(a => new GroupEnrichedDto() { 
                 Id = a.Id,
                 CheckIn = a.CheckIn,
                 CheckOut = a.CheckOut,
@@ -687,7 +687,7 @@ namespace Oblak.Controllers
                     Person prs = null;
                     if (_registerClient is SrbClient)
                     {
-                        prs = db.SrbPersons.Include(a => a.Property).FirstOrDefault(p => p.Id == person);
+                        prs = db.SrbPersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity).FirstOrDefault(p => p.Id == person);
                         await _registerClient.Authenticate(prs.Property.LegalEntity);
                     }
                     if (_registerClient is MneClient)
@@ -989,7 +989,7 @@ namespace Oblak.Controllers
 
             try
             {
-                var g = db.Groups.FirstOrDefault(a => a.Id == group);
+                var g = db.Groups.Include(a => a.Persons).FirstOrDefault(a => a.Id == group);
                 var rb90Client = _registerClient as MneClient;
                 rb90Client.CalcGroupResTax(g);
                 var result = await GroupGet(group);

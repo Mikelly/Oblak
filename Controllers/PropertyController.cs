@@ -230,5 +230,19 @@ namespace Oblak.Controllers
 
             return Json(data);
         }
+
+        public async Task<IActionResult> Opstine()
+        {
+            List<CodeList> data = _db.CodeLists.Where(a => a.Type == "opstina").ToList();
+
+            return Json(data);
+        }
+
+        public async Task<IActionResult> Mjesta(string opstina)
+        {
+            List<CodeList> data = _db.CodeLists.Where(a => a.Type == "mjesto" && a.Param1 == opstina).ToList();
+
+            return Json(data);
+        }
     }
 }

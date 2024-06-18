@@ -17,11 +17,19 @@ namespace Oblak.Services.Payment
         {
             _logger = logger;
             _configuration = configuration;
-            _client = new RestClient(_configuration["Payments:Endpoint"]!);
+        }
+
+        public string GetConfigurationValue(bool testMode, string key)
+        {
+            return testMode
+                ? _configuration[$"Payments:TEST:{key}"]!
+                : _configuration[$"Payments:PROD:{key}"]!;
         }
 
         public async Task<PaymentServiceResponse> InitiatePaymentAsync(PaymentServiceRequest input)
         {
+            _client = new RestClient(GetConfigurationValue(input.TestMode, "Endpoint"));
+
             var requestBody = new
             {
                 merchantTransactionId = input.MerchantTransactionId,
@@ -31,12 +39,12 @@ namespace Oblak.Services.Payment
                 successUrl = input.SuccessUrl,
                 cancelUrl = input.CancelUrl,
                 errorUrl = input.ErrorUrl,
-                callbackUrl = _configuration["Payments:Callback"]!,
+                callbackUrl = GetConfigurationValue(input.TestMode, "Callback"),
                 transactionToken = input.TransactionToken
             };
 
-            var apiKey = _configuration["Payments:ApiKey"]!;
-            var secret = _configuration["Payments:SharedSecret"]!;
+            var apiKey = GetConfigurationValue(input.TestMode, "ApiKey");
+            var secret = GetConfigurationValue(input.TestMode, "SharedSecret");
             var dateHeader = DateTime.UtcNow.ToString("R");
 
             var jsonBody = JsonConvert.SerializeObject(requestBody, new JsonSerializerSettings
@@ -48,7 +56,7 @@ namespace Oblak.Services.Payment
             var message = $"POST\n{bodyHash}\napplication/json; charset=utf-8\n{dateHeader}\n/api/v3/transaction/{apiKey}/debit";
             var signature = GenerateSignature(secret, message);
 
-            var authHeader = Convert.ToBase64String(Encoding.UTF8.GetBytes(_configuration["Payments:ApiUser"] + ":" + _configuration["Payments:Password"]));
+            var authHeader = Convert.ToBase64String(Encoding.UTF8.GetBytes(GetConfigurationValue(input.TestMode, "ApiUser") + ":" + GetConfigurationValue(input.TestMode, "Password")));
 
             var request = new RestRequest($"api/v3/transaction/{apiKey}/debit", Method.Post);
 
@@ -78,11 +86,11 @@ namespace Oblak.Services.Payment
             }
         }
 
-        public bool ValidateSignature(string requestBody, string requestUri, string dateHeader, string xSignatureHeader)
+        public bool ValidateSignature(string requestBody, string requestUri, string dateHeader, string xSignatureHeader, bool testMode)
         {
             var bodyHash = ComputeSHA512Hash(requestBody);
             var message = $"POST\n{bodyHash}\napplication/json; charset=utf-8\n{dateHeader}\n{requestUri}";
-            var secret = _configuration["Payments:SharedSecret"]!;
+            var secret = GetConfigurationValue(testMode, "SharedSecret");
             var computedSignature = GenerateSignature(secret, message);
 
             return computedSignature == xSignatureHeader;

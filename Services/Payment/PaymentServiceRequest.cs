@@ -9,5 +9,6 @@
         public string SuccessUrl { get; set; } = string.Empty;
         public string CancelUrl { get; set; } = string.Empty;
         public string ErrorUrl { get; set; } = string.Empty;
+        public bool TestMode { get; set; } = true;
     }
 }

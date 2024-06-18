@@ -295,7 +295,7 @@ namespace Oblak.Controllers
 
             foreach (var group in grupe)
             {
-                group.Status = statuses[group.Id];
+                group.PaymentStatus = statuses[group.Id];
             }
 
             return Json(grupe);            
@@ -333,7 +333,13 @@ namespace Oblak.Controllers
                 ResTaxFee = a.ResTaxFee ?? 0,
                 ResTaxCalculated = a.ResTaxCalculated ?? false,
                 ResTaxPaid = a.ResTaxPaid ?? false
-            }).SingleOrDefault(a => a.Id == id);            
+            }).SingleOrDefault(a => a.Id == id);
+
+            if (m != null)
+            {
+                var statuses = await _groupService.GetPaymentStatusForGroupsAsync(new List<int> { m.Id });
+                m.PaymentStatus = statuses[m.Id];
+            }
 
             return m;
         }
@@ -1293,7 +1299,8 @@ namespace Oblak.Controllers
                 TransactionToken = input.Token,
                 SuccessUrl = input.SuccessUrl,
                 CancelUrl = input.CancelUrl,
-                ErrorUrl = input.ErrorUrl
+                ErrorUrl = input.ErrorUrl,
+                TestMode = _legalEntity.Test
             });
 
             var now = DateTime.UtcNow;
@@ -1332,14 +1339,14 @@ namespace Oblak.Controllers
 
         [HttpPost]
         [Route("storePaymentResult")]
-        public async Task<ActionResult<bool>> StorePaymentResult()
+        public async Task<ActionResult<bool>> StorePaymentResult([FromQuery] bool testMode = false)
         {
             try
             {
                 // Read the request body
                 string requestBody = await new StreamReader(Request.Body).ReadToEndAsync();
                 JObject requestBodyObject = JObject.Parse(requestBody);
-                var apiKey = _configuration["Payments:ApiKey"]!;
+                var apiKey = _paymentService.GetConfigurationValue(testMode, "ApiKey");
                 var requestUri = $"{Request.Path}{Request.QueryString}";
                 var dateHeader = Request.Headers["Date"].FirstOrDefault();
                 var xSignatureHeader = Request.Headers["X-Signature"].FirstOrDefault();
@@ -1349,7 +1356,7 @@ namespace Oblak.Controllers
                     return BadRequest("Missing required headers.");
                 }
 
-                bool isValidSignature = _paymentService.ValidateSignature(requestBody, requestUri, dateHeader, xSignatureHeader);
+                bool isValidSignature = _paymentService.ValidateSignature(requestBody, requestUri, dateHeader, xSignatureHeader, testMode);
                 if (!isValidSignature)
                 {
                     return Unauthorized("Invalid signature.");
@@ -1375,6 +1382,16 @@ namespace Oblak.Controllers
                 var now = DateTime.UtcNow;
                 transaction.ResponseJson = requestBody;
                 transaction.UserModifiedDate = now;
+
+                // If status is OK, update ResTaxPaid field on the associated group
+                if (success && transaction.GroupId.HasValue)
+                {
+                    var group = await db.Groups.FindAsync(transaction.GroupId.Value);
+                    if (group != null)
+                    {
+                        group.ResTaxPaid = true;
+                    }
+                }
 
                 // save changes
                 await db.SaveChangesAsync();

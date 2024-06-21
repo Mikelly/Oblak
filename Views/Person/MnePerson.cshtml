@@ -304,7 +304,7 @@
                         .Max(DateTime.Now.Date)
                         .Min(DateTime.Now.Date.AddMonths(-3))
                         .Events(e => e.Change("resTaxCalc"))
-                        .HtmlAttributes(new { style = "width:100%" })
+                        .HtmlAttributes(new { id = "CheckInDateTime", style = "width:100%" })
                         )
                 </div>
                 <div class="one">
@@ -315,7 +315,7 @@
                         .Min(DateTime.Now.Date)
                         .Max(DateTime.Now.Date.AddMonths(12))
                         .Events(e => e.Change("resTaxCalc"))
-                        .HtmlAttributes(new { style = "width:100%" })
+                        .HtmlAttributes(new { id = "CheckOut", style = "width:100%" })
                         )
                 </div>
                 <div class="one">
@@ -411,6 +411,14 @@
                     <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/save_color.png'/>                    
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>SAČUVAJ<br/>IZMJENE<div>
                 </div>"))
+
+    @(Html.Kendo().Button().Name("btnCopyLast")
+        .HtmlAttributes(new { type = "button", onclick = "copyLast()", style = "height:95px; width:95px; cursor:pointer; margin-left:10px;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/copy2.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>KOPIRAJ<br/>PRIJAVU<div>
+                </div>"))
+
     <div style="flex-grow:1"></div>
     @if(dto.GroupId == null)
     {

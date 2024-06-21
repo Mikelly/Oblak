@@ -383,6 +383,42 @@
         });
     }
 
+    function copyLast() {
+
+        $.ajax({
+            url: `/person/copylast`,
+            type: 'POST',
+            success: function (data) {
+                if (data.info != "") {
+                    var mccb = $('#PropertyId').data("kendoMultiColumnComboBox");
+                    mccb.value(data.propertyId);
+                    mccb.text(data.propertyName);
+                    
+                    
+                    const out = Date.parse(data.checkOut);
+                    const ind = Date.parse(data.checkIn);
+
+                    var indate = new Date(ind);
+                    var outdate = new Date(out);
+                    
+                    debugger;
+                    
+                    $('#CheckInDateTime').data("kendoDatePicker").value(indate);
+
+                    if (isNaN(out) == false) {
+                        $('#CheckOut').data("kendoDatePicker").value(outdate);
+                    }
+                }
+                if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+            },
+            complete: function (data) {
+                
+            }
+        });
+    }
+
     function certprint(g, p) {
         window.open(`/api/certificatepdf?grupa=${g}&person=${p}`, "_blank");
     }

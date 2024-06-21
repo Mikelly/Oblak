@@ -43,14 +43,14 @@
             <label for="name">Naziv izdavaoca</label>
             @(Html.Kendo().TextBox().Name("Name").HtmlAttributes(new { style = "width:100%" }))
         </div>
-@*         <div class="one" style="flex:0 1 calc(33% - 20px)">
-            <label for="firstname">Ime</label>
-            @(Html.Kendo().TextBox().Name("FirstName").HtmlAttributes(new { style = "width:100%" }))
+@*          <div class="one" style="flex:0 1 calc(33% - 20px)">
+            <label for="firstname">Broj telefona</label>
+            @(Html.Kendo().TextBox().Name("PhoneNumber").HtmlAttributes(new { style = "width:100%" }))
         </div>
         <div class="one" style="flex:0 1 calc(33% - 20px)">
-            <label for="lastname">Prezime</label>
-            @(Html.Kendo().TextBox().Name("LastName").HtmlAttributes(new { style = "width:100%" }))
-        </div> *@
+            <label for="lastname">Broj dokumenta</label>
+            @(Html.Kendo().TextBox().Name("DocumentNumber").HtmlAttributes(new { style = "width:100%" }))
+        </div>  *@
         <div class="one" style="flex:0 1 calc(33% - 20px)">
             <label for="lastname">Poreski broj</label>
             @(Html.Kendo().TextBox().Name("TIN").HtmlAttributes(new { style = "width:100%" }))
@@ -59,7 +59,17 @@
             <label for="gender">Adresa izdavaoca</label>
             @(Html.Kendo().TextArea().Name("Address").HtmlAttributes(new { style = "width:100%; height:100px;" }))
         </div>
-        <div class="one" style="display:flex; flex-wrap: wrap;  align-items: center; align-content: space-between; flex: 0 1 calc(66% - 20px)">
+        <div class="one" style="flex: 0 1 calc(33% - 20px); justify-content:space-between; justify-items:space-between;">
+            <div style="margin-bottom:23px;">
+                <label for="firstname">Broj telefona</label>
+                @(Html.Kendo().TextBox().Name("PhoneNumber").HtmlAttributes(new { style = "width:100%" }))
+            </div>
+            <div>
+                <label for="lastname">Broj dokumenta</label>
+                @(Html.Kendo().TextBox().Name("DocumentNumber").HtmlAttributes(new { style = "width:100%" }))
+            </div>
+        </div>
+        <div class="one" style="display:flex; flex-wrap: wrap;  align-items: center; align-content: space-between; flex: 0 1 calc(33% - 20px)">
             <hr style="flex-basis: 100%; height: 0; margin-top: 10px; border: 0;" />
             <div>
                 @(Html.Kendo().Switch().Name("IsInVat").HtmlAttributes(new { style = "width:60px;" }).Messages(a => a.Checked("DA").Unchecked("NE")))
@@ -120,6 +130,7 @@
             <label for="mjesto">Mjesto objekta</label>
             @(Html.Kendo().DropDownList()
               .Name("propertyPlace")
+              .Filter("contains")
               .HtmlAttributes(new { style = "width:100%" })
               .OptionLabel("Izaberite mjesto...")
               .DataTextField("Name")

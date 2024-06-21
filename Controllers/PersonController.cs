@@ -324,6 +324,21 @@ namespace Oblak.Controllers
             return PartialView();
         }
 
+
+        public ActionResult CopyLast()
+        {
+            var last = _db.MnePersons.Include(a => a.Property).Where(a => a.UserCreated == _appUser.UserName).FirstOrDefault();
+
+            if (last != null)
+            {
+                return Json(new { info = "OK", error = "", propertyId = last.PropertyId, propertyName = last.Property.Name, checkIn = last.CheckIn });
+            }
+            else
+            {
+                return Json(new { info = "", error = "Ne postoji zadnja prijava" });
+            }        
+        }
+
         public ActionResult ResTax(int? resType, int? payType, string birthDate, string checkIn, string checkOut)
         {
             /*var p = _db.Properties.Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == property);

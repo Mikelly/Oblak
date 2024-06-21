@@ -33,6 +33,15 @@ namespace Oblak.Data
         public string? LastName { get; set; }
 
         [StringLength(450)]
+        public string? DocumentType { get; set; }
+
+        [StringLength(450)]
+        public string? DocumentNumber { get; set; }
+
+        [StringLength(450)]
+        public string? PhoneNumber { get; set; }
+
+        [StringLength(450)]
         public string TIN { get; set; }
 
         [StringLength(2000)]

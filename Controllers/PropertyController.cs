@@ -79,6 +79,7 @@ namespace Oblak.Controllers
             ViewBag.MunicipalityCodeList = municipalistySelectList;
             ViewBag.TypeCodeList = typeSelectList;
             ViewBag.StatusList = statusSelectList;
+            ViewBag.Opstine = _db.CodeLists.Where(a => a.Type == "opstina").ToList();
 
             ViewBag.LegalEntity = legalEntity;
 

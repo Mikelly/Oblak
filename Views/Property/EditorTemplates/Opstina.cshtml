@@ -1,0 +1,10 @@
+﻿@model int
+
+@(Html.Kendo().DropDownList()
+    .Name("propertyMunicipality")
+    .HtmlAttributes(new { style = "width:100%" })
+    .OptionLabel("Izaberite opštinu...")
+    .BindTo(ViewBag.Opstine as List<CodeList>)
+    .DataTextField("Name")
+    .DataValueField("ExternalId")            
+)

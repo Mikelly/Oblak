@@ -84,6 +84,18 @@
         });
     }
 
+    function propertyEdit(e) { 
+        var div = e.container;
+        var m = e.model;
+        var g = e.sender;
+
+        alert(m.MunicipalityId);
+        alert(m.Place);
+
+        var opstina = div.find('input[name=MunicipalityId]').data('kendoDropDownList');
+        opstina.text('BARRR');
+    }
+
 
 </script>
 
@@ -154,7 +166,9 @@
             columns.Bound(g => g.Id).Title("ID").Width(110).ClientTemplate("#= Id #").HtmlAttributes(new { style = "pointer-events:none;" });
             columns.Bound(g => g.ExternalId).Title("Šifra").Width(110);
             columns.Bound(g => g.Name).Title("Naziv").Width(250);
-            columns.ForeignKey(g => g.MunicipalityId, sl).Title("Opština").Width(300);
+            columns.Bound(g => g.MunicipalityId).Title("Opština").Width(200).EditorTemplateName("Opstina");
+            columns.Bound(g => g.Place).Title("Mjesto").Width(200).EditorTemplateName("Mjesto");
+
             @* col.Bound(g => g.PropertyName).Title("Naziv objekta").Width(100); *@
             columns.Bound(g => g.Address).Title("Adresa").Width("100%");
             columns.ForeignKey(g => g.Type, tl).Title("Vrsta").Width(250);
@@ -200,6 +214,7 @@
             .Selectable()
             .Scrollable()
             .Filterable()
+            .Events(e => e.Edit("propertyEdit"))
             .HtmlAttributes(new { style = "height:100%;" })
             .Editable(editable => editable.Mode(GridEditMode.InLine))
             .DataSource(ds => ds

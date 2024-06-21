@@ -265,6 +265,8 @@ namespace Oblak.Controllers
                         {
                             dto.CheckIn = DateTime.Now;
                             dto.CheckOut = DateTime.Now.AddDays(1);
+                            dto.BirthDate = DateTime.Now.AddYears(-18);
+                            dto.DocumentValidTo = DateTime.Now.AddYears(10);
                         }
 
                         var legalEntityId = _appUser!.LegalEntityId;
@@ -278,7 +280,14 @@ namespace Oblak.Controllers
                                 dto.PropertyName = properties[0].Name;
                             }
                         }
+                    }
 
+                    if (_appUser.LegalEntity.PartnerId == 3)
+                    {
+                        if (dto.ResTaxPaymentTypeId == null)
+                        {
+                            dto.ResTaxPaymentTypeId = 2;
+                        }
                     }
                 }
                 else
@@ -591,6 +600,8 @@ namespace Oblak.Controllers
                     PermanentResidenceCountry = a.PermanentResidenceCountry,
                     CheckIn = a.CheckIn,
                     CheckOut = a.CheckOut,
+                    ResTaxAmount = a.ResTaxAmount,
+                    ResTaxFee = a.ResTaxFee,
                     DocumentType = documentTypeDictionary.GetValueOrNull(a.DocumentType),
                     DocumentNumber = a.DocumentNumber,
                     DocumentValidTo = a.DocumentValidTo,
@@ -615,7 +626,7 @@ namespace Oblak.Controllers
         {
             try
             {
-                if (User.IsInRole("TouristOrgOperator") || User.IsInRole("TouristOrgAdmin") || User.IsInRole("TouristController"))
+                if (User.IsInRole("TouristOrgOperator"))
                 {
                     var g = _db.MnePersons.FirstOrDefault(a => a.Id == guestDto.Id);
                     if (g != null && (g.ExternalId ?? 0) != 0)

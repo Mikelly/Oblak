@@ -337,6 +337,8 @@ namespace Oblak.Services.MNE
             var dr = _db.CodeLists.Where(a => a.Type == "drzava" && a.ExternalId == p.BirthCountry).FirstOrDefault();
             var di = _db.CodeLists.Where(a => a.Type == "drzava" && a.ExternalId == p.DocumentCountry).FirstOrDefault();
             var dp = _db.CodeLists.Where(a => a.Type == "drzava" && a.ExternalId == p.PermanentResidenceCountry).FirstOrDefault();
+            var op = _db.CodeLists.Where(a => a.Type == "opstina" && a.ExternalId == p.Property!.Municipality!.ExternalId).FirstOrDefault();
+            var mj = _db.CodeLists.Where(a => a.Type == "mjesto" && a.ExternalId == p.Property!.Place).FirstOrDefault();
 
             //SISTEM.Models.Helpers.Logger.Debug("Stranac after lookups");
 
@@ -366,8 +368,8 @@ namespace Oblak.Services.MNE
             if (pr != null) { s.mjestoUlaskaUCG = new granicniPrelaz(); s.mjestoUlaskaUCG.id = int.Parse(pr.ExternalId); s.mjestoUlaskaUCG.naziv = pr.Name; } else s.mjestoUlaskaUCG = null;
             if (p.LegalEntity.PassThroughId.HasValue)
             {
-                s.opstinaBoravka = new opstina(); s.opstinaBoravka.kod = "20010"; s.opstinaBoravka.naziv = "BAR";
-                s.mjestoBoravka = new mjesto(); s.mjestoBoravka.kod = "200026"; s.mjestoBoravka.naziv = "BAR";
+                s.opstinaBoravka = new opstina(); s.opstinaBoravka.kod = p.Property.Municipality.ExternalId; s.opstinaBoravka.naziv = op.ExternalId;
+                s.mjestoBoravka = new mjesto(); s.mjestoBoravka.kod = p.Property.Place; s.mjestoBoravka.naziv = mj.ExternalId;
                 s.adresaBoravkaiKucniBroj = p.Property.Address;
                 var f = "";
                 var l = "";

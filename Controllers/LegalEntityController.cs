@@ -62,7 +62,8 @@ namespace Oblak.Controllers
         [HttpPost]
         [Route("register-client", Name = "registerClient")]
         public IActionResult RegisterClient(string name, string type, string address, string tin, bool isInVat, bool isAdministered, bool isPassThrough, 
-            string propertyName, string propertyExternalId, string propertyAddress, string propertyType, string propertyMunicipality, string propertyPlace)
+            string propertyName, string propertyExternalId, string propertyAddress, string propertyType, string propertyMunicipality, string propertyPlace,
+            string phoneNumber, string documentNumber)
         {
             var username = _context.User.Identity.Name;
             var appUser = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username);
@@ -85,6 +86,8 @@ namespace Oblak.Controllers
             newLegalEntity.InVat = isInVat;
             newLegalEntity.TIN = tin;
             newLegalEntity.PartnerId = appUser.PartnerId;
+            newLegalEntity.PhoneNumber = phoneNumber;
+            newLegalEntity.DocumentNumber = documentNumber;
             if (isAdministered) newLegalEntity.AdministratorId = legalEntity.Id;
             if (isPassThrough) newLegalEntity.PassThroughId = legalEntity.Id;
 

@@ -13,6 +13,7 @@ namespace Oblak.Models.Api
         public string? Type { get; set; }
         public string? Address { get; set; }
         public int? MunicipalityId { get; set; }
+        public string? Place { get; set; }
         public decimal? Price { get; set; }
         public string? BusinessUnitCode { get; set; }
         public string? FiscalEnuCode { get; set; }
@@ -35,6 +36,7 @@ namespace Oblak.Models.Api
             property.Type = this.Type;
             property.Address = this.Address;
             property.MunicipalityId = this.MunicipalityId;
+            property.Place = this.Place;
             property.Price = this.Price;
             property.BusinessUnitCode = this.BusinessUnitCode;
             property.FiscalEnuCode = this.FiscalEnuCode;

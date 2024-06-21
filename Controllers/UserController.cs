@@ -154,15 +154,15 @@ public class UserController : Controller
     }
 
     [HttpPost]
-    public async Task<ActionResult> Destroy([DataSourceRequest] DataSourceRequest request, CheckInPointDto dto)
+    public async Task<ActionResult> Destroy([DataSourceRequest] DataSourceRequest request, UserDto dto)
     {
         try
         {
-            var cp = _db.CheckInPoints.Find(dto.Id);                    
+            var u = _db.Users.Find(dto.Id);                    
 
-            if (cp != null)
+            if (u != null)
             {                    
-                _db.CheckInPoints.Remove(cp);
+                _db.Users.Remove(u);
                 _db.SaveChanges();
                 var users = _db.Users.Where(a => a.PartnerId == _legalEntity.PartnerId).Select(a => new UserDto
                 {
@@ -176,11 +176,11 @@ public class UserController : Controller
                     CheckInPointId = a.CheckInPointId
                 });
 
-                return Json(await users.ToDataSourceResultAsync(request));
+                return Json(await new[] { u }.ToDataSourceResultAsync(request));
             }
             else
             {
-                return Json(new { error = "Punkt nije pronađen." });
+                return Json(new { error = "Korisnik nije pronađen." });
             }
         }
         catch (Exception ex)

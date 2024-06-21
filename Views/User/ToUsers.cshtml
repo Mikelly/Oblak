@@ -113,7 +113,7 @@
             })
             .Width(70);
 
-            columns.Bound(g => g.Id).Title("ID").Width(280).HtmlAttributes(new { style = "text-align:center;" });
+            //columns.Bound(g => g.Id).Title("ID").Width(280).HtmlAttributes(new { style = "text-align:center;" });
             columns.Bound(g => g.UserName).Title("Korisničko ime").Width("30%");
             columns.Bound(g => g.PersonName).Title("Ime i prezime").Width("30%");
             columns.Bound(g => g.Email).Title("E-Mail").Width("30%");            
@@ -130,6 +130,7 @@
             .Editable(editable => editable.Mode(GridEditMode.InLine))
             .DataSource(ds => ds
                 .Ajax()
+                .Sort(a => a.Add(b => b.UserName))
                 .PageSize(20)
                 .Model(m =>
                 {

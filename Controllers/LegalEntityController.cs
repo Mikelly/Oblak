@@ -42,6 +42,20 @@ namespace Oblak.Controllers
         [Route("register-client", Name = "register")]
         public IActionResult Register()
         {
+            var username = _context.User.Identity.Name;
+            var appUser = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username);
+
+            if (appUser.PartnerId == 3)
+            {
+                ViewBag.IsAdministered = true;
+                ViewBag.IsPassThrough = true;
+            }
+            else
+            {
+                ViewBag.IsAdministered = false;
+                ViewBag.IsPassThrough = false;
+            }
+
             return PartialView();
         }
 
@@ -223,7 +237,7 @@ namespace Oblak.Controllers
         {
             try
             {
-                var existingEntity = await _db.LegalEntities.FindAsync(input.Id);
+                var existingEntity = _db.LegalEntities.Include(a => a.Properties).FirstOrDefault(a => a.Id == input.Id);
 
                 if (existingEntity == null)
                 {
@@ -241,6 +255,8 @@ namespace Oblak.Controllers
 
                 if (_db.Documents.Any(a => a.Property.LegalEntityId == input.Id))
                     return Json(new DataSourceResult { Errors = "Ne možete obrisati klijenta, jer postoje računi vezani za njega." });
+
+                _db.RemoveRange(existingEntity.Properties);
 
                 _db.Remove(existingEntity);
 

@@ -611,6 +611,12 @@ namespace Oblak.Controllers
 
                 var newGuest = _mapper.Map<MnePersonDto, MnePerson>(guestDto);
                 var property = _db.Properties.Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == guestDto.PropertyId);
+
+                if (property == null)
+                {
+					return Json(new BasicDto() { info = "", error = "Nijeste odabrali smještajni objekat!", id = 0 });
+				}
+
 				//newGuest.LegalEntityId = property.LegalEntityId;
 
 				if (User.IsInRole("TouristOrgOperator") || User.IsInRole("TouristOrgAdmin") || User.IsInRole("TouristController"))

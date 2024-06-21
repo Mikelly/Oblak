@@ -9,6 +9,26 @@
             opstina: $("#propertyMunicipality").val()
         };
     }
+
+    function passThroughChanged() { 
+        var pass = $('#IsPassThrough').data('kendoSwitch').check();
+        
+        if (pass == false) {
+            var textbox = $('#PropertyExternalId').data('kendoTextBox');
+            textbox.enable(true);
+        }
+        else {
+            var textbox = $('#PropertyExternalId').data('kendoTextBox');
+            textbox.value('');
+            textbox.enable(false);
+
+        }
+    }
+
+    $(document).ready(function () {
+        passThroughChanged();
+    });
+
 </script>
 
 
@@ -67,12 +87,12 @@
             </div>
             <hr style="flex-basis: 100%; height: 0; margin: 0; border: 0;" />
             <div style="flex-grow:1">
-                @(Html.Kendo().Switch().Name("IsAdministered").HtmlAttributes(new { style = "width:60px;" }).Messages(a => a.Checked("DA").Unchecked("NE")))
+                @(Html.Kendo().Switch().Name("IsAdministered").Checked((bool)ViewBag.IsAdministered).HtmlAttributes(new { style = "width:60px;" }).Messages(a => a.Checked("DA").Unchecked("NE")))
                 <label style="display:inline-block;" for="personalnumber">Da li se administrira?</label>
             </div>
             <hr style="flex-basis: 100%; height: 0; margin: 0; border: 0;" />
             <div style="flex-grow:1">
-                @(Html.Kendo().Switch().Name("IsPassThrough").HtmlAttributes(new { style = "width:60px;" }).Messages(a => a.Checked("DA").Unchecked("NE")))
+                @(Html.Kendo().Switch().Name("IsPassThrough").Checked((bool)ViewBag.IsPassThrough).HtmlAttributes(new { style = "width:60px;" }).Messages(a => a.Checked("DA").Unchecked("NE")).Events(e => e.Change("passThroughChanged")))
                 <label style="display:inline-block;" for="personalnumber">Da li je podređen?</label>
             </div>
         </div>

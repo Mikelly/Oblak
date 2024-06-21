@@ -37,16 +37,19 @@
 		<!--/ about -->
 				
 		<!-- news -->
-		<li aria-haspopup="true">
-			<a href="#"><i class="fa fa-file-invoice fa-10x"></i>Računi</a>
-			<div class="grid-container3">
-				<ul>
- 					<li><a href="/items"><i class="fa fa-shop"></i>Artikli</a></li>
-					<li><a href="/items"><i class="fa fa-address-book"></i>Kupci</a></li>
-					<li><a href="#"><i class="fa fa-print"></i>Izvještaji</a></li>
-				</ul>
-			</div>
-		</li>
+		@if (User.IsInRole("TouristOrg") == false)
+		{
+			<li aria-haspopup="true">
+				<a href="#"><i class="fa fa-file-invoice fa-10x"></i>Računi</a>
+				<div class="grid-container3">
+					<ul>
+						<li><a href="/items"><i class="fa fa-shop"></i>Artikli</a></li>
+						<li><a href="/items"><i class="fa fa-address-book"></i>Kupci</a></li>
+						<li><a href="#"><i class="fa fa-print"></i>Izvještaji</a></li>
+					</ul>
+				</div>
+			</li>
+		}
 		<!--/ news -->
 				
 		<!-- podešavanja -->
@@ -56,7 +59,11 @@
 				<ul>
 					<li><a href="/clients"><i class="fa fa-bed"></i>Izdavaoci</a></li>
 					<li><a href="/check-in-points"><i class="fa fa-shop"></i>Check-In Points</a></li>
-					<li><a href="/users"><i class="fa fa-users"></i>Korisnici</a></li>					
+					@if(User.IsInRole("TouristOrgAdmin")) 
+					{
+						<li><a href="/users"><i class="fa fa-users"></i>Korisnici</a></li>					
+					}
+					
 					@* <li><a href="#"><i class="fa fa-print"></i>Podešavanje računa</a></li> *@
 @* 					<li><a href="#"><i class="fa fa-credit-card"></i>Kreditne kartice</a></li>
 					<li><a href="#"><i class="fa fa-calculator"></i>Moj POS</a></li> *@

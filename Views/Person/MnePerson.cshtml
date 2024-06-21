@@ -304,7 +304,17 @@
                         .Max(DateTime.Now.Date)
                         .Min(DateTime.Now.Date.AddMonths(-3))
                         .Events(e => e.Change("resTaxCalc"))
-                        .HtmlAttributes(new { id = "CheckInDateTime", style = "width:100%" })
+                        .HtmlAttributes(new { id = "CheckIn", style = "width:100%" })
+                        )
+                </div>
+                <div class="one">
+                    <label for="Duration">Trajanje boravka<span style="color: red;">*</span></label>
+                    @(Html.Kendo().IntegerTextBox()
+                        .Name("Duration")                        
+                        .Min(1)
+                        .Max(90)                        
+                        .Events(e => e.Change("durationCalc"))
+                        .HtmlAttributes(new { id = "Duration", style = "width:100%" })
                         )
                 </div>
                 <div class="one">

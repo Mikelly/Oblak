@@ -49,12 +49,16 @@ namespace Oblak.Controllers
             {
                 ViewBag.IsAdministered = true;
                 ViewBag.IsPassThrough = true;
+                ViewBag.Opstina = "20010";
             }
             else
             {
                 ViewBag.IsAdministered = false;
                 ViewBag.IsPassThrough = false;
+                ViewBag.Opstina = "";
             }
+
+            ViewBag.Opstine = _db.CodeLists.Where(a => a.Type == "opstina").ToList();
 
             return PartialView();
         }

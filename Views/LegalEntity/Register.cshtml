@@ -56,6 +56,7 @@
             @(Html.Kendo().DropDownList().Name("Type")
                 .OptionLabel("Izaberite vrstu")
                 .BindTo(legalEntityTypes)
+                .Value("Person")
                 .HtmlAttributes(new { style = "width:100%" })
                 )
         </div>
@@ -136,15 +137,17 @@
               .Name("propertyMunicipality")
               .HtmlAttributes(new { style = "width:100%" })
               .OptionLabel("Izaberite opštinu...")
+              .BindTo(ViewBag.Opstine as List<CodeList>)
               .DataTextField("Name")
               .DataValueField("ExternalId")
-              .DataSource(source =>
+              .Value(ViewBag.Opstina)
+@*               .DataSource(source =>
               {
                   source.Read(read =>
                   {
                       read.Action("Opstine", "Property");
                   });
-              })
+              }) *@
             )
 
             <label for="mjesto">Mjesto objekta</label>

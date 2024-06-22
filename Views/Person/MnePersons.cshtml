@@ -476,7 +476,7 @@
 
     function virman() {        
         
-        var id = $('#Id');
+        var id = $('#Id').val();
         
         $.ajax({
             url: `/print-direct?id=${id}`,

@@ -336,7 +336,7 @@ namespace Oblak.Controllers
 
         public ActionResult CopyLast()
         {
-            var last = _db.MnePersons.Include(a => a.Property).Where(a => a.UserCreated == _appUser.UserName).FirstOrDefault();
+            var last = _db.MnePersons.Include(a => a.Property).Where(a => a.UserCreated == _appUser.UserName).OrderByDescending(a => a.UserCreatedDate).FirstOrDefault();
 
             if (last != null)
             {
@@ -932,16 +932,23 @@ namespace Oblak.Controllers
         [Route("print-direct")]
         public IActionResult PrintDirect(int id)
         {
-            var person = _db.MnePersons.Include(a => a.Property).Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == id);
+            var person = _db.MnePersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == id);
+
+            var address = person.Property.LegalEntity.Address ?? "";
+            address = address
+                .Replace("\n", " ")
+                .Replace("\t", " ")
+                .Replace("\r", " ")
+                .Trim();
 
             return Json(new
             {
-                from = $"{person.Property.LegalEntity.Name}\n{person.Property.LegalEntity.TIN}",
-                to = "Opstina Bar",
+                from = $"{person.Property.LegalEntity.Name}\n{address}",
+                to = "Boravisna taksa, TO Bar",
                 fromacc = "-",
                 toacc = "510-8093205-10",
-                desc = "Uplata boravisne takse",
-                amount = ((person.ResTaxAmount).Value + (person.ResTaxFee ?? 0m)).ToString("#,###.00", new CultureInfo("de-DE"))
+                desc = $"Uplata boravisne takse\nGost: {person.FirstName} {person.LastName}\nPeriod:{person.CheckIn.ToString("dd.MM.yyyy")} - {person.CheckOut.Value.ToString("dd.MM.yyyy")}",
+                amount = ((person.ResTaxAmount ?? 0m) + (person.ResTaxFee ?? 0m)).ToString("#,###.00", new CultureInfo("de-DE"))
             });
         }
 

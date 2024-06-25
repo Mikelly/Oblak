@@ -296,12 +296,12 @@ app.MapHub<MessageHub>("/messageHub");
 Telerik.Windows.Documents.Extensibility.FixedExtensibilityManager.FontsProvider = new Oblak.Helpers.TelerikFontsProvider();
 Telerik.Windows.Documents.Extensibility.FixedExtensibilityManager.JpegImageConverter = new Telerik.Documents.ImageUtils.JpegImageConverter();
 
-if (!app.Environment.IsDevelopment())
-{
-    FirebaseApp.Create(new AppOptions()
-    {
-        Credential = GoogleCredential.FromFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FCM.json")),
-    });
-}
+//if (!app.Environment.IsDevelopment())
+//{
+//    FirebaseApp.Create(new AppOptions()
+//    {
+//        Credential = GoogleCredential.FromFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FCM.json")),
+//    });
+//}
 
 app.Run();

@@ -24,6 +24,9 @@ namespace Oblak.Models
         [Display(Name = "Poreski broj")]
         public string TIN { get; set; }
 
+        [Display(Name = "Broj telefona")]
+        public string PhoneNumber { get; set; }
+
         [UIHint("Editor")]
         [Display(Name = "Adresa")]
         public string Address { get; set; }

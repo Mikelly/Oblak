@@ -83,6 +83,7 @@
 	<ItemGroup>
 		<Folder Include="Connected Services\EFI\" />
 		<Folder Include="Middleware\" />
+		<Folder Include="NewFolder\" />
 		<Folder Include="Views\Document\" />
 		<Folder Include="wwwroot\temp\" />
 		<Folder Include="wwwroot\templates\" />

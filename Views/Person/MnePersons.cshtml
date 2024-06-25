@@ -465,6 +465,8 @@
         var out = addDays(checkIn, duration);
         
         checkOut.value(out);
+
+        resTaxCalc();
     }
 
     function addDays(date, days) {
@@ -627,56 +629,60 @@
 <div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
     @(
         Html.Kendo().Grid<MnePersonEnrichedDto>()
-            .Name("mnePersonGrid")
-            .Columns(columns =>
-            {
-                // First Level Header
-                columns.Group(group => group
-                .Title("Boravak")
-                .HeaderHtmlAttributes(new { style = "text-align: center;" })
-                .Columns(col =>
-                    {
-                        col.Bound(g => g.PropertyName).Title("Smještajni objekat").Width(250);
-                        col.Bound(g => g.FullName).Title("Ime i prezime").Width(250);
-                        col.Bound(g => g.PersonType).Title("Tip gosta").Width(150).ClientTemplate("#= PersonType == 1 ? 'Domaći gost' : 'Strani gost' #");
-                        col.Bound(g => g.CheckIn).Title("Prijava").Format("{0:dd.MM.yyyy}").Width(100).HtmlAttributes(new { style = "text-align:center;" });
-                        col.Bound(g => g.CheckOut).Title("Odjava").Format("{0:dd.MM.yyyy}").Width(100).HtmlAttributes(new { style = "text-align:center;" });
-                        col.Bound(g => g.Registered).Title("Prijavljen").Width(100).ClientTemplate("#= Registered ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
-                    })
-                );
-
-                // Second Level Header
-                columns.Group(group => group
-                .Title("Lični dokument")
-                .HeaderHtmlAttributes(new { style = "text-align: center;" })
-                .Columns(col =>
-                    {
-                        col.Bound(g => g.DocumentType).Title("Vrsta").Width(100);
-                        col.Bound(g => g.DocumentNumber).Title("Broj").Width(100);
-                        col.Bound(g => g.DocumentValidTo).Title("Rok važenja").Format("{0:dd.MM.yyyy}").Width(100).HtmlAttributes(new { style = "text-align:center;" });;
-                    })
-                );
-
-                columns.Group(group => group
-                .Title("Boravišna taksa")
-                .HeaderHtmlAttributes(new { style = "text-align: center;" })
-                .Columns(col =>
+                .Name("mnePersonGrid")
+                .Columns(columns =>
                 {
-                    col.Bound(g => g.ResTaxAmount).Title("Iznos").Width(100).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" });
-                col.Bound(g => g.ResTaxFee).Title("Provizija").Width(100).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" });
+                    // First Level Header
+                    columns.Group(group => group
+                    .Title("Boravak")
+                    .HeaderHtmlAttributes(new { style = "text-align: center;" })
+                    .Columns(col =>
+                        {
+                            col.Bound(g => g.PropertyName).Title("Smještajni objekat").Width(250);
+                            col.Bound(g => g.FullName).Title("Ime i prezime").Width(250);
+                            col.Bound(g => g.PersonType).Title("Tip gosta").Width(150).ClientTemplate("#= PersonType == 1 ? 'Domaći gost' : 'Strani gost' #");
+                            col.Bound(g => g.CheckIn).Title("Prijava").Format("{0:dd.MM.yyyy}").Width(100).HtmlAttributes(new { style = "text-align:center;" });
+                            col.Bound(g => g.CheckOut).Title("Odjava").Format("{0:dd.MM.yyyy}").Width(100).HtmlAttributes(new { style = "text-align:center;" });
+                            col.Bound(g => g.Registered).Title("Prijavljen").Width(100).ClientTemplate("#= Registered ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
+                        })
+                    );
+
+                    // Second Level Header
+                    columns.Group(group => group
+                    .Title("Lični dokument")
+                    .HeaderHtmlAttributes(new { style = "text-align: center;" })
+                    .Columns(col =>
+                        {
+                            col.Bound(g => g.DocumentType).Title("Vrsta").Width(100);
+                            col.Bound(g => g.DocumentNumber).Title("Broj").Width(100);
+                            col.Bound(g => g.DocumentValidTo).Title("Rok važenja").Format("{0:dd.MM.yyyy}").Width(100).HtmlAttributes(new { style = "text-align:center;" });;
+                        })
+                    );
+
+                    columns.Group(group => group
+                    .Title("Boravišna taksa")
+                    .HeaderHtmlAttributes(new { style = "text-align: center;" })
+                    .Columns(col =>
+                    {
+                        col.Bound(g => g.ResTaxAmount).Title("Iznos").Width(100).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" }).ClientFooterTemplate("<div style='text-align:right'>#=kendo.toString(sum, '0.00')#<div>");
+                        col.Bound(g => g.ResTaxFee).Title("Provizija").Width(100).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" }).ClientFooterTemplate("<div style='text-align:right'>#=kendo.toString(sum, '0.00')#<div>");
+                    })
+                );
+
+                })
+            .Pageable(p => p.Refresh(true))
+            .Sortable()
+            .Filterable()
+            .Selectable()
+            .Scrollable()
+            .HtmlAttributes(new { style = "height:100%;" })
+            .DataSource(ds => ds
+            .Ajax()
+            .Aggregates(a => { 
+                a.Add(b => b.ResTaxAmount).Sum(); 
+                a.Add(b => b.ResTaxFee).Sum(); 
             })
-            );
-            
-        })
-        .Pageable(p => p.Refresh(true))
-        .Sortable()
-        .Filterable()
-        .Selectable()
-        .Scrollable()
-        .HtmlAttributes(new { style = "height:100%;" })
-        .DataSource(ds => ds
-        .Ajax()
-        .PageSize(20)
+            .PageSize(20)
         .Model(m =>
         {
             m.Id(g => g.Id);
@@ -691,7 +697,8 @@
             m.Field(g => g.DocumentValidTo);
             m.Field(g => g.Registered);
             m.Field(g => g.Locked);
-            
+            m.Field(g => g.ResTaxAmount);
+            m.Field(g => g.ResTaxFee);
             m.Field(g => g.Deleted);
         })
         .Read(read => read.Action("ReadMnePersons", "Person", new { groupId = ViewBag.Group }))

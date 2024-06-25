@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.Spreadsheet;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Kendo.Mvc.Extensions;
 using Kendo.Mvc.UI;
 using Microsoft.AspNetCore.Mvc;
@@ -79,7 +81,7 @@ namespace Oblak.Controllers
             ViewBag.MunicipalityCodeList = municipalistySelectList;
             ViewBag.TypeCodeList = typeSelectList;
             ViewBag.StatusList = statusSelectList;
-            ViewBag.Opstine = _db.CodeLists.Where(a => a.Type == "opstina").ToList();
+            ViewBag.Opstine = new SelectList(_db.Municipalities.ToList(), "Name", "Id");
 
             ViewBag.LegalEntity = legalEntity;
 
@@ -218,6 +220,7 @@ namespace Oblak.Controllers
         {
             await _registerClient.Initialize(_legalEntity);
             var properties = await _registerClient.GetProperties();
+            text = text.ToLower();
 
             List<PropertyEnrichedDto> data = properties
                 .Where(a => a.Name.ToLower().Contains(text) || a.LegalEntity.Name.ToLower().Contains(text))
@@ -234,16 +237,25 @@ namespace Oblak.Controllers
 
         public async Task<IActionResult> Opstine()
         {
-            List<CodeList> data = _db.CodeLists.Where(a => a.Type == "opstina").ToList();
+            var data = _db.Municipalities.ToList();
 
             return Json(data);
         }
-
-        public async Task<IActionResult> Mjesta(string opstina)
+                
+        public async Task<IActionResult> Mjesta(int opstina, [DataSourceRequest] DataSourceRequest request)
         {
-            List<CodeList> data = _db.CodeLists.Where(a => a.Type == "mjesto" && a.Param1 == opstina).ToList();
+            var m = _db.Municipalities.FirstOrDefault(a => a.Id == opstina);
+            var txt = Request.Query["filter[filters][0][value]"].ToString() ?? "";
+            var nam = Request.Query["filter[filters][0][field]"].ToString() ?? "";
 
-            return Json(data);
+            var data = _db.CodeLists.Where(a => a.Type == "mjesto" && a.Param1 == m.ExternalId);
+
+            if (nam == "Name")
+            { 
+                data = data.Where(a => a.Name.Contains(txt) || txt == "");
+            }
+
+            return Json(data.ToList());
         }
     }
 }

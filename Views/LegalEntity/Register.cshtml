@@ -137,9 +137,9 @@
               .Name("propertyMunicipality")
               .HtmlAttributes(new { style = "width:100%" })
               .OptionLabel("Izaberite opštinu...")
-              .BindTo(ViewBag.Opstine as List<CodeList>)
+              .BindTo(ViewBag.Opstine as List<Municipality>)
               .DataTextField("Name")
-              .DataValueField("ExternalId")
+              .DataValueField("Id")
               .Value(ViewBag.Opstina)
 @*               .DataSource(source =>
               {

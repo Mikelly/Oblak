@@ -49,7 +49,7 @@ namespace Oblak.Controllers
             {
                 ViewBag.IsAdministered = true;
                 ViewBag.IsPassThrough = true;
-                ViewBag.Opstina = "20010";
+                ViewBag.Opstina = "3";
             }
             else
             {
@@ -58,7 +58,7 @@ namespace Oblak.Controllers
                 ViewBag.Opstina = "";
             }
 
-            ViewBag.Opstine = _db.CodeLists.Where(a => a.Type == "opstina").ToList();
+            ViewBag.Opstine = _db.Municipalities.ToList();
 
             return PartialView();
         }
@@ -117,7 +117,7 @@ namespace Oblak.Controllers
 
                 if (string.IsNullOrEmpty(propertyMunicipality) == false)
                 {
-                    var municipality = _db.Municipalities.Where(a => a.ExternalId == propertyMunicipality).FirstOrDefault();
+                    var municipality = _db.Municipalities.Where(a => a.Id.ToString() == propertyMunicipality).FirstOrDefault();
                     prop.MunicipalityId = municipality.Id;
                 }
 
@@ -130,8 +130,6 @@ namespace Oblak.Controllers
                 prop.Name = propertyName;
 				prop.Address = propertyAddress;				
 				prop.Type = propertyType;
-
-
 			}
 
             if (errors != string.Empty) return Json(new BasicDto() { error = errors, info = "" });

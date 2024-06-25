@@ -452,7 +452,10 @@ namespace Oblak.Controllers
                 }
                 if (_registerClient is MneClient)
                 {
-                    person = db.MnePersons.Include(a => a.Property).Include(a => a.LegalEntity).FirstOrDefault(p => p.Id == id)!;
+                    person = db.MnePersons
+                        .Include(a => a.Property).ThenInclude(a => a.Municipality)
+                        .Include(a => a.Property).ThenInclude(a => a.LegalEntity)
+                        .Include(a => a.LegalEntity).FirstOrDefault(p => p.Id == id)!;
                 }
 
                 if (User.IsInRole("TouristOrgOperator"))

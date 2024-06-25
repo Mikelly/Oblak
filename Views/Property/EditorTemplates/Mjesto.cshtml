@@ -1,10 +1,20 @@
 ﻿@model int
 
 @(Html.Kendo().DropDownList()
-    .Name("propertyMunicipality")
+    .Name("propertyPlace")
+    .Filter("contains")
     .HtmlAttributes(new { style = "width:100%" })
-    .OptionLabel("Izaberite opštinu...")
-    .BindTo(ViewBag.Opstine as List<CodeList>)
+    .OptionLabel("Izaberite mjesto...")
     .DataTextField("Name")
-    .DataValueField("ExternalId")            
-)
+    .DataValueField("ExternalId")
+    .DataSource(source =>
+    {
+        source.Read(read =>
+        {
+            read.Action("Mjesta", "Property").Data("filterMjesta");
+        })
+        .ServerFiltering(true);
+    })    
+    .AutoBind(true)
+    .CascadeFrom("MunicipalityId_propertyMunicipality")
+    )

@@ -20,6 +20,12 @@
 
     });
 
+    function filterMjesta() {
+        return {
+            opstina: $("#propertyMunicipality").val()
+        };
+    }
+
     function loadProperties() {
         $.ajax({
             url: `/Property/FetchPropertiesExternal?legalEntity=${le}`,
@@ -89,11 +95,8 @@
         var m = e.model;
         var g = e.sender;
 
-        alert(m.MunicipalityId);
-        alert(m.Place);
-
-        var opstina = div.find('input[name=MunicipalityId]').data('kendoDropDownList');
-        opstina.text('BARRR');
+        var opstina = $('#MunicipalityId_propertyMunicipality').data('kendoDropDownList');
+        opstina.value(20010);
     }
 
 

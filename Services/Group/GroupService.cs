@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Oblak.Data;
 using Oblak.Data.Enums;
+using Oblak.Models.Api;
 using System.Linq;
 
 namespace Oblak.Services;
@@ -73,5 +74,37 @@ public class GroupService
         }
 
         return statuses;
+    }
+
+    public async Task<GroupPaymentInfoDto> GetPaymentInfoForGroupAsync(int groupId)
+    {
+        var latestTransaction = await _db.PaymentTransactions
+            .Where(pt => pt.GroupId == groupId)
+            .OrderByDescending(pt => pt.UserCreatedDate)
+            .FirstOrDefaultAsync();
+
+        if (latestTransaction == null)
+        {
+            return new GroupPaymentInfoDto
+            {
+                PaymentStatus = PaymentStatusTypes.Pending.ToString()
+            };
+        }
+
+        var paymentStatus = latestTransaction.Status switch
+        {
+            nameof(PaymentResponseTypes.OK) => PaymentStatusTypes.Finished.ToString(),
+            nameof(PaymentResponseTypes.REDIRECT) => PaymentStatusTypes.InProgress.ToString(),
+            nameof(PaymentResponseTypes.ERROR) => PaymentStatusTypes.Error.ToString(),
+            _ => PaymentStatusTypes.Pending.ToString()
+        };
+
+        return new GroupPaymentInfoDto
+        {
+            MerchantTransactionId = latestTransaction.MerchantTransactionId,
+            PaymentStatus = paymentStatus,
+            Timestamp = latestTransaction.UserCreatedDate,
+            PaymentResponse = latestTransaction.ResponseJson
+        };
     }
 }

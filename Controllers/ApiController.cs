@@ -1407,5 +1407,22 @@ namespace Oblak.Controllers
                 return StatusCode(500, "Internal server error.");
             }
         }
+
+        [HttpGet]
+        [Route("groupGetPaymentInfo")]
+        public async Task<ActionResult<GroupPaymentInfoDto>> GroupGetPaymentInfo(int id)
+        {
+            var group = await db.Groups.FirstOrDefaultAsync(g => g.Id == id);
+
+            if (group == null)
+            {
+                Response.StatusCode = 500;
+                return Json(new { info = "", error = "Nije pronađen ID grupe!" });
+            }
+
+            // Fetch payment information for the group
+            var paymentInfo = await _groupService.GetPaymentInfoForGroupAsync(id);
+            return Json(paymentInfo);
+        }
     }
 }

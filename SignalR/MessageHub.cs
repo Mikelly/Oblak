@@ -9,7 +9,7 @@ public class MessageHub : Hub
 
 	public override Task OnConnectedAsync()
 	{
-		var username = Context.GetHttpContext().User.Identity.Name;
+		var username = Context.GetHttpContext().User.Identity.Name ?? "";
 
 		var status = _connectedUsers.FirstOrDefault(x => x.Username.ToLower() == username.ToLower());
 

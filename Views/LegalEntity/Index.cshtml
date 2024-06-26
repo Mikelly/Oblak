@@ -568,12 +568,12 @@
 @*             columns.Bound(g => g.FirstName).Title("Ime").Width("15%");
             columns.Bound(g => g.LastName).Title("Prezime").Width("25%"); *@
             columns.ForeignKey(g => g.Type, legalEntityTypes).Title("Vrsta").Width("150px");
-            if (property_admin) columns.ForeignKey(g => g.AdministratorId, admins).Title("Administrator").Width("250px");
-            columns.Bound(g => g.TIN).Title("Poreski broj").Width("150px").HtmlAttributes(new { style = "text-align:center;" });
-            columns.Bound(g => g.PhoneNumber).Title("Broj telefona").Width("150px").HtmlAttributes(new { style = "text-align:center;" });
-            columns.Bound(g => g.Address).Title("Adresa").Width("40%").Filterable(f => f.Operators(o => o.ForString(b => b.Contains("Sadrži"))));
-            columns.Bound(g => g.Country).Title("Država").Width("150px");
-            columns.Bound(g => g.InVat).Title("U PDV-u").Width("100px").ClientTemplate("#= InVat ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
+            if (property_admin) columns.ForeignKey(g => g.AdministratorId, admins).Title("Administrator").Width("250px").HtmlAttributes(new { style = "text-align:center;" });
+            columns.Bound(g => g.TIN).Title("Poreski broj").Width("150px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" }).HtmlAttributes(new { style = "text-align:center;" });
+            columns.Bound(g => g.PhoneNumber).Title("Broj telefona").Width("150px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+            columns.Bound(g => g.Address).Title("Adresa").Width("40%").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" });
+            columns.Bound(g => g.Country).Title("Država").Width("150px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+            columns.Bound(g => g.InVat).Title("U PDV-u").Width("100px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" }).ClientTemplate("#= InVat ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
         })
         .Pageable(p => p.Refresh(true))
         .Editable(e => e.Mode(GridEditMode.InLine))

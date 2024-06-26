@@ -4,6 +4,7 @@
 @{
     ViewBag.Title = "Prijave gostiju";
     Layout = "~/Views/Shared/_LayoutINV.cshtml";
+    var admin = User.IsInRole("TouristOrgAdmin");
 }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
@@ -104,6 +105,8 @@
             });
         }
         else {
+
+            if(mrz.HolderSex == 'F') mrz.HolderSex = 'Z';
 
             if (obj.DocIssuer != "") {
                 $.ajax({
@@ -629,44 +632,49 @@
 <div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
     @(
         Html.Kendo().Grid<MnePersonEnrichedDto>()
-                .Name("mnePersonGrid")
-                .Columns(columns =>
-                {
-                    // First Level Header
-                    columns.Group(group => group
-                    .Title("Boravak")
-                    .HeaderHtmlAttributes(new { style = "text-align: center;" })
-                    .Columns(col =>
-                        {
-                            col.Bound(g => g.PropertyName).Title("Smještajni objekat").Width(250);
-                            col.Bound(g => g.FullName).Title("Ime i prezime").Width(250);
-                            col.Bound(g => g.PersonType).Title("Tip gosta").Width(150).ClientTemplate("#= PersonType == 1 ? 'Domaći gost' : 'Strani gost' #");
-                            col.Bound(g => g.CheckIn).Title("Prijava").Format("{0:dd.MM.yyyy}").Width(100).HtmlAttributes(new { style = "text-align:center;" });
-                            col.Bound(g => g.CheckOut).Title("Odjava").Format("{0:dd.MM.yyyy}").Width(100).HtmlAttributes(new { style = "text-align:center;" });
-                            col.Bound(g => g.Registered).Title("Prijavljen").Width(100).ClientTemplate("#= Registered ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
-                        })
-                    );
-
-                    // Second Level Header
-                    columns.Group(group => group
-                    .Title("Lični dokument")
-                    .HeaderHtmlAttributes(new { style = "text-align: center;" })
-                    .Columns(col =>
-                        {
-                            col.Bound(g => g.DocumentType).Title("Vrsta").Width(100);
-                            col.Bound(g => g.DocumentNumber).Title("Broj").Width(100);
-                            col.Bound(g => g.DocumentValidTo).Title("Rok važenja").Format("{0:dd.MM.yyyy}").Width(100).HtmlAttributes(new { style = "text-align:center;" });;
-                        })
-                    );
-
-                    columns.Group(group => group
-                    .Title("Boravišna taksa")
-                    .HeaderHtmlAttributes(new { style = "text-align: center;" })
-                    .Columns(col =>
+                    .Name("mnePersonGrid")
+                    .Columns(columns =>
                     {
-                        col.Bound(g => g.ResTaxAmount).Title("Iznos").Width(100).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" }).ClientFooterTemplate("<div style='text-align:right'>#=kendo.toString(sum, '0.00')#<div>");
-                        col.Bound(g => g.ResTaxFee).Title("Provizija").Width(100).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" }).ClientFooterTemplate("<div style='text-align:right'>#=kendo.toString(sum, '0.00')#<div>");
-                    })
+                        // First Level Header
+                        columns.Group(group => group
+                        .Title("Boravak")
+                        .HeaderHtmlAttributes(new { style = "text-align: center;" })
+                        .Columns(col =>
+                            {
+                                col.Bound(g => g.PropertyName).Title("Smještajni objekat").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(250);
+                                col.Bound(g => g.FullName).Title("Ime i prezime").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(250);
+                                col.Bound(g => g.PersonType).Title("Tip gosta").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(150).ClientTemplate("#= PersonType == 1 ? 'Domaći gost' : 'Strani gost' #");
+                                col.Bound(g => g.CheckIn).Title("Prijava").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Format("{0:dd.MM.yyyy}").Width(90).HtmlAttributes(new { style = "text-align:center;" });
+                                col.Bound(g => g.CheckOut).Title("Odjava").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Format("{0:dd.MM.yyyy}").Width(90).HtmlAttributes(new { style = "text-align:center;" });
+                                col.Bound(g => g.Registered).Title("Prijavljen").Width(90).ClientTemplate("#= Registered ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
+                            })
+                        );
+
+                        // Second Level Header
+                        columns.Group(group => group
+                        .Title("Lični dokument")
+                        .HeaderHtmlAttributes(new { style = "text-align: center;" })
+                        .Columns(col =>
+                            {
+                                col.Bound(g => g.DocumentType).Title("Vrsta").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(90);
+                                col.Bound(g => g.DocumentNumber).Title("Broj").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(90);
+                                col.Bound(g => g.DocumentValidTo).Title("Važi do").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Format("{0:dd.MM.yyyy}").Width(90).HtmlAttributes(new { style = "text-align:center;" });;
+                            })
+                        );
+
+                        columns.Group(group => group
+                        .Title("Boravišna taksa")
+                        .HeaderHtmlAttributes(new { style = "text-align: center;" })
+                        .Columns(col =>
+                        {
+                            col.Bound(g => g.ResTaxAmount).Title("Iznos").Width(75).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" }).ClientFooterTemplate("<div style='text-align:right'>#=kendo.toString(sum, '0.00')#<div>");
+                            col.Bound(g => g.ResTaxFee).Title("Provizija").Width(75).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" }).ClientFooterTemplate("<div style='text-align:right'>#=kendo.toString(sum, '0.00')#<div>");
+                            if (admin)
+                            { 
+                                col.Bound(g => g.UserCreated).Title("Operater").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(140).HtmlAttributes(new { style = "text-align:center;" });
+                                col.Bound(g => g.CheckInPointName).Title("Punkt").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(100).HtmlAttributes(new { style = "text-align:center;" });
+                            }
+                        })
                 );
 
                 })

@@ -260,6 +260,13 @@ namespace Oblak.Controllers
                             dto.ResTaxPaymentTypeId = restax.PayType;
                             dto.ResTaxAmount = restax.Tax;
                             dto.ResTaxFee = restax.Fee;
+                            if (User.IsInRole("TouristOrg"))
+                            {
+                                if ((dto.PersonalNumber ?? "") == "")
+                                {
+                                    dto.PersonalNumber = dto.BirthDate.ToString("dd.MM.yyyy").Replace(".", "");
+                                }
+                            }
                         }
                         else
                         {
@@ -292,7 +299,7 @@ namespace Oblak.Controllers
                 }
                 else
                 {
-                    var p = _db.MnePersons.Include(a => a.Property).Include(a => a.LegalEntity).Include(a => a.Group).FirstOrDefault(a => a.Id == person);
+                    var p = _db.MnePersons.Include(a => a.Property).Include(a => a.LegalEntity).Include(a => a.Group).Include(a => a.CheckInPoint).FirstOrDefault(a => a.Id == person);
                     dto = new MnePersonEnrichedDto();
                     dto = dto.GetFromMnePerson(p);
                 }
@@ -546,7 +553,7 @@ namespace Oblak.Controllers
                 .Where(x => x.Type == "isprava")
                 .ToDictionary(x => x.ExternalId, x => x.Name);
 
-            var query = _db.MnePersons.Include(a => a.Property)
+            var query = _db.MnePersons.Include(a => a.Property).Include(a => a.CheckInPoint)
                 .Where(a => a.LegalEntityId == _legalEntityId);
 
             if (User.IsInRole("TouristOrgOperator"))
@@ -614,7 +621,9 @@ namespace Oblak.Controllers
                     VisaValidFrom = a.VisaValidFrom,
                     VisaValidTo = a.VisaValidTo,
                     Registered = a.ExternalId != null,
-                    Deleted = a.IsDeleted
+                    Deleted = a.IsDeleted,
+                    UserCreated = a.UserCreated,
+                    CheckInPointName = a.CheckInPoint.Name
                 });
 
             return Json(await data.ToDataSourceResultAsync(request));

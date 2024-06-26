@@ -1,6 +1,23 @@
-﻿using Oblak.Data;
+﻿using Kendo.Mvc.UI.Fluent;
+using Oblak.Data;
 
 namespace Oblak.Helpers;
+
+public static class Kendo
+{
+    public static void FilterConfig(GridBoundColumnFilterableBuilder f)
+    {
+        f.Enabled(true)
+            .Messages(m => m.IsFalse("nije").IsTrue("jeste")).Search(true)
+            .Operators(o =>
+            {
+                o.ForString(os => os.Clear().Contains("sadrži").DoesNotContain("ne sadrži").StartsWith("počinje sa").EndsWith("se završava na").IsEqualTo("je jednak").IsNotEqualTo("nije jednak").IsNullOrEmpty("je prazan").IsNotNullOrEmpty("nije prazan"));
+                o.ForNumber(os => os.Clear().IsEqualTo("je jednak").IsNotEqualTo("nije jednak").IsGreaterThan("je veći od").IsGreaterThanOrEqualTo("je veći od ili je jedank").IsLessThan("je manji od").IsLessThanOrEqualTo("je manji od ili je jednak").IsNull("je prazan").IsNotNull("nije prazan"));
+                o.ForDate(os => os.Clear().IsEqualTo("je jednak").IsNotEqualTo("nije jednak").IsGreaterThan("je nakon").IsGreaterThanOrEqualTo("je nakon ili je jedank").IsLessThan("je prije").IsLessThanOrEqualTo("je prije ili je jednak").IsNull("je prazan").IsNotNull("nije prazan"));
+                o.ForEnums(os => os.Clear().IsEqualTo("je jednak").IsNotEqualTo("nije jednak").IsNull("je prazan").IsNotNull("nije prazan"));
+            });
+    }
+}
 
 public class Exceptions
 {

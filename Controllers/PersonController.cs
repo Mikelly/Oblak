@@ -234,27 +234,27 @@ namespace Oblak.Controllers
                     {
                         if (mrz != null)
                         {
-                            var country = codeLists.Where(a => a.Type == "drzava" && a.ExternalId == mrz.DocIssuer).FirstOrDefault();
-                            dto.PersonType = mrz.DocIssuer == "MNE" ? "1" : "4";
+                            var country = codeLists.Where(a => a.Type == "drzava" && a.ExternalId == mrz.DocIssuer.Replace("<", "")).FirstOrDefault();
+                            dto.PersonType = country.ExternalId == "MNE" ? "1" : "4";
                             dto.LastName = mrz.HolderNamePrimary;
                             dto.FirstName = mrz.HolderNameSecondary;
                             dto.Nationality = mrz.HolderNationality;
                             dto.BirthDate = mrz.HolderDateOfBirthDate();
-                            dto.Gender = mrz.HolderSex;
+                            dto.Gender = mrz.HolderSex == "M" ? "M" : "Z";
                             dto.PersonalNumber = mrz.HolderNumber;
-                            dto.DocumentCountry = mrz.DocIssuer;
+                            dto.DocumentCountry = country.ExternalId;
                             dto.DocumentIssuer = mrz.DocAuthority;
                             dto.DocumentNumber = mrz.DocNumber;
                             dto.DocumentValidTo = mrz.DocExpiryDate();
                             dto.DocumentType = mrz.DocType == "IcaoTd1" || mrz.DocType == "IcaoTd2" ? "2" : "1";
                             dto.CheckIn = DateTime.Now;
                             dto.CheckOut = DateTime.Now.AddDays(1);
-                            dto.BirthCountry = mrz.DocIssuer;
-                            dto.PermanentResidenceCountry = mrz.DocIssuer;
+                            dto.BirthCountry = country.ExternalId;
+                            dto.PermanentResidenceCountry = country.ExternalId;
                             dto.BirthPlace = country.Name;                            
                             dto.PermanentResidenceAddress = country.Name;
                             dto.PermanentResidencePlace = country.Name;
-                            dto.DocumentIssuer = country.Name;
+                            dto.DocumentIssuer = country.ExternalId;
                             var restax = ResTaxFoo(null, null, dto.BirthDate, dto.CheckIn, dto.CheckOut);
                             dto.ResTaxTypeId = restax.ResType;
                             dto.ResTaxPaymentTypeId = restax.PayType;
@@ -436,6 +436,11 @@ namespace Oblak.Controllers
 
 		private RestTaxResult ResTaxFoo(int? resType, int? payType, DateTime? birthDate, DateTime? checkIn, DateTime? checkOut)
 		{
+            if (resType > 3)
+            {
+                return new RestTaxResult { Tax = 0, Fee = 0, ResType = resType.Value, PayType = 1 };
+            }
+
             //var p = _db.Properties.Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == property);
             //var pid = p.LegalEntity.PartnerId;
             var pid = _appUser.LegalEntity.PartnerId;

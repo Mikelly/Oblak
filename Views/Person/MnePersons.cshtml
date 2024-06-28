@@ -257,7 +257,7 @@
                 if (data.info != "") {
                     var grid = $('#mnePersonGrid').data('kendoGrid');
                     grid.dataSource.read();
-                    Swal.fire({ icon: 'success', title: 'Uspješno sačuvane izmjene!', confirmButtonText: `U redu` });
+                    Swal.fire({ icon: 'success', title: 'Uspješno sačuvane izmjene!', confirmButtonText: `U redu`, timer: 1000 });
                     if (isgroup == false) {
                         var wnd = $("#wndGuest").data("kendoWindow");
                         wnd.close();
@@ -309,7 +309,7 @@
                     Swal.fire({ icon: 'error', title: errorMessages, confirmButtonText: `U redu` });
                 }
                 else {
-                    Swal.fire({ icon: 'success', title: 'Gost je uspješno prijavljen!', confirmButtonText: `U redu` });
+                    Swal.fire({ icon: 'success', title: 'Gost je uspješno prijavljen!', confirmButtonText: `U redu`, timer: 1500 });
                 }
                 //var wnd = $("#wndGuest").data("kendoWindow");                
             }
@@ -411,6 +411,8 @@
                     if (isNaN(out) == false) {
                         $('#CheckOut').data("kendoDatePicker").value(outdate);
                     }
+
+                    resTaxCalc();
                 }
                 if (data.error != "") {
                     Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
@@ -643,10 +645,14 @@
                             {
                                 col.Bound(g => g.PropertyName).Title("Smještajni objekat").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(250);
                                 col.Bound(g => g.FullName).Title("Ime i prezime").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(250);
-                                col.Bound(g => g.PersonType).Title("Tip gosta").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(150).ClientTemplate("#= PersonType == 1 ? 'Domaći gost' : 'Strani gost' #");
+                                //col.Bound(g => g.PersonType).Title("Tip gosta").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(150).ClientTemplate("#= PersonType == 1 ? 'Domaći gost' : 'Strani gost' #");
                                 col.Bound(g => g.CheckIn).Title("Prijava").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Format("{0:dd.MM.yyyy}").Width(90).HtmlAttributes(new { style = "text-align:center;" });
                                 col.Bound(g => g.CheckOut).Title("Odjava").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Format("{0:dd.MM.yyyy}").Width(90).HtmlAttributes(new { style = "text-align:center;" });
-                                col.Bound(g => g.Registered).Title("Prijavljen").Width(90).ClientTemplate("#= Registered ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
+                                col.Bound(g => g.Registered).Title("MUP?").Width(80).ClientTemplate("#= Registered ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
+                                if (admin)
+                                {
+                                    col.Bound(g => g.UserCreatedDate).Title("Vrijeme").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Format("{0:dd.MM.yyyy HH:mm}").Width(130).HtmlAttributes(new { style = "text-align:center;" });
+                                }
                             })
                         );
 
@@ -656,8 +662,9 @@
                         .HeaderHtmlAttributes(new { style = "text-align: center;" })
                         .Columns(col =>
                             {
-                                col.Bound(g => g.DocumentType).Title("Vrsta").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(90);
-                                col.Bound(g => g.DocumentNumber).Title("Broj").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(90);
+                                col.Bound(g => g.DocumentType).Title("Vrsta").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(100);
+                                col.Bound(g => g.DocumentCountry).Title("Država").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(80);
+                                col.Bound(g => g.DocumentNumber).Title("Broj").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(100);
                                 col.Bound(g => g.DocumentValidTo).Title("Važi do").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Format("{0:dd.MM.yyyy}").Width(90).HtmlAttributes(new { style = "text-align:center;" });;
                             })
                         );
@@ -667,8 +674,8 @@
                         .HeaderHtmlAttributes(new { style = "text-align: center;" })
                         .Columns(col =>
                         {
-                            col.Bound(g => g.ResTaxAmount).Title("Iznos").Width(75).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" }).ClientFooterTemplate("<div style='text-align:right'>#=kendo.toString(sum, '0.00')#<div>");
-                            col.Bound(g => g.ResTaxFee).Title("Provizija").Width(75).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" }).ClientFooterTemplate("<div style='text-align:right'>#=kendo.toString(sum, '0.00')#<div>");
+                            col.Bound(g => g.ResTaxAmount).Title("Iznos").Width(80).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" }).ClientFooterTemplate("<div style='text-align:right'>#=kendo.toString(sum, '0.00')#<div>");
+                            col.Bound(g => g.ResTaxFee).Title("Provizija").Width(80).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" }).ClientFooterTemplate("<div style='text-align:right'>#=kendo.toString(sum, '0.00')#<div>");
                             if (admin)
                             { 
                                 col.Bound(g => g.UserCreated).Title("Operater").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(140).HtmlAttributes(new { style = "text-align:center;" });

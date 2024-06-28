@@ -220,7 +220,7 @@ namespace Oblak.Controllers
         {
             await _registerClient.Initialize(_legalEntity);
             var properties = await _registerClient.GetProperties();
-            text = text.ToLower();
+            text = (text ?? "") .ToLower();
 
             List<PropertyEnrichedDto> data = properties
                 .Where(a => a.Name.ToLower().Contains(text) || a.LegalEntity.Name.ToLower().Contains(text))

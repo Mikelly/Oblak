@@ -52,6 +52,7 @@ namespace Oblak.Models.Api
         public decimal? ResTaxAmount { get; set; }
         public decimal? ResTaxFee { get; set; }
         public string? UserCreated { get; set; }
+        public DateTime? UserCreatedDate { get; set; }
         public string? CheckInPointName { get; set; }
 
         public MnePerson SetMnePerson(MnePerson mnePerson, int legalEntityId)
@@ -160,6 +161,7 @@ namespace Oblak.Models.Api
                 ResTaxTypeId = mnePerson.ResTaxTypeId,
                 ResTaxPaymentTypeId = mnePerson.ResTaxPaymentTypeId,
                 UserCreated = mnePerson.UserCreated,
+                UserCreatedDate = mnePerson.UserCreatedDate,
                 CheckInPointName = mnePerson.CheckInPoint.Name,
             };
 

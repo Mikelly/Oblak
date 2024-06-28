@@ -20,8 +20,11 @@
 					<li><a href="/properties"><i class="fa fa-hotel"></i>Smještajni objekti</a></li>					
 					<li><a href="/groups"><i class="fa fa-user-group"></i>Grupne prijave</a></li>
 					<li><a href="/persons"><i class="fa fa-user"></i>Individualne prijave</a></li>
-					<li><a href="/guest-list"><i class="fa fa-book"></i>Knjiga gostiju</a></li>
-					<li><a href="#"><i class="fa fa-percent"></i>Boravišna taksa</a></li>
+					@if (User.IsInRole("TouristOrg") == false)
+					{
+						<li><a href="/guest-list"><i class="fa fa-book"></i>Knjiga gostiju</a></li>
+						<li><a href="#"><i class="fa fa-percent"></i>Boravišna taksa</a></li>
+					}
 					@if (User.IsInRole("TouristOrg"))
 					{
 						<li><a href="/reports-tourist-org"><i class="fa fa-print"></i>Izvještaji</a></li>

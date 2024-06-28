@@ -244,7 +244,7 @@ namespace Oblak.Controllers
                             dto.PersonalNumber = mrz.HolderNumber;
                             dto.DocumentCountry = country.ExternalId;
                             dto.DocumentIssuer = mrz.DocAuthority;
-                            dto.DocumentNumber = mrz.DocNumber;
+                            dto.DocumentNumber = (mrz.DocNumber ?? "").Replace("<", "");
                             dto.DocumentValidTo = mrz.DocExpiryDate();
                             dto.DocumentType = mrz.DocType == "IcaoTd1" || mrz.DocType == "IcaoTd2" ? "2" : "1";
                             dto.CheckIn = DateTime.Now;
@@ -264,7 +264,7 @@ namespace Oblak.Controllers
                             {
                                 if ((dto.PersonalNumber ?? "") == "")
                                 {
-                                    dto.PersonalNumber = dto.BirthDate.ToString("dd.MM.yyyy").Replace(".", "");
+                                    dto.PersonalNumber = dto.BirthDate.ToString("ddMMyyyy");
                                 }
                             }
                         }
@@ -347,7 +347,7 @@ namespace Oblak.Controllers
 
             if (last != null)
             {
-                return Json(new { info = "OK", error = "", propertyId = last.PropertyId, propertyName = last.Property.Name, checkIn = last.CheckIn });
+                return Json(new { info = "OK", error = "", propertyId = last.PropertyId, propertyName = last.Property.Name, checkIn = last.CheckIn, checkOut = last.CheckOut ?? DateTime.Now.Date.AddDays(1) });
             }
             else
             {
@@ -618,6 +618,7 @@ namespace Oblak.Controllers
                     DocumentNumber = a.DocumentNumber,
                     DocumentValidTo = a.DocumentValidTo,
                     DocumentIssuer = a.DocumentIssuer,
+                    DocumentCountry = a.DocumentCountry,
                     EntryPoint = a.EntryPoint,
                     EntryPointDate = a.EntryPointDate,
                     VisaType = a.VisaType,
@@ -628,6 +629,7 @@ namespace Oblak.Controllers
                     Registered = a.ExternalId != null,
                     Deleted = a.IsDeleted,
                     UserCreated = a.UserCreated,
+                    UserCreatedDate = a.UserCreatedDate,
                     CheckInPointName = a.CheckInPoint.Name
                 });
 
@@ -902,10 +904,13 @@ namespace Oblak.Controllers
 
             var partner = _db.Partners.Find(_appUser.PartnerId);
 
+            var checkInPoint = _appUser.CheckInPointId;
+
             var guests = _db.MnePersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity)
                 .Where(a => (a.UserCreatedDate ?? (DateTime?)a.CheckIn ?? DateTime.MinValue).Date == date)
-                .Where(a => a.Property.LegalEntity.PartnerId == partner.Id)
-                .Select(a => new { a.Property.LegalEntity.Name, a.Property.LegalEntity.TIN, Date = a.UserCreatedDate ?? a.CheckIn, Tax = (a.ResTaxAmount ?? 0m) })
+                .Where(a => a.Property.LegalEntity.PartnerId == partner.Id && a.CheckInPointId == checkInPoint)
+                .Where(a => a.ResTaxAmount != 0)
+                .Select(a => new { a.Property.LegalEntity.Name, a.Property.LegalEntity.TIN, Date = a.UserCreatedDate ?? a.CheckIn, Tax = (a.ResTaxAmount ?? 0m) + (a.ResTaxFee ?? 0m) })
                 .ToList();
 
             var lines = guests.OrderBy(a => a.Date)
@@ -926,6 +931,9 @@ namespace Oblak.Controllers
             var date = DateTime.ParseExact(datum, "dd.MM.yyyy", CultureInfo.InvariantCulture);
 
             var partner = _db.Partners.Find(_appUser.PartnerId);
+            var chekinpoint = _appUser.CheckInPointId;
+
+            var cp = _db.CheckInPoints.Find(_appUser.CheckInPointId);
 
             var toReport = $"{partner.Id}PostOffice";            
             var path = Path.Combine(_env.ContentRootPath, "Reports", toReport);
@@ -935,7 +943,8 @@ namespace Oblak.Controllers
                 new List<Telerik.Reporting.Parameter>() { 
                     new Telerik.Reporting.Parameter(){ Name = "Date", Value = date },
                     new Telerik.Reporting.Parameter(){ Name = "PartnerId", Value = partner.Id },
-                    new Telerik.Reporting.Parameter(){ Name = "CheckInPoint", Value = partner.Id },
+                    new Telerik.Reporting.Parameter(){ Name = "CheckInPoint", Value = chekinpoint },
+                    new Telerik.Reporting.Parameter(){ Name = "CheckInPointName", Value = cp.Name },
                 },
                 "PDF");
 

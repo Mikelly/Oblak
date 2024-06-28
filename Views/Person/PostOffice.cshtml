@@ -11,7 +11,7 @@
 
     function reportpost() {
         var datum = kendo.toString($('#Datum').data('kendoDatePicker').value(), 'dd.MM.yyyy');
-        window.location = `/post-office-report?datum=${datum}`;
+        window.open(`/post-office-report?datum=${datum}`, `_blank`);
     };
 
 </script>

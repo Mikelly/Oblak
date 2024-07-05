@@ -18,7 +18,7 @@ namespace Oblak.Data
         public int? PropertyId { get; set; }
         public Property Property { get; set; }
         [StringLength(450)]
-        public string Token { get; set; }
+        public string? Token { get; set; }
         [StringLength(450)]
         public string Type { get; set; }
         public decimal Amount { get; set; } = decimal.Zero;
@@ -26,6 +26,7 @@ namespace Oblak.Data
         [StringLength(450)]
         public string? Status { get; set; }
         public bool? Success { get; set; }
+        public bool? WithRegister { get; set; }
         public string? MerchantTransactionId { get; set; }
         [Column(TypeName = "NVARCHAR(MAX)")]
         public string? ResponseJson { get; set; }

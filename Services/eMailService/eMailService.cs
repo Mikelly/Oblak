@@ -32,14 +32,17 @@ namespace Oblak.Services
             }
         }
 
-        public async Task SendMail(string from, string to, string templateId, object templateData, (string, Stream) attachment)
+        public async Task SendMail(string from, string to, string templateId, object templateData, (string, Stream)? attachment = null)
         {   
             var msg = new SendGridMessage();
             msg.SetFrom(new EmailAddress(from, from));
             msg.AddTo(new EmailAddress(to, to));
             msg.SetTemplateId(templateId);
             msg.SetTemplateData(templateData);
-            await msg.AddAttachmentAsync(attachment.Item1, attachment.Item2);            
+            if (attachment.HasValue)
+            {
+                await msg.AddAttachmentAsync(attachment.Value.Item1, attachment.Value.Item2);
+            }
             var response = await _sendGridClient.SendEmailAsync(msg);
             if (response.IsSuccessStatusCode)
             {

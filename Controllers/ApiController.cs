@@ -18,6 +18,7 @@ using Oblak.Services.Payten;
 using Oblak.Services.Reporting;
 using Oblak.Services.Payment;
 using Newtonsoft.Json.Linq;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Oblak.Controllers
 {
@@ -1268,9 +1269,16 @@ namespace Oblak.Controllers
         }
 
         [HttpPost]
+        [Authorize]
         [Route("initiatePayment")]
         public async Task<ActionResult<InitiatePaymentOutput>> InitiatePayment(InitiatePaymentInput input)
         {
+            if (_legalEntity == null)
+            {
+                Response.StatusCode = 401;
+                return Json(new { info = "", error = "Korisnik nije ulogovan!" });
+            }
+
             var group = await db.Groups.Include(x => x.LegalEntity)
                 .Include(x => x.Property)
                 .Where(x => x.Id == input.GroupId && x.LegalEntityId == _legalEntity.Id)
@@ -1282,7 +1290,6 @@ namespace Oblak.Controllers
                 return Json(new { info = "", error = "Nije pronađen ID grupe!" });
             }
 
-            group.ResTaxAmount = 10.00m; // hard-coded value for testing purposes
             if (!group.ResTaxAmount.HasValue ||
                 group.ResTaxAmount.Value == 0)
             {
@@ -1297,12 +1304,14 @@ namespace Oblak.Controllers
             var paymentResponse = await _paymentService.InitiatePaymentAsync(new PaymentServiceRequest
             {
                 MerchantTransactionId = transactionId,
-                Amount = group.ResTaxAmount.Value,
+                Amount = group.ResTaxAmount.Value + group.ResTaxFee.Value,
                 SurchargeAmount = group.ResTaxFee.Value,
                 TransactionToken = input.Token,
                 SuccessUrl = input.SuccessUrl,
                 CancelUrl = input.CancelUrl,
                 ErrorUrl = input.ErrorUrl,
+                WithRegister = input.StoreCard,
+                ReferenceUuid = input.ReferenceUuid,
                 TestMode = _legalEntity.Test
             });
 
@@ -1320,7 +1329,8 @@ namespace Oblak.Controllers
                 Amount = group.ResTaxAmount.Value,
                 SurchargeAmount = group.ResTaxFee.Value,
                 UserCreated = _legalEntity.Name,
-                UserCreatedDate = now
+                UserCreatedDate = now,
+                WithRegister = input.StoreCard
             });
 
             await db.SaveChangesAsync();
@@ -1399,6 +1409,43 @@ namespace Oblak.Controllers
                 // save changes
                 await db.SaveChangesAsync();
 
+                try
+                {
+                    var transactionType = requestBodyObject.SelectToken("transactionType")?.ToString();
+
+                    if(transactionType == PaymentTransactionTypes.DEBIT.ToString())
+                    {
+                        var email = await db.Users
+                            .Where(x => x.LegalEntityId == transaction.LegalEntityId)
+                            .Select(x => x.Email)
+                            .FirstOrDefaultAsync();
+
+                        var amount = requestBodyObject.SelectToken("totalAmount")?.ToString() ?? "N/A";
+                        var currency = requestBodyObject.SelectToken("currency")?.ToString() ?? "N/A";
+                        var lastFourDigits = requestBodyObject.SelectToken("returnData.lastFourDigits")?.ToString() ?? "N/A";
+                        var cardType = requestBodyObject.SelectToken("returnData.binBrand")?.ToString() ?? "N/A";
+                        var authCode = requestBodyObject.SelectToken("extraData.authCode")?.ToString() ?? "TEST";
+
+                        var template = _configuration["SendGrid:Templates:PaymentConfirmation"]!;
+                        var senderEmail = _configuration["SendGrid:EmailAddress"];
+
+                        await _eMailService.SendMail(senderEmail!, email!, template, new
+                        {
+                            subject = $@"donotreply: Informacije o Vašoj transakciji",
+                            status = success ? $"Uspješno plaćanje" : $"Neuspješno plaćanje",
+                            orderNumber = $"{transaction.MerchantTransactionId}",
+                            amount = $"{amount} {currency}",
+                            cardType = $"{cardType}, **** **** **** {lastFourDigits}",
+                            authCode = $"{authCode}",
+                            timestamp = $"{transaction.UserCreatedDate.AddHours(2):yyyy-MM-ddTHH:mm:ss}" // Format the timestamp
+                        });
+                    }
+                }
+                catch (Exception)
+                {
+                    // ignore
+                }
+
                 return Ok(true);
             }
             catch (Exception ex)
@@ -1412,7 +1459,13 @@ namespace Oblak.Controllers
         [Route("groupGetPaymentInfo")]
         public async Task<ActionResult<GroupPaymentInfoDto>> GroupGetPaymentInfo(int id)
         {
-            var group = await db.Groups.FirstOrDefaultAsync(g => g.Id == id);
+            if (_legalEntity == null)
+            {
+                Response.StatusCode = 401;
+                return Json(new { info = "", error = "Korisnik nije ulogovan!" });
+            }
+
+            var group = await db.Groups.Where(x => x.Id == id && x.LegalEntityId == _legalEntity.Id).FirstOrDefaultAsync();
 
             if (group == null)
             {
@@ -1424,5 +1477,123 @@ namespace Oblak.Controllers
             var paymentInfo = await _groupService.GetPaymentInfoForGroupAsync(id);
             return Json(paymentInfo);
         }
+
+        [HttpPost]
+        [Route("storePaymentMethod")]
+        public async Task<ActionResult<InitiatePaymentOutput>> StorePaymentMethod(RegisterPaymentMethodInput input)
+        {
+            if (_legalEntity == null)
+            {
+                Response.StatusCode = 401;
+                return Json(new { info = "", error = "Korisnik nije ulogovan!" });
+            }
+
+            var transactionId = Guid.NewGuid().ToString();
+
+            var paymentResponse = await _paymentService.RegisterPaymentMethod(new PaymentServiceRequest
+            {
+                MerchantTransactionId = transactionId,
+                TransactionToken = input.Token,
+                SuccessUrl = input.SuccessUrl,
+                CancelUrl = input.CancelUrl,
+                ErrorUrl = input.ErrorUrl,
+                TestMode = _legalEntity.Test
+            });
+
+            var now = DateTime.UtcNow;
+            var transaction = await db.PaymentTransactions.AddAsync(new PaymentTransaction
+            {
+                Status = paymentResponse.ReturnType,
+                Success = paymentResponse.Success,
+                MerchantTransactionId = transactionId,
+                LegalEntityId = _legalEntity.Id,
+                Token = input.Token,
+                Type = PaymentTransactionTypes.REGISTER.ToString(),
+                UserCreated = _legalEntity.Name,
+                UserCreatedDate = now
+            });
+
+            await db.SaveChangesAsync();
+
+            if (paymentResponse.Success)
+            {
+                return Json(new InitiatePaymentOutput
+                {
+                    RedirectUrl = paymentResponse.RedirectUrl,
+                    RedirectType = paymentResponse.RedirectType
+                });
+            }
+            else
+            {
+                var errors = paymentResponse.Errors?.Select(x => x.AdapterMessage ?? x.ErrorMessage);
+                return Json(new { info = "", error = errors });
+            }
+        }
+
+        [HttpPost]
+        [Route("deletePaymentMethod")]
+        public async Task<ActionResult<InitiatePaymentOutput>> DeletePaymentMethod(DeregisterPaymentMethodInput input)
+        {
+            if (_legalEntity == null)
+            {
+                Response.StatusCode = 401;
+                return Json(new { info = "", error = "Korisnik nije ulogovan!" });
+            }
+
+            var transactionId = Guid.NewGuid().ToString();
+
+            var paymentResponse = await _paymentService.DeregisterPaymentMethod(new PaymentServiceRequest
+            {
+                MerchantTransactionId = transactionId,
+                ReferenceUuid = input.ReferenceUuid
+            });
+
+            var now = DateTime.UtcNow;
+            var transaction = await db.PaymentTransactions.AddAsync(new PaymentTransaction
+            {
+                Status = paymentResponse.ReturnType,
+                Success = paymentResponse.Success,
+                MerchantTransactionId = transactionId,
+                LegalEntityId = _legalEntity.Id,
+                Type = PaymentTransactionTypes.DEREGISTER.ToString(),
+                UserCreated = _legalEntity.Name,
+                UserCreatedDate = now
+            });
+
+            await db.SaveChangesAsync();
+
+            if (paymentResponse.Success)
+            {
+                return Ok();
+            }
+            else
+            {
+                var errors = paymentResponse.Errors?.Select(x => x.AdapterMessage ?? x.ErrorMessage);
+                return Json(new { info = "", error = errors });
+            }
+        }
+
+        //[HttpGet]
+        //[Route("getPaymentMethod")]
+        //public async Task<ActionResult<GroupPaymentInfoDto>> GroupGetPaymentInfo()
+        //{
+        //    if (_legalEntity == null)
+        //    {
+        //        Response.StatusCode = 401;
+        //        return Json(new { info = "", error = "Korisnik nije ulogovan!" });
+        //    }
+
+        //    var group = await db.Groups.Where(x => x.Id == id && x.LegalEntityId == _legalEntity.Id).FirstOrDefaultAsync();
+
+        //    if (group == null)
+        //    {
+        //        Response.StatusCode = 500;
+        //        return Json(new { info = "", error = "Nije pronađen ID grupe!" });
+        //    }
+
+        //    // Fetch payment information for the group
+        //    var paymentInfo = await _groupService.GetPaymentInfoForGroupAsync(id);
+        //    return Json(paymentInfo);
+        //}
     }
 }

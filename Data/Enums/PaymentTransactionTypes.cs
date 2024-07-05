@@ -2,6 +2,8 @@
 {
     public enum PaymentTransactionTypes
     {
-        DEBIT
+        DEBIT,
+        REGISTER,
+        DEREGISTER
     }
 }

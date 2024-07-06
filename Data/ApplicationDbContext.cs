@@ -200,10 +200,13 @@ namespace Oblak.Data
             modelBuilder.Entity<PaymentTransaction>()
                 .HasIndex(pt => new { pt.Id, pt.LegalEntityId })
                 .HasDatabaseName("IX_PaymentTransaction_Id_LegalEntityId");
-
             modelBuilder.Entity<PaymentTransaction>()
                 .HasIndex(pt => new { pt.MerchantTransactionId, pt.LegalEntityId })
                 .HasDatabaseName("IX_PaymentTransaction_MerchantTransactionId_LegalEntityId");
+
+            modelBuilder.Entity<PaymentMethod>().ToTable("PaymentMethods");
+            modelBuilder.Entity<PaymentMethod>().HasOne(a => a.PaymentTransaction);
+            modelBuilder.Entity<PaymentMethod>().HasOne(a => a.LegalEntity);
 
             modelBuilder
                 .HasDbFunction(typeof(ApplicationDbContext).GetMethod(nameof(GuestList), new[] { typeof(int) })!)
@@ -248,6 +251,7 @@ namespace Oblak.Data
 		public DbSet<UserDevice> UserDevices { get; set; }
         public DbSet<Report> Reports { get; set; }
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
+        public DbSet<PaymentMethod> PaymentMethods { get; set; }
         public DbSet<Municipality> Municipalities { get; set; }
 		public DbSet<Log> Logs { get; set; }
 

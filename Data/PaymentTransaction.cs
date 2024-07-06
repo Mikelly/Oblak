@@ -28,6 +28,7 @@ namespace Oblak.Data
         public bool? Success { get; set; }
         public bool? WithRegister { get; set; }
         public string? MerchantTransactionId { get; set; }
+        public string? ReferenceUuid { get; set; }
         [Column(TypeName = "NVARCHAR(MAX)")]
         public string? ResponseJson { get; set; }
         [StringLength(450)]

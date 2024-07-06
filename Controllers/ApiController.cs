@@ -19,6 +19,8 @@ using Oblak.Services.Reporting;
 using Oblak.Services.Payment;
 using Newtonsoft.Json.Linq;
 using Microsoft.AspNetCore.Authorization;
+using SkiaSharp;
+using static SQLite.SQLite3;
 
 namespace Oblak.Controllers
 {
@@ -1343,7 +1345,8 @@ namespace Oblak.Controllers
                 SurchargeAmount = group.ResTaxFee.Value,
                 UserCreated = _legalEntity.Name,
                 UserCreatedDate = now,
-                WithRegister = input.StoreCard
+                WithRegister = input.StoreCard,
+                ReferenceUuid = paymentResponse.Uuid
             });
 
             await db.SaveChangesAsync();
@@ -1391,6 +1394,7 @@ namespace Oblak.Controllers
                 // fetch transaction from database
                 string transactionId = requestBodyObject.SelectToken("merchantTransactionId")?.ToString();
                 var transaction = await db.PaymentTransactions
+                    .Include(x => x.LegalEntity)
                     .Where(x => x.MerchantTransactionId == transactionId)
                     .FirstOrDefaultAsync();
 
@@ -1403,13 +1407,18 @@ namespace Oblak.Controllers
                 // update transaction with payment result
                 var result = requestBodyObject.SelectToken("result")?.ToString();
                 var success = result == PaymentResponseTypes.OK.ToString();
+
                 transaction.Status = result;
                 transaction.Success = success;
                 var now = DateTime.UtcNow;
                 transaction.ResponseJson = requestBody;
                 transaction.UserModifiedDate = now;
 
-                // If status is OK, update ResTaxPaid field on the associated group
+                var transactionType = requestBodyObject.SelectToken("transactionType")?.ToString();
+                var lastFourDigits = requestBodyObject.SelectToken("returnData.lastFourDigits")?.ToString();
+                var cardType = requestBodyObject.SelectToken("returnData.binBrand")?.ToString();
+
+                // If status is OK, update ResTaxPaid field on the associated group to true
                 if (success && transaction.GroupId.HasValue)
                 {
                     var group = await db.Groups.FindAsync(transaction.GroupId.Value);
@@ -1418,15 +1427,43 @@ namespace Oblak.Controllers
                         group.ResTaxPaid = true;
                     }
                 }
+                // If status is OK and transaction type is REGISTER, deregister the old payment method and update PaymentMethods table
+                if (success && 
+                    (transactionType == PaymentTransactionTypes.REGISTER.ToString() ||
+                    transaction.WithRegister == true))
+                {
+                    var oldPaymentMethod = await db.PaymentMethods
+                        .Include(x => x.PaymentTransaction)
+                        .Where(x => x.LegalEntityId == transaction.LegalEntityId)
+                        .FirstOrDefaultAsync();
+
+                    if (oldPaymentMethod != null)
+                    {
+                        DeregisterPaymentMethodInput input = new DeregisterPaymentMethodInput
+                        {
+                            ReferenceUuid = oldPaymentMethod.PaymentTransaction.ReferenceUuid!
+                        };
+                        _ = await DeletePaymentMethodInternal(input, transaction.LegalEntityId!.Value, transaction.LegalEntity.Name);
+                    }
+
+                    var paymentMethod = await db.PaymentMethods.AddAsync(new PaymentMethod
+                    {
+                        PaymentTransactionId = transaction.Id,
+                        LegalEntityId = transaction.LegalEntityId,
+                        Type = cardType!,
+                        LastFourDigits = lastFourDigits!,
+                        UserCreated = transaction.LegalEntity.Name,
+                        UserCreatedDate = now,
+                    });
+                }
 
                 // save changes
                 await db.SaveChangesAsync();
 
                 try
                 {
-                    var transactionType = requestBodyObject.SelectToken("transactionType")?.ToString();
-
-                    if(transactionType == PaymentTransactionTypes.DEBIT.ToString())
+                    // if transaction type is DEBIT, send payment confirmation email
+                    if (transactionType == PaymentTransactionTypes.DEBIT.ToString())
                     {
                         var email = await db.Users
                             .Where(x => x.LegalEntityId == transaction.LegalEntityId)
@@ -1435,9 +1472,9 @@ namespace Oblak.Controllers
 
                         var amount = requestBodyObject.SelectToken("totalAmount")?.ToString() ?? "N/A";
                         var currency = requestBodyObject.SelectToken("currency")?.ToString() ?? "N/A";
-                        var lastFourDigits = requestBodyObject.SelectToken("returnData.lastFourDigits")?.ToString() ?? "N/A";
-                        var cardType = requestBodyObject.SelectToken("returnData.binBrand")?.ToString() ?? "N/A";
                         var authCode = requestBodyObject.SelectToken("extraData.authCode")?.ToString() ?? "TEST";
+                        lastFourDigits = lastFourDigits ?? "N/A";
+                        cardType = cardType ?? "N/A";
 
                         var template = _configuration["SendGrid:Templates:PaymentConfirmation"]!;
                         var senderEmail = _configuration["SendGrid:EmailAddress"];
@@ -1451,13 +1488,14 @@ namespace Oblak.Controllers
                             cardType = $"{cardType}",
                             lastFourDigits = $"{lastFourDigits}",
                             authCode = $"{authCode}",
-                            timestamp = $"{transaction.UserCreatedDate.AddHours(2):yyyy-MM-ddTHH:mm:ss}" // Format the timestamp
+                            timestamp = $"{transaction.UserCreatedDate.AddHours(2):yyyy-MM-dd HH:mm:ss}", // Format the timestamp,
+                            success = success
                         });
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    // ignore
+                    _logger.LogError(ex, "Failed to send paymnent confirmation email.");
                 }
 
                 return Content("OK");
@@ -1524,7 +1562,8 @@ namespace Oblak.Controllers
                 Token = input.Token,
                 Type = PaymentTransactionTypes.REGISTER.ToString(),
                 UserCreated = _legalEntity.Name,
-                UserCreatedDate = now
+                UserCreatedDate = now,
+                ReferenceUuid = paymentResponse.Uuid
             });
 
             await db.SaveChangesAsync();
@@ -1554,6 +1593,11 @@ namespace Oblak.Controllers
                 return Json(new { info = "", error = "Korisnik nije ulogovan!" });
             }
 
+            return await DeletePaymentMethodInternal(input, _legalEntity.Id, _legalEntity.Name);
+        }
+
+        private async Task<ActionResult<InitiatePaymentOutput>> DeletePaymentMethodInternal(DeregisterPaymentMethodInput input, int legalEntityId, string legalEntityName)
+        {
             var transactionId = Guid.NewGuid().ToString();
 
             var paymentResponse = await _paymentService.DeregisterPaymentMethod(new PaymentServiceRequest
@@ -1562,15 +1606,19 @@ namespace Oblak.Controllers
                 ReferenceUuid = input.ReferenceUuid
             });
 
+            _ = await db.PaymentMethods
+                .Where(x => x.LegalEntityId == legalEntityId)
+                .ExecuteDeleteAsync();
+
             var now = DateTime.UtcNow;
             var transaction = await db.PaymentTransactions.AddAsync(new PaymentTransaction
             {
                 Status = paymentResponse.ReturnType,
                 Success = paymentResponse.Success,
                 MerchantTransactionId = transactionId,
-                LegalEntityId = _legalEntity.Id,
+                LegalEntityId = legalEntityId,
                 Type = PaymentTransactionTypes.DEREGISTER.ToString(),
-                UserCreated = _legalEntity.Name,
+                UserCreated = legalEntityName,
                 UserCreatedDate = now
             });
 
@@ -1587,27 +1635,35 @@ namespace Oblak.Controllers
             }
         }
 
-        //[HttpGet]
-        //[Route("getPaymentMethod")]
-        //public async Task<ActionResult<GroupPaymentInfoDto>> GroupGetPaymentInfo()
-        //{
-        //    if (_legalEntity == null)
-        //    {
-        //        Response.StatusCode = 401;
-        //        return Json(new { info = "", error = "Korisnik nije ulogovan!" });
-        //    }
 
-        //    var group = await db.Groups.Where(x => x.Id == id && x.LegalEntityId == _legalEntity.Id).FirstOrDefaultAsync();
+        [HttpGet]
+        [Route("getPaymentMethod")]
+        public async Task<ActionResult<PaymentMethodDto>> GetPaymentMethod()
+        {
+            if (_legalEntity == null)
+            {
+                Response.StatusCode = 401;
+                return Json(new { info = "", error = "Korisnik nije ulogovan!" });
+            }
 
-        //    if (group == null)
-        //    {
-        //        Response.StatusCode = 500;
-        //        return Json(new { info = "", error = "Nije pronađen ID grupe!" });
-        //    }
+            var paymentMethod = await db.PaymentMethods.Where(x => x.LegalEntityId == _legalEntity.Id)
+                .Include(x => x.PaymentTransaction)
+                .OrderByDescending(x => x.UserCreatedDate)
+                .FirstOrDefaultAsync();
 
-        //    // Fetch payment information for the group
-        //    var paymentInfo = await _groupService.GetPaymentInfoForGroupAsync(id);
-        //    return Json(paymentInfo);
-        //}
+            if (paymentMethod == null)
+            {
+                return Json(null);
+            }
+
+            var result = new PaymentMethodDto
+            {
+                ReferenceUuid = paymentMethod.PaymentTransaction.ReferenceUuid!,
+                Type = paymentMethod.Type,
+                LastFourDigits = paymentMethod.LastFourDigits
+            };
+
+            return Json(result);
+        }
     }
 }

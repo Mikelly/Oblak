@@ -162,8 +162,7 @@ namespace Oblak.Services.Payment
             var requestBody = new
             {
                 merchantTransactionId = input.MerchantTransactionId,
-                referenceUuid = input.ReferenceUuid,
-                callbackUrl = GetConfigurationValue(input.TestMode, "Callback")
+                referenceUuid = input.ReferenceUuid
             };
 
             var apiKey = GetConfigurationValue(input.TestMode, "ApiKey");

@@ -1435,7 +1435,8 @@ namespace Oblak.Controllers
                             status = success ? $"Uspješno plaćanje" : $"Neuspješno plaćanje",
                             orderNumber = $"{transaction.MerchantTransactionId}",
                             amount = $"{amount} {currency}",
-                            cardType = $"{cardType}, **** **** **** {lastFourDigits}",
+                            cardType = $"{cardType}",
+                            lastFourDigits = $"{lastFourDigits}",
                             authCode = $"{authCode}",
                             timestamp = $"{transaction.UserCreatedDate.AddHours(2):yyyy-MM-ddTHH:mm:ss}" // Format the timestamp
                         });
@@ -1446,7 +1447,7 @@ namespace Oblak.Controllers
                     // ignore
                 }
 
-                return Ok(true);
+                return Content("OK");
             }
             catch (Exception ex)
             {

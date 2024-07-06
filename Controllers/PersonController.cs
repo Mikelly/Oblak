@@ -698,6 +698,7 @@ namespace Oblak.Controllers
         }
 
         [HttpGet]
+        [Route("delete-mne-person")]
         public JsonResult DeleteMnePerson(int guestId)
         {
             try
@@ -706,18 +707,22 @@ namespace Oblak.Controllers
 
                 if (guest != null)
                 {
+                    if (User.IsInRole("TouristOrgOperator"))
+                    {
+                        return Json(new { error = "Nemate prava brisati gosta", info = "" });
+                    }                    
                     _db.MnePersons.Remove(guest);
                     _db.SaveChanges();
-                    return Json(new { info = "Gost uspješno obrisan." });
+                    return Json(new { info = "Gost je uspješno obrisan", error = "" });
                 }
                 else
                 {
-                    return Json(new { error = "Gost nije pronađen." });
+                    return Json(new { error = "Gost nije pronađen", info = "" });
                 }
             }
             catch (Exception ex)
             {
-                return Json(new { error = "Došlo je do greške prilikom brisanja gosta." });
+                return Json(new { error = "Došlo je do greške prilikom brisanja gosta" });
             }
         }
 

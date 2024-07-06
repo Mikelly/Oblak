@@ -30,6 +30,7 @@
             .HtmlAttributes(new { style = "height:100%;" })            
             .DataSource(ds => ds
                 .Ajax()
+                .Sort(a => a.Add(b => b.TimeStamp).Descending())
                 .PageSize(20)
                 .Model(m =>
                 {

@@ -196,6 +196,22 @@ namespace Oblak.Controllers
                     parameters.Add(new Parameter() { Name = "User", Value = User.Identity.Name });
                 }
             }
+            else if (report == "GuestListByPlace")
+            {
+                parameters.Add(new Parameter() { Name = "PartnerId", Value = _legalEntity.PartnerId });
+                parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
+                parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
+            }
+            else if (report == "PostOffice")
+            {
+                var cpid = int.Parse(checkInPoint);
+				var cp = _db.CheckInPoints.FirstOrDefault(a => a.Id == cpid);
+
+                parameters.Add(new Parameter() { Name = "PartnerId", Value = _legalEntity.PartnerId });
+                parameters.Add(new Parameter() { Name = "Date", Value = DateTime.ParseExact(date, "ddMMyyyy", null) });
+                parameters.Add(new Parameter() { Name = "CheckInPoint", Value = cpid });
+                parameters.Add(new Parameter() { Name = "CheckInPointName", Value = cp.Name });
+            }
             else if (report == "ResTax")
             {
                 parameters.Add(new Parameter() { Name = "Date", Value = DateTime.ParseExact(date, "ddMMyyyy", null) });

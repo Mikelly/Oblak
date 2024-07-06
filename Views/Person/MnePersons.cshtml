@@ -309,6 +309,8 @@
                     Swal.fire({ icon: 'error', title: errorMessages, confirmButtonText: `U redu` });
                 }
                 else {
+                    var grid = $('#mnePersonGrid').data('kendoGrid');
+                    grid.dataSource.read();
                     Swal.fire({ icon: 'success', title: 'Gost je uspješno prijavljen!', confirmButtonText: `U redu`, timer: 1500 });
                 }
                 //var wnd = $("#wndGuest").data("kendoWindow");                
@@ -316,7 +318,7 @@
         });
     }
 
-    function deleteGuestFromRb90() {
+    function deleteGuest() {
 
         var grid = $('#mnePersonGrid').data('kendoGrid');
         var item = grid.dataItem(grid.select());
@@ -326,19 +328,16 @@
         var person = item.Id;
 
         $.ajax({
-            url: `/api/personExternalDelete?id=${person}`,
+            url: `/delete-mne-person?guestId=${person}`,
             type: 'GET',
             success: function (data, status, xhr) {
-                if (data.ExternalErrors != undefined) {
-                    var errorMessages = data.ExternalErrors.map(function (v) {
-                        return v;
-                    }).join('<br>');
-                    Swal.fire({ icon: 'error', title: errorMessages, confirmButtonText: `U redu` });
+                if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
                 }
-                else {
+                if (data.info != "") {
                     var grid = $('#mnePersonGrid').data('kendoGrid');
                     grid.dataSource.read();
-                    Swal.fire({ icon: 'success', title: 'Gost je uspješno obrisan iz RB90!', confirmButtonText: `U redu` });
+                    Swal.fire({ icon: 'success', title: data.info, confirmButtonText: `U redu` });
                 }
                 //var wnd = $("#wndGuest").data("kendoWindow");
             }
@@ -663,9 +662,9 @@
                         .Columns(col =>
                             {
                                 col.Bound(g => g.DocumentType).Title("Vrsta").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(100);
-                                col.Bound(g => g.DocumentCountry).Title("Država").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(80);
+                                col.Bound(g => g.DocumentCountry).Title("Država").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(80).HtmlAttributes(new { style = "text-align:center;" });
                                 col.Bound(g => g.DocumentNumber).Title("Broj").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(100);
-                                col.Bound(g => g.DocumentValidTo).Title("Važi do").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Format("{0:dd.MM.yyyy}").Width(90).HtmlAttributes(new { style = "text-align:center;" });;
+                                col.Bound(g => g.DocumentValidTo).Title("Važi do").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Format("{0:dd.MM.yyyy}").Width(90).HtmlAttributes(new { style = "text-align:center;" });
                             })
                         );
 
@@ -679,7 +678,7 @@
                             if (admin)
                             { 
                                 col.Bound(g => g.UserCreated).Title("Operater").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(140).HtmlAttributes(new { style = "text-align:center;" });
-                                col.Bound(g => g.CheckInPointName).Title("Punkt").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(100).HtmlAttributes(new { style = "text-align:center;" });
+                                col.Bound(g => g.CheckInPointName).Title("Punkt").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(110).HtmlAttributes(new { style = "text-align:center;" });
                             }
                         })
                 );

@@ -705,7 +705,7 @@ namespace Oblak.Services.MNE
             mnePerson.ResTaxPaymentTypeId = dto.ResTaxPaymentTypeId;
             mnePerson.ResTaxAmount = dto.ResTaxAmount;
 
-            if (_user != null)
+            if (_user != null && mnePerson.CheckInPointId == null)
             {
                 mnePerson.CheckInPointId = _user.CheckInPointId;
             }

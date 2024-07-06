@@ -1,7 +1,12 @@
 ﻿@{
 	Layout = "~/Views/Shared/_LayoutINV.cshtml";
 	var prtnid = (string)ViewBag.PartnerId;
-	var reports = new Dictionary<string, string>() { { $"{prtnid}CountryStats", "Statistika po državama" }, { $"{prtnid}GuestList", "Boravišne prijave za period" } };
+	var reports = new Dictionary<string, string>() { 
+		{ $"{prtnid}CountryStats", "Statistika po državama" }, 
+		{ $"{prtnid}GuestList", "Boravišne prijave za period" }, 
+		{ $"{prtnid}GuestListByPlace", "Gosti po lokaciji" },
+		{ $"{prtnid}PostOffice", "Izvještaj za poštu" },
+	};
 	var formats = new Dictionary<string, string>() { { $"PDF", "PDF dokument" }, { $"XLSX", "Excel fajl" } };
 	var admin = ViewBag.Admin;
 }
@@ -26,12 +31,13 @@
 	}
 
 	function reportChanged() { 
-		$('.run').css('display','flex');		
+		$('.run').css('display','flex');	
+		var prtnid = '@prtnid';
 		$('.parameter').hide();
-		var report = $('#report').val();
-		if (report == "CountryStats") { 
+		var report = $('#report').val().replace(prtnid, '');
+		if (report == "CountryStats") {
 			$('#datum').show();
-		}		
+		}
 		else if (report == "GuestList") {
 			$('#datumOd').show();
 			$('#datumDo').show();
@@ -40,21 +46,27 @@
 				$('#user').show();
 			}
 		}
+		else if (report == "GuestListByPlace") {
+			$('#datumOd').show();
+			$('#datumDo').show();			
+		}
+		else if (report == "PostOffice") {
+			$('#datum').show();
+			$('#checkInPoint').show();
+		}
 	}
 
 	function runReport() {
 		$('#freport').val($('#report').val());
 		$('#fformat').val($('#reportFormat').val());
 
-		var rep = $('#report').val();
-		if (rep == "GuestList") {
-			$('#fdateFrom').val(kendo.toString($('#DateFrom').data('kendoDatePicker').value(), 'ddMMyyyy'));
-			$('#fdateTo').val(kendo.toString($('#DateTo').data('kendoDatePicker').value(), 'ddMMyyyy'));
-			if (admin == 'True') {
-				$('#fcheckInPointId').val($('#CheckInPointId').val());
-				$('#fuserName').val($('#UserName').val());
-			}
-		}
+		$('#reportForm')[0].reset();
+
+		$('#fdate').val(kendo.toString($('#Date').data('kendoDatePicker').value(), 'ddMMyyyy'));
+		$('#fdateFrom').val(kendo.toString($('#DateFrom').data('kendoDatePicker').value(), 'ddMMyyyy'));
+		$('#fdateTo').val(kendo.toString($('#DateTo').data('kendoDatePicker').value(), 'ddMMyyyy'));
+		$('#fcheckInPointId').val($('#CheckInPointId').val());
+		$('#fuserName').val($('#UserName').val());		
 
 		$('#reportForm').submit();
 	}

@@ -10,6 +10,7 @@ using Oblak.Data;
 using Oblak.Data.Enums;
 using Oblak.Models.Account;
 using Oblak.Models.Api;
+using SQLitePCL;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -128,6 +129,15 @@ namespace Oblak.Controllers
                     if (checkPassword.Succeeded)
                     {
                         await _signInManager.SignInAsync(user, true);
+                        if (User.IsInRole("TouristOrgOperator"))
+                        {
+                            var au = _db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.PassThrough).FirstOrDefault(u => u.Id == user.Id);
+                            if (au.LegalEntity.PassThroughId != null)
+                            {
+                                _db.Logs.Add(new Log() { Action = "Login", LegalEntityId = au.LegalEntity.PassThroughId.Value, PartnerId = au.LegalEntity.PassThrough.PartnerId.Value, UserName = user.UserName });
+                                _db.SaveChanges();
+                            }
+                        }
                         return RedirectToRoute("Home");
                     }
 
@@ -152,8 +162,16 @@ namespace Oblak.Controllers
         [Route("sign-out", Name = "SignOut")]
         public async Task<IActionResult> SignOut()
         {
+			if (User.IsInRole("TouristOrgOperator"))
+			{
+				var au = _db.Users.FirstOrDefault(u => u.UserName.ToLower() == User.Identity.Name.ToLower());
+				if (au.PartnerId.HasValue)
+				{
+					_db.Logs.Add(new Log() { Action = "Logout", LegalEntityId = au.LegalEntityId, PartnerId = au.PartnerId.Value });
+				}
+			}
             await _signInManager.SignOutAsync();
-            return RedirectToAction("SignIn");
+			return RedirectToAction("SignIn");
         }
 
 

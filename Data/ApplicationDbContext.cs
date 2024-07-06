@@ -249,8 +249,9 @@ namespace Oblak.Data
         public DbSet<Report> Reports { get; set; }
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
         public DbSet<Municipality> Municipalities { get; set; }
+		public DbSet<Log> Logs { get; set; }
 
-        public string GuestList(int id) => throw new NotImplementedException();
+		public string GuestList(int id) => throw new NotImplementedException();
         public string GroupDesc(int id) => throw new NotImplementedException();
         public string PropertyDesc(int id) => throw new NotImplementedException();
         public int Nights(int id, DateTime last) => throw new NotImplementedException();        

@@ -1,0 +1,45 @@
+﻿@using Oblak.Models.Api;
+@{
+    ViewBag.Title = "Logs";            
+    Layout = "~/Views/Shared/_LayoutINV.cshtml";    
+}
+
+<script type="text/javascript">
+    $(document).ready(function () {
+
+    });
+</script>
+
+
+
+<div style="position:absolute; top:25px; bottom: 15px; left: 15px; right:15px;">
+    @(Html.Kendo().Grid<Log>()
+        .Name("LogGrid")        
+        .Columns(columns =>
+        {            
+            columns.Bound(g => g.UserName).Title("Operater").Width(150);            
+            columns.Bound(g => g.Action).Title("Aktivnost").Width(150);
+            columns.Bound(g => g.TimeStamp).Title("Vrijeme").Width(150).Format("{0:dd.MM.yyyy HH:mm}");
+            
+            })
+            .Pageable(p => p.Refresh(true))
+            .Sortable()
+            .Selectable()
+            .Scrollable()
+            .Filterable()
+            .HtmlAttributes(new { style = "height:100%;" })            
+            .DataSource(ds => ds
+                .Ajax()
+                .PageSize(20)
+                .Model(m =>
+                {
+                    m.Id(g => g.Id);
+                    m.Field(g => g.Id).Editable(false);
+                    m.Field(g => g.Action);
+                    m.Field(g => g.TimeStamp);
+                    m.Field(g => g.UserName);                    
+                })        
+        .Read(a => a.Action("Read", "Log"))                
+        )
+    )
+</div>

@@ -79,7 +79,7 @@ public class GroupService
     public async Task<GroupPaymentInfoDto> GetPaymentInfoForGroupAsync(int groupId)
     {
         var latestTransaction = await _db.PaymentTransactions
-            .Where(pt => pt.GroupId == groupId)
+            .Where(pt => pt.GroupId == groupId && pt.Type == PaymentTransactionTypes.DEBIT.ToString())
             .OrderByDescending(pt => pt.UserCreatedDate)
             .FirstOrDefaultAsync();
 

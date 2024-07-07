@@ -659,6 +659,8 @@ namespace Oblak.Services.MNE
                 mnePerson = _db.MnePersons.FirstOrDefault(a => a.Id == dto.Id)!;
             }
 
+            _logger.LogDebug("Mne Person Legal Entity:" + _legalEntity.Id);
+
             mnePerson.LegalEntityId = _legalEntity.Id;
             //mnePerson.Id = dto.Id;
             //mnePerson.ExternalId = dto.ExternalId;
@@ -714,6 +716,12 @@ namespace Oblak.Services.MNE
 
             if (mnePerson.ResTaxTypeId != null)
             {
+                if (mnePerson.ResTaxTypeId > 3)
+                {
+                    mnePerson.ResTaxAmount = 0;
+                    mnePerson.ResTaxFee = 0;
+                }
+
                 var resTaxType = _db.ResTaxTypes.FirstOrDefault(a => a.Id == mnePerson.ResTaxTypeId);
                 if (mnePerson.CheckOut.HasValue)
                 {

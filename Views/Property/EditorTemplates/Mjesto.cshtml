@@ -15,6 +15,6 @@
         })
         .ServerFiltering(true);
     })    
-    .AutoBind(true)
-    .CascadeFrom("MunicipalityId_propertyMunicipality")
+    .AutoBind(true)    
+    .Events(e => e.Cascade("cascadePlace"))
     )

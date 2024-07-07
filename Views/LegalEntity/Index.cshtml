@@ -564,7 +564,7 @@
             }).Width("70px");
 
             columns.Bound(g => g.Id).Title("Id").Width("80px");
-            columns.Bound(g => g.Name).Title("Naziv").Width("40%");
+            columns.Bound(g => g.Name).Title("Naziv").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width("40%");
 @*             columns.Bound(g => g.FirstName).Title("Ime").Width("15%");
             columns.Bound(g => g.LastName).Title("Prezime").Width("25%"); *@
             columns.ForeignKey(g => g.Type, legalEntityTypes).Title("Vrsta").Width("150px");

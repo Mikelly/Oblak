@@ -550,7 +550,20 @@ namespace Oblak.Controllers
             {
                 var g = db.Groups.Where(a => a.Id == gost.GroupId).FirstOrDefault();
                 var o = db.Properties.Where(a => a.Id == gost.PropertyId).Include(a => a.LegalEntity).FirstOrDefault();
-                await _registerClient.Initialize(_legalEntity);
+                //await _registerClient.Initialize(_legalEntity);
+                if (User.IsInRole("TouristOrgOperator") || User.IsInRole("TouristOrgAdmin") || User.IsInRole("TouristController"))
+                {
+                    var pass = o.LegalEntity.PassThroughId;
+                    if (pass.HasValue)
+                    {
+                        var passLegalEntity = db.LegalEntities.FirstOrDefault(a => a.Id == pass.Value);
+                        await _registerClient.Initialize(passLegalEntity);
+                    }
+                }
+                else
+                {
+                    await _registerClient.Initialize(_legalEntity);
+                }
                 var result = await _registerClient.Person(gost);
 
                 return Json(_mapper.Map<MnePersonDto>(result));

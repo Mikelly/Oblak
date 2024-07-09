@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Oblak.Data.Enums;
 using RestSharp;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -39,7 +40,13 @@ namespace Oblak.Services.Payment
                 { "successUrl", input.SuccessUrl },
                 { "cancelUrl", input.CancelUrl },
                 { "errorUrl", input.ErrorUrl },
-                { "callbackUrl", GetConfigurationValue(input.TestMode, "Callback") }
+                { "callbackUrl", GetConfigurationValue(input.TestMode, "Callback") },
+                { "customer", new Dictionary<string, object> {
+                    { "firstName", input.FirstName ?? string.Empty },
+                    { "lastName", input.LastName ?? string.Empty },
+                    { "billingAddress1", input.BillingAddress1 ?? string.Empty }, 
+                    { "identification", input.Identification ?? string.Empty }
+                } }
             };
 
             if (string.IsNullOrEmpty(input.ReferenceUuid))
@@ -108,7 +115,14 @@ namespace Oblak.Services.Payment
                 cancelUrl = input.CancelUrl,
                 errorUrl = input.ErrorUrl,
                 callbackUrl = GetConfigurationValue(input.TestMode, "Callback"),
-                transactionToken = input.TransactionToken
+                transactionToken = input.TransactionToken,
+                customer = new
+                {
+                    firstName = input.FirstName ?? string.Empty,
+                    lastName = input.LastName ?? string.Empty,
+                    billingAddress1 = input.BillingAddress1 ?? string.Empty,
+                    identification = input.Identification ?? string.Empty
+                }
             };
 
             var apiKey = GetConfigurationValue(input.TestMode, "ApiKey");

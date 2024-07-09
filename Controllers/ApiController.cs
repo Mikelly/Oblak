@@ -1327,7 +1327,11 @@ namespace Oblak.Controllers
                 ErrorUrl = input.ErrorUrl,
                 WithRegister = input.StoreCard,
                 ReferenceUuid = input.ReferenceUuid,
-                TestMode = _legalEntity.Test
+                TestMode = _legalEntity.Test,
+                FirstName = _legalEntity.FirstName!,
+                LastName = _legalEntity.LastName!,
+                BillingAddress1 = _legalEntity.Address,
+                Identification = _legalEntity.TIN
             });
 
             var now = DateTime.UtcNow;
@@ -1416,7 +1420,7 @@ namespace Oblak.Controllers
 
                 var transactionType = requestBodyObject.SelectToken("transactionType")?.ToString();
                 var lastFourDigits = requestBodyObject.SelectToken("returnData.lastFourDigits")?.ToString();
-                var cardType = requestBodyObject.SelectToken("returnData.binBrand")?.ToString();
+                var cardType = requestBodyObject.SelectToken("returnData.type")?.ToString();
 
                 // If status is OK, update ResTaxPaid field on the associated group to true
                 if (success && transaction.GroupId.HasValue)
@@ -1549,7 +1553,11 @@ namespace Oblak.Controllers
                 SuccessUrl = input.SuccessUrl,
                 CancelUrl = input.CancelUrl,
                 ErrorUrl = input.ErrorUrl,
-                TestMode = _legalEntity.Test
+                TestMode = _legalEntity.Test,
+                FirstName = _legalEntity.FirstName!,
+                LastName = _legalEntity.LastName!,
+                BillingAddress1 = _legalEntity.Address,
+                Identification = _legalEntity.TIN
             });
 
             var now = DateTime.UtcNow;

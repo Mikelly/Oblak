@@ -1,4 +1,6 @@
-﻿namespace Oblak.Services.Payment
+﻿using Oblak.Data;
+
+namespace Oblak.Services.Payment
 {
     public class PaymentServiceRequest
     {
@@ -12,5 +14,9 @@
         public string ErrorUrl { get; set; } = string.Empty;
         public bool WithRegister { get; set; } = false;
         public bool TestMode { get; set; } = true;
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string BillingAddress1 { get; set; } = string.Empty;
+        public string Identification { get; set; } = string.Empty;
     }
 }

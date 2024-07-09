@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 using Oblak.Data;
 using Oblak.Data.Enums;
 using Oblak.Models.Api;
@@ -99,12 +100,32 @@ public class GroupService
             _ => PaymentStatusTypes.Pending.ToString()
         };
 
-        return new GroupPaymentInfoDto
+        var result = new GroupPaymentInfoDto () 
         {
             MerchantTransactionId = latestTransaction.MerchantTransactionId,
             PaymentStatus = paymentStatus,
             Timestamp = latestTransaction.UserCreatedDate,
-            PaymentResponse = latestTransaction.ResponseJson
+            PaymentResponse = latestTransaction.ResponseJson ?? string.Empty, // Remove this proprety after the mobile app is updated to use TotalAmount, Amount, Surcharge, Currency, AuthCode, CardType, LastFourDigits
         };
+
+        if (!string.IsNullOrEmpty(latestTransaction.ResponseJson))
+        {
+            var responseObject = JObject.Parse(latestTransaction.ResponseJson);
+
+            var totalAmount = responseObject.SelectToken("totalAmount")?.ToString() ?? string.Empty;
+            result.TotalAmount = totalAmount; // Mobile app needs to be updated to use this property instead of PaymentResponse
+            var amount = responseObject.SelectToken("amount")?.ToString() ?? string.Empty;
+            result.Amount = amount; // Mobile app needs to be updated to use this property instead of PaymentResponse
+            var surcharge = responseObject.SelectToken("surchargeAmount")?.ToString() ?? string.Empty;
+            result.Surcharge = surcharge; // Mobile app needs to be updated to use this property instead of PaymentResponse
+            var currency = responseObject.SelectToken("currency")?.ToString() ?? string.Empty;
+            result.Currency = currency; // Mobile app needs to be updated to use this property instead of PaymentResponse
+            result.AuthCode = responseObject.SelectToken("extraData.authCode")?.ToString() ?? string.Empty; // Mobile app needs to be updated to use this property instead of PaymentResponse
+            result.CardType = responseObject.SelectToken("returnData.type")?.ToString() ?? string.Empty; // Mobile app needs to be updated to use this property instead of PaymentResponse
+            result.LastFourDigits = responseObject.SelectToken("returnData.lastFourDigits")?.ToString() ?? string.Empty; // Mobile app needs to be updated to use this property instead of PaymentResponse
+        }
+
+
+        return result;
     }
 }

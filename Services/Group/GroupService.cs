@@ -123,6 +123,7 @@ public class GroupService
             result.AuthCode = responseObject.SelectToken("extraData.authCode")?.ToString() ?? string.Empty; // Mobile app needs to be updated to use this property instead of PaymentResponse
             result.CardType = responseObject.SelectToken("returnData.type")?.ToString() ?? string.Empty; // Mobile app needs to be updated to use this property instead of PaymentResponse
             result.LastFourDigits = responseObject.SelectToken("returnData.lastFourDigits")?.ToString() ?? string.Empty; // Mobile app needs to be updated to use this property instead of PaymentResponse
+            result.ErrorCode = responseObject.SelectToken("code")?.ToString() ?? string.Empty;
         }
 
 

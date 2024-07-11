@@ -4,6 +4,8 @@
     {
         DEBIT,
         REGISTER,
-        DEREGISTER
+        DEREGISTER,
+        PREAUTHORIZE,
+        VOID
     }
 }

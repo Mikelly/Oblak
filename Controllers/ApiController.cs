@@ -1431,11 +1431,20 @@ namespace Oblak.Controllers
                         group.ResTaxPaid = true;
                     }
                 }
-                // If status is OK and transaction type is REGISTER, deregister the old payment method and update PaymentMethods table
+                // If status is OK and transaction type is PREAUTHORIZE, void the amount, deregister the old payment method and update PaymentMethods table
                 if (success && 
-                    (transactionType == PaymentTransactionTypes.REGISTER.ToString() ||
+                    (transactionType == PaymentTransactionTypes.PREAUTHORIZE.ToString() ||
                     transaction.WithRegister == true))
                 {
+                    if(transactionType == PaymentTransactionTypes.PREAUTHORIZE.ToString())
+                    {
+                        VoidTransactionInput input = new VoidTransactionInput
+                        {
+                            ReferenceUuid = transaction.ReferenceUuid!
+                        };
+                        _ = await VoidTransactionInternal(input, transaction.LegalEntityId!.Value, transaction.LegalEntity.Name);
+                    }
+
                     var oldPaymentMethod = await db.PaymentMethods
                         .Include(x => x.PaymentTransaction)
                         .Where(x => x.LegalEntityId == transaction.LegalEntityId)
@@ -1546,7 +1555,7 @@ namespace Oblak.Controllers
 
             var transactionId = Guid.NewGuid().ToString();
 
-            var paymentResponse = await _paymentService.RegisterPaymentMethod(new PaymentServiceRequest
+            var paymentResponse = await _paymentService.PreauthorizeTransaction(new PaymentServiceRequest
             {
                 MerchantTransactionId = transactionId,
                 TransactionToken = input.Token,
@@ -1557,7 +1566,8 @@ namespace Oblak.Controllers
                 FirstName = _legalEntity.FirstName!,
                 LastName = _legalEntity.LastName!,
                 BillingAddress1 = _legalEntity.Address,
-                Identification = _legalEntity.TIN
+                Identification = _legalEntity.TIN,
+                Amount = 0.01m
             });
 
             var now = DateTime.UtcNow;
@@ -1568,10 +1578,11 @@ namespace Oblak.Controllers
                 MerchantTransactionId = transactionId,
                 LegalEntityId = _legalEntity.Id,
                 Token = input.Token,
-                Type = PaymentTransactionTypes.REGISTER.ToString(),
+                Type = PaymentTransactionTypes.PREAUTHORIZE.ToString(),
                 UserCreated = _legalEntity.Name,
                 UserCreatedDate = now,
-                ReferenceUuid = paymentResponse.Uuid
+                ReferenceUuid = paymentResponse.Uuid,
+                Amount = 0.01m
             });
 
             await db.SaveChangesAsync();
@@ -1604,6 +1615,42 @@ namespace Oblak.Controllers
             return await DeletePaymentMethodInternal(input, _legalEntity.Id, _legalEntity.Name);
         }
 
+        private async Task<ActionResult<InitiatePaymentOutput>> VoidTransactionInternal(VoidTransactionInput input, int legalEntityId, string legalEntityName)
+        {
+            var transactionId = Guid.NewGuid().ToString();
+
+            var paymentResponse = await _paymentService.VoidTransaction(new PaymentServiceRequest
+            {
+                MerchantTransactionId = transactionId,
+                ReferenceUuid = input.ReferenceUuid
+            });
+
+            var now = DateTime.UtcNow;
+            var transaction = await db.PaymentTransactions.AddAsync(new PaymentTransaction
+            {
+                Status = paymentResponse.ReturnType,
+                Success = paymentResponse.Success,
+                MerchantTransactionId = transactionId,
+                LegalEntityId = legalEntityId,
+                Type = PaymentTransactionTypes.VOID.ToString(),
+                UserCreated = legalEntityName,
+                UserCreatedDate = now,
+                ReferenceUuid = input.ReferenceUuid
+            });
+
+            await db.SaveChangesAsync();
+
+            if (paymentResponse.Success)
+            {
+                return Ok();
+            }
+            else
+            {
+                var errors = paymentResponse.Errors?.Select(x => x.AdapterMessage ?? x.ErrorMessage);
+                return Json(new { info = "", error = errors });
+            }
+        }
+
         private async Task<ActionResult<InitiatePaymentOutput>> DeletePaymentMethodInternal(DeregisterPaymentMethodInput input, int legalEntityId, string legalEntityName)
         {
             var transactionId = Guid.NewGuid().ToString();
@@ -1627,7 +1674,8 @@ namespace Oblak.Controllers
                 LegalEntityId = legalEntityId,
                 Type = PaymentTransactionTypes.DEREGISTER.ToString(),
                 UserCreated = legalEntityName,
-                UserCreatedDate = now
+                UserCreatedDate = now,
+                ReferenceUuid = input.ReferenceUuid
             });
 
             await db.SaveChangesAsync();
@@ -1642,7 +1690,6 @@ namespace Oblak.Controllers
                 return Json(new { info = "", error = errors });
             }
         }
-
 
         [HttpGet]
         [Route("getPaymentMethod")]

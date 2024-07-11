@@ -115,6 +115,7 @@ namespace Oblak.Services.Payment
             }
         }
 
+        [Obsolete("Use PreauthorizeTransaction instead of RegisterPaymentMethod.")]
         public async Task<PaymentServiceResponse> RegisterPaymentMethod(PaymentServiceRequest input)
         {
             _client = new RestClient(GetConfigurationValue(input.TestMode, "Endpoint"));

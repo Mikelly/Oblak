@@ -915,7 +915,8 @@ namespace Oblak.Controllers
                 .Where(a => (a.UserCreatedDate ?? (DateTime?)a.CheckIn ?? DateTime.MinValue).Date == date)
                 .Where(a => a.Property.LegalEntity.PartnerId == partner.Id && a.CheckInPointId == checkInPoint)
                 .Where(a => a.ResTaxAmount != 0)
-                .Select(a => new { a.Property.LegalEntity.Name, a.Property.LegalEntity.TIN, Date = a.UserCreatedDate ?? a.CheckIn, Tax = (a.ResTaxAmount ?? 0m) + (a.ResTaxFee ?? 0m) })
+                .Select(a => new { a.Property.LegalEntity.Name, a.Property.LegalEntity.TIN, Date = a.UserCreatedDate ?? a.CheckIn, Tax = (a.ResTaxAmount ?? 0m) })
+                .Where(a => a.Tax > 0)
                 .ToList();
 
             var lines = guests.OrderBy(a => a.Date)

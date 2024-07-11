@@ -1331,7 +1331,8 @@ namespace Oblak.Controllers
                 FirstName = _legalEntity.FirstName!,
                 LastName = _legalEntity.LastName!,
                 BillingAddress1 = _legalEntity.Address,
-                Identification = _legalEntity.TIN
+                Identification = _legalEntity.TIN,
+                Email = _appUser.Email!
             });
 
             var now = DateTime.UtcNow;
@@ -1485,7 +1486,7 @@ namespace Oblak.Controllers
 
                         var amount = requestBodyObject.SelectToken("totalAmount")?.ToString() ?? "N/A";
                         var currency = requestBodyObject.SelectToken("currency")?.ToString() ?? "N/A";
-                        var authCode = requestBodyObject.SelectToken("extraData.authCode")?.ToString() ?? "TEST";
+                        var authCode = requestBodyObject.SelectToken("extraData.authCode")?.ToString() ?? string.Empty;
                         lastFourDigits = lastFourDigits ?? "N/A";
                         cardType = cardType ?? "N/A";
 
@@ -1567,7 +1568,8 @@ namespace Oblak.Controllers
                 LastName = _legalEntity.LastName!,
                 BillingAddress1 = _legalEntity.Address,
                 Identification = _legalEntity.TIN,
-                Amount = 0.01m
+                Amount = 0.01m,
+                Email = _appUser.Email!
             });
 
             var now = DateTime.UtcNow;

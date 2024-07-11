@@ -13,5 +13,6 @@
         public string? CardType { get; set; } // Mobile app needs to be updated to use this property instead of PaymentResponse
         public string? LastFourDigits { get; set; } // Mobile app needs to be updated to use this property instead of PaymentResponse
         public string? PaymentResponse { get; set; } // Remove this proprety after the mobile app is updated to use TotalAmount, Amount, Surcharge, Currency, AuthCode, CardType, LastFourDigits
+        public string? ErrorCode { get; set; }
     }
 }

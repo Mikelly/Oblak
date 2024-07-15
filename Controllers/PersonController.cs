@@ -559,6 +559,7 @@ namespace Oblak.Controllers
                 .ToDictionary(x => x.ExternalId, x => x.Name);
 
             var query = _db.MnePersons.Include(a => a.Property).Include(a => a.CheckInPoint)
+                .Where(a => a.GroupId == groupId && groupId != 0 || groupId == 0 && a.GroupId == null)
                 .Where(a => a.LegalEntityId == _legalEntityId);
 
             if (User.IsInRole("TouristOrgOperator"))
@@ -903,13 +904,15 @@ namespace Oblak.Controllers
 
         [HttpGet]
         [Route("post-office-export")]
-        public FileResult PostOfficeExport(string datum)
+        public FileResult PostOfficeExport(string datum, int? chekinpointid)
         {
             var date = DateTime.ParseExact(datum, "dd.MM.yyyy", CultureInfo.InvariantCulture);
 
             var partner = _db.Partners.Find(_appUser.PartnerId);
 
             var checkInPoint = _appUser.CheckInPointId;
+
+            if (chekinpointid.HasValue) checkInPoint = chekinpointid;
 
             var guests = _db.MnePersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity)
                 .Where(a => (a.UserCreatedDate ?? (DateTime?)a.CheckIn ?? DateTime.MinValue).Date == date)
@@ -961,7 +964,7 @@ namespace Oblak.Controllers
         [Route("print-direct")]
         public IActionResult PrintDirect(int id)
         {
-            var person = _db.MnePersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == id);
+            var person = _db.MnePersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.LegalEntity).Include(a => a.CheckInPoint).FirstOrDefault(a => a.Id == id);
 
             var address = person.Property.LegalEntity.Address ?? "";
             address = address
@@ -973,7 +976,7 @@ namespace Oblak.Controllers
             return Json(new
             {
                 from = $"{person.Property.LegalEntity.Name}\n{address}",
-                to = "Boravisna taksa, TO Bar",
+                to = $"Boravisna taksa, TO Bar{(person.CheckInPoint != null ? ", " + person.CheckInPoint.Name : "")}",
                 fromacc = "-",
                 toacc = "510-8093205-10",
                 desc = $"Uplata boravisne takse\nGost: {person.FirstName} {person.LastName}\nPeriod:{person.CheckIn.ToString("dd.MM.yyyy")} - {person.CheckOut.Value.ToString("dd.MM.yyyy")}",

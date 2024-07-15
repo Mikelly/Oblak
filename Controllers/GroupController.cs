@@ -179,10 +179,29 @@ namespace RegBor.Controllers
 
 		public virtual async Task<ActionResult> Read([DataSourceRequest] DataSourceRequest request)
         {
+			//var isPropertyAdmin = User.IsInRole("PropertyAdmin");
+			//var legalEntityId = _appUser!.LegalEntityId;
+
+			//List<PropertyDto> properties = null;
+
+			//if (isPropertyAdmin)
+			//{
+			//	var ids = _db.LegalEntities.Where(a => a.AdministratorId == legalEntityId).Select(a => a.Id).ToList();
+			//	properties = _db.Properties.Where(a => ids.Contains(a.LegalEntityId)).ToList()
+			//		.Select(a => _mapper.Map<Property, PropertyDto>(a)).ToList();
+			//}
+			//else
+			//{
+			//	properties = _db.Properties.Where(a => a.LegalEntityId == legalEntityId).ToList()
+			//		.Select(a => _mapper.Map<Property, PropertyDto>(a)).ToList();
+			//}
+
 			var propertyIds = (await GetProperties()).Select(a => a.Id).ToArray();
+            //propertyIds = properties.Select(a => a.Id).ToArray();
 
 			var data = _db.Groups
-                .Where(a => propertyIds.Contains(a.PropertyId))
+                //.Where(a => propertyIds.Contains(a.Id))
+                .Where(a => a.LegalEntityId == _legalEntityId)
                 .Include(a => a.Property)
 				.OrderByDescending(x => x.Date)
                 .Select(a => new GroupEnrichedDto

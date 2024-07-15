@@ -308,7 +308,7 @@ namespace Oblak.Controllers
         [Route("groupCreate")]
         public async Task<ActionResult<GroupDto>> GroupCreate(GroupDto groupDto)
         {
-            var group = await _registerClient.Group(groupDto);
+			var group = await _registerClient.Group(groupDto);
 
             return Json(_mapper.Map(group, groupDto));
         }
@@ -424,7 +424,7 @@ namespace Oblak.Controllers
         [Route("groupRegister")]
         public async Task<ActionResult> GroupRegister(int id, DateTime? checkInDate, DateTime? checkOutDate)
         {
-            var group = db.Groups.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Where(a => a.Id == id).First();
+            var group = db.Groups.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.Property).ThenInclude(a => a.Municipality).Where(a => a.Id == id).First();
             var legalEntity = group.LegalEntity;
 
             try

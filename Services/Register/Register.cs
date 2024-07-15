@@ -125,8 +125,16 @@ namespace Oblak.Services
                 m = _db.Groups.SingleOrDefault(a => a.Id == group.Id)!;
             }
 
-            var property = _db.Properties.FirstOrDefault(p => p.Id == group.PropertyId);
-            m.LegalEntityId = property.LegalEntityId;
+            var property = _db.Properties.Include(a => a.LegalEntity).FirstOrDefault(p => p.Id == group.PropertyId);
+
+            var legalEntity = property.LegalEntity; 
+
+            if (property.LegalEntity.PassThroughId != null)
+            {
+				legalEntity = _db.LegalEntities.FirstOrDefault(a => a.Id == property.LegalEntity.PassThroughId.Value);
+			}
+
+            m.LegalEntityId = legalEntity.Id;
             m.PropertyId = group.PropertyId;
             m.PropertyExternalId = property.ExternalId;
             m.Email = group.Email;

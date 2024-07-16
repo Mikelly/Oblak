@@ -271,7 +271,7 @@ namespace Oblak.Controllers
             var legalEntities = await _registerClient.GetLegalEntities();
             var ids = legalEntities.Select(a => a.Id).ToArray();
 
-            var grupe = db.Groups.Where(a => ids.Contains(a.LegalEntityId))
+            var grupe = db.Groups.Include(a => a.Property).Where(a => ids.Contains(a.Property.LegalEntityId))
                 .OrderByDescending(a => a.Date)
                 .Skip((page - 1) * 50)
                 .Take(50)
@@ -424,7 +424,12 @@ namespace Oblak.Controllers
         [Route("groupRegister")]
         public async Task<ActionResult> GroupRegister(int id, DateTime? checkInDate, DateTime? checkOutDate)
         {
-            var group = db.Groups.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.Property).ThenInclude(a => a.Municipality).Where(a => a.Id == id).First();
+            var group = db.Groups
+                .Include(a => a.Property).ThenInclude(a => a.LegalEntity)
+                .Include(a => a.Property).ThenInclude(a => a.Municipality)
+                .Include(a => a.LegalEntity)
+                .Where(a => a.Id == id).First();
+
             var legalEntity = group.LegalEntity;
 
             try
@@ -1294,9 +1299,11 @@ namespace Oblak.Controllers
                 return Json(new { info = "", error = "Korisnik nije ulogovan!" });
             }
 
-            var group = await db.Groups.Include(x => x.LegalEntity)
+            var group = await db.Groups
+                .Include(x => x.LegalEntity)
                 .Include(x => x.Property)
-                .Where(x => x.Id == input.GroupId && x.LegalEntityId == _legalEntity.Id)
+                .ThenInclude(x => x.LegalEntity)
+                .Where(x => x.Id == input.GroupId /*&& x.LegalEntityId == _legalEntity.Id*/)
                 .FirstOrDefaultAsync();
 
             if (group == null)
@@ -1342,7 +1349,7 @@ namespace Oblak.Controllers
                 Success = paymentResponse.Success,
                 MerchantTransactionId = transactionId,
                 GroupId = group.Id,
-                LegalEntityId = group.LegalEntityId,
+                LegalEntityId = group.Property.LegalEntityId,
                 PropertyId = group.PropertyId,
                 Token = input.Token,
                 Type = PaymentTransactionTypes.DEBIT.ToString(),
@@ -1531,7 +1538,7 @@ namespace Oblak.Controllers
                 return Json(new { info = "", error = "Korisnik nije ulogovan!" });
             }
 
-            var group = await db.Groups.Where(x => x.Id == id && x.LegalEntityId == _legalEntity.Id).FirstOrDefaultAsync();
+            var group = await db.Groups.Where(x => x.Id == id /*&& x.LegalEntityId == _legalEntity.Id*/).FirstOrDefaultAsync();
 
             if (group == null)
             {

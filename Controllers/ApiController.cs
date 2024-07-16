@@ -1632,7 +1632,8 @@ namespace Oblak.Controllers
             var paymentResponse = await _paymentService.VoidTransaction(new PaymentServiceRequest
             {
                 MerchantTransactionId = transactionId,
-                ReferenceUuid = input.ReferenceUuid
+                ReferenceUuid = input.ReferenceUuid,
+                TestMode = _legalEntity.Test
             });
 
             var now = DateTime.UtcNow;
@@ -1668,7 +1669,8 @@ namespace Oblak.Controllers
             var paymentResponse = await _paymentService.DeregisterPaymentMethod(new PaymentServiceRequest
             {
                 MerchantTransactionId = transactionId,
-                ReferenceUuid = input.ReferenceUuid
+                ReferenceUuid = input.ReferenceUuid,
+                TestMode = _legalEntity.Test
             });
 
             _ = await db.PaymentMethods

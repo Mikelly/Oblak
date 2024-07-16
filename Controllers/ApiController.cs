@@ -1484,7 +1484,8 @@ namespace Oblak.Controllers
                 try
                 {
                     // if transaction type is DEBIT, send payment confirmation email
-                    if (transactionType == PaymentTransactionTypes.DEBIT.ToString())
+                    // additionally we're making sure to send only for successful transactions, but unsuccesful transactions are also supported
+                    if (success && transactionType == PaymentTransactionTypes.DEBIT.ToString())
                     {
                         var email = await db.Users
                             .Where(x => x.LegalEntityId == transaction.LegalEntityId)

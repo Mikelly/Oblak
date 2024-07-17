@@ -1450,7 +1450,7 @@ namespace Oblak.Controllers
                         {
                             ReferenceUuid = transaction.ReferenceUuid!
                         };
-                        _ = await VoidTransactionInternal(input, transaction.LegalEntityId!.Value, transaction.LegalEntity.Name);
+                        _ = await VoidTransactionInternal(input, transaction.LegalEntityId!.Value, transaction.LegalEntity.Name, transaction.LegalEntity.Test);
                     }
 
                     var oldPaymentMethod = await db.PaymentMethods
@@ -1464,7 +1464,7 @@ namespace Oblak.Controllers
                         {
                             ReferenceUuid = oldPaymentMethod.PaymentTransaction.ReferenceUuid!
                         };
-                        _ = await DeletePaymentMethodInternal(input, transaction.LegalEntityId!.Value, transaction.LegalEntity.Name);
+                        _ = await DeletePaymentMethodInternal(input, transaction.LegalEntityId!.Value, transaction.LegalEntity.Name, transaction.LegalEntity.Test);
                     }
 
                     var paymentMethod = await db.PaymentMethods.AddAsync(new PaymentMethod
@@ -1622,10 +1622,10 @@ namespace Oblak.Controllers
                 return Json(new { info = "", error = "Korisnik nije ulogovan!" });
             }
 
-            return await DeletePaymentMethodInternal(input, _legalEntity.Id, _legalEntity.Name);
+            return await DeletePaymentMethodInternal(input, _legalEntity.Id, _legalEntity.Name, _legalEntity.Test);
         }
 
-        private async Task<ActionResult<InitiatePaymentOutput>> VoidTransactionInternal(VoidTransactionInput input, int legalEntityId, string legalEntityName)
+        private async Task<ActionResult<InitiatePaymentOutput>> VoidTransactionInternal(VoidTransactionInput input, int legalEntityId, string legalEntityName, bool testMode)
         {
             var transactionId = Guid.NewGuid().ToString();
 
@@ -1633,7 +1633,7 @@ namespace Oblak.Controllers
             {
                 MerchantTransactionId = transactionId,
                 ReferenceUuid = input.ReferenceUuid,
-                TestMode = _legalEntity.Test
+                TestMode = testMode
             });
 
             var now = DateTime.UtcNow;
@@ -1662,7 +1662,7 @@ namespace Oblak.Controllers
             }
         }
 
-        private async Task<ActionResult<InitiatePaymentOutput>> DeletePaymentMethodInternal(DeregisterPaymentMethodInput input, int legalEntityId, string legalEntityName)
+        private async Task<ActionResult<InitiatePaymentOutput>> DeletePaymentMethodInternal(DeregisterPaymentMethodInput input, int legalEntityId, string legalEntityName, bool testMode)
         {
             var transactionId = Guid.NewGuid().ToString();
 
@@ -1670,7 +1670,7 @@ namespace Oblak.Controllers
             {
                 MerchantTransactionId = transactionId,
                 ReferenceUuid = input.ReferenceUuid,
-                TestMode = _legalEntity.Test
+                TestMode = testMode
             });
 
             _ = await db.PaymentMethods

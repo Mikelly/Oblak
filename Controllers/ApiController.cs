@@ -1323,6 +1323,10 @@ namespace Oblak.Controllers
 
             var transactionId = Guid.NewGuid().ToString();
 
+            var names = (_legalEntity.Name ?? string.Empty).Trim().Split(' ');
+            var firstName = names.Length > 1 ? string.Join(" ", names.Take(names.Length - 1)) : names.FirstOrDefault() ?? string.Empty;
+            var lastName = names.Length > 1 ? names.Last() : string.Empty;
+
             var paymentResponse = await _paymentService.InitiatePaymentAsync(new PaymentServiceRequest
             {
                 MerchantTransactionId = transactionId,
@@ -1335,8 +1339,8 @@ namespace Oblak.Controllers
                 WithRegister = input.StoreCard,
                 ReferenceUuid = input.ReferenceUuid,
                 TestMode = _legalEntity.Test,
-                FirstName = _legalEntity.FirstName!,
-                LastName = _legalEntity.LastName!,
+                FirstName = firstName,
+                LastName = lastName,
                 BillingAddress1 = _legalEntity.Address,
                 Identification = _legalEntity.TIN,
                 Email = _appUser.Email!
@@ -1564,6 +1568,10 @@ namespace Oblak.Controllers
 
             var transactionId = Guid.NewGuid().ToString();
 
+            var names = (_legalEntity.Name ?? string.Empty).Trim().Split(' ');
+            var firstName = names.Length > 1 ? string.Join(" ", names.Take(names.Length - 1)) : names.FirstOrDefault() ?? string.Empty;
+            var lastName = names.Length > 1 ? names.Last() : string.Empty;
+
             var paymentResponse = await _paymentService.PreauthorizeTransaction(new PaymentServiceRequest
             {
                 MerchantTransactionId = transactionId,
@@ -1572,8 +1580,8 @@ namespace Oblak.Controllers
                 CancelUrl = input.CancelUrl,
                 ErrorUrl = input.ErrorUrl,
                 TestMode = _legalEntity.Test,
-                FirstName = _legalEntity.FirstName!,
-                LastName = _legalEntity.LastName!,
+                FirstName = firstName,
+                LastName = lastName,
                 BillingAddress1 = _legalEntity.Address,
                 Identification = _legalEntity.TIN,
                 Amount = 0.01m,

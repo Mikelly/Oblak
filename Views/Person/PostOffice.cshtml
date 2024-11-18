@@ -18,6 +18,12 @@
 
 <div style="display:flex; flex-wrap:wrap; justify-content:center; justify-items:center; margin-top:40px; font-size:large;">
     
+    <div style="width:200px; text-align:center; font-weight:bold;">
+        @ViewBag.TaxDesc
+    </div>
+
+    <div style="flex-basis:100%; height:40px;"></div>
+
     <div style="width:200px;">
         Izaberite datum:
         @Html.Kendo().DatePicker().Name("Datum").Value(DateTime.Now)

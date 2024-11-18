@@ -12,7 +12,8 @@ namespace Oblak.Data
         public int PartnerId { get; set; }
 
         public Partner Partner { get; set; }
-        
+
+        [StringLength(450)]
         public string Description { get; set; }
 
         public decimal Amount { get; set; }

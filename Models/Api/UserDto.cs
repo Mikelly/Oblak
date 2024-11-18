@@ -14,7 +14,7 @@ namespace Oblak.Models.Api
         
         public string Id { get; set; }
 
-        public int LegalEntityId { get; set; }
+        public int LegalEntityId { get; set; }        
 
         public int? PartnerId { get; set; }
         

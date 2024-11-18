@@ -180,6 +180,12 @@ namespace Oblak.Controllers
                 parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
                 parameters.Add(new Parameter() { Name = "Date", Value = DateTime.ParseExact(date, "ddMMyyyy", null) });
             }
+            else if (report == "CountryStatsPeriod")
+            {
+                parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
+                parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
+                parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
+            }
             else if (report == "GuestList")
             {
                 parameters.Add(new Parameter() { Name = "PartnerId", Value = _legalEntity.PartnerId });

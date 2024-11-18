@@ -78,7 +78,7 @@ namespace Oblak.Services
 
         public abstract Task GuestListMail(int objekat, string datumOo, string datumdo, string email);
 
-        public abstract Task<Stream> GuestListPdf(int objekat, string datumOo, string datumdo);
+        public abstract Task<Stream> GuestListPdf(int objekat, string datumod, string datumdo);
 
         public abstract Task SendGuestToken(int propertyId, int? unitId, string email, string phoneNo, string lang);
 
@@ -102,7 +102,7 @@ namespace Oblak.Services
 			return data;
 		}
 
-		public async Task<List<LegalEntity>> GetLegalEntities()
+        public async Task<List<LegalEntity>> GetLegalEntities()
 		{			
 			var ids = _db.LegalEntities.Where(a => a.AdministratorId == _legalEntity.Id).Select(a => a.Id).ToList();
 			var data = _db.LegalEntities.Where(a => ids.Contains(a.Id)).ToList();

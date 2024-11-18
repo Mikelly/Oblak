@@ -280,9 +280,9 @@ app.UseHangfireDashboard("/dashboard", new DashboardOptions
     IgnoreAntiforgeryToken = true
 });
 
+/*
+
 app.MapHangfireDashboard();
-
-
 
 if (!app.Environment.IsDevelopment())
 {
@@ -290,6 +290,8 @@ if (!app.Environment.IsDevelopment())
 }
 
 RecurringJob.AddOrUpdate<SrbScheduler>("HourlyCheckOutSrb", a => a.HourlyCheckOut(), builder.Configuration["SRB:Schedulers:HourlyCheckOut"]);
+
+*/
 
 app.MapHub<MessageHub>("/messageHub");
 

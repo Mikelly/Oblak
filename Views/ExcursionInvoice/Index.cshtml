@@ -1,0 +1,203 @@
+﻿@using Oblak.Models.Api;
+@using Oblak.Models.EFI;
+
+@{
+    ViewBag.Title = "Fakture";
+    Layout = "~/Views/Shared/_LayoutINV.cshtml";
+}
+
+<script type="text/javascript">
+    
+    var le = -1;
+
+    $(document).ready(function () {
+        
+    });
+
+    function newinvoice() {
+
+        window.location = `excursion-invoice-create`;
+    }
+
+    function payments(taxType) {
+        var grid = $('#AgenciesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati agenciju', confirmButtonText: `U redu` });
+
+        ag = item.Id;
+
+        $.ajax({
+            url: `legal-entity-payments?taxType=${taxType}&ag=${ag}`,
+            type: 'GET',
+            success: function (data) {
+                console.log(data);
+                var wnd = $("#wndPayments").data("kendoWindow");
+                wnd.title(`Unos uplata - ${item.Name}`);
+                wnd.content(data);
+                wnd.setOptions({
+                    width: $(window).width() * 0.80,
+                    height: $(window).height() * 0.80
+                });
+                wnd.center().open();
+            },
+            error: function (error) {
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'Došlo je do greške', confirmButtonText: `U redu` });
+            },
+            complete: function () {
+            }
+        });
+    }
+
+    function excursions() {
+        var grid = $('#AgenciesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati agenciju', confirmButtonText: `U redu` });
+
+        ag = item.Id;
+
+        $.ajax({
+            url: `agency-excursions?&agency=${ag}`,
+            type: 'GET',
+            success: function (data) {
+                console.log(data);
+                var wnd = $("#wndPayments").data("kendoWindow");
+                wnd.title(`Unos izleta - ${item.Name}`);
+                wnd.content(data);
+                wnd.setOptions({
+                    width: $(window).width() * 0.80,
+                    height: $(window).height() * 0.80
+                });
+                wnd.center().open();
+            },
+            error: function (error) {
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'Došlo je do greške', confirmButtonText: `U redu` });
+            },
+            complete: function () {
+            }
+        });
+    }
+
+    function showInvoice2() {
+        var grid = $('#ExcursionInvoicesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati fakturu', confirmButtonText: `U redu` });
+
+        window.open(`/excursion-invoice?id=${item.Id}`);
+    }
+
+    function showInvoice() {
+        var grid = $('#ExcursionInvoicesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati fakturu', confirmButtonText: `U redu` });
+
+        window.location = `/excursion-invoice?id=${item.Id}`;
+    }
+
+    function newInvoice() {
+        window.location = `excursion-invoice-create`;
+    }
+
+</script>
+
+<style type="text/css">
+</style>
+
+<div style="display:flex; margin-left:15px; margin-top:25px; margin-right:15px;">
+
+    @(Html.Kendo().Button().Name("btnNewInvoice")
+        .HtmlAttributes(new { type = "button", onclick = "newinvoice()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/new_invoice.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>NOVA<br/>FAKTURA<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnShowInvoice")
+        .HtmlAttributes(new { type = "button", onclick = "showInvoice()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/view_glass.png'/>
+                <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>PRIKAŽI<br/>FAKTURU<div>
+            </div>"))
+
+    @(Html.Kendo().Button().Name("btnShowInvoice2")
+        .HtmlAttributes(new { type = "button", onclick = "showInvoice2()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/opennew.png'/>
+                <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>U DRUGOM<br/>PROZORU<div>
+            </div>"))
+
+    
+
+@*     <div style="display: flex; margin-left:auto;">
+        @(Html.Kendo().Button().Name("btnSave")
+            .HtmlAttributes(new { type = "button", onclick = "balance('ResidenceTax')", style = "height:95px; width:95px; margin-left:10px;; cursor:pointer;" })
+            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/save.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>SAČUVAJ<br/>PROMJENE<div>
+            </div>"))
+    </div> *@
+ 
+</div>
+
+<div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
+    @(Html.Kendo().Grid<ExcursionInvoiceDto>()
+        .Name("ExcursionInvoicesGrid")
+        .Columns(columns =>
+        {
+
+            columns.Group(g => g.Title("Faktura").Columns(c =>
+            {
+                columns.Bound(g => g.AgencyName).Title("Agencija").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(250);
+                columns.Bound(g => g.Date).Title("Datum").Format("{0:dd.MM.yyyy}").Width(100).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+                columns.Bound(g => g.InvoiceNumber).Title("Broj").Width(150).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+                columns.Bound(g => g.DueDate).Title("Valuta").Format("{0:dd.MM.yyyy}").Width(100).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+            }));
+
+            columns.Group(g => g.Title("Obračun").Columns(c =>
+            {
+                columns.Bound(g => g.BillingAmount).Title("Iznos").Width(100).Format("{0:n2}").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:right;" });
+                columns.Bound(g => g.BillingFee).Title("Provizija").Width(100).Format("{0:n2}").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:right;" });
+                columns.Bound(g => g.BillingTotal).Title("Ukupno").Width(100).Format("{0:n2}").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:right;" });
+                columns.Bound(g => g.TaxPaymentTypeDescription).Title("Način plaćanja").Width(120).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+                columns.Bound(g => g.Status).Title("Status").Width(120).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+                columns.Bound(g => g.Note).Title("Napomena").Width(200).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" });
+            }));           
+            
+        })
+        .Pageable(p => p.Refresh(true))
+        .Editable(e => e.Mode(GridEditMode.InLine))
+        .Sortable()
+        .Selectable()
+        .Scrollable()
+        .Filterable()
+        .HtmlAttributes(new { style = "height:100%;" })        
+        .DataSource(ds => ds
+            .Ajax()
+            .PageSize(20)
+            .Model(m =>
+            {
+                m.Id(g => g.Id);
+                m.Field(g => g.Id).Editable(false);
+                m.Field(g => g.AgencyId);
+                m.Field(g => g.AgencyName);
+                m.Field(g => g.Date);
+                m.Field(g => g.DueDate);
+                m.Field(g => g.BillingAmount);
+                m.Field(g => g.BillingFee);
+                m.Field(g => g.BillingPeriodFrom);
+                m.Field(g => g.BillingPeriodFrom);
+                m.Field(g => g.TaxPaymentTypeId);
+                m.Field(g => g.TaxPaymentTypeDescription);
+                m.Field(g => g.Note);
+                m.Field(g => g.InvoiceNo);
+                m.Field(g => g.InvoiceNumber);
+                m.Field(g => g.Status);
+        })
+        .Read(a => a.Action("Read", "ExcursionInvoice", new { AgencyId = ViewBag.Agency }))
+        ))
+</div>

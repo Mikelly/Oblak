@@ -15,6 +15,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.IO;
 using SkiaSharp;
+using Oblak.Data.Api;
 
 
 namespace Oblak.Controllers
@@ -169,6 +170,47 @@ namespace Oblak.Controllers
             ViewBag.Admins = admins;
 
             return View();
+        }
+
+        [HttpGet("legalentity-select")]
+        public IActionResult Select(int? legalEntity)
+        {
+            if (legalEntity != null)
+            {
+                var le = _db.LegalEntities.Where(a => a.Id == legalEntity).FirstOrDefault();
+
+                ViewBag.Value = le.Id.ToString();
+                ViewBag.Text = le.Name;
+            }
+            else
+            {
+                ViewBag.Id = null;
+                ViewBag.Text = null;
+            }
+
+            return PartialView();
+        }
+
+
+
+        [HttpGet("legal-entity-read-admin")]
+        public async Task<IActionResult> ReadAdmin(string text)
+        {
+            var username = _context.User.Identity.Name;
+            var appUser = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username);
+
+            var data = await _db.LegalEntities.Where(x => x.PartnerId == appUser.PartnerId).OrderByDescending(x => x.Id).ToListAsync();
+
+            text = (text ?? "").ToLower();
+
+            var final = data
+                .Where(a => a.Name.ToLower().Contains(text) || a.Address.ToLower().Contains(text))
+                .Take(100)
+                .ToList()
+                .Select(_mapper.Map<LegalEntityDto>)
+                .ToList();
+
+            return Json(final);
         }
 
         [HttpPost("legal-entity-read")]

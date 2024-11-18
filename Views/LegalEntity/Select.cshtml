@@ -1,0 +1,36 @@
+﻿<div style="width:80%; margin-left:auto; margin-right:auto; margin-top:10px;">
+
+    <label for="legalEntityDropdown"><b>Izaberite izdavaoca:</b></label>
+    @(Html.Kendo().MultiColumnComboBox()
+        .Name("SelectLegalEntityId")
+        .Placeholder("Izaberite izdavaoca")
+        .DataTextField("Name")
+        .DataValueField("Id")
+        .Enable(true)
+        .Columns(columns =>
+        {
+            columns.Add().Field("Name").Title("Naziv").Width("200px");
+            columns.Add().Field("Address").Title("Adresa").Width("250px");
+        })
+        .HtmlAttributes(new { id = "SelectLegalEntityId", style = "width:100%;", autocomplete = "off", autocorrect = "off", autocapitalize = "off", spellcheck = "false" })
+        .DropDownWidth("400px")
+        .Messages(m => m.NoData("Nema podataka").Clear("Poništi"))
+        .Filter("contains").FilterFields(new string[] { "Name" })
+        .AutoBind(false)
+        .MinLength(1)     
+        .Value((string)ViewBag.Value)
+        .Text((string)ViewBag.Text)
+        .DataSource(source => { source.Read(read => { read.Action("ReadAdmin", "LegalEntity"); }).ServerFiltering(true); })
+    )
+
+</div>
+
+<div style="width:100px; margin-left:auto; margin-right:auto; margin-top:35px;">
+    @(Html.Kendo().Button().Name("btnSelectClient")
+        .HtmlAttributes(new { type = "button", onclick = "doSelectLegalEntity()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+            <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/bed.png'/>
+            <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>IZABERITE<br/>IZDAVAOCA<div>
+        </div>"))
+
+</div>

@@ -44,8 +44,8 @@ namespace Oblak.Controllers
                 _appUser = _db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.Properties).FirstOrDefault(a => a.UserName == username)!;
                 _legalEntityId = _appUser.LegalEntityId;
                 _legalEntity = _appUser.LegalEntity;
-                if (_appUser.LegalEntity.Country == Country.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>();
-                if (_appUser.LegalEntity.Country == Country.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>();
+                if (_appUser.LegalEntity.Country == CountryType.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>();
+                if (_appUser.LegalEntity.Country == CountryType.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>();
             }
         }
 
@@ -59,12 +59,12 @@ namespace Oblak.Controllers
 
             var municipalityList = new List<CodeList>();
             var typeList = new List<CodeList>();
-            if (_appUser.LegalEntity.Country == Country.MNE)
+            if (_appUser.LegalEntity.Country == CountryType.MNE)
             {
                 municipalityList = _db.Municipalities.Where(a => a.Country == _appUser.LegalEntity.Country).Select(a => new CodeList { ExternalId = a.Id.ToString(), Name = a.Name }).ToList();
                 typeList = codeLists.Where(x => x.Type == "vrstaobjekta").ToList();
             }
-            else if (_appUser.LegalEntity.Country == Country.SRB)
+            else if (_appUser.LegalEntity.Country == CountryType.SRB)
             {
                 municipalityList = codeLists.Where(x => x.Type == "ResidenceMunicipality").ToList();
                 typeList = codeLists.Where(x => x.Type == "Property_Type").ToList();

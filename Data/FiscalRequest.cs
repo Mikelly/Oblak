@@ -49,15 +49,23 @@ public partial class FiscalRequest
     public string? Status { get; set; }
 
     [StringLength(4000)]
-    public string? Error { get; set; }    
+    public string? Error { get; set; }
 
+
+    #region Audit Properties
+
+    [StringLength(450)]
     public string? UserCreated { get; set; }
     
     public DateTime? UserCreatedDate { get; set; }
 
+    [StringLength(450)]
     public string? UserModified { get; set; }
 
     public DateTime? UserModifiedDate { get; set; }
+
+    #endregion
+
 
     public LegalEntity LegalEntity { get; set; }
 }

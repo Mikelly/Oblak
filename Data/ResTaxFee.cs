@@ -12,11 +12,12 @@ namespace Oblak.Data
         public int PartnerId { get; set; }
 
         public Partner Partner { get; set; }
-        
+
+        [StringLength(450)]
         public string Description { get; set; }
         
         public int ResTaxPaymentTypeId { get; set; }
-
+                
         public ResTaxPaymentType ResTaxPaymentType {  get; set; } 
 
         public decimal? FeeAmount { get; set; }

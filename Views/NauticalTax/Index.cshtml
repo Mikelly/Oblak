@@ -1,0 +1,61 @@
+﻿@using Oblak.Models.Api;
+@using Oblak.Models.EFI;
+
+@{
+    ViewBag.Title = "Izdavaoci";
+    Layout = "~/Views/Shared/_LayoutINV.cshtml";
+}
+
+<script type="text/javascript">
+    $(document).ready(function () {
+
+    });
+
+</script>
+
+<div style="position:absolute; top:25px; bottom: 15px; left: 15px; right:15px;">
+    @(Html.Kendo().Grid<NauticalTaxDto>()
+        .Name("NauticalTaxGrid")
+        .ToolBar(t => t.Create().Text("Novi zapis"))
+        .Columns(columns =>
+        {
+            columns.Command(command => { 
+                command.Edit().Text(" ").UpdateText(" ").CancelText(" "); 
+                command.Destroy().Text(" "); 
+            })
+            .Width(70);            
+            columns.ForeignKey(g => g.VesselType, ViewBag.VesselTypes as SelectList).Title("Vrsta plovila").Width("25%").HtmlAttributes(new { style = "text-align:left;" });
+            columns.Bound(g => g.LowerLimitLength).Title("Dužina od").Format("{0:n2}").Width("15%").HtmlAttributes(new { style = "text-align:right;" });
+            columns.Bound(g => g.UpperLimitLength).Title("Dužina do").Format("{0:n2}").Width("15%").HtmlAttributes(new { style = "text-align:right;" });
+            columns.Bound(g => g.LowerLimitPeriod).Title("Broj dana od").EditorTemplateName("Integer").Format("{0:n2}").Width("15%").HtmlAttributes(new { style = "text-align:right;" });
+            columns.Bound(g => g.UpperLimitPeriod).Title("Broj dana do").EditorTemplateName("Integer").Format("{0:n2}").Width("15%").HtmlAttributes(new { style = "text-align:right;" });
+            columns.Bound(g => g.Amount).Title("Iznos takse").Format("{0:n2}").Width("15%").HtmlAttributes(new { style = "text-align:right;" });
+        })
+        .Pageable(p => p.Refresh(true))
+        .Sortable()
+        .Selectable()
+        .Scrollable()
+        .Filterable()
+        .HtmlAttributes(new { style = "height:100%;" })
+        .Editable(editable => editable.Mode(GridEditMode.InLine))
+        .DataSource(ds => ds
+            .Ajax()
+            .PageSize(20)
+            .Model(m =>
+            {
+                m.Id(g => g.Id);
+                m.Field(g => g.Id).Editable(false);
+                m.Field(g => g.VesselType);
+                m.Field(g => g.Amount);
+                m.Field(g => g.LowerLimitLength);
+                m.Field(g => g.LowerLimitPeriod);
+                m.Field(g => g.UpperLimitLength);
+                m.Field(g => g.UpperLimitPeriod);
+        })
+        .Create(a => a.Action("Create", "NauticalTax"))
+        .Read(a => a.Action("Read", "NauticalTax"))
+        .Update(a => a.Action("Update", "NauticalTax"))
+        .Destroy(a => a.Action("Destroy", "NauticalTax"))
+        )
+    )
+</div>

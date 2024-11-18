@@ -478,12 +478,64 @@
         });
     }
 
+    function resetPassword() {
+
+        var grid = $('#legalEntitiesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+        le = item.Id;
+
+        $.ajax({
+            url: `/legal-entity-account?legalentity=${le}`,
+            type: 'POST',
+            data: $('#accountForm').serialize(),
+            success: function (data, status, xhr) {
+                if (data.error != "") Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                else {
+                    Swal.fire({ icon: 'success', title: data.info, confirmButtonText: `U redu` });
+                    var wnd = $("#wndAccount").data("kendoWindow").close();
+                }
+            }
+        });
+    }
+
+    function payments(taxType) {
+        var grid = $('#legalEntitiesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati izdavaoca', confirmButtonText: `U redu` });
+
+        le = item.Id;
+
+        $.ajax({
+            url: `legal-entity-payments?taxType=${taxType}&le=${le}`,
+            type: 'GET',
+            success: function (data) {
+                console.log(data);                
+                var wnd = $("#wndPayments").data("kendoWindow");
+                wnd.title(`Unos uplata - ${item.Name}`)
+                wnd.content(data);
+                wnd.setOptions({
+                    width: $(window).width() * 0.80,
+                    height: $(window).height() * 0.80
+                });
+                wnd.center().open();
+            },
+            error: function (error) {
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'Došlo je do greške', confirmButtonText: `U redu` });
+            },
+            complete: function () {
+            }
+        });
+    }
+
 </script>
 
 <style type="text/css">
 </style>
 
 <div style="display:flex; margin-left:15px; margin-top:25px; margin-right:15px;">
+
     @(Html.Kendo().Button().Name("btnNewClient")
         .HtmlAttributes(new { type = "button", onclick = "register()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
         .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
@@ -526,7 +578,7 @@
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>RB90<br/>CERTIFIKAT<div>
                 </div>"))
 
-    @if (User.IsInRole("Invoice") || true)
+    @if (User.IsInRole("Invoice") || User.IsInRole("Administrator"))
     {
         @(Html.Kendo().Button().Name("btnLogo")
             .HtmlAttributes(new { type = "button", onclick = "logo()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
@@ -550,6 +602,24 @@
                     </div>"))
     }    
 
+    <div style="display: flex; margin-left:auto;">
+        @(Html.Kendo().Button().Name("btnPayments")
+            .HtmlAttributes(new { type = "button", onclick = "payments('ResidenceTax')", style = "height:95px; width:95px; margin-left:10px; cursor:pointer;" })
+            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/deposit.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>UNOS<br/>UPLATA<div>
+            </div>"))
+
+        @(Html.Kendo().Button().Name("btnSaldo")
+            .HtmlAttributes(new { type = "button", onclick = "balance('ResidenceTax')", style = "height:95px; width:95px; margin-left:10px;; cursor:pointer;" })
+            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/ledger.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>SALDO<br/>OBAVEZA<div>
+            </div>"))
+    </div>
+    
+
+ 
 </div>
 
 <div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
@@ -573,6 +643,7 @@
             columns.Bound(g => g.PhoneNumber).Title("Broj telefona").Width("150px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
             columns.Bound(g => g.Address).Title("Adresa").Width("40%").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" });
             columns.Bound(g => g.Country).Title("Država").Width("150px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+            columns.Bound(g => g.IsRegistered).Title("Registrovan?").Width("100px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" }).ClientTemplate("#= InVat ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
             columns.Bound(g => g.InVat).Title("U PDV-u").Width("100px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" }).ClientTemplate("#= InVat ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
         })
         .Pageable(p => p.Refresh(true))
@@ -596,10 +667,7 @@
                 m.Field(g => g.Address);
                 m.Field(g => g.Country);
                 m.Field(g => g.InVat);
-                m.Field(g => g.UserCreated);
-                m.Field(g => g.UserCreatedDate);
-                m.Field(g => g.UserModified);
-                m.Field(g => g.UserModifiedDate);
+                m.Field(g => g.IsRegistered);
             })
         .Read(a => a.Url("legal-entity-read"))
         .Create(a => a.Url("legal-entity-create"))
@@ -689,4 +757,32 @@
     .HtmlAttributes(new { style = "padding:20px; padding-bottom:10px; font-size:14px;" })
 )
 
-@Html.Kendo().Window().Name("wndSendLink").Title("Slanje linka").Visible(false).Modal(true).Draggable(false).Width(400).Height(450).HtmlAttributes(new { style = "padding:20px;" })
+@(Html.Kendo().Window().Name("wndPayments")
+    .Title("Unos uplata")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(1200)
+    .Height(600)
+    .HtmlAttributes(new { style = "padding:20px; padding-bottom:10px; font-size:14px;" })
+)
+
+@(Html.Kendo().Window().Name("wndBalance")
+    .Title("Saldo obaveza")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(400)
+    .Height(200)
+    .HtmlAttributes(new { style = "padding:20px; padding-bottom:10px; font-size:14px;" })
+)
+
+@(Html.Kendo().Window().Name("wndSendLink")
+    .Title("Slanje linka")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(400)
+    .Height(450)
+    .HtmlAttributes(new { style = "padding:20px;" })
+)

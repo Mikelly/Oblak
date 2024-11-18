@@ -11,15 +11,19 @@ namespace Oblak.Data
 
         public int LegalEntityId { get; set; }
 
-        public int CheckInPointId { get; set; }
+        public Nullable<int> NauticalLegalEntityId { get; set; }
+
+        public int? CheckInPointId { get; set; }
 
         public int PropertyExternalId { get; set; }
         
         public int PropertyId { get; set; }                
         
         public Nullable<int> UnitId { get; set; }
-        
-        [StringLength(36)]
+
+		public Nullable<int> VesselId { get; set; }
+
+		[StringLength(36)]
         public string Guid { get; set; }
         
         public DateTime Date { get; set; }
@@ -55,6 +59,8 @@ namespace Oblak.Data
 
         public bool? ResTaxPaid { get; set; }
 
+
+
         [StringLength(450)]
         public string? UserCreated { get; set; }
 
@@ -65,11 +71,19 @@ namespace Oblak.Data
 
         public DateTime? UserModifiedDate { get; set; }
         
+        
+        
         #region Navigation Properties
-
+        
         public LegalEntity LegalEntity { get; set; }
 
         public Property Property { get; set; }
+
+		public Vessel? Vessel { get; set; }
+
+        public CheckInPoint? CheckInPoint { get; set; }
+
+        public LegalEntity? NauticalLegalEntity { get; set; }
 
         public List<Person> Persons { get; set; }
 

@@ -1,0 +1,557 @@
+﻿@using Oblak.Models.Api;
+@using Oblak.Models.EFI;
+
+@{
+    ViewBag.Title = "Fakture";
+    Layout = "~/Views/Shared/_LayoutINV.cshtml";
+    var i = (ExcursionInvoiceDto)ViewBag.Invoice;
+    var enbl = i.Status == "U izradi" || i.Status == "Otvorena";
+}
+
+<script type="text/javascript">
+    
+    var le = -1;
+
+    $(document).ready(function () {
+        
+    });
+
+    function newinvoiceitem() {
+
+        var grid = $("#ExcursionInvoiceItemsGrid").data("kendoGrid");
+        grid.addRow();
+    }
+
+    function payments(taxType) {
+        var grid = $('#AgenciesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati agenciju', confirmButtonText: `U redu` });
+
+        ag = item.Id;
+
+        $.ajax({
+            url: `legal-entity-payments?taxType=${taxType}&ag=${ag}`,
+            type: 'GET',
+            success: function (data) {
+                console.log(data);
+                var wnd = $("#wndPayments").data("kendoWindow");
+                wnd.title(`Unos uplata - ${item.Name}`);
+                wnd.content(data);
+                wnd.setOptions({
+                    width: $(window).width() * 0.80,
+                    height: $(window).height() * 0.80
+                });
+                wnd.center().open();
+            },
+            error: function (error) {
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'Došlo je do greške', confirmButtonText: `U redu` });
+            },
+            complete: function () {
+            }
+        });
+    }
+
+    function excursions() {
+        var grid = $('#AgenciesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati agenciju', confirmButtonText: `U redu` });
+
+        ag = item.Id;
+
+        $.ajax({
+            url: `agency-excursions?&agency=${ag}`,
+            type: 'GET',
+            success: function (data) {
+                console.log(data);
+                var wnd = $("#wndPayments").data("kendoWindow");
+                wnd.title(`Unos izleta - ${item.Name}`);
+                wnd.content(data);
+                wnd.setOptions({
+                    width: $(window).width() * 0.80,
+                    height: $(window).height() * 0.80
+                });
+                wnd.center().open();
+            },
+            error: function (error) {
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'Došlo je do greške', confirmButtonText: `U redu` });
+            },
+            complete: function () {
+            }
+        });
+    }
+
+    function invoiceSync(e) {
+        
+        if (e.sender.shouldSync) {
+            this.read();
+        
+            $.ajax({
+            url: `excursion-invoice-totals?invoiceId=@ViewBag.InvoiceId`,
+            type: 'GET',
+            success: function (data) {
+                $('#BillingAmount').data('kendoNumericTextBox').value(data.Amount);
+                $('#BillingFee').data('kendoNumericTextBox').value(data.Fee);
+                $('#BillingTotal').data('kendoNumericTextBox').value(data.Total);
+            },
+            error: function (error) {                
+                Swal.fire({ icon: 'error', title: 'Došlo je do greške', confirmButtonText: `U redu` });
+            },
+            complete: function () {
+            }
+        });
+        }
+    }
+
+    function invoiceRequestEnd(e) {
+        var response = e.response;
+        var type = e.type;
+        var grid = e.sender;
+
+        if (e.type == "update" || e.type == "create") {
+            var errors = e.response.Errors;
+            if (errors != undefined) grid.shouldSync = false;
+            else grid.shouldSync = true;
+        }
+        debugger;
+    }
+
+    function saveInvoice() {
+        
+        var data = $('#invoiceDiv').find('input, select, textarea').serialize();
+                
+        $.ajax({
+            url: '/excursion-invoice-save',
+            type: 'POST',
+            data: data,
+            success: function (data) {
+                if (data.info != "") {
+                    Swal.fire({ icon: 'success', title: 'Uspješno sačuvane izmjene!', confirmButtonText: `U redu`, timer: 2000 })
+                        .then((result) => {                      
+                            if (result.dismiss === Swal.DismissReason.timer || result.dismiss === Swal.DismissReason.backdrop || result.isConfirmed) {
+                                window.location = `excursion-invoice?id=${data.id}`;
+                            }
+                        });                    
+                }
+                else if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }             
+            },
+            error: function () {
+                alert("Došlo je do greške.");
+            }
+        });
+    }
+
+    function closeInvoice() {        
+        
+        $.ajax({
+            url: `/excursion-invoice-close?invoiceId=@i.Id`,
+            type: 'GET',            
+            success: function (data) {
+                if (data.info != "") {
+                    window.location.reload();
+                }
+                else if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }             
+            },
+            error: function () {
+                alert("Došlo je do greške.");
+            }
+        });
+        
+        //window.location = `/excursion-invoice-close?invoiceId=@i.Id`;
+    }
+
+    function openInvoice() {        
+        
+        $.ajax({
+            url: `/excursion-invoice-open?invoiceId=@i.Id`,
+            type: 'GET',            
+            success: function (data) {
+                if (data.info != "") {
+                    window.location.reload();
+                }
+                else if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }             
+            },
+            error: function () {
+                alert("Došlo je do greške.");
+            }
+        });
+        
+        //window.location = `/excursion-invoice-close?invoiceId=@i.Id`;
+    }
+
+    // function openInvoice() {        
+    //     window.location = '/excursion-invoice-open?invoiceId=@(i.Id)';
+    // }
+    
+    
+    function generate(invoice) {
+                
+        $.ajax({
+            url: `/generate-invoice?invoiceId=${invoice}`,
+            type: 'GET',            
+            success: function (data) {
+                if (data.info != "") {
+                    Swal.fire({ icon: 'success', title: data.info, confirmButtonText: `U redu`, timer: 1000 });
+                    var grid = $('#ExcursionInvoiceItemsGrid').data('kendoGrid');
+                    grid.dataSource.read();
+                }
+                else if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }             
+            },
+            error: function () {
+                alert("Došlo je do greške.");
+            }
+        });
+    }
+
+    function virman() {        
+        
+        var id = $('#Id').val();
+        
+        $.ajax({
+            url: `/print-direct?i=${id}&tax='E'`,
+            type: 'GET',
+            success: function (data) {
+                window.postMessage({
+                    type: "FROM_PAGE",
+                    message: {
+                        type: "Virman",
+                        data: data
+                    }
+                }, "*");
+            },
+            complete: function (data) {
+                
+            }
+        });
+    }
+
+    function print() {        
+        window.open(`/excursion-invoice-pdf?invoice=@i.Id`, `_blank`);
+    };
+
+</script>
+
+<style type="text/css">
+
+    .fieldset-like {
+        border: 1.5px solid #ccc;
+        padding: 10px 15px;
+        padding-bottom: 15px;
+        border-radius: 5px;
+        margin: 10px 0;
+        position: relative;
+    }
+
+        .fieldset-like .legend {
+            font-weight: bold;
+            padding-left: 2px 10px;
+            position: absolute;
+            top: -12px;
+            left: 10px;
+            background-color: #fff;
+        }
+
+    .k-numerictextbox input
+    {
+        text-align:center;
+        font-family:'Roboto Mono'
+    }
+
+    .k-datepicker input
+    {
+        font-size:13px;
+        text-align:center;
+        font-family:'Roboto Mono'
+    }
+
+</style>
+
+<div id="invoiceDiv" style="display:flex; align-items: stretch; margin-left:15px; margin-top:25px; margin-right:15px;">
+
+
+@*     @(Html.Kendo().Button().Name("btnNewInvoiceItem")
+        .HtmlAttributes(new { type = "button", onclick = "newinvoiceitem()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/add_new_color.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>NOVI<br/>ZAPIS<div>
+                </div>")) *@
+
+     @Html.Hidden("Id", ((int)i.Id).ToString())
+
+    <div class="fieldset-like" style="width:350px; margin-left:0px">
+        <span class="legend">Faktura</span>
+        <div style="">
+            <label for="propertyDropdown">Izaberite agenciju:</label>
+            @(Html.Kendo().MultiColumnComboBox()
+                .Name("AgencyId")
+                .Placeholder("Izaberite agenciju")
+                .DataTextField("Name")
+                .DataValueField("Id")
+                .Enable(enbl)
+                .Columns(columns =>
+                {
+                    columns.Add().Field("Id").Title("ID").Width("80px");
+                    columns.Add().Field("Name").Title("Naziv").Width("200px");
+                    columns.Add().Field("Address").Title("Adresa").Width("220px");                    
+                })
+                .HtmlAttributes(new { id = "AgencyId", style = "width:100%;", autocomplete = "off", autocorrect = "off", autocapitalize = "off", spellcheck = "false" })
+                .DropDownWidth("500px")                
+                .Messages(m => m.NoData("Nema podataka").Clear("Poništi"))
+                .Filter("contains").FilterFields(new string[] { "Name" })
+                .AutoBind(false)
+                .MinLength(3)
+                //.Events(e => e.Change("propertyChanged"))
+                //.ValuePrimitive(true)
+                .Value(i.AgencyId.ToString())
+                .Text(i.AgencyName)
+                .DataSource(source => { source.Read(read => { read.Action("ReadAdmin", "Agency"); }).ServerFiltering(true); })
+                )
+        </div>
+
+        <div>
+            <div style="display:inline-block; width:140px;">
+                <label style="text-align:center;" for="Date">Redni broj</label>
+                    @(Html.Kendo().IntegerTextBox().Name("InvoiceNo").Value(i.InvoiceNo).Enable(enbl).Spinners(false)
+                        .HtmlAttributes(new { id = "InvoiceNo", style = "width:100%" })
+                        )
+            </div>
+            <div style="display:inline-block; width:200px; margin-left:5px;">            
+                <label for="DueDate">Broj fakture</label>
+                    @(Html.Kendo().TextBox().Name("InvoiceNumber").Value(i.InvoiceNumber).Enable(enbl)                        
+                        .HtmlAttributes(new { id = "InvoiceNumber", style = "width:100%; text-align:center;", @readonly = "readonly" })
+                        )
+            </div>
+        </div>
+
+    </div>
+
+    <div class="fieldset-like" style="width:150px; margin-left:15px;">
+        <span class="legend">Datum fakture</span>
+        <div>
+            <label style="text-align:center;" for="Date">Datum računa</label>
+            @(Html.Kendo().DatePicker().Value(i.Date).Enable(enbl)
+                .Name("Date")
+                .Format("dd.MM.yyyy")
+                //.Events(e => e.Change("resTaxCalc"))
+                .HtmlAttributes(new { id = "Date1", style = "width:100%" })
+                )
+        </div>
+        <div>            
+            <label for="DueDate">Datum dospijeća</label>
+            @(Html.Kendo().DatePicker().Value(i.DueDate).Enable(enbl)
+                .Name("DueDate")
+                .Format("dd.MM.yyyy")
+                //.Events(e => e.Change("resTaxCalc"))
+                .HtmlAttributes(new { id = "DueDate", style = "width:100%" })
+                )
+        </div>
+    </div>
+
+
+    <div class="fieldset-like" style="width:150px; margin-left:15px" ">
+        <span class="legend">Obračunski period</span>
+        <div>
+            <label for="BillingPeriodFrom">Od datuma</label>
+            @(Html.Kendo().DatePicker().Value(i.BillingPeriodFrom).Enable(enbl)
+                .Name("BillingPeriodFrom")
+                .Format("dd.MM.yyyy")
+                //.Events(e => e.Change("resTaxCalc"))
+                .HtmlAttributes(new { id = "BillingPeriodFrom", style = "width:100%" })
+                )
+        </div>
+        <div>
+            <label for="BillingPeriodTo">Do datuma</label>
+            @(Html.Kendo().DatePicker().Value(i.BillingPeriodTo).Enable(enbl)
+                .Name("BillingPeriodTo")
+                .Format("dd.MM.yyyy")
+                //.Events(e => e.Change("resTaxCalc"))
+                .HtmlAttributes(new { id = "BillingPeriodTo", style = "width:100%" })
+                )
+        </div>
+    </div>
+
+
+    <div class="fieldset-like" style="width:406px; margin-left:15px" ">
+        <span class="legend">Naplata fakture</span>
+        
+        <div style="width:100%">
+            <div style="display:inline-block; width: 268px;">
+                <label for="resTaxPaymentType">Naplata takse:</label>
+                @(Html.Kendo().DropDownList().Value(i.TaxPaymentTypeId.ToString())
+                    .Name("TaxPaymentTypeId").Enable(enbl)
+                    .BindTo(ViewBag.TaxPaymentTypes as SelectList)
+                    .HtmlAttributes(new { id = "TaxPaymentTypeId", style = "width:100%" })                
+                )        
+            </div>
+             <div style="width:130px;display:inline-block;margin-left:5px;">
+                <label for="BillingAmount">Uplatnica</label>
+                @(Html.Kendo().TextBox().Value(i.BillingNote)
+                    .Name("BillingNote").Enable(enbl)
+                    .HtmlAttributes(new { id = "BillingNote", style = "width:100%" })
+                    )
+            </div>
+        </div>
+
+
+        
+        <div>
+            </div style="">
+                <div style="width:130px;display:inline-block;">
+                    <label for="BillingAmount">Taksa</label>
+                    @(Html.Kendo().NumericTextBox().Value((double)i.BillingAmount).Format("{0:n2}")
+                        .Name("BillingAmount").Min(0).Spinners(false).Enable(enbl)
+                        .HtmlAttributes(new { id = "BillingAmount", style = "width:100%", @readonly = "readonly" })
+                        )
+                </div>
+                <div style="width:130px;display:inline-block; margin-left:5px;">
+                    <label for="BillingFee">Provizija</label>
+                    @(Html.Kendo().NumericTextBox().Value((double)i.BillingFee).Format("{0:n2}")
+                        .Name("BillingFee").Min(0).Spinners(false).Enable(enbl)
+                        .HtmlAttributes(new { id = "BillingFee", style = "width:100%", @readonly = "readonly" })
+                        )
+                </div>
+                <div style="width:130px;display:inline-block; margin-left:5px;">
+                    <label for="BillingTotal">Ukupno</label>
+                    @(Html.Kendo().NumericTextBox().Value((double)i.BillingAmount + (double)i.BillingFee).Format("{0:n2}")
+                        .Name("BillingTotal").Min(0).Spinners(false).Enable(enbl)
+                        .HtmlAttributes(new { id = "BillingTotal", style = "width:100%", @readonly = "readonly" })
+                        )
+                </div>
+            <div>
+
+        </div>
+
+
+    </div>
+
+    <div style="width:155px; flex-direction:column; display: flex; margin-left:auto;">
+
+        @if (i.Status == "Zaključena")
+        {
+
+            <div style="display: flex; width:150px; margin-top:5px;">
+                @(
+                    Html.Kendo().Button().Name("btnPrint")
+                                .HtmlAttributes(new { type = "button", onclick = "print()", style = "height:42px; width:150px; margin-left:10px;; cursor:pointer;" })
+                                .Content(@"<div style='width:100%;display:flex;align-items:center;'>
+                        <img style='width:32px;height:32px;display:inline-block; margin-left:5px;' src='/Content/Icons/print_invoice_color.png'/>
+                        <div style='font-weight:bold;display:inline-block;line-height:110%;font-size:90%;display:flex;flex:1;justify-content:center;text-align:center;'>ŠTAMPAJ<br/>FAKTURU<div>
+                    </div>")
+                    )
+            </div>
+
+            <div style="display: flex; width:150px; margin-top:5px;">
+                @(
+                    Html.Kendo().Button().Name("btnReceipt")
+                                .HtmlAttributes(new { type = "button", onclick = "receipt()", style = "height:42px; width:150px; margin-left:10px;; cursor:pointer;" })
+                                .Content(@"<div style='width:100%;display:flex;align-items:center;'>
+                        <img style='width:32px;height:32px;display:inline-block; margin-left:5px;' src='/Content/Icons/receipt.png'/>
+                        <div style='font-weight:bold;display:inline-block;line-height:110%;font-size:90%;display:flex;flex:1;justify-content:center;text-align:center;'>ŠTAMPAJ<br/>UPLATNICU<div>
+                    </div>")
+                )
+            </div>
+
+            <div style="display: flex; width:150px; margin-top:5px;">
+                @(
+                    Html.Kendo().Button().Name("btnOpen")
+                                .HtmlAttributes(new { type = "button", onclick = "openInvoice()", style = "height:42px; width:150px; margin-left:10px;; cursor:pointer;" })
+                                .Content(@"<div style='width:100%;display:flex;align-items:center;'>
+                        <img style='width:32px;height:32px;display:inline-block; margin-left:5px;' src='/Content/Icons/unlock.png'/>
+                        <div style='font-weight:bold;display:inline-block;line-height:110%;font-size:90%;display:flex;flex:1;justify-content:center;text-align:center;'>OTKLJUČAJ<br/>FAKTURU<div>
+                    </div>")
+                    )
+            </div>
+        }
+        else
+        {
+            <div style="display:flex; width:150px; ">
+                @(Html.Kendo().Button().Name("btnSave")
+                    .HtmlAttributes(new { type = "button", onclick = "saveInvoice()", style = "height:42px; width:150px; margin-left:10px;; cursor:pointer;" })
+                    .Content(@"<div style='width:100%;display:flex;align-items:center;'>
+                            <img style='width:32px;height:32px;display:inline-block; margin-left:5px;' src='/Content/Icons/save.png'/>
+                            <div style='font-weight:bold;display:inline-block;line-height:110%;font-size:90%;display:flex;flex:1;justify-content:center;text-align:center;'>SAČUVAJ<br/>PROMJENE<div>
+                        </div>"))
+            </div>
+
+            <div style="display: flex; width:150px; margin-top:5px;">
+                @(
+                    Html.Kendo().Button().Name("btnClose")
+                                .HtmlAttributes(new { type = "button", onclick = "closeInvoice()", style = "height:42px; width:150px; margin-left:10px;; cursor:pointer;" })
+                                .Content(@"<div style='width:100%;display:flex;align-items:center;'>
+                        <img style='width:32px;height:32px;display:inline-block; margin-left:5px;' src='/Content/Icons/complete.png'/>
+                        <div style='font-weight:bold;display:inline-block;line-height:110%;font-size:90%;display:flex;flex:1;justify-content:center;text-align:center;'>ZAKLJUČI<br/>FAKTURU<div>
+                    </div>")
+                    )
+            </div>
+        }
+    </div>
+    
+
+ 
+
+
+</div>
+
+<div style="position:absolute; top:170px; bottom: 15px; left: 15px; right:15px;">
+    @(
+        Html.Kendo().Grid<ExcursionInvoiceItemDto>()
+            .Name("ExcursionInvoiceItemsGrid")
+            .ToolBar(t => { if (enbl) { t.Create().Text("Novi zapis"); t.Custom().Name("Generate").Text("Unesi izlete u fakturu").IconClass("k-i-link").HtmlAttributes(new { onclick = $"generate({i.Id})" }); } })
+            .Columns(columns =>
+            {
+                if(enbl)
+                {
+                    columns.Command(command =>
+                    {
+                        command.Edit().Text(" ").UpdateText(" ").CancelText(" ");
+                        command.Destroy().Text(" ");
+                    }).Width(70);
+                }
+                columns.Bound(g => g.VoucherNo).Title("Vaučer").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(250);
+                columns.Bound(g => g.Date).Title("Datum").Format("{0:dd.MM.yyyy}").EditorTemplateName("Date").Width(150).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+                columns.Bound(g => g.NoOfPersons).Title("Broj osoba").EditorTemplateName("Integer").Width(150).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+                columns.Bound(g => g.Price).Title("Cijena").Format("{0:n2}").Width(150).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:right;" });
+                columns.Bound(g => g.Amount).Title("Iznos").Format("{0:n2}").Width(150).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:right;" });                
+                columns.Bound(g => g.Note).Title("Napomena").Format("{0:n2}").Width("90%").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" });
+        })
+        .Pageable(p => p.Refresh(true))
+        .Editable(e => e.Mode(GridEditMode.InLine))
+        .Sortable()
+        .Selectable()
+        .Scrollable()
+        .Filterable()
+        .HtmlAttributes(new { style = "height:100%;" })        
+        .DataSource(ds => ds
+            .Ajax()
+            .PageSize(20)
+            .Model(m =>
+            {
+                m.Id(g => g.Id);
+                m.Field(g => g.Id).Editable(false);
+                m.Field(g => g.ExcursionInvoiceId);
+                m.Field(g => g.Price).DefaultValue(1);
+                m.Field(g => g.Amount).Editable(false);
+                m.Field(g => g.Note);
+                m.Field(g => g.Date);
+                m.Field(g => g.VoucherNo);
+                m.Field(g => g.NoOfPersons);      
+            })
+        .Events(e => e.Sync("invoiceSync").RequestEnd("invoiceRequestEnd"))
+        .Read(a => a.Action("Read", "ExcursionInvoiceItem", new { InvoiceId = ViewBag.InvoiceId }))
+        .Create(a => a.Action("Create", "ExcursionInvoiceItem", new { InvoiceId = ViewBag.InvoiceId }))
+        .Update(a => a.Action("Update", "ExcursionInvoiceItem", new { InvoiceId = ViewBag.InvoiceId }))
+        .Destroy(a => a.Action("Destroy", "ExcursionInvoiceItem", new { InvoiceId = ViewBag.InvoiceId }))
+        )
+    )
+</div>

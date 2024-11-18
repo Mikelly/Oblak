@@ -1,0 +1,222 @@
+﻿@using Oblak.Data.Api
+@using Oblak.Models.Api;
+@using Oblak.Models.EFI;
+
+@{
+    ViewBag.Title = "Plovila";
+    Layout = "~/Views/Shared/_LayoutINV.cshtml";
+}
+
+<script type="text/javascript">
+    $(document).ready(function () {
+
+    });
+
+    function newVessel() {
+        var grid = $("#VesselsGrid").data("kendoGrid");
+        grid.addRow();
+    }
+
+    function createLegalEntity() {
+        var grid = $('#VesselsGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati plovilo', confirmButtonText: `U redu` });
+
+        $.ajax({
+            url: `create-from-owner?vessel=${item.Id}&name=${item.OwnerName}&address=${item.OwnerAddress ?? ''}&phone=${item.OwnerPhone ?? ''}&tin=${item.OwnerTIN ?? ''}`,
+            type: 'POST',
+            success: function (data) {
+                grid.dataSource.read();
+            },
+            error: function (error) {
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'Došlo je do greške', confirmButtonText: `U redu` });
+            },
+            complete: function () {
+            }
+        });
+    }
+
+
+    function selectLegalEntity() {
+        var grid = $('#VesselsGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati plovilo', confirmButtonText: `U redu` });
+
+        le = item.LegalEntityId;
+
+        $.ajax({
+            url: `legalentity-select?legalentity=${le}`,
+            type: 'GET',
+            success: function (data) {
+                console.log(data);                
+                var wnd = $("#wndLegalEntity").data("kendoWindow");
+                wnd.title(`Izbor izdavaoca - ${item.Name}`)
+                wnd.content(data);
+                wnd.center().open();
+            },
+            error: function (error) {
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'Došlo je do greške', confirmButtonText: `U redu` });
+            },
+            complete: function () {
+            }
+        });
+    }
+
+    function doSelectLegalEntity(e) {
+
+        var grid = $('#VesselsGrid').data('kendoGrid');
+        var vessel = grid.dataItem(grid.select());
+        if (vessel == null) Swal.fire({ icon: 'error', title: 'Morate odabrati plovilo', confirmButtonText: `U redu` });
+        
+        var legalEntity = $("#SelectLegalEntityId").data("kendoMultiColumnComboBox").value();
+        
+        if(legalEntity == '')
+        {
+            Swal.fire({ icon: 'error', title: 'Morate odabrati izdavaoca', confirmButtonText: `U redu` })                        
+                .then((result) => {                      
+                    return;
+                });  
+        }
+        else
+        {
+            $.ajax({
+                url: `/vessel-legalentity-select?legalentity=${legalEntity}&vessel=${vessel.Id}`,                
+                type: 'POST',
+                success: function (data, status, xhr) {                    
+                    grid.dataSource.read();
+                    var wnd = $("#wndLegalEntity").data("kendoWindow");
+                    wnd.close();
+                },
+                error: function () {
+                    Swal.fire({ icon: 'error', title: 'Došlo je do greške!', confirmButtonText: `U redu` });
+                }
+            });
+        }
+    }
+
+    function onCountryChange(e) {
+        var grid = $("#VesselsGrid").data("kendoGrid");
+        var val = $("#CountryId").val();
+        var dataItem = grid.dataItem(grid.select());
+        dataItem.CountryId = val;
+        dataItem.dirty = true;
+        grid.trigger("change");
+    }
+
+</script>
+
+
+<div style="display:flex; margin-left:15px; margin-top:25px; margin-right:15px;">
+
+    @(Html.Kendo().Button().Name("btnNewVessel")
+        .HtmlAttributes(new { type = "button", onclick = "newVessel()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/ship.png'/>
+                <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>NOVO<br/>PLOVILO<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnCreateLegalEntity")
+        .HtmlAttributes(new { type = "button", onclick = "createLegalEntity(event)", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/bed.png'/>
+                <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>KREIRAJ<br/>IZDAVAOCA<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnSelectLegalEntity")
+        .HtmlAttributes(new { type = "button", onclick = "selectLegalEntity(event)", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/search.png'/>
+                <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>IZABERI<br/>IZDAVAOCA<div>
+                </div>"))
+
+</div>
+
+<div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
+    @(
+        Html.Kendo().Grid<VesselDto>()
+            .Name("VesselsGrid")
+            //.ToolBar(t => t.Create().Text("Novo plovilo"))
+            .Columns(columns =>
+            {
+                columns.Command(command => { 
+                    command.Edit().Text(" ").UpdateText(" ").CancelText(" "); 
+                    command.Destroy().Text(" "); 
+                })
+                .Width(70);            
+
+                columns.Group(g => g.Title("Plovilo").Columns(col =>
+                {
+                    col.ForeignKey(c => c.VesselType, ViewBag.VesselTypes as SelectList).Title("Vrsta plovila").Width(150);
+                    col.Bound(c => c.Name).Title("Naziv").Width(200); ;
+                    col.Bound(c => c.Registration).Title("Registracija").Width(150); ;
+                    col.Bound(g => g.CountryId).Title("Država").ClientTemplate("#= CountryName ?? '' #").EditorTemplateName("Country").EditorViewData(new { Foo = "onCountryChange", ValueField = "Id", TextField = "CountryName" }).Width(250);
+                    col.Bound(c => c.Length).Title("Dužina").EditorTemplateName("Integer").Format("{0:n2}").Width(110).HtmlAttributes(new { style = "text-align:right;" }); ;
+                }));
+
+                columns.Bound(c => c.LegalEntityName).Title("Izdavaoc").Width(250);
+@* 
+                columns.Group(g => g.Title("Izdavaoc").Columns(col =>
+                {
+                    col.Bound(c => c.LegalEntityName).Title("Izdavaoc").Width(250);
+                })); *@
+
+                columns.Group(g => g.Title("Vlasnik").Columns(col =>
+                {
+                    col.Bound(c => c.OwnerName).Title("Ime").Width(150);
+                    col.Bound(c => c.OwnerAddress).Title("Adresa").Width(200);
+                    col.Bound(c => c.OwnerEmail).Title("E-mail").Width(150);
+                    col.Bound(c => c.OwnerPhone).Title("Telefon").Width(125);
+                    col.Bound(c => c.OwnerTIN).Title("JMBG").Width(125);
+                }));
+            })
+            .Pageable(p => p.Refresh(true))
+            .Sortable()
+            .Selectable()
+            .Scrollable()
+            .Filterable()
+            .HtmlAttributes(new { style = "height:100%;" })
+            .Editable(editable => editable.Mode(GridEditMode.InLine))
+            .DataSource(ds => ds
+                .Ajax()
+                .PageSize(20)
+                .Model(m =>
+                {
+                    m.Id(g => g.Id);
+                    m.Field(g => g.Id).Editable(false);
+                    m.Field(g => g.VesselType).DefaultValue("Yacht");
+                    m.Field(g => g.Name);
+                    m.Field(g => g.Registration);
+                    m.Field(g => g.LegalEntityId);
+                    m.Field(g => g.LegalEntityName).Editable(false);
+                    m.Field(g => g.CountryId);
+                    m.Field(g => g.Length);
+                    m.Field(g => g.OwnerName);
+                    m.Field(g => g.OwnerAddress);
+                    m.Field(g => g.OwnerEmail);
+                    m.Field(g => g.OwnerPhone);
+                    m.Field(g => g.OwnerTIN);
+                    
+            })
+            .Events(e => e.Sync("genericSync").RequestEnd("genericRequestEnd"))
+            .Create(a => a.Action("Create", "Vessel"))
+            .Read(a => a.Action("Read", "Vessel"))
+            .Update(a => a.Action("Update", "Vessel"))
+            .Destroy(a => a.Action("Destroy", "Vessel"))
+            )
+        )
+</div>
+
+
+@(Html.Kendo().Window().Name("wndLegalEntity")
+    .Title("Izbor izdavaoca")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(600)
+    .Height(300)
+    .HtmlAttributes(new { style = "padding:20px; padding-bottom:10px; font-size:14px;" })
+)

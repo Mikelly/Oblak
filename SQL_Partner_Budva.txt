@@ -1,0 +1,6 @@
+﻿SET IDENTITY_INSERT Partners ON
+
+INSERT INTO [dbo].[Partners] ([Id], [Country], [Name], [TIN], [Address], [ResidenceTaxPaymentRequired], [UseAdvancePayment])
+VALUES (4, 'MNE', N'Turistička organizacija opštine Budva', '02410575', N'Mediteranska TQ Plaza 8/6, 85310 Budva', 1, 1)
+
+SET IDENTITY_INSERT Partners OFF

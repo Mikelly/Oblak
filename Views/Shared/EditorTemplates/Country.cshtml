@@ -1,0 +1,11 @@
+﻿@model string
+
+@(Html.Kendo().DropDownListFor(m => m)
+    //.Name((string)ViewData["Field"]!) // Name should match the foreign key property
+    .DataValueField((string)ViewData["ValueField"]!) // Set to the field holding the foreign key value
+    .DataTextField((string)ViewData["TextField"]!) // Set to the field holding the display text
+    .Filter(FilterType.Contains) // Enables filterable dropdown with "contains" filter
+    .DataSource(dataSource => dataSource.Read(read => read.Action("GetItems", "Country")))
+    .Events(e => e.Change((string)ViewData["Foo"]!)) // Trigger change event
+    .OptionLabel("Izaberite državu") // Optional: placeholder text
+)

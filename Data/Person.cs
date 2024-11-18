@@ -47,7 +47,10 @@ namespace Oblak.Data
         [StringLength(4000)]
         public string? Error { get; set; }
 
-        [StringLength(450)]
+		[StringLength(4000)]
+		public string? Note { get; set; }
+
+		[StringLength(450)]
         public string? UserCreated { get; set; }
         
         public DateTime? UserCreatedDate { get; set; }

@@ -1,0 +1,10 @@
+﻿Objekat: <span> </span> @ViewBag.Property
+<br />
+@if (ViewBag.Vessel != null)
+{
+    <text>Plovilo: </text> @ViewBag.Vessel
+    <br />
+    <text>Izdavalac: </text> @ViewBag.NauticalLegalEntity
+}
+<br />
+Boravišna taksa: <b>@(((decimal)ViewBag.ResidenceTaxAmount).ToString("#,##0.00")) </b> + Provizija: <b>@(((decimal)ViewBag.ResidenceTaxFee).ToString("#,##0.00"))</b> = Ukupno: <b>@(((decimal)ViewBag.ResidenceTaxTotal).ToString("#,##0.00"))</b>

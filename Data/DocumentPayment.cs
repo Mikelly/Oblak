@@ -9,9 +9,14 @@ namespace Oblak.Data
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; } 
+        
         public int DocumentId { get; set; }
+        
         public Document Document { get; set; }
+
+        [StringLength(450)]
         public PaymentType PaymentType { get; set; } = PaymentType.Cash;
+        
         public decimal Amount { get; set; }
     }
 }

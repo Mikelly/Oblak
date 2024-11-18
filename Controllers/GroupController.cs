@@ -3,9 +3,11 @@ using Kendo.Mvc.Extensions;
 using Kendo.Mvc.UI;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Oblak.Data;
 using Oblak.Data.Enums;
+using Oblak.Helpers;
 using Oblak.Models.Api;
 using Oblak.Models.rb90;
 using Oblak.Services;
@@ -24,6 +26,7 @@ namespace RegBor.Controllers
 		private readonly IMapper _mapper;
 		private readonly ApplicationUser _appUser;
 		private readonly int _legalEntityId;
+        private readonly HttpContext _context;
 		
 
 		public GroupController(
@@ -37,23 +40,44 @@ namespace RegBor.Controllers
 			_db = db;			
 			_logger = logger;
 			_mapper = mapper;
+            _context = httpContextAccessor.HttpContext!;
 
             var username = httpContextAccessor.HttpContext?.User?.Identity?.Name;
             if (username != null)
             {
                 _appUser = _db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.Properties).FirstOrDefault(a => a.UserName == username)!;
 				_legalEntityId = _appUser.LegalEntityId;
-                if (_appUser.LegalEntity.Country == Country.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>();
-                if (_appUser.LegalEntity.Country == Country.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>();
+                if (_appUser.LegalEntity.Country == CountryType.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>();
+                if (_appUser.LegalEntity.Country == CountryType.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>();
             }
         }
 
-		[HttpGet]
+        [HttpGet]
 		[Route("groups", Name = "Groups")]
-		public ActionResult Index()
+		public ActionResult Index(bool nautical = false)
 		{
+            ViewBag.Nautical = nautical;
+
+            var username = _context!.User!.Identity!.Name;
+            var appUser = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username);
+
+            var sl = _db.ResTaxPaymentTypes
+                .Where(a => a.PartnerId == appUser.PartnerId)
+                .Select(a =>
+                    new SelectListItem() { Text = a.Description, Value = a.Id.ToString() }
+                ).ToList();
+
+            ViewBag.ResTaxPaymentTypes = new SelectList(sl, "Value", "Text");
+
             return View();
 		}
+
+        [HttpGet]
+        [Route("nautical-groups", Name = "NauticalGroups")]
+        public ActionResult Index()
+        {
+            return Index(true);
+        }
 
         /*
 		[HttpGet]
@@ -80,12 +104,24 @@ namespace RegBor.Controllers
 			return PartialView();
 		}
 
-		public ActionResult NovaGrupa(int objekat, int? jedinica, string dolazak, string odlazak, string email)
+		public ActionResult NovaGrupa(int objekat, int? jedinica, string dolazak, string odlazak, string email, int? vessel, int? nautical)
 		{
-			var g = _db.Groups.Where(a => a.PropertyId == objekat)
-				.Where(a => a.UnitId == jedinica || jedinica == null)
-				.Where(a => a.CheckIn == null && a.CheckOut == null && _db.MnePersons.Where(b => b.GroupId == a.Id).Any() == false)
-				.OrderByDescending(a => a.Date).FirstOrDefault();
+            Group? g = null;
+
+            if (vessel.HasValue)
+            {
+                g = _db.Groups.Where(a => a.PropertyId == objekat)
+                    .Where(a => a.VesselId == vessel)
+                    .Where(a => a.CheckIn == null && a.CheckOut == null && _db.MnePersons.Where(b => b.GroupId == a.Id).Any() == false)
+                    .OrderByDescending(a => a.Date).FirstOrDefault();
+            }
+            else
+            {
+                g = _db.Groups.Where(a => a.PropertyId == objekat)
+                    .Where(a => a.UnitId == jedinica || jedinica == null)
+                    .Where(a => a.CheckIn == null && a.CheckOut == null && _db.MnePersons.Where(b => b.GroupId == a.Id).Any() == false)
+                    .OrderByDescending(a => a.Date).FirstOrDefault();
+            }
 
 			if (g == null)
 			{
@@ -113,6 +149,8 @@ namespace RegBor.Controllers
 			g.LegalEntityId = property.LegalEntityId;
 			g.PropertyId = objekat;
 			g.UnitId = jedinica;
+            g.VesselId = vessel;
+            g.NauticalLegalEntityId = nautical;
 			g.Email = email;
 			g.CheckIn = d;
 			g.CheckOut = o;
@@ -151,9 +189,6 @@ namespace RegBor.Controllers
 			ViewBag.Email = grupa.Email ?? "";
 			return View();
 		}
-
-		
-
 		
 
 		private async Task<List<Property>> GetProperties()
@@ -170,14 +205,14 @@ namespace RegBor.Controllers
 			}
 			else
 			{
-				properties = _db.Properties.Where(a => a.LegalEntityId == legalEntityId).ToList();
-					
+				properties = _db.Properties.Where(a => a.LegalEntityId == legalEntityId).ToList();					
 			}
 
 			return properties;
 		}
 
-		public virtual async Task<ActionResult> Read([DataSourceRequest] DataSourceRequest request)
+
+		public virtual async Task<ActionResult> Read([DataSourceRequest] DataSourceRequest request, bool nautical = false)
         {
 			//var isPropertyAdmin = User.IsInRole("PropertyAdmin");
 			//var legalEntityId = _appUser!.LegalEntityId;
@@ -199,22 +234,56 @@ namespace RegBor.Controllers
 			var propertyIds = (await GetProperties()).Select(a => a.Id).ToArray();
             //propertyIds = properties.Select(a => a.Id).ToArray();
 
-			var data = _db.Groups
-                //.Where(a => propertyIds.Contains(a.Id))
-                .Where(a => a.LegalEntityId == _legalEntityId)
-                .Include(a => a.Property)
-				.OrderByDescending(x => x.Date)
-                .Select(a => new GroupEnrichedDto
-                {
-                    Id = a.Id,
-                    Date = a.Date,
-                    PropertyName = a.Property.PropertyName,
-                    CheckIn = a.CheckIn,
-                    CheckOut = a.CheckOut,
-                    Email = a.Email,
-                    //Guests = a.Persons.Any() ? $"{a.Persons.Count}: {string.Join(", ", a.Persons.Select(p => $"{p.FirstName} {p.LastName}"))}" : ""
-                    Guests = _db.GuestList(a.Id)
-                });
+            IQueryable<GroupEnrichedDto> data = null;
+
+            if (nautical == false)
+            {
+                data = _db.Groups
+                    //.Where(a => propertyIds.Contains(a.Id))
+                    .Where(a => a.VesselId == null)
+                    .Where(a => a.LegalEntityId == _legalEntityId)
+                    .Include(a => a.Property)
+                    .OrderByDescending(x => x.Date)
+                    .Select(a => new GroupEnrichedDto
+                    {
+                        Id = a.Id,
+                        Date = a.Date,
+                        PropertyName = a.Property.PropertyName,
+                        VesselDesc = "",
+                        NauticalLegalEntity = "",
+                        CheckIn = a.CheckIn,
+                        CheckOut = a.CheckOut,
+                        Email = a.Email,
+                        ResTaxAmount = a.ResTaxAmount ?? 0m,
+                        ResTaxFee = a.ResTaxFee ?? 0m,                        
+                        Guests = _db.GuestList(a.Id)
+                    });
+            }
+            else
+            {
+                data = _db.Groups
+                    //.Where(a => propertyIds.Contains(a.Id))
+                    .Where(a => a.VesselId != null)
+                    .Where(a => a.LegalEntityId == _legalEntityId)
+                    .Include(a => a.Property)
+                    .Include(a => a.Vessel)
+                    .Include(a => a.NauticalLegalEntity)
+                    .OrderByDescending(x => x.Date)
+                    .Select(a => new GroupEnrichedDto
+                    {
+                        Id = a.Id,
+                        Date = a.Date,
+                        PropertyName = a.Property.PropertyName,
+                        VesselDesc = a.Vessel.Name + ", " + a.Vessel.Registration,
+                        NauticalLegalEntity = a.NauticalLegalEntity.Name,
+                        CheckIn = a.CheckIn,
+                        CheckOut = a.CheckOut,
+                        Email = a.Email,     
+                        ResTaxAmount = a.ResTaxAmount ?? 0m,
+                        ResTaxFee = a.ResTaxFee ?? 0m,
+                        Guests = _db.GuestList(a.Id)
+                    });
+            }
 
             return Json(data.ToDataSourceResult(request));
         }
@@ -250,18 +319,55 @@ namespace RegBor.Controllers
                     PropertyId = groupDto.PropertyId,
                     UnitId = groupDto.UnitId,
 					LegalEntityId = _legalEntityId,
+                    VesselId = groupDto.VesselId,
+                    NauticalLegalEntityId = groupDto.NauticalLegalEntityId,
+                    ResTaxPaymentTypeId = groupDto.ResTaxPaymentTypeId,
 					Guid = new Guid().ToString(),
 					PropertyExternalId = groupDto.PropertyId,
                 };
 
-				//if (ModelState.IsValid)
-				//{
-					_db.Groups.Add(newGroup);
+                if (_appUser != null && newGroup.CheckInPointId == null)
+                {
+                    newGroup.CheckInPointId = _appUser.CheckInPointId;
+                }
+
+                //if (ModelState.IsValid)
+                //{
+                _db.Groups.Add(newGroup);
 					_db.SaveChanges();
 				//}
 
+                (_registerClient as MneClient)!.CalcGroupResTax(newGroup, ResTaxPaymentStatus.Card);
+
 				// Return success or any other relevant information
 				return Json(new[] { newGroup.Id });
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions and return error information
+                return Json(new DataSourceResult { Errors = ex.Message });
+            }
+        }
+
+        [HttpGet("group-desc")]        
+        public ActionResult Desc(int groupId)
+        {
+            try
+            {
+                var g = _db.Groups.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.Vessel).Include(a => a.NauticalLegalEntity).FirstOrDefault(a => a.Id == groupId);
+                if (g != null)
+                {
+                    ViewBag.Property = $"{g.Property.Name} - {g.Property.LegalEntity.Name}";
+                    if (g.VesselId.HasValue)
+                    {
+                        ViewBag.Vessel = $"{g.Vessel.Name}, {g.Vessel.Registration}, {g.Vessel.OwnerName}";
+                        ViewBag.NauticalLegalEntity = $"{g.NauticalLegalEntity.Name}";
+                    }                    
+                    ViewBag.ResidenceTaxAmount = g.ResTaxAmount ?? 0m;
+                    ViewBag.ResidenceTaxFee = g.ResTaxFee ?? 0m;
+                    ViewBag.ResidenceTaxTotal = (g.ResTaxAmount ?? 0m) + (g.ResTaxFee ?? 0m);
+                }
+                return PartialView();
             }
             catch (Exception ex)
             {

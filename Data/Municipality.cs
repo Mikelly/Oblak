@@ -11,7 +11,7 @@ namespace Oblak.Data
         public int Id { get; set; }
                 
         [StringLength(450)]
-        public Country Country { get; set; }
+        public CountryType Country { get; set; }
 
         [StringLength(450)]
         public string Name { get; set; }
@@ -19,6 +19,7 @@ namespace Oblak.Data
         [StringLength(450)]
         public string? ExternalId { get; set; }
 
+        [StringLength(450)]
         public string Address { get; set; }
 
         public decimal ResidenceTaxAmount { get; set; }

@@ -656,7 +656,7 @@ namespace Oblak.Services.MNE
             }
             else
             {
-                mnePerson = _db.MnePersons.FirstOrDefault(a => a.Id == dto.Id)!;
+                mnePerson = _db.MnePersons.Include(a => a.Group).FirstOrDefault(a => a.Id == dto.Id)!;
             }
 
             _logger.LogDebug("Mne Person Legal Entity:" + _legalEntity.Id);
@@ -768,6 +768,11 @@ namespace Oblak.Services.MNE
 
             //_mapper.Map(dto, mnePerson);
 
+            if (mnePerson.Group != null)
+            {
+                this.CalcGroupResTax(mnePerson.Group);
+            }
+
             _db.SaveChanges();
 
             return mnePerson;
@@ -778,39 +783,62 @@ namespace Oblak.Services.MNE
         {
             var partner = _db.Properties.Include(x => x.LegalEntity).ThenInclude(x => x.Partner).Where(x => x.Id == g.PropertyId).FirstOrDefault().LegalEntity.Partner;
 
-            foreach (MnePerson p in g.Persons)
+            if (g.VesselId.HasValue)
             {
-                if (p.CheckOut.HasValue == false) throw new Exception($"Gost {p.FirstName} {p.LastName} nema definisan datum odjave. Molimo unesite datum kako bi ste kompletirali prijavu.");
+                _db.Entry(g).Reference(a => a.Vessel).Load();
+                var vessel = g.Vessel!;
+                var days = (int)(g.CheckOut!.Value - g.CheckIn!.Value).TotalDays;
 
-                var zero = new DateTime(1, 1, 1);
-                var span = (DateTime.Now.Date - p.BirthDate.Date);
-                var age = (zero + span).Year - 1;
+                var tax = _db.NauticalTax
+                    .Where(a => vessel.Length > a.LowerLimitLength && vessel.Length < a.UpperLimitPeriod)
+                    .Where(a => days > a.LowerLimitPeriod && days < a.UpperLimitPeriod)
+                    .FirstOrDefault();
 
-                var resTaxType = _db.ResTaxTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.AgeFrom <= age && age <= a.AgeTo);
-                if (resTaxType != null)
+                g.ResTaxAmount = tax?.Amount;
+                g.ResTaxFee = CalcResTaxFee(g.ResTaxAmount ?? 0, partner.Id, g.ResTaxPaymentTypeId ?? 0);
+            }
+            else
+            {
+                foreach (MnePerson p in g.Persons)
                 {
-                    p.ResTaxTypeId = resTaxType.Id;
-                    
-                    var days = (int)(p.CheckOut.Value.Date - p.CheckIn.Date).TotalDays;
-                    if (days < 0) days = 0;
-                    p.ResTaxAmount = resTaxType.Amount * days;                    
+                    if (p.CheckOut.HasValue == false) throw new Exception($"Gost {p.FirstName} {p.LastName} nema definisan datum odjave. Molimo unesite datum kako bi ste kompletirali prijavu.");
 
-                    var resPaymentType = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.PaymentStatus == ResTaxPaymentStatus.Card);
-                    p.ResTaxPaymentTypeId = resPaymentType.Id;
+                    var zero = new DateTime(1, 1, 1);
+                    var span = (DateTime.Now.Date - p.BirthDate.Date);
+                    var age = (zero + span).Year - 1;
 
-                    p.ResTaxFee = CalcResTaxFee(p.ResTaxAmount ?? 0, partner.Id, p.ResTaxPaymentTypeId ?? 0);
+                    var resTaxType = _db.ResTaxTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.AgeFrom <= age && age <= a.AgeTo);
+                    if (resTaxType != null)
+                    {
+                        p.ResTaxTypeId = resTaxType.Id;
 
-                    _db.SaveChanges();
+                        var days = (int)(p.CheckOut.Value.Date - p.CheckIn.Date).TotalDays;
+                        if (days < 0) days = 0;
+                        p.ResTaxAmount = resTaxType.Amount * days;
+
+                        var resPaymentType = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.PaymentStatus == ResTaxPaymentStatus.Card);
+                        p.ResTaxPaymentTypeId = resPaymentType.Id;
+
+                        p.ResTaxFee = CalcResTaxFee(p.ResTaxAmount ?? 0, partner.Id, p.ResTaxPaymentTypeId ?? 0);
+
+                        _db.SaveChanges();
+                    }
                 }
             }
 
-            var payId = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.PaymentStatus == pay);
+            if (g.ResTaxPaymentTypeId != null)
+            {
+                var payId = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.PaymentStatus == pay);
+                g.ResTaxPaymentTypeId = payId.Id;
+            }
 
-            g.ResTaxPaymentTypeId = payId.Id;
-            g.ResTaxAmount = _db.MnePersons.Where(a => a.GroupId == g.Id).Select(a => a.ResTaxAmount).Sum();
-            g.ResTaxFee = CalcResTaxFee(g.ResTaxAmount ?? 0, partner.Id, g.ResTaxPaymentTypeId ?? 0);
-            g.ResTaxCalculated = true;
-            g.ResTaxPaid = false;
+            if (g.VesselId == null)
+            {
+                g.ResTaxAmount = _db.MnePersons.Where(a => a.GroupId == g.Id).Select(a => a.ResTaxAmount).Sum();
+                g.ResTaxFee = CalcResTaxFee(g.ResTaxAmount ?? 0, partner.Id, g.ResTaxPaymentTypeId ?? 0);
+                g.ResTaxCalculated = true;
+                g.ResTaxPaid = false;
+            }
 
             _db.SaveChanges();
         }
@@ -1176,9 +1204,34 @@ namespace Oblak.Services.MNE
             throw new NotImplementedException();
         }
 
-        public override Task<Stream> GuestListPdf(int objekat, string datumOo, string datumdo)
+        public override async Task<Stream> GuestListPdf(int objekat, string datumod, string datumdo)
         {
-            throw new NotImplementedException();
+            var reportProcessor = new Telerik.Reporting.Processing.ReportProcessor();
+            var deviceInfo = new System.Collections.Hashtable();
+            var reportSource = new Telerik.Reporting.UriReportSource();
+
+            var reportName = _configuration["REPORTING:MNE:GuestList"];
+            var report = _db.Reports.FirstOrDefault(a => a.Name == reportName);
+            var path = Path.Combine(_env.ContentRootPath, "Reports", report.Path);
+
+            var dateFrom = DateTime.ParseExact(datumod, "dd.MM.yyyy", CultureInfo.InvariantCulture);
+            var dateTo = DateTime.ParseExact(datumdo, "dd.MM.yyyy", CultureInfo.InvariantCulture);
+
+            reportSource.Uri = path;
+            reportSource.Parameters.Add("Property", objekat);
+            reportSource.Parameters.Add("DateFrom", dateFrom);
+            reportSource.Parameters.Add("DateTo", dateTo);
+
+            Telerik.Reporting.Processing.RenderingResult result = reportProcessor.RenderReport("PDF", reportSource, deviceInfo);
+
+            if (!result.HasErrors)
+            {
+                return new MemoryStream(result.DocumentBytes);
+            }
+            else
+            {
+                return null;
+            }
         }
     }
 }

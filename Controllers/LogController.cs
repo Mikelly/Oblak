@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Oblak.Data;
+using Oblak.Data.Api;
 using Oblak.Data.Enums;
 using Oblak.Models;
 using Oblak.Models.Api;
@@ -52,12 +53,11 @@ namespace Oblak.Controllers
 
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Read([DataSourceRequest] DataSourceRequest request)
+        public async Task<IActionResult> GetItems([DataSourceRequest] DataSourceRequest request)
         {
             try
             {
-                var logs = _db.Logs.Where(a => a.PartnerId == _legalEntity.PartnerId);                
+                var logs = _db.Logs.Where(a => a.PartnerId == _legalEntity.PartnerId);
                 return Json(await logs.ToDataSourceResultAsync(request));
             }
             catch (Exception ex)
@@ -65,5 +65,6 @@ namespace Oblak.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
     }
 }

@@ -261,6 +261,31 @@ namespace Oblak.Controllers
             return View();
         }
 
+        [HttpPost]
+        public async Task<IActionResult> ResetPassword(string password)
+        {
+
+            var user = await _userManager.FindByEmailAsync("");
+            if (user == null)
+            {            
+                return RedirectToAction("ResetPasswordConfirmation");
+            }
+
+            var removePasswordResult = await _userManager.RemovePasswordAsync(user);
+            if (!removePasswordResult.Succeeded)
+            {
+                // Handle error (user might not have a password set)
+            }
+            
+            var setPasswordResult = await _userManager.AddPasswordAsync(user, password);
+            if (!setPasswordResult.Succeeded)
+            {
+                // Handle errors if needed
+            }
+
+            return RedirectToAction("ResetPasswordConfirmation");
+        }
+
         private string GenerateToken(IEnumerable<Claim> claims)
         {
             var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]!));

@@ -231,6 +231,81 @@ namespace Oblak.Migrations
                     b.ToTable("UserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Oblak.Data.Agency", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ContactPerson")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("CountryId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DueDays")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("HasContract")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("PartnerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PhoneNo")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("TAX")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("TIN")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserCreated")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserCreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserModified")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CountryId");
+
+                    b.HasIndex("PartnerId");
+
+                    b.ToTable("Agencies");
+                });
+
             modelBuilder.Entity("Oblak.Data.CheckInPoint", b =>
                 {
                     b.Property<int>("Id")
@@ -332,6 +407,34 @@ namespace Oblak.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("CodeLists");
+                });
+
+            modelBuilder.Entity("Oblak.Data.Country", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CountryCode2")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("CountryCode3")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("CountryName")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Countries");
                 });
 
             modelBuilder.Entity("Oblak.Data.Document", b =>
@@ -569,7 +672,8 @@ namespace Oblak.Migrations
                         .HasColumnType("decimal(18,4)");
 
                     b.Property<string>("VatExempt")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal>("VatRate")
                         .HasPrecision(18, 4)
@@ -601,13 +705,209 @@ namespace Oblak.Migrations
 
                     b.Property<string>("PaymentType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("DocumentId");
 
                     b.ToTable("DocumentPayments");
+                });
+
+            modelBuilder.Entity("Oblak.Data.Excursion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AgencyId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CountryId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("ExcursionTaxAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ExcursionTaxExempt")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("NoOfPersons")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserCreated")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserCreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserModified")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("VoucherNo")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgencyId");
+
+                    b.HasIndex("CountryId");
+
+                    b.ToTable("Excursions");
+                });
+
+            modelBuilder.Entity("Oblak.Data.ExcursionInvoice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AgencyId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("BillingAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("BillingFee")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("BillingNote")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("BillingPeriodFrom")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("BillingPeriodTo")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CheckInPointId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("InvoiceNo")
+                        .HasColumnType("int");
+
+                    b.Property<string>("InvoiceNumber")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("TaxPaymentTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserCreated")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserCreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserModified")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgencyId");
+
+                    b.HasIndex("CheckInPointId");
+
+                    b.HasIndex("TaxPaymentTypeId");
+
+                    b.ToTable("ExcursionInvoices");
+                });
+
+            modelBuilder.Entity("Oblak.Data.ExcursionInvoiceItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ExcursionInvoiceId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("NoOfPersons")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("TaxExempt")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCreated")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserCreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserModified")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("VoucherNo")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExcursionInvoiceId");
+
+                    b.ToTable("ExcursionInvoiceItems");
                 });
 
             modelBuilder.Entity("Oblak.Data.FiscalEnu", b =>
@@ -759,13 +1059,15 @@ namespace Oblak.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("UserCreated")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("UserCreatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("UserModified")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("UserModifiedDate")
                         .HasColumnType("datetime2");
@@ -788,7 +1090,7 @@ namespace Oblak.Migrations
                     b.Property<DateTime?>("CheckIn")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("CheckInPointId")
+                    b.Property<int?>("CheckInPointId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("CheckOut")
@@ -811,6 +1113,9 @@ namespace Oblak.Migrations
                         .HasColumnType("nvarchar(36)");
 
                     b.Property<int>("LegalEntityId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("NauticalLegalEntityId")
                         .HasColumnType("int");
 
                     b.Property<string>("Note")
@@ -866,13 +1171,22 @@ namespace Oblak.Migrations
                     b.Property<DateTime?>("UserModifiedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("VesselId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
+                    b.HasIndex("CheckInPointId");
+
                     b.HasIndex("LegalEntityId");
+
+                    b.HasIndex("NauticalLegalEntityId");
 
                     b.HasIndex("PropertyId");
 
                     b.HasIndex("ResTaxPaymentTypeId");
+
+                    b.HasIndex("VesselId");
 
                     b.ToTable("Groups");
                 });
@@ -976,6 +1290,9 @@ namespace Oblak.Migrations
                     b.Property<string>("InvoiceHeader")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
+
+                    b.Property<bool>("IsRegistered")
+                        .HasColumnType("bit");
 
                     b.Property<string>("LastName")
                         .HasMaxLength(450)
@@ -1109,7 +1426,8 @@ namespace Oblak.Migrations
 
                     b.Property<string>("Address")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Country")
                         .IsRequired()
@@ -1139,6 +1457,61 @@ namespace Oblak.Migrations
                     b.ToTable("Municipalities");
                 });
 
+            modelBuilder.Entity("Oblak.Data.NauticalTax", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("LowerLimitLength")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("LowerLimitPeriod")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PartnerId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("UpperLimitLength")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("UpperLimitPeriod")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserCreated")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserCreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserModified")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("VesselType")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PartnerId");
+
+                    b.ToTable("NauticalTax");
+                });
+
             modelBuilder.Entity("Oblak.Data.Partner", b =>
                 {
                     b.Property<int>("Id")
@@ -1163,6 +1536,9 @@ namespace Oblak.Migrations
                         .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("NauticalTaxProperty")
+                        .HasColumnType("int");
 
                     b.Property<string>("PartnerType")
                         .HasMaxLength(450)
@@ -1191,6 +1567,9 @@ namespace Oblak.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<bool>("UseAdvancePayment")
+                        .HasColumnType("bit");
+
                     b.Property<string>("UserCreated")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
@@ -1208,6 +1587,80 @@ namespace Oblak.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Partners");
+                });
+
+            modelBuilder.Entity("Oblak.Data.PartnerTaxSetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("PartnerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PaymentAccount")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("PaymentAddress")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("PaymentDescription")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("PaymentName")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<decimal>("TaxPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("TaxType")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("UseAdvancePayment")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UserCreated")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserCreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserModified")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PartnerId");
+
+                    b.ToTable("PartnerTaxSettings");
                 });
 
             modelBuilder.Entity("Oblak.Data.PaymentMethod", b =>
@@ -1394,6 +1847,10 @@ namespace Oblak.Migrations
 
                     b.Property<int>("LegalEntityId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
 
                     b.Property<string>("PersonalNumber")
                         .HasMaxLength(450)
@@ -1769,7 +2226,8 @@ namespace Oblak.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal?>("FeeAmount")
                         .HasPrecision(18, 2)
@@ -1834,7 +2292,8 @@ namespace Oblak.Migrations
 
                     b.Property<string>("PaymentStatus")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1882,7 +2341,8 @@ namespace Oblak.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("PartnerId")
                         .HasColumnType("int");
@@ -1972,6 +2432,158 @@ namespace Oblak.Migrations
                     b.ToTable("SelfRegisterTokens");
                 });
 
+            modelBuilder.Entity("Oblak.Data.TaxPayment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AgencyId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("LegalEntityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("PaymentRef")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("TaxPaymentTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TaxType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserCreated")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserCreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserModified")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgencyId");
+
+                    b.HasIndex("LegalEntityId");
+
+                    b.HasIndex("TaxPaymentTypeId");
+
+                    b.ToTable("TaxPayments");
+                });
+
+            modelBuilder.Entity("Oblak.Data.TaxPaymentBalance", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AgencyId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Balance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("LegalEntityId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TaxType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserCreated")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserCreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserModified")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgencyId");
+
+                    b.HasIndex("LegalEntityId");
+
+                    b.ToTable("TaxPaymentBalances");
+                });
+
+            modelBuilder.Entity("Oblak.Data.TaxPaymentType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("IsBalanced")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsCash")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("PartnerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserCreated")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserCreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserModified")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PartnerId");
+
+                    b.ToTable("TaxPaymentTypes");
+                });
+
             modelBuilder.Entity("Oblak.Data.UserDevice", b =>
                 {
                     b.Property<int>("Id")
@@ -2001,6 +2613,87 @@ namespace Oblak.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("UserDevices");
+                });
+
+            modelBuilder.Entity("Oblak.Data.Vessel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("CountryId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("LegalEntityId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Length")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("OwnerAddress")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("OwnerEmail")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("OwnerName")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("OwnerPhone")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("OwnerTIN")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("PartnerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Registration")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserCreated")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserCreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserModified")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UserModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("VesselType")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CountryId");
+
+                    b.HasIndex("LegalEntityId");
+
+                    b.HasIndex("PartnerId");
+
+                    b.ToTable("Vessels");
                 });
 
             modelBuilder.Entity("Oblak.Data.ApplicationUser", b =>
@@ -2240,10 +2933,6 @@ namespace Oblak.Migrations
                         .HasMaxLength(3)
                         .HasColumnType("nvarchar(3)");
 
-                    b.Property<string>("Note")
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
-
                     b.Property<int?>("NumberOfServices")
                         .HasColumnType("int");
 
@@ -2361,6 +3050,25 @@ namespace Oblak.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Oblak.Data.Agency", b =>
+                {
+                    b.HasOne("Oblak.Data.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Oblak.Data.Partner", "Partner")
+                        .WithMany()
+                        .HasForeignKey("PartnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Country");
+
+                    b.Navigation("Partner");
+                });
+
             modelBuilder.Entity("Oblak.Data.CheckInPoint", b =>
                 {
                     b.HasOne("Oblak.Data.Partner", "Partner")
@@ -2427,6 +3135,61 @@ namespace Oblak.Migrations
                     b.Navigation("Document");
                 });
 
+            modelBuilder.Entity("Oblak.Data.Excursion", b =>
+                {
+                    b.HasOne("Oblak.Data.Agency", "Agency")
+                        .WithMany()
+                        .HasForeignKey("AgencyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Oblak.Data.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId");
+
+                    b.Navigation("Agency");
+
+                    b.Navigation("Country");
+                });
+
+            modelBuilder.Entity("Oblak.Data.ExcursionInvoice", b =>
+                {
+                    b.HasOne("Oblak.Data.Agency", "Agency")
+                        .WithMany("ExcursionInvoices")
+                        .HasForeignKey("AgencyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Oblak.Data.CheckInPoint", "CheckInPoint")
+                        .WithMany()
+                        .HasForeignKey("CheckInPointId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Oblak.Data.TaxPaymentType", "TaxPaymentType")
+                        .WithMany("ExcursionInvoices")
+                        .HasForeignKey("TaxPaymentTypeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Agency");
+
+                    b.Navigation("CheckInPoint");
+
+                    b.Navigation("TaxPaymentType");
+                });
+
+            modelBuilder.Entity("Oblak.Data.ExcursionInvoiceItem", b =>
+                {
+                    b.HasOne("Oblak.Data.ExcursionInvoice", "ExcursionInvoice")
+                        .WithMany("ExcursionInvoiceItems")
+                        .HasForeignKey("ExcursionInvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ExcursionInvoice");
+                });
+
             modelBuilder.Entity("Oblak.Data.FiscalEnu", b =>
                 {
                     b.HasOne("Oblak.Data.LegalEntity", "LegalEntity")
@@ -2459,11 +3222,19 @@ namespace Oblak.Migrations
 
             modelBuilder.Entity("Oblak.Data.Group", b =>
                 {
+                    b.HasOne("Oblak.Data.CheckInPoint", "CheckInPoint")
+                        .WithMany()
+                        .HasForeignKey("CheckInPointId");
+
                     b.HasOne("Oblak.Data.LegalEntity", "LegalEntity")
                         .WithMany("Groups")
                         .HasForeignKey("LegalEntityId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.HasOne("Oblak.Data.LegalEntity", "NauticalLegalEntity")
+                        .WithMany()
+                        .HasForeignKey("NauticalLegalEntityId");
 
                     b.HasOne("Oblak.Data.Property", "Property")
                         .WithMany("Groups")
@@ -2475,11 +3246,21 @@ namespace Oblak.Migrations
                         .WithMany()
                         .HasForeignKey("ResTaxPaymentTypeId");
 
+                    b.HasOne("Oblak.Data.Vessel", "Vessel")
+                        .WithMany()
+                        .HasForeignKey("VesselId");
+
+                    b.Navigation("CheckInPoint");
+
                     b.Navigation("LegalEntity");
+
+                    b.Navigation("NauticalLegalEntity");
 
                     b.Navigation("Property");
 
                     b.Navigation("ResTaxPaymentType");
+
+                    b.Navigation("Vessel");
                 });
 
             modelBuilder.Entity("Oblak.Data.Item", b =>
@@ -2512,6 +3293,28 @@ namespace Oblak.Migrations
                     b.Navigation("Partner");
 
                     b.Navigation("PassThrough");
+                });
+
+            modelBuilder.Entity("Oblak.Data.NauticalTax", b =>
+                {
+                    b.HasOne("Oblak.Data.Partner", "Partner")
+                        .WithMany()
+                        .HasForeignKey("PartnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Partner");
+                });
+
+            modelBuilder.Entity("Oblak.Data.PartnerTaxSetting", b =>
+                {
+                    b.HasOne("Oblak.Data.Partner", "Partner")
+                        .WithMany()
+                        .HasForeignKey("PartnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Partner");
                 });
 
             modelBuilder.Entity("Oblak.Data.PaymentMethod", b =>
@@ -2704,6 +3507,78 @@ namespace Oblak.Migrations
                     b.Navigation("Property");
                 });
 
+            modelBuilder.Entity("Oblak.Data.TaxPayment", b =>
+                {
+                    b.HasOne("Oblak.Data.Agency", "Agency")
+                        .WithMany()
+                        .HasForeignKey("AgencyId");
+
+                    b.HasOne("Oblak.Data.LegalEntity", "LegalEntity")
+                        .WithMany()
+                        .HasForeignKey("LegalEntityId");
+
+                    b.HasOne("Oblak.Data.TaxPaymentType", "TaxPaymentType")
+                        .WithMany()
+                        .HasForeignKey("TaxPaymentTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Agency");
+
+                    b.Navigation("LegalEntity");
+
+                    b.Navigation("TaxPaymentType");
+                });
+
+            modelBuilder.Entity("Oblak.Data.TaxPaymentBalance", b =>
+                {
+                    b.HasOne("Oblak.Data.Agency", "Agency")
+                        .WithMany()
+                        .HasForeignKey("AgencyId");
+
+                    b.HasOne("Oblak.Data.LegalEntity", "LegalEntity")
+                        .WithMany()
+                        .HasForeignKey("LegalEntityId");
+
+                    b.Navigation("Agency");
+
+                    b.Navigation("LegalEntity");
+                });
+
+            modelBuilder.Entity("Oblak.Data.TaxPaymentType", b =>
+                {
+                    b.HasOne("Oblak.Data.Partner", "Partner")
+                        .WithMany()
+                        .HasForeignKey("PartnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Partner");
+                });
+
+            modelBuilder.Entity("Oblak.Data.Vessel", b =>
+                {
+                    b.HasOne("Oblak.Data.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId");
+
+                    b.HasOne("Oblak.Data.LegalEntity", "LegalEntity")
+                        .WithMany()
+                        .HasForeignKey("LegalEntityId");
+
+                    b.HasOne("Oblak.Data.Partner", "Partner")
+                        .WithMany()
+                        .HasForeignKey("PartnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Country");
+
+                    b.Navigation("LegalEntity");
+
+                    b.Navigation("Partner");
+                });
+
             modelBuilder.Entity("Oblak.Data.ApplicationUser", b =>
                 {
                     b.HasOne("Oblak.Data.LegalEntity", "LegalEntity")
@@ -2730,11 +3605,21 @@ namespace Oblak.Migrations
                     b.Navigation("ResTaxType");
                 });
 
+            modelBuilder.Entity("Oblak.Data.Agency", b =>
+                {
+                    b.Navigation("ExcursionInvoices");
+                });
+
             modelBuilder.Entity("Oblak.Data.Document", b =>
                 {
                     b.Navigation("DocumentItems");
 
                     b.Navigation("DocumentPayments");
+                });
+
+            modelBuilder.Entity("Oblak.Data.ExcursionInvoice", b =>
+                {
+                    b.Navigation("ExcursionInvoiceItems");
                 });
 
             modelBuilder.Entity("Oblak.Data.Group", b =>
@@ -2784,6 +3669,11 @@ namespace Oblak.Migrations
             modelBuilder.Entity("Oblak.Data.ResTaxPaymentType", b =>
                 {
                     b.Navigation("PaymentFees");
+                });
+
+            modelBuilder.Entity("Oblak.Data.TaxPaymentType", b =>
+                {
+                    b.Navigation("ExcursionInvoices");
                 });
 #pragma warning restore 612, 618
         }

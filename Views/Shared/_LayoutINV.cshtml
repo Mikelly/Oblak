@@ -182,4 +182,22 @@
         }
     }
 
+    function genericSync(e) {
+        debugger;
+        if (e.sender.shouldSync) this.read();
+    }
+
+    function genericRequestEnd(e) {
+        var response = e.response;
+        var type = e.type;
+        var grid = e.sender;
+
+        if (e.type == "update" || e.type == "create") {
+            var errors = e.response.Errors;
+            if (errors != undefined) grid.shouldSync = false;
+            else grid.shouldSync = true;
+        }
+        debugger;
+    }
+
 </script>

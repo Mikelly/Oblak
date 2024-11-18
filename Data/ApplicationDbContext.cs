@@ -15,6 +15,7 @@ namespace Oblak.Data
         {
 			if (accessor != null) _user = accessor.HttpContext?.User.Identity?.Name ?? "unknown";
 		}
+
         public ApplicationDbContext(IHttpContextAccessor accessor)
         {
             if (accessor != null) _user = accessor.HttpContext?.User.Identity?.Name ?? "unknown";
@@ -71,18 +72,51 @@ namespace Oblak.Data
 
             modelBuilder.Entity<LegalEntity>().HasOne(a => a.PassThrough);
             modelBuilder.Entity<LegalEntity>().Property(a => a.Type).HasConversion(new EnumToStringConverter<LegalEntityType>());
-            modelBuilder.Entity<LegalEntity>().Property(a => a.Country).HasConversion(new EnumToStringConverter<Country>());
+            modelBuilder.Entity<LegalEntity>().Property(a => a.Country).HasConversion(new EnumToStringConverter<CountryType>());
 
-            modelBuilder.Entity<Partner>().Property(a => a.Country).HasConversion(new EnumToStringConverter<Country>());
+            modelBuilder.Entity<TaxPayment>().HasOne(a => a.TaxPaymentType);
+            modelBuilder.Entity<TaxPayment>().HasOne(a => a.LegalEntity);
+            modelBuilder.Entity<TaxPayment>().HasOne(a => a.Agency);
+            modelBuilder.Entity<TaxPayment>().Property(a => a.TaxType).HasConversion(new EnumToStringConverter<TaxType>());
+            modelBuilder.Entity<TaxPayment>().Property(a => a.Amount).HasPrecision(18, 2);
+
+            modelBuilder.Entity<TaxPaymentBalance>().HasOne(a => a.LegalEntity);
+            modelBuilder.Entity<TaxPaymentBalance>().HasOne(a => a.Agency);
+            modelBuilder.Entity<TaxPaymentBalance>().Property(a => a.Balance).HasPrecision(18, 2);
+
+            modelBuilder.Entity<TaxPaymentType>().HasOne(a => a.Partner);
+
+            modelBuilder.Entity<Agency>().HasOne(a => a.Partner);
+            modelBuilder.Entity<Agency>().HasOne(a => a.Country);
+            modelBuilder.Entity<Agency>().HasMany(a => a.ExcursionInvoices).WithOne(a => a.Agency).OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Excursion>().HasOne(a => a.Agency);
+            modelBuilder.Entity<Excursion>().HasOne(a => a.Country);
+            modelBuilder.Entity<Excursion>().Property(a => a.ExcursionTaxAmount).HasPrecision(18, 2);
+
+            modelBuilder.Entity<ExcursionInvoice>().HasOne(a => a.Agency).WithMany(a => a.ExcursionInvoices).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ExcursionInvoice>().HasOne(a => a.TaxPaymentType).WithMany(a => a.ExcursionInvoices).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ExcursionInvoice>().HasOne(a => a.CheckInPoint);
+            modelBuilder.Entity<ExcursionInvoice>().Property(a => a.BillingAmount).HasPrecision(18, 2);
+            modelBuilder.Entity<ExcursionInvoice>().Property(a => a.BillingFee).HasPrecision(18, 2);
+            modelBuilder.Entity<ExcursionInvoice>().Property(a => a.Status).HasConversion(new EnumToStringConverter<TaxInvoiceStatus>());
+
+            modelBuilder.Entity<ExcursionInvoiceItem>().HasOne(a => a.ExcursionInvoice).WithMany(a => a.ExcursionInvoiceItems).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<ExcursionInvoiceItem>().Property(a => a.Price).HasPrecision(18, 2);
+            modelBuilder.Entity<ExcursionInvoiceItem>().Property(a => a.Amount).HasPrecision(18, 2);
+
+            modelBuilder.Entity<Partner>().Property(a => a.Country).HasConversion(new EnumToStringConverter<CountryType>());
             modelBuilder.Entity<Partner>().Property(a => a.PartnerType).HasConversion(new EnumToStringConverter<PartnerType>());
 
-            modelBuilder.Entity<Municipality>().Property(a => a.Country).HasConversion(new EnumToStringConverter<Country>());
+            modelBuilder.Entity<PartnerTaxSetting>().Property(a => a.TaxType).HasConversion(new EnumToStringConverter<TaxType>());
+            modelBuilder.Entity<PartnerTaxSetting>().Property(a => a.TaxPrice).HasPrecision(18, 2);
+
+            modelBuilder.Entity<Municipality>().Property(a => a.Country).HasConversion(new EnumToStringConverter<Enums.CountryType>());
             modelBuilder.Entity<Municipality>().Property(a => a.ResidenceTaxAmount).HasPrecision(18, 2);
             modelBuilder.Entity<Municipality>().HasMany(a => a.Properties).WithOne(a => a.Municipality).OnDelete(DeleteBehavior.NoAction);
 
 			modelBuilder.Entity<LegalEntity>().Property(a => a.Type).HasConversion(new EnumToStringConverter<LegalEntityType>());
-            modelBuilder.Entity<LegalEntity>().Property(a => a.Country).HasConversion(new EnumToStringConverter<Country>());
-
+            modelBuilder.Entity<LegalEntity>().Property(a => a.Country).HasConversion(new EnumToStringConverter<CountryType>());
 
             modelBuilder.Entity<Property>().HasOne(a => a.LegalEntity);
             modelBuilder.Entity<Property>().HasOne(a => a.Municipality);
@@ -95,12 +129,19 @@ namespace Oblak.Data
 
             modelBuilder.Entity<PropertyUnit>().Property(a => a.Price).HasPrecision(12, 8);
 
-            modelBuilder.Entity<Partner>().Property(a => a.Country).HasConversion(new EnumToStringConverter<Country>());
+            modelBuilder.Entity<Partner>().Property(a => a.Country).HasConversion(new EnumToStringConverter<CountryType>());
 
-            modelBuilder.Entity<Group>().HasOne(a => a.LegalEntity);
+            modelBuilder.Entity<Vessel>().HasOne(a => a.Partner);
+            modelBuilder.Entity<Vessel>().HasOne(a => a.Country);
+            modelBuilder.Entity<Vessel>().HasOne(a => a.LegalEntity);
+			modelBuilder.Entity<Vessel>().Property(a => a.VesselType).HasConversion(new EnumToStringConverter<VesselType>());
+			
+			modelBuilder.Entity<Group>().HasOne(a => a.LegalEntity);
             modelBuilder.Entity<Group>().HasMany(a => a.Persons);
             modelBuilder.Entity<Group>().HasOne(a => a.Property);			
-			modelBuilder.Entity<Group>().HasOne(a => a.ResTaxPaymentType);
+			modelBuilder.Entity<Group>().HasOne(a => a.Vessel);
+            modelBuilder.Entity<Group>().HasOne(a => a.CheckInPoint);
+            modelBuilder.Entity<Group>().HasOne(a => a.ResTaxPaymentType);
 			modelBuilder.Entity<Group>().Property(a => a.ResTaxAmount).HasPrecision(18, 2);
 			modelBuilder.Entity<Group>().Property(a => a.ResTaxFee).HasPrecision(18, 2);
 
@@ -146,7 +187,13 @@ namespace Oblak.Data
             modelBuilder.Entity<ResTaxFee>().Property(a => a.UpperLimit).HasPrecision(18, 2);
             modelBuilder.Entity<ResTaxFee>().Property(a => a.LowerLimit).HasPrecision(18, 2);
 
-            modelBuilder.Entity<SelfRegisterToken>().HasOne(a => a.Property);
+			modelBuilder.Entity<NauticalTax>().HasOne(a => a.Partner);
+			modelBuilder.Entity<NauticalTax>().Property(a => a.VesselType).HasConversion(new EnumToStringConverter<VesselType>());
+			modelBuilder.Entity<NauticalTax>().Property(a => a.Amount).HasPrecision(18, 2);
+			modelBuilder.Entity<NauticalTax>().Property(a => a.LowerLimitLength).HasPrecision(18, 2);
+			modelBuilder.Entity<NauticalTax>().Property(a => a.UpperLimitLength).HasPrecision(18, 2);
+			
+			modelBuilder.Entity<SelfRegisterToken>().HasOne(a => a.Property);
 
             modelBuilder.Entity<Document>().HasMany(a => a.DocumentItems);
             modelBuilder.Entity<Document>().HasMany(a => a.DocumentPayments);
@@ -224,10 +271,21 @@ namespace Oblak.Data
                 .HasDbFunction(typeof(ApplicationDbContext).GetMethod(nameof(PropertyDesc), new[] { typeof(int) })!)
                 .HasName("PropertyDesc");
 
+            modelBuilder
+                .HasDbFunction(typeof(ApplicationDbContext).GetMethod(nameof(Balance), new[] { typeof(string), typeof(int), typeof(int) })!)
+                .HasName("Balance");
         }
 
         public DbSet<LegalEntity> LegalEntities { get; set; }
-        public DbSet<Partner> Partners { get; set; }
+		public DbSet<TaxPayment> TaxPayments { get; set; }
+        public DbSet<TaxPaymentBalance> TaxPaymentBalances { get; set; }
+        public DbSet<TaxPaymentType> TaxPaymentTypes { get; set; }
+		public DbSet<Partner> Partners { get; set; }
+        public DbSet<PartnerTaxSetting> PartnerTaxSettings { get; set; }
+        public DbSet<Agency> Agencies { get; set; }
+        public DbSet<Excursion> Excursions { get; set; }
+        public DbSet<ExcursionInvoice> ExcursionInvoices { get; set; }
+        public DbSet<ExcursionInvoiceItem> ExcursionInvoiceItems { get; set; }
         public DbSet<CheckInPoint> CheckInPoints { get; set; }
         public DbSet<ApplicationUser> Users { get; set; }
         public DbSet<Document> Documents { get; set; }
@@ -237,7 +295,8 @@ namespace Oblak.Data
         public DbSet<FiscalEnu> FiscalEnu { get; set; }
         public DbSet<FiscalRequest> FiscalRequests { get; set; }
         public DbSet<Property> Properties { get; set; }
-        public DbSet<PropertyUnit> PropertyUnits { get; set; }
+		public DbSet<Vessel> Vessels { get; set; }
+		public DbSet<PropertyUnit> PropertyUnits { get; set; }
         public DbSet<Group> Groups { get; set; }
         public DbSet<MnePerson> MnePersons { get; set; }
         public DbSet<SrbPerson> SrbPersons { get; set; }
@@ -248,16 +307,19 @@ namespace Oblak.Data
 		public DbSet<ResTaxType> ResTaxTypes { get; set; }
 		public DbSet<ResTaxPaymentType> ResTaxPaymentTypes { get; set; }
 		public DbSet<ResTaxFee> ResTaxFees { get; set; }
+		public DbSet<NauticalTax> NauticalTax { get; set; }
 		public DbSet<UserDevice> UserDevices { get; set; }
         public DbSet<Report> Reports { get; set; }
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
         public DbSet<PaymentMethod> PaymentMethods { get; set; }
         public DbSet<Municipality> Municipalities { get; set; }
-		public DbSet<Log> Logs { get; set; }
+        public DbSet<Country> Countries { get; set; }
+        public DbSet<Log> Logs { get; set; }
 
 		public string GuestList(int id) => throw new NotImplementedException();
         public string GroupDesc(int id) => throw new NotImplementedException();
         public string PropertyDesc(int id) => throw new NotImplementedException();
-        public int Nights(int id, DateTime last) => throw new NotImplementedException();        
+        public int Nights(int id, DateTime last) => throw new NotImplementedException();
+        public decimal Balance(string taxType, int legalEntity, int agency) => throw new NotImplementedException();
     }
 }

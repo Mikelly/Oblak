@@ -8,7 +8,7 @@ namespace Oblak.Models.Api
     {        
         public int Id { get; set; }
              
-        public Country Country { get; set; }
+        public CountryType Country { get; set; }
                 
         public string Name { get; set; }
                 

@@ -1,6 +1,6 @@
 ﻿namespace Oblak.Data.Enums
 {
-    public enum Country
+    public enum CountryType
     {
         MNE,
         SRB,     

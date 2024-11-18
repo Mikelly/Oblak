@@ -1,0 +1,42 @@
+﻿@{
+    var last = (MnePerson)ViewBag.Last;
+}
+
+<div style="text-align:center;">
+    Zadnja prijava boravka za gosta
+    <br />
+    <b>@last.FirstName @last.LastName</b>    
+</div>
+
+<br />
+<br />
+
+<div>
+    Smještajni objekat:
+    <br />
+    @Html.Kendo().TextBox().Name("Last.Property").Value(last.Property.Name).HtmlAttributes(new { @readonly = "readonly", style = "font-size:16px" })
+</div>
+
+<br />
+
+<div>
+    Izdavalac:
+    <br />
+    @Html.Kendo().TextBox().Name("Last.LegalEntity").Value(last.Property.LegalEntity.Name).HtmlAttributes(new { @readonly = "readonly", style = "font-size:16px" })
+</div>
+
+<br />
+
+<div>
+    Prijava:
+    <br />
+    @Html.Kendo().DatePicker().Name("Last.CheckIn").Value(last.CheckIn).Format("dd.MM.yyyy").HtmlAttributes(new { @readonly = "readonly", style = "font-size:16px; font-family: 'Roboto Mono'" })
+</div>
+
+<br />
+
+<div>
+    Odjava:
+    <br />
+    @Html.Kendo().DatePicker().Name("Last.CheckOut").Value(last.CheckOut ?? DateTime.Now.AddDays(1)).Format("dd.MM.yyyy").HtmlAttributes(new { @readonly = "readonly", style = "font-size:16px; font-family: 'Roboto Mono'" })
+</div>

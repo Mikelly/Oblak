@@ -27,6 +27,7 @@
 					}
 					@if (User.IsInRole("TouristOrg"))
 					{
+						<li><a href="/guest-list"><i class="fa fa-book"></i>Knjiga gostiju</a></li>
 						<li><a href="/reports-tourist-org"><i class="fa fa-print"></i>Izvještaji</a></li>
 						<li><a href="/post-office"><i style="margin-left:-4px; margin-right:10px;" class="fa-solid fa-truck"></i>Export za Poštu CG</a></li>
 					}
@@ -37,6 +38,34 @@
 				</ul>
 			</div>
 		</li>
+		@if (User.IsInRole("TouristOrg"))
+		{
+			<li aria-haspopup="true">
+				<a href="#"><i class="fa fa-anchor"></i>Nautička taksa</a>
+				<div class="grid-container3">
+					<ul>
+						<li><a href="/vessels"><i class="fa fa-ship"></i>Plovila</a></li>					
+						<li><a href="/nautical-groups"><i class="fa fa-user-group"></i>Grupne prijave</a></li>
+						<li><a href="/nautical-tax"><i class="fa fa-gear"></i>Podešavanja</a></li>
+						<li><a href="/reports"><i class="fa fa-print"></i>Izvještaji</a></li>	
+						<li><a href="/post-office-nau"><i style="margin-left:-4px; margin-right:10px;" class="fa-solid fa-truck"></i>Export za Poštu CG</a></li>
+					</ul>
+				</div>
+			</li>
+
+			<li aria-haspopup="true">
+				<a href="#"><i class="fa fa-bus"></i>Izletnička taksa</a>
+				<div class="grid-container3">
+					<ul>
+						<li><a href="/agencies"><i class="fa fa-briefcase"></i>Agencije</a></li>					
+						<li><a href="/excursions"><i class="fa fa-bus"></i>Izleti</a></li>
+						<li><a href="/excursion-invoices"><i class="fa fa-euro-sign"></i>Fakture</a></li>
+						<li><a href="/reports"><i class="fa fa-print"></i>Izvještaji</a></li>						
+						<li><a href="/post-office-exc"><i style="margin-left:-4px; margin-right:10px;" class="fa-solid fa-truck"></i>Export za Poštu CG</a></li>
+					</ul>
+				</div>
+			</li>
+		}
 		<!--/ about -->
 				
 		<!-- news -->
@@ -61,6 +90,7 @@
 			<div class="grid-container3">
 				<ul>
 					<li><a href="/clients"><i class="fa fa-bed"></i>Izdavaoci</a></li>
+					<li><a href="/vessels"><i class="fa fa-ship"></i>Plovila</a></li>
 					<li><a href="/check-in-points"><i class="fa fa-shop"></i>Check-In Points</a></li>
 					@if(User.IsInRole("TouristOrgAdmin")) 
 					{

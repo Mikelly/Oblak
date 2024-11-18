@@ -18,7 +18,9 @@
         setTimeout(function () {
             console.log('initialize native messaging');
             window.postMessage({ type: "FROM_PAGE", message: { type: "Initialize" } }, "*");
-        }, 500);    
+        }, 500);   
+        
+        $('#groupdesc').load('/group-desc?groupid=@ViewBag.Group');
 
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/messageHub")
@@ -485,7 +487,7 @@
         var id = $('#Id').val();
         
         $.ajax({
-            url: `/print-direct?id=${id}`,
+            url: `/print-direct?id=${id}&tax='R'`,
             type: 'GET',
             success: function (data) {
                 window.postMessage({
@@ -498,6 +500,28 @@
             },
             complete: function (data) {
                 
+            }
+        });
+    }
+
+    function virmangroup() {
+
+        var id = $('#Id').val();
+
+        $.ajax({
+            url: `/print-direct?g=@ViewBag.Group&tax='@ViewBag.TaxType'`,
+            type: 'GET',
+            success: function (data) {
+                window.postMessage({
+                    type: "FROM_PAGE",
+                    message: {
+                        type: "Virman",
+                        data: data
+                    }
+                }, "*");
+            },
+            complete: function (data) {
+
             }
         });
     }
@@ -535,6 +559,37 @@
     function dtmChanged() {
         //$('#grpPeriod').data('kendoButtonGroup').trigger('select');
         periodSelect({ indices: 4 });
+    }
+
+    function propertyChanged(e) {
+
+        var item = this.dataItem();
+
+        if (item) {
+            $.ajax({
+                url: `/deferred?property=${item.Id}`,
+                type: 'GET',
+                success: function (data, status, xhr) {
+                    if (data.allowed == false) {
+                        var dropdownlist = $("#ResTaxPaymentTypeId").data("kendoDropDownList");
+                        var dataSource = dropdownlist.dataSource;
+
+                        var itemToRemove = dataSource.data().find(function (item) {
+                            return item.Value === data.Id.toString();
+                        });
+
+                        if (itemToRemove) {
+                            dataSource.remove(itemToRemove);
+                        }
+                    }
+                },
+                error: function () {
+                    Swal.fire({ icon: 'error', title: 'Došlo je do greške!', confirmButtonText: `U redu` });
+                }
+            });
+        } else {
+            console.log("No item selected.");
+        }
     }
 
 </script>
@@ -597,15 +652,21 @@
                 )
 
             <div id="dtmPeriod" style="width:390px; vertical-align:top;">
-                <div style="margin-bottom:10px; margin-top:3px; display:inline-block;">
+                <div style="margin-bottom:10px; margin-top:3px; display:inline-block; width:175px;">
                     Od datuma:<br />
-                    @Html.Kendo().DatePicker().Name("dtmOd").HtmlAttributes(new { style = "width:175px;" }).Events(e => e.Change("dtmChanged")).Enable(false)
+                    @Html.Kendo().DatePicker().Name("dtmOd").HtmlAttributes(new { style = "width:calc(100% - 0px);" }).Events(e => e.Change("dtmChanged")).Enable(false)
                 </div>
-                <div style="display:inline-block; margin-left:7px;">
+                <div style="display:inline-block; margin-left:7px; width:175px;">
                     Do datuma:<br />
-                    @Html.Kendo().DatePicker().Name("dtmDo").HtmlAttributes(new { style = "width:175px;" }).Events(e => e.Change("dtmChanged")).Enable(false)
+                    @Html.Kendo().DatePicker().Name("dtmDo").HtmlAttributes(new { style = "width:calc(100% - 0px);" }).Events(e => e.Change("dtmChanged")).Enable(false)
                 </div>
             </div>
+        </div>
+    }
+    else
+    {
+        <div id="groupdesc" style="font-size:15px;">            
+            
         </div>
     }
 
@@ -619,6 +680,13 @@
                         <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/police.png'/>
                         <div style='font-weight:bold;display:block;position:relative;top:6px;line-height:110%;font-size:90%'>PRIJAVI<br/>GOSTE<div>
                     </div>"))
+
+        @(Html.Kendo().Button().Name("btnVirman")
+            .HtmlAttributes(new { type = "button", onclick = $"virman()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
+                <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/receipt.png'/>
+                <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>ŠTAMPA<br/>UPLATNICE<div>
+                </div>"))
 
         @(Html.Kendo().Button().Name("btnCert")
             .HtmlAttributes(new { type = "button", onclick = $"sendCert({@ViewBag.Group}, 0)", style = "height:95px; width:95px; cursor:pointer;" })
@@ -738,4 +806,14 @@
     .Width(800)
     .Height(550)
     .HtmlAttributes(new { style = "padding:20px;" })
+)
+
+@(Html.Kendo().Window().Name("wndPrevInfo")
+    .Title("Prethodni boravak")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(400)
+    .Height(500)
+    .HtmlAttributes(new { style = "padding:40px; font-size:16px" })
 )

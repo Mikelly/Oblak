@@ -47,7 +47,8 @@ namespace Oblak.Models.Api
         public string? EntryPoint { get; set; }
         public DateTime? EntryPointDate { get; set; }
         public string? Other { get; set; }
-        public int? ResTaxTypeId { get; set; }        
+		public string? Note { get; set; }
+		public int? ResTaxTypeId { get; set; }        
         public int? ResTaxPaymentTypeId { get; set; }
         public decimal? ResTaxAmount { get; set; }
         public decimal? ResTaxFee { get; set; }
@@ -97,6 +98,7 @@ namespace Oblak.Models.Api
             mnePerson.EntryPoint = this.EntryPoint;
             mnePerson.EntryPointDate = this.EntryPointDate;
             mnePerson.Other = this.Other;
+            mnePerson.Note = this.Note;
             mnePerson.ResTaxAmount = this.ResTaxAmount;
             mnePerson.ResTaxFee = this.ResTaxFee;
             mnePerson.ResTaxTypeId = this.ResTaxTypeId;
@@ -156,6 +158,7 @@ namespace Oblak.Models.Api
                 EntryPoint = mnePerson.EntryPoint,
                 EntryPointDate = mnePerson.EntryPointDate,
                 Other = mnePerson.Other,
+                Note = mnePerson.Note,
                 ResTaxAmount = mnePerson.ResTaxAmount,
                 ResTaxFee = mnePerson.ResTaxFee,
                 ResTaxTypeId = mnePerson.ResTaxTypeId,

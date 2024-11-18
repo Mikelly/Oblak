@@ -1,0 +1,186 @@
+﻿@using Oblak.Models.Api;
+@using Oblak.Models.EFI;
+
+<script type="text/javascript">
+    $(document).ready(function () {
+
+    });
+
+    function loadProperties() {
+        $.ajax({
+            url: `/Property/FetchPropertiesExternal?legalEntity=${le}`,
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                if (data.success) {
+                    Swal.fire({icon: 'success', title: 'Smještajni objekti su uspješno preuzeti.', confirmButtonText: 'U redu' });
+                    var grid = $("#propertiesGrid").data("kendoGrid");
+                    grid.dataSource.read();                        
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Došlo je do greške prilikom preuzimanja smještajnih objekata.', confirmButtonText: 'U redu' });
+                }
+            },
+            error: function (error) {
+                Swal.fire({ icon: 'error', title: 'Došlo je do greške prilikom preuzimanja smještajnih objekata.', confirmButtonText: 'U redu' });
+            }
+        });
+    }
+
+    function newProperty(e) {
+        var grid = $("#propertiesGrid").data("kendoGrid");
+        grid.addRow();
+    }
+
+
+    function fiscal() {
+
+        var grid = $('#propertiesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati smještajni objekat', confirmButtonText: `U redu` });
+
+        var prop = item.Id;
+
+        $.ajax({
+            url: `/fiscal-enu?property=${prop}`,
+            type: 'GET',
+            success: function (data, status, xhr) {
+                var wnd = $("#wndFiscal").data("kendoWindow");
+                wnd.content(data);
+                wnd.center().open();
+            }
+        });
+    }
+
+    function setFiscal() {
+
+        $.ajax({
+            url: `/fiscal-enu`,
+            type: 'POST',
+            data: $('#frmFiscal').serialize(),
+            success: function (data, status, xhr) {
+                if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+                else {
+                    $("#wndFiscal").data("kendoWindow").close();                    
+                }
+            }
+        });
+    }
+
+    function paymentError(e) {
+        debugger;
+        if (e.xhr.status === 401) {
+            Swal.fire({ icon: 'error', title: 'Nemate prava da mijenjate ili brišete uplatu!', confirmButtonText: `U redu` });
+        } else {
+            Swal.fire({ icon: 'error', title: e.errorThrown, confirmButtonText: `U redu` });            
+        }
+
+        if (isDeleteRequest) {
+            isDeleteRequest = false;
+            e.sender.read();
+        }
+    }
+
+    function requestStart(e) {        
+        if (e.type === "destroy") {
+            isDeleteRequest = true;
+        }
+    }
+
+
+    function newpayment() {
+        var grid = $("#taxPaymentsGrid").data("kendoGrid");
+        grid.addRow();
+    }
+
+
+</script>
+
+<div style="display:flex; align-items: center; justify-content: space-between; margin-left:0px; margin-top:0px; margin-right:0px;">
+
+    @(Html.Kendo().Button().Name("btnNewPayment")
+        .HtmlAttributes(new { type = "button", onclick = "newpayment()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+            <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/deposit.png'/>
+            <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>NOVA<br/>UPLATA<div>
+        </div>"))
+
+    <div style="display: flex; flex:1; justify-content: center; align-items: center; font-size:large; font-weight:bold; text-align:center;">
+        Saldo obaveza:
+        <br />
+        @(((decimal)ViewBag.Balance).ToString("#,##0.00"))
+    </div>
+
+
+    <div style="display: flex;">
+        @(Html.Kendo().Button().Name("btnLedger")
+            .HtmlAttributes(new { type = "button", onclick = "printbalance('ResidenceTax')", style = "height:95px; width:95px; margin-left:10px;; cursor:pointer;" })
+            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+        <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/ledger.png'/>
+        <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>KARTICA<br/>OBAVEZNIKA<div>
+        </div>"))
+    </div>
+
+</div>
+
+<div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
+    @(Html.Kendo().Grid<TaxPaymentDto>()
+        .Name("taxPaymentsGrid")
+        //.ToolBar(t => t.Create().Text("Nova uplata"))
+        .Columns(columns =>
+        {
+            columns.Command(command => { 
+                command.Edit().Text(" ").UpdateText(" ").CancelText(" "); 
+                command.Destroy().Text(" "); 
+            })
+            .Width(70);
+            columns.ForeignKey(g => g.TaxPaymentTypeId, (SelectList)ViewBag.PaymentMethods).Title("Vrsta uplate").Width(200).HtmlAttributes(new { style = "text-align:center;" });
+            columns.Bound(g => g.TransactionDate).Title("Datum uplate").Format("{0:dd.MM.yyyy}").EditorTemplateName("Date").Width(150).HtmlAttributes(new { style = "text-align:center;" });
+            columns.Bound(g => g.Amount).Title("Iznos uplate").Format("{0:n2}").Width(150).HtmlAttributes(new { style = "text-align:right;" });
+            columns.Bound(g => g.Note).Title("Opis transakcije").Width("50%").HtmlAttributes(new { style = "text-align:center;" });
+            columns.Bound(g => g.UserModified).Title("Izmijenio").Width(150).HtmlAttributes(new { style = "text-align:center;" });
+            columns.Bound(g => g.UserModifiedDate).Title("Vrijeme").Format("{0:dd.MM.yyyy HH:mm}").Width(125).HtmlAttributes(new { style = "text-align:center;" });
+        })
+        .Pageable(p => p.Refresh(true))
+        .Sortable()
+        .Selectable()
+        .Scrollable()
+        .Filterable()
+        .HtmlAttributes(new { style = "height:100%;" })
+        .Editable(editable => editable.Mode(GridEditMode.InLine))
+        .DataSource(ds => ds
+            .Ajax()
+            .PageSize(20)
+            .Model(m =>
+            {
+                m.Id(g => g.Id);
+                m.Field(g => g.Id).Editable(false);
+                m.Field(g => g.TransactionDate);
+                m.Field(g => g.Amount);
+                m.Field(g => g.LegalEntityId);
+                m.Field(g => g.UserCreated).Editable(false);
+                m.Field(g => g.UserModified).Editable(false);
+                m.Field(g => g.UserCreatedDate).Editable(false);
+                m.Field(g => g.UserModifiedDate).Editable(false);
+        })
+        .Events(e => e.Error("paymentError").RequestStart("requestStart"))
+        .Create(a => a.Action("Create", "TaxPayment", new { le = ViewBag.le, ag = ViewBag.ag, taxType = ViewBag.taxType }))
+        .Read(a => a.Action("Read", "TaxPayment", new { le = ViewBag.le, ag = ViewBag.ag, taxType = ViewBag.taxType }))
+        .Update(a => a.Action("Update", "TaxPayment", new { le = ViewBag.le, ag = ViewBag.ag, taxType = ViewBag.taxType }))
+        .Destroy(a => a.Action("Destroy", "TaxPayment", new { le = ViewBag.le, ag = ViewBag.ag, taxType = ViewBag.taxType }))
+        )
+    )
+</div>
+
+
+@(Html.Kendo().Window().Name("wndFiscal")
+    .Title("Fiskalni podaci")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(400)
+    .Height(600)
+    .HtmlAttributes(new { style = "padding:20px; padding-bottom:10px; font-size:14px;" })
+)

@@ -15,7 +15,7 @@ namespace Oblak.Data
         public LegalEntityType Type { get; set; }
 
         [StringLength(450)]
-        public Country Country { get; set; }
+        public CountryType Country { get; set; }
 
         public int? PartnerId { get; set; }
 
@@ -53,6 +53,8 @@ namespace Oblak.Data
         public byte[]? Logo { get; set; }    
         
         public bool InVat { get; set; }
+
+		public bool IsRegistered { get; set; } = false;
 
 		public bool Test { get; set; }
 

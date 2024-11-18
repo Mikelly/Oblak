@@ -97,8 +97,8 @@ namespace Oblak.Controllers
                 if (_appUser != null)
                 {
                     _legalEntity = _appUser.LegalEntity;
-                    if (_appUser.LegalEntity.Country == Country.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>()!;
-                    if (_appUser.LegalEntity.Country == Country.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>()!;
+                    if (_appUser.LegalEntity.Country == CountryType.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>()!;
+                    if (_appUser.LegalEntity.Country == CountryType.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>()!;
                 }
             }
         }

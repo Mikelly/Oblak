@@ -22,7 +22,8 @@ namespace Oblak.Data
         
         [StringLength(450)]
         public string ItemUnit { get; set; }
-        
+
+        [StringLength(450)]
         public MneVatExempt? VatExempt { get; set; }
         
         public decimal Quantity { get; set; }

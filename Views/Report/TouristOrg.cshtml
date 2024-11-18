@@ -2,7 +2,8 @@
 	Layout = "~/Views/Shared/_LayoutINV.cshtml";
 	var prtnid = (string)ViewBag.PartnerId;
 	var reports = new Dictionary<string, string>() { 
-		{ $"{prtnid}CountryStats", "Statistika po državama" }, 
+		{ $"{prtnid}CountryStats", "Statistika po državama" },
+		{ $"{prtnid}CountryStatsPeriod", "Statistika po državama za period" },
 		{ $"{prtnid}GuestList", "Boravišne prijave za period" }, 
 		{ $"{prtnid}GuestListByPlace", "Gosti po lokaciji" },
 		{ $"{prtnid}PostOffice", "Izvještaj za poštu" },
@@ -47,7 +48,7 @@
 				$('#user').show();
 			}
 		}
-		else if (report == "GuestListByPlace" || report == "ResTax") {
+		else if (report == "GuestListByPlace" || report == "ResTax" || report == "CountryStatsPeriod") {
 			$('#datumOd').show();
 			$('#datumDo').show();			
 		}

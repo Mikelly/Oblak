@@ -37,16 +37,6 @@ namespace Oblak.Models
 
         public bool InVat { get; set; }
 
-        [ScaffoldColumn(false)]
-        public string? UserCreated { get; set; }
-
-        [ScaffoldColumn(false)]
-        public DateTime? UserCreatedDate { get; set; }
-
-        [ScaffoldColumn(false)]
-        public string? UserModified { get; set; }
-
-        [ScaffoldColumn(false)]
-        public DateTime? UserModifiedDate { get; set; }
+        public bool IsRegistered { get; set; }
     }
 }

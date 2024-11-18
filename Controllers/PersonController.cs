@@ -7,17 +7,20 @@ using Microsoft.EntityFrameworkCore;
 using NuGet.DependencyResolver;
 using Oblak.Data;
 using Oblak.Data.Enums;
+using Oblak.Helpers;
 using Oblak.Models;
 using Oblak.Models.Api;
 using Oblak.Services;
 using Oblak.Services.MNE;
 using Oblak.Services.Reporting;
 using Oblak.Services.SRB;
+using SQLitePCL;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using static SQLite.SQLite3;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Oblak.Controllers
 {
@@ -25,11 +28,11 @@ namespace Oblak.Controllers
     {
         private readonly Register _registerClient;
         private readonly ReportingService _reporting;
+        private readonly IWebHostEnvironment _env;
         private readonly ApplicationDbContext _db;
         private readonly ILogger<PersonController> _logger;
         private readonly IMapper _mapper;
         private readonly ApplicationUser _appUser;
-        private readonly IWebHostEnvironment _env;
         private readonly int _legalEntityId;
         private readonly LegalEntity _legalEntity;
 
@@ -56,8 +59,8 @@ namespace Oblak.Controllers
                 _appUser = _db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.Properties).FirstOrDefault(a => a.UserName == username)!;
                 _legalEntityId = _appUser.LegalEntityId;
                 _legalEntity = _appUser.LegalEntity;
-                if (_appUser.LegalEntity.Country == Country.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>();
-                if (_appUser.LegalEntity.Country == Country.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>();
+                if (_appUser.LegalEntity.Country == CountryType.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>();
+                if (_appUser.LegalEntity.Country == CountryType.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>();
             }
         }
 
@@ -75,7 +78,7 @@ namespace Oblak.Controllers
                 .Where(a => a.Country == _appUser.LegalEntity.Country.ToString())
                 .ToListAsync();
 
-            if (_appUser.LegalEntity.Country == Country.SRB)
+            if (_appUser.LegalEntity.Country == CountryType.SRB)
             {
                 codeLists = codeLists.Where(a => a.Country == "SRB").ToList();
 
@@ -97,7 +100,7 @@ namespace Oblak.Controllers
                 return View("SrbPersons", srbViewModel);
             }
 
-            if (_appUser.LegalEntity.Country == Country.MNE)
+            if (_appUser.LegalEntity.Country == CountryType.MNE)
             {
                 codeLists = codeLists.Where(a => a.Country == "MNE").ToList();
                 var model = new CodeListViewModel
@@ -122,6 +125,7 @@ namespace Oblak.Controllers
         {
             var group = await _db.Groups.Where(x => x.Id == groupId).FirstOrDefaultAsync();
             ViewBag.Group = groupId;
+            ViewBag.TaxType = group?.VesselId == null ? "R" : "N";
 
             var isPropertyAdmin = User.IsInRole("PropertyAdmin");
             var legalEntityId = _appUser!.LegalEntityId;
@@ -143,12 +147,12 @@ namespace Oblak.Controllers
 
             ViewBag.Properties = properties;
 
-            if (_appUser.LegalEntity.Country == Country.SRB)
+            if (_appUser.LegalEntity.Country == CountryType.SRB)
             {
                 return View("SrbPersons");
             }
 
-            else if (_appUser.LegalEntity.Country == Country.MNE)
+            else if (_appUser.LegalEntity.Country == CountryType.MNE)
             {
                 return View("MnePersons");
             }
@@ -160,11 +164,11 @@ namespace Oblak.Controllers
         [Route("mrz")]
         public async Task<ActionResult> Mrz(int? group, [FromBody] MrzDto mrz)
         {
-            if (_appUser.LegalEntity.Country == Country.SRB)
+            if (_appUser.LegalEntity.Country == CountryType.SRB)
             {
 
             }
-            else if (_appUser.LegalEntity.Country == Country.MNE)
+            else if (_appUser.LegalEntity.Country == CountryType.MNE)
             {
 
             }
@@ -188,7 +192,7 @@ namespace Oblak.Controllers
 
             ViewBag.Group = group;
 
-            if (_appUser.LegalEntity.Country == Country.SRB)
+            if (_appUser.LegalEntity.Country == CountryType.SRB)
             {
                 SrbPersonEnrichedDto dto = null;
                 if (person == null) dto = new SrbPersonEnrichedDto();
@@ -213,15 +217,16 @@ namespace Oblak.Controllers
                 return PartialView("SrbPerson", srbViewModel);
             }
 
-            if (_appUser.LegalEntity.Country == Country.MNE)
+            if (_appUser.LegalEntity.Country == CountryType.MNE)
             {
+                Group g = null;
                 MnePersonEnrichedDto dto = null;
                 if (person == 0)
                 {
                     dto = new MnePersonEnrichedDto();
                     if (group.HasValue && group != 0)
                     {
-                        var g = _db.Groups.Include(a => a.Property).FirstOrDefault(a => a.Id == group);
+                        g = _db.Groups.Include(a => a.Property).FirstOrDefault(a => a.Id == group)!;
                         if (g != null)
                         {
                             dto.PropertyId = g.Property.Id;
@@ -255,7 +260,7 @@ namespace Oblak.Controllers
                             dto.PermanentResidenceAddress = country.Name;
                             dto.PermanentResidencePlace = country.Name;
                             dto.DocumentIssuer = country.ExternalId;
-                            var restax = ResTaxFoo(null, null, dto.BirthDate, dto.CheckIn, dto.CheckOut);
+                            var restax = ResTaxFoo(null, null, dto.BirthDate, dto.CheckIn, dto.CheckOut, g?.VesselId != null);
                             dto.ResTaxTypeId = restax.ResType;
                             dto.ResTaxPaymentTypeId = restax.PayType;
                             dto.ResTaxAmount = restax.Tax;
@@ -289,6 +294,8 @@ namespace Oblak.Controllers
                         }
                     }
 
+                    ViewBag.Nautical = g?.VesselId != null;
+
                     if (_appUser.LegalEntity.PartnerId == 3)
                     {
                         if (dto.ResTaxPaymentTypeId == null)
@@ -300,6 +307,8 @@ namespace Oblak.Controllers
                 else
                 {
                     var p = _db.MnePersons.Include(a => a.Property).Include(a => a.LegalEntity).Include(a => a.Group).Include(a => a.CheckInPoint).FirstOrDefault(a => a.Id == person);
+                    g = p.Group;
+                    ViewBag.Nautical = g?.VesselId != null;
                     dto = new MnePersonEnrichedDto();
                     dto = dto.GetFromMnePerson(p);
                 }
@@ -353,6 +362,25 @@ namespace Oblak.Controllers
             {
                 return Json(new { info = "", error = "Ne postoji zadnja prijava" });
             }        
+        }
+
+        public ActionResult PrevInfo(string document, string country)
+        {
+            var last = _db.MnePersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity)
+                .Where(a => a.DocumentCountry == country && a.DocumentNumber == document)
+                .OrderByDescending(a => a.UserCreatedDate)
+                .FirstOrDefault();
+
+            if (last != null)
+            {
+                ViewBag.Last = last;
+                return PartialView();
+                //return Json(new { info = "OK", error = "", propertyId = last.PropertyId, propertyName = last.Property.Name, checkIn = last.CheckIn, checkOut = last.CheckOut ?? DateTime.Now.Date.AddDays(1) });
+            }
+            else
+            {
+                return Json(new { info = "", error = $"Gost sa brojem dokumenta {document} iz države ${country} nije prijavljen!" });
+            }
         }
 
         public ActionResult ResTax(int? resType, int? payType, string birthDate, string checkIn, string checkOut)
@@ -426,7 +454,7 @@ namespace Oblak.Controllers
 				co = DateTime.ParseExact(checkOut, "dd.MM.yyyy", null);
 			}
 
-			var result = ResTaxFoo(resType, payType, bd, ci, co);
+			var result = ResTaxFoo(resType, payType, bd, ci, co, false);
 
             return Json(new { tax = result.Tax, fee = result.Fee, resType = result.ResType, payType = result.PayType });
         }
@@ -441,12 +469,13 @@ namespace Oblak.Controllers
 		}
 
 
-		private RestTaxResult ResTaxFoo(int? resType, int? payType, DateTime? birthDate, DateTime? checkIn, DateTime? checkOut)
+		private RestTaxResult ResTaxFoo(int? resType, int? payType, DateTime? birthDate, DateTime? checkIn, DateTime? checkOut, bool nautical)
 		{
             if (resType > 3)
             {
                 return new RestTaxResult { Tax = 0, Fee = 0, ResType = resType.Value, PayType = 1 };
             }
+
 
             //var p = _db.Properties.Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == property);
             //var pid = p.LegalEntity.PartnerId;
@@ -897,16 +926,67 @@ namespace Oblak.Controllers
 
         [HttpGet]
         [Route("post-office")]
-        public IActionResult PostOffice()
+        public IActionResult PostOffice(string tax = "R")
         {
-            return View();
+            ViewBag.Tax = tax;
+			(TaxType taxType, string taxDesc) = DecodeTaxType(tax);
+            ViewBag.TaxDesc = taxDesc;
+			return View("PostOffice");
+        }
+
+        [HttpGet]
+        [Route("post-office-res")]
+        public IActionResult PostOfficeRes()
+        {
+            return PostOffice("R");
+        }
+
+        [HttpGet]
+        [Route("post-office-exc")]
+        public IActionResult PostOfficeExc()
+        {
+            return PostOffice("E");
+        }
+
+        [HttpGet]
+        [Route("post-office-nau")]
+        public IActionResult PostOfficeNau()
+        {
+            return PostOffice("N");
+        }
+
+        //public class PostOfficeData
+        //{
+        //    public string Name { get; set; }
+        //    public string TIN { get; set; }
+        //    public DateTime Date { get; set; }
+        //    public decimal Tax { get; set; }
+        //}
+
+        public class PostOfficeData
+        {
+            public string OrderNo { get; set; }
+            public string Account { get; set; }
+            public string Description { get; set; }
+            public string RecipientName { get; set; }
+            public string PayeeName { get; set; }
+            public string PayeeAddress { get; set; }
+            public string TIN { get; set; }
+            public decimal Tax { get; set; }
+            public decimal Fee { get; set; }
+            public string UserCreated { get; set; }
+            public DateTime UserCreatedDate { get; set; }
+            public string CheckInPointName { get; set; }
         }
 
         [HttpGet]
         [Route("post-office-export")]
-        public FileResult PostOfficeExport(string datum, int? chekinpointid)
+        public FileResult PostOfficeExport(string datum, int? chekinpointid, string tax = "R")
         {
             var date = DateTime.ParseExact(datum, "dd.MM.yyyy", CultureInfo.InvariantCulture);
+
+            (TaxType taxType, string taxDesc) = DecodeTaxType(tax);
+            var taxName = Enum.GetName(typeof(TaxType), taxType);
 
             var partner = _db.Partners.Find(_appUser.PartnerId);
 
@@ -914,17 +994,39 @@ namespace Oblak.Controllers
 
             if (chekinpointid.HasValue) checkInPoint = chekinpointid;
 
+            var sql = $"EXEC TouristOrgPostOffice '{date.ToString("dd-MMM-yyyy").ToUpper()}', {partner.Id}, {checkInPoint.Value}, '{taxName}', 0";
+            var data = _db.Database.SqlQuery<PostOfficeData>(FormattableStringFactory.Create(sql)).ToList();
+
+
+
+            //var settings = _db.PartnerTaxSettings.FirstOrDefault(a => a.TaxType == TaxType.ResidenceTax && a.PartnerId == _appUser.PartnerId);
+
+            /*
             var guests = _db.MnePersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity)
+                .Where(a => a.GroupId == null)
                 .Where(a => (a.UserCreatedDate ?? (DateTime?)a.CheckIn ?? DateTime.MinValue).Date == date)
                 .Where(a => a.Property.LegalEntity.PartnerId == partner.Id && a.CheckInPointId == checkInPoint)
                 .Where(a => a.ResTaxAmount != 0)
-                .Select(a => new { a.Property.LegalEntity.Name, a.Property.LegalEntity.TIN, Date = a.UserCreatedDate ?? a.CheckIn, Tax = (a.ResTaxAmount ?? 0m) })
+                .Select(a => new PostOfficeData() { Name = a.Property.LegalEntity.Name, TIN = a.Property.LegalEntity.TIN, Date = a.UserCreatedDate ?? a.CheckIn, Tax = (a.ResTaxAmount ?? 0m) })
                 .Where(a => a.Tax > 0)
                 .ToList();
 
-            var lines = guests.OrderBy(a => a.Date)
+            var groups = _db.Groups
+                .Where(a => a.VesselId == null)
+                .Where(a => (a.UserCreatedDate ?? (DateTime?)a.CheckIn ?? DateTime.MinValue).Date == date)
+                .Where(a => a.Property.LegalEntity.PartnerId == partner.Id && a.CheckInPointId == checkInPoint)
+                .Where(a => a.ResTaxAmount != 0)
+                .Select(a => new PostOfficeData() { Name = a.Property.LegalEntity.Name, TIN = a.Property.LegalEntity.TIN, Date = a.UserCreatedDate ?? a.CheckIn ?? DateTime.Now.Date, Tax = (a.ResTaxAmount ?? 0m) })
+                .Where(a => a.Tax > 0)
+                .ToList();
+
+            var data = guests.Union(groups).ToList();*/
+
+            //var data = dataFromDb.Select(a => new PostOfficeData() { Name = a.PayeeName, Date = a.UserCreatedDate, Tax = a.Tax + a.Fee, TIN = a.TIN }).ToList();
+
+            var lines = data.OrderBy(a => a.UserCreatedDate)
                 .Select((a, b) =>
-                    $"0|{partner.TIN}|{(b + 1).ToString("00000")}|0|{a.Name}|Uplata boravišne takse|TO Bar||{a.TIN}|{a.Tax.ToString("##0.00", new CultureInfo("en-US"))}|330|510-8093205-10|{a.Date.ToString("yyyyMMdd HH:mm:ss")}|0"
+                    $"0|{partner.TIN}|{(b + 1).ToString("00000")}|0|{a.PayeeName}|{a.Description}|{partner.Name}||{a.TIN}|{a.Tax.ToString("##0.00", new CultureInfo("en-US"))}|330|{a.Account}|{a.UserCreatedDate.ToString("yyyyMMdd HH:mm:ss")}|0"
                     )
                 .ToList();
 
@@ -933,10 +1035,34 @@ namespace Oblak.Controllers
             return File(Encoding.UTF8.GetBytes(txt), "text/plain", $"{partner.Name}_PostOfficeExport_{date.ToString("yyyyMMdd")}.txt");
         }
 
+        (TaxType, string) DecodeTaxType(string tax)
+        {
+            var taxType = tax switch
+            {
+                "R" => TaxType.ResidenceTax,
+                "N" => TaxType.NauticalTax,
+                "E" => TaxType.ExcursionTax,
+                _ => TaxType.ResidenceTax
+            };
+
+            var taxDesc = tax switch
+            {
+                "R" => "Boravišna taksa",
+                "N" => "Nautička taksa",
+                "E" => "Izletnička taksa",
+                _ => "Boravišna taksa"
+            };
+
+            return (taxType, taxDesc);
+        }
+
         [HttpGet]
         [Route("post-office-report")]
-        public FileResult PostOfficeReport(string datum)
+        public FileResult PostOfficeReport(string datum, string tax = "R")
         {
+            (TaxType taxType, string taxDesc) = DecodeTaxType(tax);
+            var taxName = Enum.GetName(typeof(TaxType), taxType);
+
             var date = DateTime.ParseExact(datum, "dd.MM.yyyy", CultureInfo.InvariantCulture);
 
             var partner = _db.Partners.Find(_appUser.PartnerId);
@@ -953,35 +1079,140 @@ namespace Oblak.Controllers
                     new Telerik.Reporting.Parameter(){ Name = "Date", Value = date },
                     new Telerik.Reporting.Parameter(){ Name = "PartnerId", Value = partner.Id },
                     new Telerik.Reporting.Parameter(){ Name = "CheckInPoint", Value = chekinpoint },
+                    new Telerik.Reporting.Parameter(){ Name = "TaxType", Value = taxName },
+                    new Telerik.Reporting.Parameter(){ Name = "Id", Value = 0 },
                     new Telerik.Reporting.Parameter(){ Name = "CheckInPointName", Value = cp.Name },
+                    new Telerik.Reporting.Parameter(){ Name = "TaxTypeName", Value = taxDesc },
                 },
                 "PDF");
 
             return File(bytes, "application/pdf");
         }
 
+        class VirmanData
+        { 
+            public string from { get; set; } = "";
+            public string to { get; set; } = "";
+            public string fromacc { get; set; } = "";
+            public string toacc { get; set; } = "";
+            public string desc { get; set; } = "";
+            public string amount { get; set; } = "";
+            public string tax { get; set; } = "";
+            public string fee { get; set; } = "";
+            public string id { get; set; } = "";
+            public string refdeb { get; set; } = "";
+            public string refcre { get; set; } = "";
+            public string addr { get; set; } = "";
+            public string model { get; set; } = "18";
+            public string code { get; set; } = "030";
+        }
+
         [HttpGet]
         [Route("print-direct")]
-        public IActionResult PrintDirect(int id)
+        public IActionResult PrintDirect(int id, string tax = "R")
         {
-            var person = _db.MnePersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.LegalEntity).Include(a => a.CheckInPoint).FirstOrDefault(a => a.Id == id);
+            (TaxType taxType, string taxDesc) = DecodeTaxType(tax);
+            taxDesc = taxDesc.ToAscii();
+            var taxName = Enum.GetName(typeof(TaxType), taxType);
 
-            var address = person.Property.LegalEntity.Address ?? "";
+            var partner = _db.Partners.FirstOrDefault(x => x.Id == _appUser.PartnerId);
+            var settings = _db.PartnerTaxSettings.Where(a => a.PartnerId == _appUser.PartnerId && a.TaxType == taxType).FirstOrDefault();
+
+			var sql = $"EXEC TouristOrgPostOffice '{DateTime.Now.Date.ToString("dd-MMM-yyyy").ToUpper()}', {partner.Id}, {0}, '{taxName}', {id}";
+			var po = _db.Database.SqlQuery<PostOfficeData>(FormattableStringFactory.Create(sql)).ToList().FirstOrDefault();
+
+			//var po = _db.Database.SqlQuery<PostOfficeData>($"EXEC TouristOrgPostOffice {DateTime.Now.Date.ToString("dd-MMM-yyyy")}, {partner.Id}, {0}, '{taxName}', {id}").FirstOrDefault();
+
+            /*
+            var person = _db.MnePersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.LegalEntity).Include(a => a.CheckInPoint).FirstOrDefault(a => a.Id == id);
+            var group = _db.Groups.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.LegalEntity).Include(a => a.CheckInPoint).FirstOrDefault(a => a.Id == id);
+            var invoice = _db.ExcursionInvoices.Include(a => a.Agency).Include(a => a.CheckInPoint).FirstOrDefault(a => a.Id == id);
+
+
+
+            var data = new VirmanData();
+
+            var address = string.Empty;
+            var checkInPoint = string.Empty;
+            var desc = string.Empty;
+
+            if (person != null)
+            {
+                address = person.Property.LegalEntity.Address ?? string.Empty;
+                checkInPoint = person.CheckInPoint.Name;
+                data.from = $"{person.Property.LegalEntity.Name}";
+                data.refcre = $"{person.Property.LegalEntity.TIN}";
+                data.desc = $"{settings.PaymentDescription}\nGost: {person.FirstName} {person.LastName}\nPeriod:{person.CheckIn.ToString("dd.MM.yyyy")} - {person.CheckOut.Value.ToString("dd.MM.yyyy")}";
+                data.tax = (person.ResTaxAmount ?? 0m).ToString("#,###.00", new CultureInfo("de-DE"));
+                data.fee = (person.ResTaxFee ?? 0m).ToString("#,###.00", new CultureInfo("de-DE"));
+                data.amount = ((person.ResTaxFee ?? 0m) + (person.ResTaxAmount ?? 0m)).ToString("#,###.00", new CultureInfo("de-DE"));
+            }
+            else if (group != null)
+            {
+                address = group.Property.LegalEntity.Address ?? string.Empty;
+                checkInPoint = group.CheckInPoint.Name;
+                data.from = $"{group.Property.LegalEntity.Name}";
+                data.refcre = $"{group.Property.LegalEntity.TIN}";
+                data.desc = $"{settings.PaymentDescription}";
+                data.tax = (group.ResTaxAmount ?? 0m).ToString("#,###.00", new CultureInfo("de-DE"));
+                data.fee = (group.ResTaxFee ?? 0m).ToString("#,###.00", new CultureInfo("de-DE"));
+                data.amount = ((group.ResTaxFee ?? 0m) + (group.ResTaxAmount ?? 0m)).ToString("#,###.00", new CultureInfo("de-DE"));
+            }
+            else if(invoice != null)
+            {
+                address = invoice.Agency.Address ?? string.Empty;
+                checkInPoint = invoice.CheckInPoint.Name;
+                data.from = $"{invoice.Agency.Name}";
+                data.refcre = $"{invoice.Agency.TIN}";
+                data.refdeb = $"{invoice.InvoiceNumber}";
+                data.desc = $"{settings.PaymentDescription}";
+                data.tax = invoice.BillingAmount.ToString("#,###.00", new CultureInfo("de-DE"));
+                data.fee = invoice.BillingFee.ToString("#,###.00", new CultureInfo("de-DE"));
+                data.amount = (invoice.BillingAmount + invoice.BillingFee).ToString("#,###.00", new CultureInfo("de-DE"));
+            }
+            
             address = address
                 .Replace("\n", " ")
                 .Replace("\t", " ")
                 .Replace("\r", " ")
                 .Trim();
 
-            return Json(new
-            {
-                from = $"{person.Property.LegalEntity.Name}\n{address}",
-                to = $"Boravisna taksa, TO Bar{(person.CheckInPoint != null ? ", " + person.CheckInPoint.Name : "")}",
-                fromacc = "-",
-                toacc = "510-8093205-10",
-                desc = $"Uplata boravisne takse\nGost: {person.FirstName} {person.LastName}\nPeriod:{person.CheckIn.ToString("dd.MM.yyyy")} - {person.CheckOut.Value.ToString("dd.MM.yyyy")}",
-                amount = ((person.ResTaxAmount ?? 0m) + (person.ResTaxFee ?? 0m)).ToString("#,###.00", new CultureInfo("de-DE"))
-            });
+            */
+
+            var address = po.PayeeAddress
+                .Replace("\n", " ")
+                .Replace("\t", " ")
+                .Replace("\r", " ")
+                .Trim();
+
+            var data = new VirmanData();
+            data.from = $"{po.PayeeName}\n{address}";
+            data.to = $"{po.RecipientName}{(po.CheckInPointName != null ? Environment.NewLine + po.CheckInPointName : "")}";
+            data.toacc = po.Account;
+            data.refcre = po.TIN;
+            data.tax = (po.Tax).ToString("#,##0.00", new CultureInfo("de-DE"));
+            data.fee = (po.Fee).ToString("#,##0.00", new CultureInfo("de-DE"));
+            data.amount = (po.Tax + po.Fee).ToString("#,##0.00", new CultureInfo("de-DE"));
+            data.addr = settings.PaymentAddress;
+
+            /*
+            data.from += Environment.NewLine + address;
+            data.toacc = settings.PaymentAccount;
+            data.to = $"{partner.Name}{(checkInPoint != null ? Environment.NewLine + person.CheckInPoint.Name : "")}";
+            data.addr = settings.PaymentAddress;
+            */
+
+            return Json(data);
+
+            //return Json(new
+            //{
+            //    from = $"{person.Property.LegalEntity.Name}\n{address}",
+            //    to = $"Boravisna taksa, TO Bar{(person.CheckInPoint != null ? ", " + person.CheckInPoint.Name : "")}",
+            //    fromacc = "-",
+            //    toacc = "510-8093205-10",
+            //    desc = $"Uplata boravisne takse\nGost: {person.FirstName} {person.LastName}\nPeriod:{person.CheckIn.ToString("dd.MM.yyyy")} - {person.CheckOut.Value.ToString("dd.MM.yyyy")}",
+            //    amount = ((person.ResTaxAmount ?? 0m) + (person.ResTaxFee ?? 0m)).ToString("#,###.00", new CultureInfo("de-DE"))
+            //});
         }
 
         [HttpGet]
@@ -1080,6 +1311,8 @@ namespace Oblak.Controllers
             //    , "PDF");
 
             //return File(result, "application/pdf");
+
+            var a = 10;
 
             var stream = await _registerClient.GuestListPdf(objekat, datumod, datumdo);
 

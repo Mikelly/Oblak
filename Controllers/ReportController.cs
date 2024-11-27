@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Oblak.Data;
+using Oblak.Migrations;
+using System.Xml.Linq;
 using Telerik.Reporting;
 
 namespace Oblak.Controllers
@@ -223,6 +225,9 @@ namespace Oblak.Controllers
                 parameters.Add(new Parameter() { Name = "Date", Value = DateTime.ParseExact(date, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "CheckInPoint", Value = cpid });
                 parameters.Add(new Parameter() { Name = "CheckInPointName", Value = cp.Name });
+				parameters.Add(new Parameter() { Name = "TaxType", Value = "ResidenceTax" });
+				parameters.Add(new Parameter() { Name = "TaxTypeName", Value = "Boravišna taksa" });
+				parameters.Add(new Parameter() { Name = "Id", Value = 0 });
             }
             else if (report == "ResTax")
             {

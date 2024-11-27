@@ -15,7 +15,7 @@ namespace Oblak.Data
         public LegalEntityType Type { get; set; }
 
         [StringLength(450)]
-        public CountryType Country { get; set; }
+        public CountryEnum Country { get; set; }
 
         public int? PartnerId { get; set; }
 
@@ -40,6 +40,9 @@ namespace Oblak.Data
 
         [StringLength(450)]
         public string? PhoneNumber { get; set; }
+
+        [StringLength(450)]
+        public string? Email { get; set; }
 
         [StringLength(450)]
         public string TIN { get; set; }

@@ -50,8 +50,8 @@ namespace Oblak.Controllers
             if (username != null)
             {
                 _appUser = db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.Properties).FirstOrDefault(a => a.UserName == username)!;
-                if (_appUser.LegalEntity.Country == Data.Enums.CountryType.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>();
-                if (_appUser.LegalEntity.Country == Data.Enums.CountryType.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>();
+                if (_appUser.LegalEntity.Country == Data.Enums.CountryEnum.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>();
+                if (_appUser.LegalEntity.Country == Data.Enums.CountryEnum.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>();
             }
         }
 

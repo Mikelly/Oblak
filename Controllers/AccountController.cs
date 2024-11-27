@@ -1,5 +1,4 @@
-﻿using Humanizer;
-using Kendo.Mvc.UI;
+﻿using Kendo.Mvc.UI;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +9,6 @@ using Oblak.Data;
 using Oblak.Data.Enums;
 using Oblak.Models.Account;
 using Oblak.Models.Api;
-using SQLitePCL;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -343,9 +341,19 @@ namespace Oblak.Controllers
         }
 
         [HttpGet("roles-admin")]
-        public async Task<IActionResult> RolesAdmin(int legalEntity)
+        public async Task<IActionResult> RolesAdmin(int? legalEntity, string username)
         {
-            var userName = _db.Users.Where(a => a.LegalEntityId == legalEntity).Select(a => a.UserName).FirstOrDefault();
+            var userName = string.Empty;
+
+            if (legalEntity.HasValue)
+            { 
+                userName = _db.Users.Where(a => a.LegalEntityId == legalEntity).Select(a => a.UserName).FirstOrDefault();
+            }
+
+            if (username != null)
+            { 
+                userName = username.Trim();
+            }
 
             if (userName != null)
             {
@@ -361,6 +369,33 @@ namespace Oblak.Controllers
                 var data = roles.Select(a => new { a.Name, HasRole = userRoles.Contains(a.Name) }).ToDictionary(a => a.Name!, b => b.HasRole);
 
                 ViewBag.UserName = userName;
+                ViewBag.Roles = data;
+
+                return PartialView();
+            }
+            else
+            {
+                return Json(new BasicDto() { info = "", error = "Ne možete administrirati korisničke uloge, prije nego što napravite korisnički nalog za izdavaoca!" });
+            }
+        }
+
+        [HttpGet("roles-user")]
+        public async Task<IActionResult> RolesUser(string username)
+        {            
+            if (username != null)
+            {
+                var user = await _userManager.FindByNameAsync(username);
+                var userRoles = await _userManager.GetRolesAsync(user);
+                var roles = _roleManager.Roles.ToList();
+
+                if (await _userManager.IsInRoleAsync(user, "ADMINISTRATOR") == false)
+                {
+                    roles = roles.Where(a => a.NormalizedName != "PARTNER" && a.NormalizedName != "ADMINISTRATOR").ToList();
+                }
+
+                var data = roles.Select(a => new { a.Name, HasRole = userRoles.Contains(a.Name) }).ToDictionary(a => a.Name!, b => b.HasRole);
+
+                ViewBag.UserName = username;
                 ViewBag.Roles = data;
 
                 return PartialView();

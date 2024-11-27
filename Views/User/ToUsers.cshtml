@@ -75,6 +75,31 @@
         });
     }
 
+    function roles() {
+
+        var grid = $('#usersGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati izdavaoca', confirmButtonText: `U redu` });
+
+        username = item.UserName;
+
+        $.ajax({
+            url: `/roles-admin?username=${username}`,
+            type: 'GET',
+            success: function (data, status, xhr) {
+                if (xhr.getResponseHeader('content-type').indexOf("html") > 0) {
+                    var wnd = $("#wndRoles").data("kendoWindow");
+                    wnd.content(data);
+                    wnd.center().open();
+                }
+                else if (xhr.getResponseHeader('content-type').indexOf("json") > 0) {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+            }
+        });
+    }
+
 
 </script>
 
@@ -83,7 +108,7 @@
         .HtmlAttributes(new { type = "button", onclick = "account()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
         .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
                     <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/add-user.png'/>
-    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>NOVI<br/>KORISNIK<div>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>NOVI<br/>KORISNIK<div>
                 </div>"))
 
     @(Html.Kendo().Button().Name("btnNewProperty")
@@ -91,6 +116,13 @@
         .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
                     <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/access.png'/>
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>RESET<br/>LOZINKE<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnRoles")
+        .HtmlAttributes(new { type = "button", onclick = "roles()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:48px;height:48px;text-align:center;display:block;margin-left:auto;margin-right:auto;margin-top:2px;' src='/Content/Icons/user-account.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>KORISNIČKE<br/>ULOGE<div>
                 </div>"))
 
 @*     @(Html.Kendo().Button().Name("btnFiscal")
@@ -168,5 +200,15 @@
     .Draggable(false)
     .Width(400)
     .Height(275)
+    .HtmlAttributes(new { style = "padding:20px; padding-bottom:10px; font-size:14px;" })
+)
+
+@(Html.Kendo().Window().Name("wndRoles")
+    .Title("Korisničke uloge")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(400)
+    .Height(560)
     .HtmlAttributes(new { style = "padding:20px; padding-bottom:10px; font-size:14px;" })
 )

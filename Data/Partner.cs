@@ -11,7 +11,7 @@ namespace Oblak.Data
         public int Id { get; set; }
 
         [StringLength(450)]
-        public CountryType Country { get; set; }
+        public CountryEnum Country { get; set; }
 
         [StringLength(450)]
         public string Name { get; set; }
@@ -31,6 +31,8 @@ namespace Oblak.Data
         [StringLength(450)]
         public string? ResidenceTaxDescription { get; set; }
 
+        public int? ResidenceTaxDaysLate { get; set; }
+
         public byte[]? Logo { get; set; }
 
         [StringLength(2000)]
@@ -42,7 +44,9 @@ namespace Oblak.Data
         public bool ResidenceTaxPaymentRequired { get; set; } = false;
 
 		public bool UseAdvancePayment { get; set; } = false;
-                
+
+        public bool CheckRegistered { get; set; } = false;
+
         public int? NauticalTaxProperty { get; set; }
 
         public List<LegalEntity> LegalEntities { get; set; }

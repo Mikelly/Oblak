@@ -5,7 +5,7 @@
 namespace Oblak.Migrations
 {
     /// <inheritdoc />
-    public partial class Budva9 : Migration
+    public partial class BudvaPartner : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

@@ -12,8 +12,8 @@ using Oblak.Data;
 namespace Oblak.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241114171631_Budva9")]
-    partial class Budva9
+    [Migration("20241121133736_EmailToLegalEntity")]
+    partial class EmailToLegalEntity
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -261,6 +261,9 @@ namespace Oblak.Migrations
                         .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("HasContract")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -1280,6 +1283,10 @@ namespace Oblak.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("Email")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("FirstName")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
@@ -1524,6 +1531,9 @@ namespace Oblak.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<bool>("CheckRegistered")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Country")
                         .IsRequired()
                         .HasMaxLength(450)
@@ -1551,6 +1561,9 @@ namespace Oblak.Migrations
                     b.Property<string>("ResidenceTaxAccount")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("ResidenceTaxDaysLate")
+                        .HasColumnType("int");
 
                     b.Property<string>("ResidenceTaxDescription")
                         .HasMaxLength(450)
@@ -1597,9 +1610,15 @@ namespace Oblak.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("ExcursionTaxPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("PartnerId")
                         .HasColumnType("int");
@@ -1619,11 +1638,12 @@ namespace Oblak.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<decimal>("ResTaxFullPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<string>("PaymentName")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
-                    b.Property<decimal>("ResTaxHalfPrice")
+                    b.Property<decimal>("TaxPrice")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 

@@ -45,7 +45,7 @@ namespace Oblak.Controllers
         }
 
         [HttpGet]
-        [Route("logs")]
+        [Route("countries")]
         public async Task<IActionResult> Index()
         {
             return View();

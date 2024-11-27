@@ -193,6 +193,7 @@ builder.Services.AddScoped<PaymentService>();
 builder.Services.AddScoped<GroupService>();
 
 builder.Services.AddTransient<SrbScheduler>();
+builder.Services.AddTransient<UpdateRegisteredScheduler>();
 builder.Services.AddTransient<FcmService>();
 
 /*
@@ -280,7 +281,7 @@ app.UseHangfireDashboard("/dashboard", new DashboardOptions
     IgnoreAntiforgeryToken = true
 });
 
-/*
+
 
 app.MapHangfireDashboard();
 
@@ -290,8 +291,9 @@ if (!app.Environment.IsDevelopment())
 }
 
 RecurringJob.AddOrUpdate<SrbScheduler>("HourlyCheckOutSrb", a => a.HourlyCheckOut(), builder.Configuration["SRB:Schedulers:HourlyCheckOut"]);
+RecurringJob.AddOrUpdate<UpdateRegisteredScheduler>("UpdateRegisteredScheduler", a => a.Update(), builder.Configuration["MNE:Schedulers:UpdateRegistered"]);
 
-*/
+
 
 app.MapHub<MessageHub>("/messageHub");
 

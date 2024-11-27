@@ -8,7 +8,11 @@ namespace Oblak.Mappers
     public class LegalEntityDtoMapper : Profile
     {
         public LegalEntityDtoMapper() {
-            CreateMap<LegalEntity, LegalEntityDto>().ReverseMap();
+            CreateMap<LegalEntity, LegalEntityDto>();
+                //.ForMember(dest => dest.IsRegistered, opt => opt.MapFrom(src => src.Properties.Any(a => a.RegDate < DateTime.Now)));
+            
+
+            CreateMap<LegalEntityDto, LegalEntity>();
         }
     }
 }

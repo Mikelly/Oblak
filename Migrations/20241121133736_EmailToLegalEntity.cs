@@ -5,38 +5,36 @@
 namespace Oblak.Migrations
 {
     /// <inheritdoc />
-    public partial class Budva11 : Migration
+    public partial class EmailToLegalEntity : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "Code",
-                table: "PartnerTaxSettings",
-                type: "nvarchar(450)",
-                maxLength: 450,
+            migrationBuilder.AddColumn<bool>(
+                name: "CheckRegistered",
+                table: "Partners",
+                type: "bit",
                 nullable: false,
-                defaultValue: "");
+                defaultValue: false);
 
             migrationBuilder.AddColumn<string>(
-                name: "Model",
-                table: "PartnerTaxSettings",
+                name: "Email",
+                table: "LegalEntities",
                 type: "nvarchar(450)",
                 maxLength: 450,
-                nullable: false,
-                defaultValue: "");
+                nullable: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "Code",
-                table: "PartnerTaxSettings");
+                name: "CheckRegistered",
+                table: "Partners");
 
             migrationBuilder.DropColumn(
-                name: "Model",
-                table: "PartnerTaxSettings");
+                name: "Email",
+                table: "LegalEntities");
         }
     }
 }

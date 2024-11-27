@@ -23,7 +23,7 @@ namespace Oblak.Models.Account
         public string ConfirmPassword { get; set; }
 
         [Required(ErrorMessage = "Morate unijeti državu korisnika")]
-        public CountryType Country { get; set; }
+        public CountryEnum Country { get; set; }
 
         [Required(ErrorMessage = "Morate odabrati da li je korisnik pravno ili fizičko lice")]
         public string LegalEntityType { get; set; }

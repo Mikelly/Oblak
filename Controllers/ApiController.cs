@@ -97,8 +97,8 @@ namespace Oblak.Controllers
                 if (_appUser != null)
                 {
                     _legalEntity = _appUser.LegalEntity;
-                    if (_appUser.LegalEntity.Country == CountryType.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>()!;
-                    if (_appUser.LegalEntity.Country == CountryType.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>()!;
+                    if (_appUser.LegalEntity.Country == CountryEnum.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>()!;
+                    if (_appUser.LegalEntity.Country == CountryEnum.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>()!;
                 }
             }
         }
@@ -428,12 +428,19 @@ namespace Oblak.Controllers
                 .Include(a => a.Property).ThenInclude(a => a.LegalEntity)
                 .Include(a => a.Property).ThenInclude(a => a.Municipality)
                 .Include(a => a.LegalEntity)
+                .Include(a => a.Persons)
                 .Where(a => a.Id == id).First();
 
             var legalEntity = group.LegalEntity;
 
             try
             {
+                foreach (MnePerson person in group.Persons)
+                {
+                    person.ResTaxStatus = ResTaxStatus.Closed;
+                }
+                db.SaveChanges();
+
                 await _registerClient.Initialize(legalEntity);
                 var result = await _registerClient.RegisterGroup(group, checkInDate, checkOutDate);
                 //if (result != null) Response.StatusCode = 400;
@@ -464,6 +471,9 @@ namespace Oblak.Controllers
                         .Include(a => a.Property).ThenInclude(a => a.Municipality)
                         .Include(a => a.Property).ThenInclude(a => a.LegalEntity)
                         .Include(a => a.LegalEntity).FirstOrDefault(p => p.Id == id)!;
+
+                    (person as MnePerson).ResTaxStatus = ResTaxStatus.Closed;
+                    db.SaveChanges();
                 }
 
                 if (User.IsInRole("TouristOrgOperator"))

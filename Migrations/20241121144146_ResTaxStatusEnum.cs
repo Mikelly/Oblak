@@ -5,25 +5,25 @@
 namespace Oblak.Migrations
 {
     /// <inheritdoc />
-    public partial class Budva12 : Migration
+    public partial class ResTaxStatusEnum : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<bool>(
-                name: "HasContract",
-                table: "Agencies",
-                type: "bit",
+            migrationBuilder.AddColumn<string>(
+                name: "ResTaxStatus",
+                table: "MnePersons",
+                type: "nvarchar(max)",
                 nullable: false,
-                defaultValue: false);
+                defaultValue: "");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "HasContract",
-                table: "Agencies");
+                name: "ResTaxStatus",
+                table: "MnePersons");
         }
     }
 }

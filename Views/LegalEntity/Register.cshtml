@@ -132,52 +132,62 @@
             @(Html.Kendo().TextArea().Name("PropertyAddress").HtmlAttributes(new { style = "width:100%; height:100px;" }))
         </div>
         <div class="one" style="display:flex; flex-wrap: wrap;  align-items: center; align-content: space-between; flex: 0 1 calc(33% - 20px)">
-            <label for="opstina">Opština objekta</label>
-            @(Html.Kendo().DropDownList()
-              .Name("propertyMunicipality")
-              .HtmlAttributes(new { style = "width:100%" })
-              .OptionLabel("Izaberite opštinu...")
-              .BindTo(ViewBag.Opstine as List<Municipality>)
-              .DataTextField("Name")
-              .DataValueField("Id")
-              .Value(ViewBag.Opstina)
-@*               .DataSource(source =>
-              {
-                  source.Read(read =>
-                  {
-                      read.Action("Opstine", "Property");
-                  });
-              }) *@
-            )
-
-            <label for="mjesto">Mjesto objekta</label>
-            @(Html.Kendo().DropDownList()
-              .Name("propertyPlace")
-              .Filter("contains")
-              .HtmlAttributes(new { style = "width:100%" })
-              .OptionLabel("Izaberite mjesto...")
-              .DataTextField("Name")
-              .DataValueField("ExternalId")
-              .DataSource(source =>
-              {
-                  source.Read(read =>
-                  {
-                      read.Action("Mjesta", "Property").Data("filterMjesta");
-                  })
-                  .ServerFiltering(true);
-              })
-              .Enable(false)
-              .AutoBind(false)
-              .CascadeFrom("propertyMunicipality")
-            )
-        </div>
-        <div class="one" style="display:flex; flex-wrap: wrap;  align-items: center; align-content: center; justify-items:center; justify-content:center; flex: 0 1 calc(33% - 20px)">
-            @(Html.Kendo().Button().Name("btnregisterNewClient")
-                .Content("<div style='display:flex;align-items:center; justify-content:space-between;'><img style='width:35px;height:35px;text-align:center; position:relative; top:0px;' src='/Content/Icons/registration.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>Kreiraj novog izdavaoca</div></div>")
-                .HtmlAttributes(new { onclick = "registerClient()", type = "button", style = "width:220px; height:50px;" })
+            <div style="width:100%">
+                <label for="opstina">Opština objekta</label>
+                @(Html.Kendo().DropDownList()
+                  .Name("propertyMunicipality")
+                  .HtmlAttributes(new { style = "width:100%" })
+                  .OptionLabel("Izaberite opštinu...")
+                  .BindTo(ViewBag.Opstine as List<Municipality>)
+                  .DataTextField("Name")
+                  .DataValueField("Id")
+                  .Value(ViewBag.Opstina)
                 )
+            </div>
+
+            <div style="width:100%">
+                <label for="mjesto">Mjesto objekta</label>
+                @(Html.Kendo().DropDownList()
+                  .Name("propertyPlace")
+                  .Filter("contains")
+                  .HtmlAttributes(new { style = "width:100%" })
+                  .OptionLabel("Izaberite mjesto...")
+                  .DataTextField("Name")
+                  .DataValueField("ExternalId")
+                  .DataSource(source =>
+                  {
+                      source.Read(read =>
+                      {
+                          read.Action("Mjesta", "Property").Data("filterMjesta");
+                      })
+                      .ServerFiltering(true);
+                  })
+                  .Enable(false)
+                  .AutoBind(false)
+                  .CascadeFrom("propertyMunicipality")
+                )
+            </div>
         </div>
+
+        <div class="one" style="display:flex; flex-wrap: wrap;  align-items: center; align-content: space-between; flex: 0 1 calc(33% - 20px)">
+            <div style="width:100%">
+                <label for="firstname">Broj rješenja za rad</label>
+                @(Html.Kendo().TextBox().Name("RegNumber").HtmlAttributes(new { style = "width:100%" }))
+            </div>
+            <div style="width:100%">
+                <label for="lastname">Datum isticanja rješenja za rad</label>
+                @(Html.Kendo().DatePicker().Name("RegDate").HtmlAttributes(new { style = "width:100%" }))
+            </div>
+        </div>
+
     </fieldset>
+
+    <div class="one" style="display:flex; flex-wrap: wrap;  align-items: center; align-content: center; justify-items:center; justify-content:center; flex: 0 1 calc(33% - 20px)">
+        @(Html.Kendo().Button().Name("btnregisterNewClient")
+            .Content("<div style='display:flex;align-items:center; justify-content:space-between;'><img style='width:35px;height:35px;text-align:center; position:relative; top:0px;' src='/Content/Icons/registration.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>Kreiraj novog izdavaoca</div></div>")
+            .HtmlAttributes(new { onclick = "registerClient()", type = "button", style = "width:220px; height:50px;" })
+            )
+    </div>
 
 </form>
 

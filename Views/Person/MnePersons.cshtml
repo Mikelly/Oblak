@@ -5,12 +5,15 @@
     ViewBag.Title = "Prijave gostiju";
     Layout = "~/Views/Shared/_LayoutINV.cshtml";
     var admin = User.IsInRole("TouristOrgAdmin");
+    var control = User.IsInRole("TouristOrgControllor");
+    
 }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
 
 <script type="text/javascript">
     
+    var dsbl = '@((bool)admin == false && (bool)control == false)';
     var group = '@(ViewBag.Group ?? 0)';
     
     $(document).ready(function () {
@@ -314,8 +317,19 @@
                     var grid = $('#mnePersonGrid').data('kendoGrid');
                     grid.dataSource.read();
                     Swal.fire({ icon: 'success', title: 'Gost je uspješno prijavljen!', confirmButtonText: `U redu`, timer: 1500 });
+                    disableResTax();
                 }
                 //var wnd = $("#wndGuest").data("kendoWindow");                
+            }
+        });
+    }
+
+    function disableResTax() {
+        
+        $("#mnePersonForm").find(":input").each(function () {
+            var widget = $(this).data("kendoWidgetInstance");
+            if (widget && widget.enable) {
+                widget.enable(false); 
             }
         });
     }
@@ -490,6 +504,7 @@
             url: `/print-direct?id=${id}&tax='R'`,
             type: 'GET',
             success: function (data) {
+                disableResTax();
                 window.postMessage({
                     type: "FROM_PAGE",
                     message: {

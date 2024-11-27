@@ -12,8 +12,8 @@ using Oblak.Data;
 namespace Oblak.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241112190322_Budva4")]
-    partial class Budva4
+    [Migration("20241118165315_BudvaPartner")]
+    partial class BudvaPartner
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -251,6 +251,9 @@ namespace Oblak.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<int>("CountryId")
+                        .HasColumnType("int");
+
                     b.Property<int>("DueDays")
                         .HasColumnType("int");
 
@@ -258,6 +261,9 @@ namespace Oblak.Migrations
                         .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("HasContract")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -295,6 +301,8 @@ namespace Oblak.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CountryId");
 
                     b.HasIndex("PartnerId");
 
@@ -402,6 +410,34 @@ namespace Oblak.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("CodeLists");
+                });
+
+            modelBuilder.Entity("Oblak.Data.Country", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CountryCode2")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("CountryCode3")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("CountryName")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Countries");
                 });
 
             modelBuilder.Entity("Oblak.Data.Document", b =>
@@ -693,10 +729,8 @@ namespace Oblak.Migrations
                     b.Property<int>("AgencyId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Country")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int?>("CountryId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
@@ -734,6 +768,8 @@ namespace Oblak.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AgencyId");
+
+                    b.HasIndex("CountryId");
 
                     b.ToTable("Excursions");
                 });
@@ -1519,6 +1555,9 @@ namespace Oblak.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<int?>("ResidenceTaxDaysLate")
+                        .HasColumnType("int");
+
                     b.Property<string>("ResidenceTaxDescription")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
@@ -1564,8 +1603,15 @@ namespace Oblak.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("ExcursionTaxPrice")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("PartnerId")
                         .HasColumnType("int");
@@ -1585,10 +1631,13 @@ namespace Oblak.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<decimal>("ResTaxFullPrice")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<string>("PaymentName")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
-                    b.Property<decimal>("ResTaxHalfPrice")
+                    b.Property<decimal>("TaxPrice")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("TaxType")
@@ -2580,10 +2629,8 @@ namespace Oblak.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Country")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int?>("CountryId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("LegalEntityId")
                         .HasColumnType("int");
@@ -2645,6 +2692,8 @@ namespace Oblak.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CountryId");
 
                     b.HasIndex("LegalEntityId");
 
@@ -3009,11 +3058,19 @@ namespace Oblak.Migrations
 
             modelBuilder.Entity("Oblak.Data.Agency", b =>
                 {
+                    b.HasOne("Oblak.Data.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Oblak.Data.Partner", "Partner")
                         .WithMany()
                         .HasForeignKey("PartnerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Country");
 
                     b.Navigation("Partner");
                 });
@@ -3092,7 +3149,13 @@ namespace Oblak.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Oblak.Data.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId");
+
                     b.Navigation("Agency");
+
+                    b.Navigation("Country");
                 });
 
             modelBuilder.Entity("Oblak.Data.ExcursionInvoice", b =>
@@ -3501,6 +3564,10 @@ namespace Oblak.Migrations
 
             modelBuilder.Entity("Oblak.Data.Vessel", b =>
                 {
+                    b.HasOne("Oblak.Data.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId");
+
                     b.HasOne("Oblak.Data.LegalEntity", "LegalEntity")
                         .WithMany()
                         .HasForeignKey("LegalEntityId");
@@ -3510,6 +3577,8 @@ namespace Oblak.Migrations
                         .HasForeignKey("PartnerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Country");
 
                     b.Navigation("LegalEntity");
 

@@ -38,7 +38,7 @@
 				</ul>
 			</div>
 		</li>
-		@if (User.IsInRole("TouristOrg"))
+		@if (User.IsInRole("NauticalTax"))
 		{
 			<li aria-haspopup="true">
 				<a href="#"><i class="fa fa-anchor"></i>Nautička taksa</a>
@@ -52,7 +52,10 @@
 					</ul>
 				</div>
 			</li>
+		}
 
+		@if (User.IsInRole("ExcursionTax"))
+		{
 			<li aria-haspopup="true">
 				<a href="#"><i class="fa fa-bus"></i>Izletnička taksa</a>
 				<div class="grid-container3">
@@ -94,6 +97,7 @@
 					<li><a href="/check-in-points"><i class="fa fa-shop"></i>Check-In Points</a></li>
 					@if(User.IsInRole("TouristOrgAdmin")) 
 					{
+						<li><a href="/restax-fee"><i class="fa fa-percent"></i>Provizije</a></li>
 						<li><a href="/users"><i class="fa fa-users"></i>Korisnici</a></li>					
 						<li><a href="/logs"><i class="fa fa-history"></i>Aktivnosti</a></li>					
 					}

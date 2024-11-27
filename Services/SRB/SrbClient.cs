@@ -450,7 +450,7 @@ public class SrbClient : Register
 
     public override Task<List<CodeList>> CodeLists()
     {
-        return _db.CodeLists.Where(a => a.Country == Data.Enums.CountryType.SRB.ToString()).ToListAsync();
+        return _db.CodeLists.Where(a => a.Country == Data.Enums.CountryEnum.SRB.ToString()).ToListAsync();
     }
 
     public void SetUp(LegalEntity legalEntity)

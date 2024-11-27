@@ -11,7 +11,7 @@ namespace Oblak.Data
         public int Id { get; set; }
                 
         [StringLength(450)]
-        public CountryType Country { get; set; }
+        public CountryEnum Country { get; set; }
 
         [StringLength(450)]
         public string Name { get; set; }

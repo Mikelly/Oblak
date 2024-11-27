@@ -11,8 +11,41 @@ namespace Oblak.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AlterColumn<string>(
+                name: "Description",
+                table: "ResTaxTypes",
+                type: "nvarchar(450)",
+                maxLength: 450,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(max)");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "PaymentStatus",
+                table: "ResTaxPaymentTypes",
+                type: "nvarchar(450)",
+                maxLength: 450,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(max)");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Description",
+                table: "ResTaxFees",
+                type: "nvarchar(450)",
+                maxLength: 450,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(max)");
+
             migrationBuilder.AddColumn<int>(
                 name: "NauticalTaxProperty",
+                table: "Partners",
+                type: "int",
+                nullable: true);
+
+            migrationBuilder.AddColumn<int>(
+                name: "ResidenceTaxDaysLate",
                 table: "Partners",
                 type: "int",
                 nullable: true);
@@ -23,6 +56,15 @@ namespace Oblak.Migrations
                 type: "bit",
                 nullable: false,
                 defaultValue: false);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Address",
+                table: "Municipalities",
+                type: "nvarchar(450)",
+                maxLength: 450,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(max)");
 
             migrationBuilder.AddColumn<bool>(
                 name: "IsRegistered",
@@ -53,35 +95,58 @@ namespace Oblak.Migrations
                 type: "int",
                 nullable: true);
 
+            migrationBuilder.AlterColumn<string>(
+                name: "UserModified",
+                table: "FiscalRequests",
+                type: "nvarchar(450)",
+                maxLength: 450,
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(max)",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "UserCreated",
+                table: "FiscalRequests",
+                type: "nvarchar(450)",
+                maxLength: 450,
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(max)",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "PaymentType",
+                table: "DocumentPayments",
+                type: "nvarchar(450)",
+                maxLength: 450,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(max)");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "VatExempt",
+                table: "DocumentItems",
+                type: "nvarchar(450)",
+                maxLength: 450,
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(max)",
+                oldNullable: true);
+
             migrationBuilder.CreateTable(
-                name: "Agencies",
+                name: "Countries",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    PartnerId = table.Column<int>(type: "int", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    TIN = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    TAX = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
-                    Address = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    PhoneNo = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
-                    ContactPerson = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
-                    DueDays = table.Column<int>(type: "int", nullable: false),
-                    UserCreated = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
-                    UserCreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UserModified = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
-                    UserModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    CountryCode2 = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
+                    CountryCode3 = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
+                    CountryName = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Agencies", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Agencies_Partners_PartnerId",
-                        column: x => x.PartnerId,
-                        principalTable: "Partners",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                    table.PrimaryKey("PK_Countries", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -91,7 +156,7 @@ namespace Oblak.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     PartnerId = table.Column<int>(type: "int", nullable: false),
-                    VesselType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    VesselType = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     LowerLimitLength = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     UpperLimitLength = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
@@ -114,6 +179,38 @@ namespace Oblak.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PartnerTaxSettings",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PartnerId = table.Column<int>(type: "int", nullable: false),
+                    TaxType = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    UseAdvancePayment = table.Column<bool>(type: "bit", nullable: false),
+                    PaymentDescription = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    PaymentAccount = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    PaymentAddress = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    PaymentName = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    Model = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    TaxPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    UserCreated = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    UserCreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UserModified = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    UserModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PartnerTaxSettings", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PartnerTaxSettings_Partners_PartnerId",
+                        column: x => x.PartnerId,
+                        principalTable: "Partners",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "TaxPaymentTypes",
                 columns: table => new
                 {
@@ -122,8 +219,8 @@ namespace Oblak.Migrations
                     PartnerId = table.Column<int>(type: "int", nullable: false),
                     IsBalanced = table.Column<bool>(type: "bit", nullable: false),
                     IsCash = table.Column<bool>(type: "bit", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Note = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    Note = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
                     UserCreated = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
                     UserCreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UserModified = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
@@ -141,6 +238,45 @@ namespace Oblak.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Agencies",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PartnerId = table.Column<int>(type: "int", nullable: false),
+                    CountryId = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    TIN = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    TAX = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    Address = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    PhoneNo = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    ContactPerson = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    DueDays = table.Column<int>(type: "int", nullable: false),
+                    HasContract = table.Column<bool>(type: "bit", nullable: false),
+                    UserCreated = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    UserCreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UserModified = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    UserModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Agencies", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Agencies_Countries_CountryId",
+                        column: x => x.CountryId,
+                        principalTable: "Countries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Agencies_Partners_PartnerId",
+                        column: x => x.PartnerId,
+                        principalTable: "Partners",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Vessels",
                 columns: table => new
                 {
@@ -148,10 +284,10 @@ namespace Oblak.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     PartnerId = table.Column<int>(type: "int", nullable: false),
                     LegalEntityId = table.Column<int>(type: "int", nullable: true),
-                    VesselType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    VesselType = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
                     Name = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
                     Registration = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    Country = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CountryId = table.Column<int>(type: "int", nullable: true),
                     Length = table.Column<int>(type: "int", nullable: false),
                     OwnerName = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
                     OwnerAddress = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
@@ -167,6 +303,11 @@ namespace Oblak.Migrations
                 {
                     table.PrimaryKey("PK_Vessels", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_Vessels_Countries_CountryId",
+                        column: x => x.CountryId,
+                        principalTable: "Countries",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_Vessels_LegalEntities_LegalEntityId",
                         column: x => x.LegalEntityId,
                         principalTable: "LegalEntities",
@@ -180,6 +321,52 @@ namespace Oblak.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ExcursionInvoices",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    AgencyId = table.Column<int>(type: "int", nullable: false),
+                    CheckInPointId = table.Column<int>(type: "int", nullable: false),
+                    InvoiceNo = table.Column<int>(type: "int", nullable: false),
+                    InvoiceNumber = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    BillingPeriodFrom = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    BillingPeriodTo = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    BillingNote = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    Note = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    TaxPaymentTypeId = table.Column<int>(type: "int", nullable: false),
+                    BillingAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    BillingFee = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    UserCreated = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    UserCreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UserModified = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    UserModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ExcursionInvoices", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ExcursionInvoices_Agencies_AgencyId",
+                        column: x => x.AgencyId,
+                        principalTable: "Agencies",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ExcursionInvoices_CheckInPoints_CheckInPointId",
+                        column: x => x.CheckInPointId,
+                        principalTable: "CheckInPoints",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ExcursionInvoices_TaxPaymentTypes_TaxPaymentTypeId",
+                        column: x => x.TaxPaymentTypeId,
+                        principalTable: "TaxPaymentTypes",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Excursions",
                 columns: table => new
                 {
@@ -188,6 +375,7 @@ namespace Oblak.Migrations
                     AgencyId = table.Column<int>(type: "int", nullable: false),
                     Date = table.Column<DateTime>(type: "datetime2", nullable: false),
                     VoucherNo = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    CountryId = table.Column<int>(type: "int", nullable: true),
                     NoOfPersons = table.Column<int>(type: "int", nullable: false),
                     ExcursionTaxExempt = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
                     ExcursionTaxAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
@@ -205,6 +393,11 @@ namespace Oblak.Migrations
                         principalTable: "Agencies",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Excursions_Countries_CountryId",
+                        column: x => x.CountryId,
+                        principalTable: "Countries",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -238,51 +431,6 @@ namespace Oblak.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ExcursionInvoices",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    AgencyId = table.Column<int>(type: "int", nullable: false),
-                    CheckInPointId = table.Column<int>(type: "int", nullable: false),
-                    InvoiceNo = table.Column<int>(type: "int", nullable: false),
-                    InvoiceNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    DueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    BillingPeriodFrom = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    BillingPeriodTo = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    BillingNote = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Note = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    TaxPaymentTypeId = table.Column<int>(type: "int", nullable: false),
-                    BillingAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    BillingFee = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    UserCreated = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
-                    UserCreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UserModified = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
-                    UserModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ExcursionInvoices", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ExcursionInvoices_Agencies_AgencyId",
-                        column: x => x.AgencyId,
-                        principalTable: "Agencies",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_ExcursionInvoices_CheckInPoints_CheckInPointId",
-                        column: x => x.CheckInPointId,
-                        principalTable: "CheckInPoints",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ExcursionInvoices_TaxPaymentTypes_TaxPaymentTypeId",
-                        column: x => x.TaxPaymentTypeId,
-                        principalTable: "TaxPaymentTypes",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
                 name: "TaxPayments",
                 columns: table => new
                 {
@@ -294,7 +442,8 @@ namespace Oblak.Migrations
                     TaxType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     TransactionDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    Note = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PaymentRef = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    Note = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
                     UserCreated = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
                     UserCreatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UserModified = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
@@ -329,7 +478,7 @@ namespace Oblak.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ExcursionInvoiceId = table.Column<int>(type: "int", nullable: false),
                     Date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Voucher = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    VoucherNo = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     TaxExempt = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     NoOfPersons = table.Column<int>(type: "int", nullable: false),
                     Price = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
@@ -347,7 +496,8 @@ namespace Oblak.Migrations
                         name: "FK_ExcursionInvoiceItems_ExcursionInvoices_ExcursionInvoiceId",
                         column: x => x.ExcursionInvoiceId,
                         principalTable: "ExcursionInvoices",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -364,6 +514,11 @@ namespace Oblak.Migrations
                 name: "IX_Groups_VesselId",
                 table: "Groups",
                 column: "VesselId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Agencies_CountryId",
+                table: "Agencies",
+                column: "CountryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Agencies_PartnerId",
@@ -396,8 +551,18 @@ namespace Oblak.Migrations
                 column: "AgencyId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Excursions_CountryId",
+                table: "Excursions",
+                column: "CountryId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_NauticalTax_PartnerId",
                 table: "NauticalTax",
+                column: "PartnerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PartnerTaxSettings_PartnerId",
+                table: "PartnerTaxSettings",
                 column: "PartnerId");
 
             migrationBuilder.CreateIndex(
@@ -429,6 +594,11 @@ namespace Oblak.Migrations
                 name: "IX_TaxPaymentTypes_PartnerId",
                 table: "TaxPaymentTypes",
                 column: "PartnerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Vessels_CountryId",
+                table: "Vessels",
+                column: "CountryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Vessels_LegalEntityId",
@@ -487,6 +657,9 @@ namespace Oblak.Migrations
                 name: "NauticalTax");
 
             migrationBuilder.DropTable(
+                name: "PartnerTaxSettings");
+
+            migrationBuilder.DropTable(
                 name: "TaxPaymentBalances");
 
             migrationBuilder.DropTable(
@@ -503,6 +676,9 @@ namespace Oblak.Migrations
 
             migrationBuilder.DropTable(
                 name: "TaxPaymentTypes");
+
+            migrationBuilder.DropTable(
+                name: "Countries");
 
             migrationBuilder.DropIndex(
                 name: "IX_Groups_CheckInPointId",
@@ -521,6 +697,10 @@ namespace Oblak.Migrations
                 table: "Partners");
 
             migrationBuilder.DropColumn(
+                name: "ResidenceTaxDaysLate",
+                table: "Partners");
+
+            migrationBuilder.DropColumn(
                 name: "UseAdvancePayment",
                 table: "Partners");
 
@@ -536,6 +716,42 @@ namespace Oblak.Migrations
                 name: "VesselId",
                 table: "Groups");
 
+            migrationBuilder.AlterColumn<string>(
+                name: "Description",
+                table: "ResTaxTypes",
+                type: "nvarchar(max)",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(450)",
+                oldMaxLength: 450);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "PaymentStatus",
+                table: "ResTaxPaymentTypes",
+                type: "nvarchar(max)",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(450)",
+                oldMaxLength: 450);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Description",
+                table: "ResTaxFees",
+                type: "nvarchar(max)",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(450)",
+                oldMaxLength: 450);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Address",
+                table: "Municipalities",
+                type: "nvarchar(max)",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(450)",
+                oldMaxLength: 450);
+
             migrationBuilder.AlterColumn<int>(
                 name: "CheckInPointId",
                 table: "Groups",
@@ -544,6 +760,45 @@ namespace Oblak.Migrations
                 defaultValue: 0,
                 oldClrType: typeof(int),
                 oldType: "int",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "UserModified",
+                table: "FiscalRequests",
+                type: "nvarchar(max)",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(450)",
+                oldMaxLength: 450,
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "UserCreated",
+                table: "FiscalRequests",
+                type: "nvarchar(max)",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(450)",
+                oldMaxLength: 450,
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "PaymentType",
+                table: "DocumentPayments",
+                type: "nvarchar(max)",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(450)",
+                oldMaxLength: 450);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "VatExempt",
+                table: "DocumentItems",
+                type: "nvarchar(max)",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(450)",
+                oldMaxLength: 450,
                 oldNullable: true);
         }
     }

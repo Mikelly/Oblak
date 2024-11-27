@@ -1,0 +1,62 @@
+﻿@using Oblak.Models.Api;
+@using Oblak.Models.EFI;
+
+@{
+    ViewBag.Title = "Izdavaoci";
+    Layout = "~/Views/Shared/_LayoutINV.cshtml";
+}
+
+<script type="text/javascript">
+    $(document).ready(function () {
+
+    });
+
+</script>
+
+<div style="position:absolute; top:25px; bottom: 15px; left: 15px; right:15px;">
+    @(Html.Kendo().Grid<ResTaxFeeDto>()
+        .Name("ResTaxFeeGrid")
+        .ToolBar(t => t.Create().Text("Novi zapis"))
+        .Columns(columns =>
+        {
+            columns.Command(command => { 
+                command.Edit().Text(" ").UpdateText(" ").CancelText(" "); 
+                command.Destroy().Text(" "); 
+            })
+            .Width(70);            
+            columns.ForeignKey(g => g.ResTaxPaymentTypeId, ViewBag.PaymentTypes as SelectList).Title("Način plaćanja").Width("20%").HtmlAttributes(new { style = "text-align:left;" });
+            columns.Bound(g => g.Description).Title("Opis").Width("30%").HtmlAttributes(new { style = "text-align:left;" });
+            columns.Bound(g => g.LowerLimit).Title("Iznos od").Format("{0:n2}").Width("15%").HtmlAttributes(new { style = "text-align:right;" });
+            columns.Bound(g => g.UpperLimit).Title("Iznos do").Format("{0:n2}").Width("15%").HtmlAttributes(new { style = "text-align:right;" });
+            columns.Bound(g => g.FeeAmount).Title("Iznos Provizije").Format("{0:n2}").Width("10%").HtmlAttributes(new { style = "text-align:right;" });
+            columns.Bound(g => g.FeePercentage).Title("Procenat provizije").Format("{0:n2}").Width("10%").HtmlAttributes(new { style = "text-align:right;" });            
+        })
+        .Pageable(p => p.Refresh(true))
+        .Sortable()
+        .Selectable()
+        .Scrollable()
+        .Filterable()
+        .HtmlAttributes(new { style = "height:100%;" })
+        .Editable(editable => editable.Mode(GridEditMode.InLine))
+        .DataSource(ds => ds
+            .Ajax()
+            .PageSize(20)
+            .Model(m =>
+            {
+                m.Id(g => g.Id);
+                m.Field(g => g.Id).Editable(false);
+                m.Field(g => g.ResTaxPaymentTypeId);
+                m.Field(g => g.Description);
+                m.Field(g => g.LowerLimit);
+                m.Field(g => g.LowerLimit);
+                m.Field(g => g.FeeAmount);
+                m.Field(g => g.FeePercentage);
+        })
+        .Events(e => e.Sync("genericSync").RequestEnd("genericRequestEnd"))
+        .Create(a => a.Action("Create", "ResTaxFee"))
+        .Read(a => a.Action("Read", "ResTaxFee"))
+        .Update(a => a.Action("Update", "ResTaxFee"))
+        .Destroy(a => a.Action("Destroy", "ResTaxFee"))
+        )
+    )
+</div>

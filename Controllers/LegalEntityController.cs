@@ -16,6 +16,7 @@ using System.Net.Http.Headers;
 using System.IO;
 using SkiaSharp;
 using Oblak.Data.Api;
+using Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure;
 
 
 namespace Oblak.Controllers
@@ -68,7 +69,7 @@ namespace Oblak.Controllers
         [Route("register-client", Name = "registerClient")]
         public IActionResult RegisterClient(string name, string type, string address, string tin, bool isInVat, bool isAdministered, bool isPassThrough, 
             string propertyName, string propertyExternalId, string propertyAddress, string propertyType, string propertyMunicipality, string propertyPlace,
-            string phoneNumber, string documentNumber)
+            string phoneNumber, string email, string documentNumber, string regNumber, string regDate)
         {
             var username = _context.User.Identity.Name;
             var appUser = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username);
@@ -92,6 +93,7 @@ namespace Oblak.Controllers
             newLegalEntity.TIN = tin;
             newLegalEntity.PartnerId = appUser.PartnerId;
             newLegalEntity.PhoneNumber = phoneNumber;
+            newLegalEntity.Email = email;
             newLegalEntity.DocumentNumber = documentNumber;
             if (isAdministered) newLegalEntity.AdministratorId = legalEntity.Id;
             if (isPassThrough) newLegalEntity.PassThroughId = legalEntity.Id;
@@ -131,6 +133,13 @@ namespace Oblak.Controllers
                 prop.Name = propertyName;
 				prop.Address = propertyAddress;				
 				prop.Type = propertyType;
+                prop.RegNumber = regNumber;
+
+                if (regDate != null)
+                {
+                    DateTime.TryParseExact(regDate, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeLocal, out var date);
+                    prop.RegDate = date;
+                }
 			}
 
             if (errors != string.Empty) return Json(new BasicDto() { error = errors, info = "" });
@@ -220,7 +229,6 @@ namespace Oblak.Controllers
             var appUser = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username);
 
             var data = await _db.LegalEntities.Where(x => x.PartnerId == appUser.PartnerId).OrderByDescending(x => x.Id).ToListAsync();
-
 
             var legalEntities = _mapper.Map<List<LegalEntityViewModel>>(data);
 

@@ -1280,6 +1280,10 @@ namespace Oblak.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("Email")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("FirstName")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
@@ -1524,6 +1528,9 @@ namespace Oblak.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<bool>("CheckRegistered")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Country")
                         .IsRequired()
                         .HasMaxLength(450)
@@ -1551,6 +1558,9 @@ namespace Oblak.Migrations
                     b.Property<string>("ResidenceTaxAccount")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("ResidenceTaxDaysLate")
+                        .HasColumnType("int");
 
                     b.Property<string>("ResidenceTaxDescription")
                         .HasMaxLength(450)
@@ -2828,6 +2838,10 @@ namespace Oblak.Migrations
 
                     b.Property<int?>("ResTaxPaymentTypeId")
                         .HasColumnType("int");
+
+                    b.Property<string>("ResTaxStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("ResTaxTypeId")
                         .HasColumnType("int");

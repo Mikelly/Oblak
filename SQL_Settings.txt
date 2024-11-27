@@ -1,4 +1,5 @@
-﻿INSERT INTO PartnerTaxSettings ([PartnerId], [TaxType], [UseAdvancePayment], [PaymentDescription], [PaymentAccount], [PaymentAddress], [TaxPrice]) VALUES
-(3, 'ResidenceTax', 0, N'Uplata boravišne takse', '510-8093205-10', '85000 Bar', 1),
-(4, 'ResidenceTax', 0, N'Uplata boravišne takse', '510-8173205-85', '85310 Budva', 1),
-(4, 'ExcursionTax', 0, N'Uplata izletničke takse', '510-8173208-76', '85310 Budva', 1)
+﻿INSERT INTO PartnerTaxSettings ([PartnerId], [TaxType], [UseAdvancePayment], [PaymentDescription], [PaymentAccount], [PaymentAddress], [PaymentName], [Code], [Model], [TaxPrice]) VALUES
+(3, 'ResidenceTax', 0, N'Uplata boravišne takse', '510-8093205-10', '85000 Bar', 'TO Bar', '18', '330', 1),
+(4, 'ResidenceTax', 0, N'Uplata boravišne takse', '510-8173205-85', '85310 Budva', 'TO Budva', '18', '030', 1),
+(4, 'ExcursionTax', 0, N'Uplata izletničke takse', '510-8173208-76', '85310 Budva', 'TO Budva', '18', '030', 1),
+(4, 'NauticalTax', 0, N'Uplata izletničke takse', '510-8173208-76', '85310 Budva', 'TO Budva', '18', '030', 1)

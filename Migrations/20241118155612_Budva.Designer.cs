@@ -12,8 +12,8 @@ using Oblak.Data;
 namespace Oblak.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241115122238_Budva12")]
-    partial class Budva12
+    [Migration("20241118155612_Budva")]
+    partial class Budva
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1554,6 +1554,9 @@ namespace Oblak.Migrations
                     b.Property<string>("ResidenceTaxAccount")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("ResidenceTaxDaysLate")
+                        .HasColumnType("int");
 
                     b.Property<string>("ResidenceTaxDescription")
                         .HasMaxLength(450)

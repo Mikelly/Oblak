@@ -47,11 +47,11 @@ namespace Oblak.Controllers
             var username = _context.User.Identity.Name;
             var appUser = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username);
 
-            if (appUser.PartnerId == 3)
+            if (appUser.PartnerId == 3 || appUser.PartnerId == 4)
             {
                 ViewBag.IsAdministered = true;
                 ViewBag.IsPassThrough = true;
-                ViewBag.Opstina = "3";
+                ViewBag.Opstina = appUser.PartnerId  == 3 ? "3" : "6";
             }
             else
             {

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.InkML;
 using Kendo.Mvc.Extensions;
 using Kendo.Mvc.UI;
 using Microsoft.AspNetCore.Identity;
@@ -102,56 +103,13 @@ public class UserController : Controller
 
             await _db.SaveChangesAsync();
                         
-            var users = _db.Users.Where(a => a.PartnerId == _legalEntity.PartnerId).Select(a => new UserDto
-            {
-                Id = a.Id,
-                UserName = a.UserName,
-                Email = a.Email,
-                PersonName = a.PersonName,
-                PartnerId = a.PartnerId,
-                LegalEntityId = a.LegalEntityId,
-                Type = a.Type.ToString(),
-                CheckInPointId = a.CheckInPointId
-            });
-
-            return Json(await users.ToDataSourceResultAsync(request));
+            return Json(new[] { _mapper.Map(user, dto) }.ToDataSourceResult(request, ModelState));
         }
         catch (Exception ex)
         {
             return Json(new DataSourceResult { Errors = ex.Message });
         }
-    }
-
-    [HttpPost]
-    public async Task<ActionResult> Create(CheckInPointDto dto, [DataSourceRequest] DataSourceRequest request)
-    {
-        try
-        {
-            var cp = new CheckInPoint();
-            _mapper.Map(dto, cp);
-            cp.PartnerId = _legalEntity.PartnerId ?? 1;                
-            _db.Add(cp);
-            await _db.SaveChangesAsync();
-
-            var users = _db.Users.Where(a => a.PartnerId == _legalEntity.PartnerId).Select(a => new UserDto
-            {
-                Id = a.Id,
-                UserName = a.UserName,
-                Email = a.Email,
-                PersonName = a.PersonName,
-                PartnerId = a.PartnerId,
-                LegalEntityId = a.LegalEntityId,
-                Type = a.Type.ToString(),
-                CheckInPointId = a.CheckInPointId
-            });
-
-            return Json(await users.ToDataSourceResultAsync(request));
-        }
-        catch (Exception ex)
-        {
-            return Json(new DataSourceResult { Errors = ex.Message });
-        }
-    }
+    }    
 
     [HttpPost]
     public async Task<ActionResult> Destroy([DataSourceRequest] DataSourceRequest request, UserDto dto)

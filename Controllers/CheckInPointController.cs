@@ -77,9 +77,7 @@ namespace Oblak.Controllers
 
                 await _db.SaveChangesAsync();
 
-                var checkpoints = _db.CheckInPoints.Where(a => a.PartnerId == _legalEntity.PartnerId);
-                var data = _mapper.Map<List<CheckInPointDto>>(checkpoints);
-                return Json(await data.ToDataSourceResultAsync(request));
+                return Json(new[] { _mapper.Map(cp, dto) }.ToDataSourceResult(request, ModelState));
             }
             catch (Exception ex)
             {
@@ -98,9 +96,7 @@ namespace Oblak.Controllers
                 _db.Add(cp);
                 await _db.SaveChangesAsync();
 
-                var checkpoints = _db.CheckInPoints.Where(a => a.PartnerId == _legalEntity.PartnerId);
-                var data = _mapper.Map<List<CheckInPointDto>>(checkpoints);
-                return Json(await data.ToDataSourceResultAsync(request));
+                return Json(new[] { _mapper.Map(cp, dto) }.ToDataSourceResult(request, ModelState));
             }
             catch (Exception ex)
             {
@@ -119,9 +115,7 @@ namespace Oblak.Controllers
                 {                    
                     _db.CheckInPoints.Remove(cp);
                     _db.SaveChanges();
-                    var checkpoints = _db.CheckInPoints.Where(a => a.PartnerId == _legalEntity.PartnerId);
-                    var data = _mapper.Map<List<CheckInPointDto>>(checkpoints);
-                    return Json(await data.ToDataSourceResultAsync(request));                    
+                    return Json(new[] { _mapper.Map(cp, dto) }.ToDataSourceResult(request, ModelState));
                 }
                 else
                 {

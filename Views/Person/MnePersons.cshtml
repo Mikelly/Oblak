@@ -326,10 +326,31 @@
 
     function disableResTax() {
         
+        $("#mnePersonForm").find(".k-datepicker, .k-dropdownlist, .k-numerictextbox, .k-combobox, .k-autocomplete, .k-textbox").each(function () {
+            var widget = $(this).data("kendoDatePicker") ||
+                $(this).data("kendoDropDownList") ||
+                $(this).data("kendoNumericTextBox") ||
+                $(this).data("kendoComboBox") ||
+                $(this).data("kendoTextBox") ||
+                $(this).data("kendoMultiColumnComboBox") ||
+                $(this).data("kendoAutoComplete");
+
+            if (widget && typeof widget.enable === "function") {
+                widget.enable(false);
+            }
+        });
+
         $("#mnePersonForm").find(":input").each(function () {
-            var widget = $(this).data("kendoWidgetInstance");
-            if (widget && widget.enable) {
-                widget.enable(false); 
+            var widget = $(this).data("kendoDatePicker") ||
+                $(this).data("kendoDropDownList") ||
+                $(this).data("kendoNumericTextBox") ||
+                $(this).data("kendoComboBox") ||
+                $(this).data("kendoTextBox") ||
+                $(this).data("kendoMultiColumnComboBox") ||
+                $(this).data("kendoAutoComplete");
+
+            if (widget && typeof widget.enable === "function") {
+                widget.enable(false);
             }
         });
     }
@@ -462,7 +483,7 @@
             if (checkOut != null) checkOut = kendo.toString(checkOut, "dd.MM.yyyy");
 
             $.ajax({
-                url: `/person/restax?property=${property}&resType=${taxType}&payType=${payType}&birthDate=${birthDate}&checkIn=${checkIn}&checkOut=${checkOut}`,
+                url: `/person/restax?property=${property}&resType=${taxType}&payType=${payType}&birthDate=${birthDate}&checkIn=${checkIn}&checkOut=${checkOut}&group=${group}`,
                 type: 'GET',
                 success: function (data) {
                     $('#ResTaxTypeId').data('kendoDropDownList').value(data.resType);
@@ -501,7 +522,7 @@
         var id = $('#Id').val();
         
         $.ajax({
-            url: `/print-direct?id=${id}&tax='R'`,
+            url: `/print-direct?id=${id}&g=${group}&tax='R'`,
             type: 'GET',
             success: function (data) {
                 disableResTax();

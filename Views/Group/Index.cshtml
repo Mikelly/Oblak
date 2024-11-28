@@ -94,8 +94,10 @@
 
         // Get selected Property and PropertyUnit values from dropdowns
         var propertyId = $("#PropertyId").data("kendoMultiColumnComboBox").value();
-        var vesselId = $("#VesselId").data("kendoMultiColumnComboBox").value();
-        var nauticalLegalEntityId = $("#NauticalLegalEntityId").data("kendoMultiColumnComboBox").value();
+        var vesselId = null;
+        if ($("#VesselId").length > 0) vesselId = $("#VesselId").data("kendoMultiColumnComboBox").value();
+        var nauticalLegalEntityId = null;
+        if ($("#NauticalLegalEntityId") > 0) nauticalLegalEntityId = $("#NauticalLegalEntityId").data("kendoMultiColumnComboBox").value();
         var resTaxPaymentTypeId = $("#ResTaxPaymentTypeId").data("kendoDropDownList").value();
 
         // Add dates, PropertyId, and PropertyUnitId to the groupDto
@@ -115,6 +117,8 @@
             success: function (data) {
                 // Handle success if needed
                 console.log(data);
+
+                debugger;
 
                 window.location = `/persons?groupid=${data}`;
 

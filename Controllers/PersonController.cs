@@ -176,6 +176,43 @@ namespace Oblak.Controllers
             return Ok();
         }
 
+        void ParseMrz(MrzDto mrz, MnePersonEnrichedDto dto, List<CodeList> codeLists, int? vesselId, int? groupId)
+        {
+            var country = codeLists.Where(a => a.Type == "drzava" && a.ExternalId == mrz.DocIssuer.Replace("<", "")).FirstOrDefault();
+            dto.PersonType = country.ExternalId == "MNE" ? "1" : "4";
+            dto.LastName = mrz.HolderNamePrimary;
+            dto.FirstName = mrz.HolderNameSecondary;
+            dto.Nationality = mrz.HolderNationality;
+            dto.BirthDate = mrz.HolderDateOfBirthDate();
+            dto.Gender = mrz.HolderSex == "M" ? "M" : "Z";
+            dto.PersonalNumber = mrz.HolderNumber;
+            dto.DocumentCountry = country.ExternalId;
+            dto.DocumentIssuer = mrz.DocAuthority;
+            dto.DocumentNumber = (mrz.DocNumber ?? "").Replace("<", "");
+            dto.DocumentValidTo = mrz.DocExpiryDate();
+            dto.DocumentType = mrz.DocType == "IcaoTd1" || mrz.DocType == "IcaoTd2" ? "2" : "1";
+            dto.CheckIn = DateTime.Now;
+            dto.CheckOut = DateTime.Now.AddDays(1);
+            dto.BirthCountry = country.ExternalId;
+            dto.PermanentResidenceCountry = country.ExternalId;
+            dto.BirthPlace = country.Name;
+            dto.PermanentResidenceAddress = country.Name;
+            dto.PermanentResidencePlace = country.Name;
+            dto.DocumentIssuer = country.ExternalId;
+            var restax = ResTaxFoo(null, null, dto.BirthDate, dto.CheckIn, dto.CheckOut, vesselId != null, groupId != null);
+            dto.ResTaxTypeId = restax.ResType;
+            dto.ResTaxPaymentTypeId = restax.PayType;
+            dto.ResTaxAmount = restax.Tax;
+            dto.ResTaxFee = restax.Fee;
+            if (User.IsInRole("TouristOrg"))
+            {
+                if ((dto.PersonalNumber ?? "") == "")
+                {
+                    dto.PersonalNumber = dto.BirthDate.ToString("ddMMyyyy");
+                }
+            }
+        }
+
         public async Task<ActionResult> Get(int? person, int? group)
         {
             MrzDto mrz = null;
@@ -234,6 +271,11 @@ namespace Oblak.Controllers
                             dto.CheckIn = g.CheckIn.Value;
                             dto.CheckOut = g.CheckOut.Value;
                         }
+
+                        if (mrz != null)
+                        { 
+                            ParseMrz(mrz, dto, codeLists, g.VesselId, g.Id);
+                        }
                     }
                     else
                     {
@@ -260,7 +302,7 @@ namespace Oblak.Controllers
                             dto.PermanentResidenceAddress = country.Name;
                             dto.PermanentResidencePlace = country.Name;
                             dto.DocumentIssuer = country.ExternalId;
-                            var restax = ResTaxFoo(null, null, dto.BirthDate, dto.CheckIn, dto.CheckOut, g?.VesselId != null);
+                            var restax = ResTaxFoo(null, null, dto.BirthDate, dto.CheckIn, dto.CheckOut, false, false);
                             dto.ResTaxTypeId = restax.ResType;
                             dto.ResTaxPaymentTypeId = restax.PayType;
                             dto.ResTaxAmount = restax.Tax;
@@ -383,7 +425,7 @@ namespace Oblak.Controllers
             }
         }
 
-        public ActionResult ResTax(int? resType, int? payType, string birthDate, string checkIn, string checkOut)
+        public ActionResult ResTax(int? resType, int? payType, string birthDate, string checkIn, string checkOut, int group)
         {
             /*var p = _db.Properties.Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == property);
             var pid = p.LegalEntity.PartnerId;
@@ -454,7 +496,7 @@ namespace Oblak.Controllers
 				co = DateTime.ParseExact(checkOut, "dd.MM.yyyy", null);
 			}
 
-			var result = ResTaxFoo(resType, payType, bd, ci, co, false);
+			var result = ResTaxFoo(resType, payType, bd, ci, co, false, group != 0);
 
             return Json(new { tax = result.Tax, fee = result.Fee, resType = result.ResType, payType = result.PayType });
         }
@@ -469,9 +511,9 @@ namespace Oblak.Controllers
 		}
 
 
-		private RestTaxResult ResTaxFoo(int? resType, int? payType, DateTime? birthDate, DateTime? checkIn, DateTime? checkOut, bool nautical)
+		private RestTaxResult ResTaxFoo(int? resType, int? payType, DateTime? birthDate, DateTime? checkIn, DateTime? checkOut, bool nautical, bool group)
 		{
-            if (resType > 3)
+            if (new int[] { 1, 2, 27, 28 }.ToList().Contains(resType ?? 0) == false)
             {
                 return new RestTaxResult { Tax = 0, Fee = 0, ResType = resType.Value, PayType = 1 };
             }
@@ -518,7 +560,7 @@ namespace Oblak.Controllers
                 pt = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == pid).Where(a => a.PaymentStatus == ResTaxPaymentStatus.Cash).FirstOrDefault();
 			}
 
-            if (pt != null)
+            if (pt != null && group == false)
 			{
 				var resTaxFees = _db.ResTaxFees.Where(a => a.ResTaxPaymentTypeId == pt.Id).ToList();
 				if (resTaxFees.Any())
@@ -718,6 +760,20 @@ namespace Oblak.Controllers
                 }
 
                 var person = await _registerClient.Person(guestDto);
+
+                if (person.GroupId != null)
+                {
+                    var g = _db.Groups.FirstOrDefault(a => a.Id == person.GroupId);
+
+                    if (g.VesselId == null)
+                    {
+
+                        g.ResTaxAmount = _db.MnePersons.Where(a => a.GroupId == g.Id).Select(a => a.ResTaxAmount).Sum();
+                        g.ResTaxFee = (_registerClient as MneClient).CalcResTaxFee(g.ResTaxAmount ?? 0, _appUser.PartnerId ?? 1, g.ResTaxPaymentTypeId ?? 0);
+                        g.ResTaxCalculated = true;
+                        g.ResTaxPaid = false;
+                    }
+                }
 
                 return Json(new BasicDto() { info = "Uspješno sačuvan gost", error = "", id = person.Id });
             }
@@ -997,7 +1053,7 @@ namespace Oblak.Controllers
 
                 if (chekinpointid.HasValue) checkInPoint = chekinpointid;
 
-                var sql = $"EXEC TouristOrgPostOffice '{date.ToString("dd-MMM-yyyy", CultureInfo.InvariantCulture).ToUpper()}', {partner.Id}, {checkInPoint.Value}, '{taxName}', 0";
+                var sql = $"EXEC TouristOrgPostOffice '{date.ToString("dd-MMM-yyyy", CultureInfo.InvariantCulture).ToUpper()}', {partner.Id}, {checkInPoint.Value}, '{taxName}', 0, 0, 0";
                 var data = _db.Database.SqlQuery<PostOfficeData>(FormattableStringFactory.Create(sql)).ToList();
 
 
@@ -1116,9 +1172,15 @@ namespace Oblak.Controllers
             public string code { get; set; } = "030";
         }
 
+        private string IntOrNull(int? v)
+        {
+            if (v.HasValue) return v.Value.ToString();
+            else return "NULL";
+        }
+
         [HttpGet]
         [Route("print-direct")]
-        public IActionResult PrintDirect(int id, string tax = "R")
+        public IActionResult PrintDirect(int? id, int? g, int? inv, string tax = "R")
         {
             (TaxType taxType, string taxDesc) = DecodeTaxType(tax);
             taxDesc = taxDesc.ToAscii();
@@ -1127,12 +1189,15 @@ namespace Oblak.Controllers
             var partner = _db.Partners.FirstOrDefault(x => x.Id == _appUser.PartnerId);
             var settings = _db.PartnerTaxSettings.Where(a => a.PartnerId == _appUser.PartnerId && a.TaxType == taxType).FirstOrDefault();
 
-			var sql = $"EXEC TouristOrgPostOffice '{DateTime.Now.Date.ToString("dd-MMM-yyyy", CultureInfo.InvariantCulture).ToUpper()}', {partner.Id}, {0}, '{taxName}', {id}";
+			var sql = $"EXEC TouristOrgPostOffice '{DateTime.Now.Date.ToString("dd-MMM-yyyy", CultureInfo.InvariantCulture).ToUpper()}', {partner.Id}, {0}, '{taxName}', {id ?? 0}, {g ?? 0}, {inv ?? 0}";
 			var po = _db.Database.SqlQuery<PostOfficeData>(FormattableStringFactory.Create(sql)).ToList().FirstOrDefault();
 
-            var person = _db.MnePersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.LegalEntity).Include(a => a.CheckInPoint).FirstOrDefault(a => a.Id == id);
-            person.ResTaxStatus = ResTaxStatus.Closed;
-            _db.SaveChanges();
+            if (id.HasValue)
+            {
+                var person = _db.MnePersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.LegalEntity).Include(a => a.CheckInPoint).FirstOrDefault(a => a.Id == id);
+                person.ResTaxStatus = ResTaxStatus.Closed;
+                _db.SaveChanges();
+            }
             
             //var po = _db.Database.SqlQuery<PostOfficeData>($"EXEC TouristOrgPostOffice {DateTime.Now.Date.ToString("dd-MMM-yyyy")}, {partner.Id}, {0}, '{taxName}', {id}").FirstOrDefault();
 
@@ -1204,11 +1269,26 @@ namespace Oblak.Controllers
             data.to = $"{po.RecipientName}{(po.CheckInPointName != null ? Environment.NewLine + po.CheckInPointName : "")}";
             data.toacc = po.Account;
             data.refcre = po.TIN;
-            data.tax = (po.Tax).ToString("#,##0.00", new CultureInfo("de-DE"));
-            data.fee = (po.Fee).ToString("#,##0.00", new CultureInfo("de-DE"));
-            data.amount = (po.Tax + po.Fee).ToString("#,##0.00", new CultureInfo("de-DE"));
+            if (partner.SplitTaxAndFee)
+            {
+                data.tax = (po.Tax).ToString("#,##0.00", new CultureInfo("de-DE"));
+                data.fee = (po.Fee).ToString("#,##0.00", new CultureInfo("de-DE"));
+                data.amount = (po.Tax).ToString("#,##0.00", new CultureInfo("de-DE"));
+            }
+            else
+            {
+                data.tax = "";
+                data.fee = "";
+                data.amount = (po.Tax + po.Fee).ToString("#,##0.00", new CultureInfo("de-DE"));
+            }
             data.addr = settings.PaymentAddress;
-            data.desc = $"{po.Description}\n{po.Guest}";
+            data.desc = $"{po.Description}";
+            if (id.HasValue)
+            {
+                data.desc += $"\n{po.Guest}";
+                data.id = $"U{id}";
+            }
+            if (g.HasValue && g > 0) data.id = $"G{g}";
 
             /*
             data.from += Environment.NewLine + address;

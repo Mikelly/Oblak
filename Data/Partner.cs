@@ -47,6 +47,8 @@ namespace Oblak.Data
 
         public bool CheckRegistered { get; set; } = false;
 
+        public bool SplitTaxAndFee { get; set; } = false;
+
         public int? NauticalTaxProperty { get; set; }
 
         public List<LegalEntity> LegalEntities { get; set; }

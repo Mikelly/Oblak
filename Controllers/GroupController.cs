@@ -13,6 +13,7 @@ using Oblak.Models.rb90;
 using Oblak.Services;
 using Oblak.Services.MNE;
 using Oblak.Services.SRB;
+using SQLitePCL;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 
@@ -336,6 +337,9 @@ namespace RegBor.Controllers
                 _db.Groups.Add(newGroup);
 					_db.SaveChanges();
 				//}
+
+                _db.Entry(newGroup).Reference(a => a.Property).Load();
+                _db.Entry(newGroup).Collection(a => a.Persons).Load();
 
                 (_registerClient as MneClient)!.CalcGroupResTax(newGroup, ResTaxPaymentStatus.Card);
 

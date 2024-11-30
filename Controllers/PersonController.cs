@@ -513,7 +513,7 @@ namespace Oblak.Controllers
 
 		private RestTaxResult ResTaxFoo(int? resType, int? payType, DateTime? birthDate, DateTime? checkIn, DateTime? checkOut, bool nautical, bool group)
 		{
-            if (new int[] { 1, 2, 27, 28 }.ToList().Contains(resType ?? 0) == false)
+            if (new int[] { 1, 2, 3, 27, 28, 29 }.ToList().Contains(resType ?? 0) == false && resType != null)
             {
                 return new RestTaxResult { Tax = 0, Fee = 0, ResType = resType.Value, PayType = 1 };
             }
@@ -1145,7 +1145,9 @@ namespace Oblak.Controllers
                     new Telerik.Reporting.Parameter(){ Name = "PartnerId", Value = partner.Id },
                     new Telerik.Reporting.Parameter(){ Name = "CheckInPoint", Value = chekinpoint },
                     new Telerik.Reporting.Parameter(){ Name = "TaxType", Value = taxName },
-                    new Telerik.Reporting.Parameter(){ Name = "Id", Value = 0 },
+                    new Telerik.Reporting.Parameter(){ Name = "id", Value = 0 },
+                    new Telerik.Reporting.Parameter(){ Name = "g", Value = 0 },
+                    new Telerik.Reporting.Parameter(){ Name = "inv", Value = 0 },
                     new Telerik.Reporting.Parameter(){ Name = "CheckInPointName", Value = cp.Name },
                     new Telerik.Reporting.Parameter(){ Name = "TaxTypeName", Value = taxDesc },
                 },

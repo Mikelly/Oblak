@@ -3,6 +3,7 @@
 @{
     var dto = (MnePersonEnrichedDto)ViewBag.Dto;
     var group = (int)ViewBag.Group == 0;
+    var groupId = (int?)ViewBag.Group;
 }
 
 <script type="text/javascript">
@@ -49,6 +50,62 @@
             },
             complete: function (data) {
 
+            }
+        });
+    }
+
+    function extPay() {
+
+        var payid = $('#PayId').val();
+        var id = $('#Id').val();
+        var g = $('#GroupId').val();
+
+        $.ajax({
+            url: `/ext-pay/?payid=${payid}&p=${id}&g=${g}`,
+            type: 'GET',
+            success: function (data, status, jqXHR) {
+
+                const contentType = jqXHR.getResponseHeader("content-type") || "";
+
+                if (contentType.includes("application/json")) {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+                else if (contentType.includes("text/html")) {
+                    var wnd = $("#wndExtPay").data("kendoWindow");
+                    wnd.content(data);
+                    wnd.center().open();
+                }
+                else {
+                    console.log("Other response type:", contentType);
+                }
+            },
+            complete: function (data) {
+
+            }
+        });
+    }
+
+    function doExtPay() {
+        $.ajax({
+            url: '/do-ext-pay',
+            type: 'POST',
+            data: $('#extPayForm').serialize(),
+            success: function (data) {
+                if (data.id != null) {
+                    $('#PayId').val(data.id);
+                }
+                if (data.info != "") {                                        
+                    Swal.fire({ icon: 'success', title: 'Uspješno sačuvane izmjene!', confirmButtonText: `U redu`, timer: 1000 });                    
+                    var wnd = $("#wndExtPay").data("kendoWindow");
+                    wnd.close();
+                    
+                }
+                else if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }                
+            },
+            error: function () {
+                alert("Došlo je do greške.");
             }
         });
     }
@@ -513,5 +570,12 @@
                         <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/licence_color.png'/>
                         <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>POTVRDE<br/>O PRIJAVI<div>
                     </div>"))
+
+        @(Html.Kendo().Button().Name("btnExtPay")
+            .HtmlAttributes(new { type = "button", onclick = $"extPay()", style = "height:95px; width:95px; cursor:pointer; margin-left:10px;" })
+            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
+                <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/virman.png'/>
+                <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>EXTERNA<br/>UPLATA<div>
+                </div>"))
     }
 </div>

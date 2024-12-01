@@ -1,0 +1,58 @@
+﻿@using Oblak.Models.Api
+
+@{    
+    var dto = (TaxPaymentDto)ViewBag.Dto;
+}
+
+<form id="extPayForm">
+
+    @Html.Hidden("PayId", dto.Id)
+    @Html.Hidden("PersonId", dto.PersonId)
+    @Html.Hidden("GroupId", dto.GroupId)
+    @Html.Hidden("InvoiceId", dto.InvoiceId)
+
+    <div class="one">
+        <label for="TransactionDate">Datum uplate</label>
+        @(
+            Html.Kendo().DatePicker().Value(dto.TransactionDate ?? DateTime.Now)
+            .Name("TransactionDate")
+            .Enable((bool)ViewBag.Enable)
+            .HtmlAttributes(new { style = "width:100%; font-family: 'Noto Sans Mono', monospace;" })
+            )
+    </div>
+    <div class="one" style="margin-top:15px;">
+        <label for="Amount">Iznos uplate</label>
+        @(
+            Html.Kendo().NumericTextBox().Value((double)(dto.Amount ?? (decimal?)ViewBag.Amount ?? 0))
+            .Name("Amount")
+            .Min(0)
+            .Enable((bool)ViewBag.Enable)
+            .HtmlAttributes(new { style = "width:100%; font-family: 'Noto Sans Mono', monospace;" })
+            )
+    </div>
+    <div class="one" style="margin-top:15px;>
+        <label for="Reference">Broj uplatnice</label>
+        @(Html.Kendo().TextBox().Value((string)dto.Reference ?? "")
+            .Name("Reference")
+            .Enable((bool)ViewBag.Enable)
+            .HtmlAttributes(new { style = "width:320px;" })
+            )
+    </div>
+    <div class="one" style="margin-top:15px;>
+        <label for="TaxPaymentTypeId">Način plaćanja</label>
+        @(Html.Kendo().DropDownList()
+            .Name("TaxPaymentTypeId")            
+            .BindTo(ViewBag.PaymentTypes as SelectList)
+            .Value((dto.TaxPaymentTypeId != 0) ? dto.TaxPaymentTypeId.ToString() : ((ViewBag.PaymentTypes as SelectList).First().Value))
+            .HtmlAttributes(new { style = "width:310px;" })
+            )
+    </div>
+
+</form>
+
+@(Html.Kendo().Button().Name("btnDoExtPay")
+.HtmlAttributes(new { type = "button", onclick = $"doExtPay()", style = "height:95px; width:95px; cursor:pointer; margin-left:115px;margin-top:30px;" })
+.Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
+        <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/virman.png'/>
+        <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>EXTERNA<br/>UPLATA<div>
+        </div>"))

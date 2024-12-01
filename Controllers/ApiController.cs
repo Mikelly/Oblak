@@ -435,11 +435,14 @@ namespace Oblak.Controllers
 
             try
             {
-                foreach (MnePerson person in group.Persons)
+                if (_registerClient is MneClient)
                 {
-                    person.ResTaxStatus = ResTaxStatus.Closed;
+                    foreach (MnePerson person in group.Persons)
+                    {
+                        person.ResTaxStatus = ResTaxStatus.Closed;
+                    }
+                    db.SaveChanges();
                 }
-                db.SaveChanges();
 
                 await _registerClient.Initialize(legalEntity);
                 var result = await _registerClient.RegisterGroup(group, checkInDate, checkOutDate);

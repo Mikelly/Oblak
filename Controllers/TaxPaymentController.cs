@@ -177,11 +177,6 @@ namespace Oblak.Controllers
         {
             try
             {
-                if (User.IsInRole("TouristOrgAdmin") == false)
-                {
-                    return Unauthorized();
-                }
-
                 var pay = _db.TaxPayments.Find(dto.Id);                    
 
                 if (pay != null)
@@ -198,6 +193,129 @@ namespace Oblak.Controllers
                 {
                     return Json(new { error = "Uplata nije pronađena." });
                 }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { error = "Došlo je do greške prilikom brisanja uplate." });
+            }
+        }
+
+
+        [HttpGet("ext-pay")]
+        public async Task<ActionResult> ExtPay(int? payid, int? p, int? g, int? inv)
+        {
+            try
+            {
+                var person = _db.MnePersons.FirstOrDefault(a => a.Id == p);
+                var group = _db.Groups.FirstOrDefault(a => a.Id == g);
+                var invoice = _db.ExcursionInvoices.FirstOrDefault(a => a.Id == inv);
+
+                TaxPayment tp = null;
+
+                if (g.HasValue)
+                {
+                    tp = _db.TaxPayments.Where(a => a.GroupId == g).FirstOrDefault();
+                }
+                else if (p.HasValue)
+                {
+                    tp = _db.TaxPayments.Where(a => a.PersonId == p).FirstOrDefault();
+                }
+                else if (inv.HasValue)
+                {
+                    tp = _db.TaxPayments.Where(a => a.InvoiceId == inv).FirstOrDefault();
+                }                
+
+                var dto = new TaxPaymentDto();
+
+                ViewBag.Enable = true;
+
+                if (tp != null)
+                {
+                    dto = _mapper.Map<TaxPaymentDto>(tp);
+                    ViewBag.Amount = dto.Amount;
+                    if (person != null)
+                    {
+                        ViewBag.Enable = person.ResTaxStatus == ResTaxStatus.Open;
+                    }
+                }
+                else
+                {
+                    if (g.HasValue)
+                    {
+                        dto.GroupId = g;
+                    }
+                    else if (p.HasValue)
+                    {
+                        dto.PersonId = p;                        
+                    }
+                    else if (inv.HasValue)
+                    {
+                        dto.InvoiceId = inv;
+                    }
+                    ViewBag.Amount = group?.ResTaxAmount ?? person?.ResTaxAmount ?? invoice?.BillingAmount;
+                }
+
+                ViewBag.Dto = dto;
+
+                var sl = _db.TaxPaymentTypes
+                    .Where(a => a.PartnerId == _appUser.PartnerId)
+                    .Select(a =>
+                        new SelectListItem() { Text = a.Description, Value = a.Id.ToString() }
+                    ).ToList();
+
+                ViewBag.PaymentTypes = new SelectList(sl, "Value", "Text");
+
+                //if(User.IsInRole("TouristOrgCopntrollor") || User.IsInRole("TouristOrgAdmin"))
+                //{
+                //    ViewBag.Enable = true;
+                //}
+
+                return PartialView();
+                
+            }
+            catch (Exception ex)
+            {
+                return Json(new { error = "Došlo je do greške." });
+            }
+        }
+
+        [HttpPost("do-ext-pay")]
+        public async Task<ActionResult> DoExtPay(TaxPaymentDto dto)
+        {
+            try
+            {
+                int.TryParse(Request.Form["PayId"].ToString(), out int id);
+
+                TaxPayment pay = null;
+
+                if(id == 0)
+                {
+                    pay = new TaxPayment();
+                }   
+                else
+                {
+                    pay  = _db.TaxPayments.FirstOrDefault(a => a.Id == id);                    
+                }
+                
+                _mapper.Map(dto, pay);
+
+                if (dto.Id == null)
+                { 
+                    _db.Entry(pay).State = EntityState.Modified;
+                    _db.TaxPayments.Attach(pay);
+                }
+                else
+                {
+                    _db.TaxPayments.Add(pay);
+                }
+
+                pay.TaxPaymentTypeId = 1;
+
+                _db.SaveChanges();
+
+                return Json(new BasicDto() { info = "Uspješno sačuvana externa uplata.", error = "", id = pay.Id });
+                
+
             }
             catch (Exception ex)
             {

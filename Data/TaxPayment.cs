@@ -15,6 +15,12 @@ namespace Oblak.Data
 
         public int? AgencyId { get; set; }
 
+        public int? PersonId { get; set; }
+
+        public int? GroupId { get; set; }
+
+        public int? InvoiceId { get; set; }
+
         public int TaxPaymentTypeId { get; set; }
 
 		public TaxType TaxType { get; set; }
@@ -29,6 +35,8 @@ namespace Oblak.Data
         [StringLength(450)]
         public string? Note { get; set; }
 
+        [StringLength(450)]
+        public string? Reference { get; set; }
 
         #region Audit Properties
 

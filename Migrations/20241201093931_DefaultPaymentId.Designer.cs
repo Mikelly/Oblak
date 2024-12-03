@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oblak.Data;
 
@@ -11,9 +12,11 @@ using Oblak.Data;
 namespace Oblak.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241201093931_DefaultPaymentId")]
+    partial class DefaultPaymentId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2463,13 +2466,6 @@ namespace Oblak.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int?>("CheckInPointId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("Fee")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<int?>("GroupId")
                         .HasColumnType("int");
 
@@ -2522,8 +2518,6 @@ namespace Oblak.Migrations
 
                     b.HasIndex("AgencyId");
 
-                    b.HasIndex("CheckInPointId");
-
                     b.HasIndex("LegalEntityId");
 
                     b.HasIndex("TaxPaymentTypeId");
@@ -2549,9 +2543,8 @@ namespace Oblak.Migrations
                     b.Property<int?>("LegalEntityId")
                         .HasColumnType("int");
 
-                    b.Property<string>("TaxType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("TaxType")
+                        .HasColumnType("int");
 
                     b.Property<string>("UserCreated")
                         .HasMaxLength(450)
@@ -3560,10 +3553,6 @@ namespace Oblak.Migrations
                         .WithMany()
                         .HasForeignKey("AgencyId");
 
-                    b.HasOne("Oblak.Data.CheckInPoint", "CheckInPoint")
-                        .WithMany()
-                        .HasForeignKey("CheckInPointId");
-
                     b.HasOne("Oblak.Data.LegalEntity", "LegalEntity")
                         .WithMany()
                         .HasForeignKey("LegalEntityId");
@@ -3575,8 +3564,6 @@ namespace Oblak.Migrations
                         .IsRequired();
 
                     b.Navigation("Agency");
-
-                    b.Navigation("CheckInPoint");
 
                     b.Navigation("LegalEntity");
 

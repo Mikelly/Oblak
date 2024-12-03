@@ -60,7 +60,7 @@ namespace Oblak.Controllers
 
         private decimal CalcTaxFee(decimal amount)
         {
-            var type = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.PaymentStatus == ResTaxPaymentStatus.Cash).FirstOrDefault();
+            var type = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.PaymentStatus == TaxPaymentStatus.Cash).FirstOrDefault();
 
             var result = _db.ResTaxFees.Where(a => a.ResTaxPaymentTypeId == type!.Id && a.PartnerId == _appUser.PartnerId)
                 .Where(a => a.LowerLimit <= amount && amount <= a.UpperLimit)

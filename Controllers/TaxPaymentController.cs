@@ -15,6 +15,7 @@ using Oblak.Services.SRB;
 using System.Data;
 using Microsoft.Data.SqlClient;
 using Oblak.Helpers;
+using Microsoft.OpenApi.Writers;
 
 namespace Oblak.Controllers
 {
@@ -63,6 +64,8 @@ namespace Oblak.Controllers
                 Text = a.Description,
                 Value = a.Id.ToString()
             }).ToList();
+
+            ViewBag.CashPaymentIds = _db.TaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.TaxPaymentStatus == TaxPaymentStatus.Cash).Select(a => a.Id).ToArray();
 
             ViewBag.PaymentMethods = new SelectList(paymethods, "Value", "Text");
 
@@ -128,10 +131,16 @@ namespace Oblak.Controllers
             {
                 var pay = new TaxPayment();
 
-                _mapper.Map(dto, pay);
+                //_mapper.Map(dto, pay);
 
+                pay.Amount = dto.Amount ?? 0;
+                pay.TransactionDate = dto.TransactionDate ?? DateTime.Now;
+                pay.Note = dto.Note;
+                pay.Reference = dto.Reference;
                 pay.LegalEntityId = le;
                 pay.AgencyId = ag;
+                pay.CheckInPointId = _appUser.CheckInPointId;
+                pay.TaxPaymentTypeId = dto.TaxPaymentTypeId;
 
                 var tt = (TaxType)Enum.Parse(typeof(TaxType), taxType);
                 pay.TaxType = tt;
@@ -161,6 +170,8 @@ namespace Oblak.Controllers
 
                 balance.Balance = calc;
                 await _db.SaveChangesAsync();
+
+                ViewBag.Balance = calc;
 
                 var payments = _db.TaxPayments.Where(a => (a.LegalEntityId == (le ?? -1) || a.AgencyId == (ag ?? -1)) && a.TaxType == tt);
                 var data = _mapper.Map<List<TaxPaymentDto>>(payments);
@@ -257,13 +268,13 @@ namespace Oblak.Controllers
 
                 ViewBag.Dto = dto;
 
-                var sl = _db.TaxPaymentTypes
-                    .Where(a => a.PartnerId == _appUser.PartnerId)
-                    .Select(a =>
-                        new SelectListItem() { Text = a.Description, Value = a.Id.ToString() }
-                    ).ToList();
+                //var sl = _db.TaxPaymentTypes
+                //    .Where(a => a.PartnerId == _appUser.PartnerId)
+                //    .Select(a =>
+                //        new SelectListItem() { Text = a.Description, Value = a.Id.ToString() }
+                //    ).ToList();
 
-                ViewBag.PaymentTypes = new SelectList(sl, "Value", "Text");
+                //ViewBag.PaymentTypes = new SelectList(sl, "Value", "Text");
 
                 //if(User.IsInRole("TouristOrgCopntrollor") || User.IsInRole("TouristOrgAdmin"))
                 //{
@@ -309,7 +320,7 @@ namespace Oblak.Controllers
                     _db.TaxPayments.Add(pay);
                 }
 
-                pay.TaxPaymentTypeId = 1;
+                pay.TaxPaymentTypeId = _db.TaxPaymentTypes.FirstOrDefault(a => a.TaxPaymentStatus == TaxPaymentStatus.AlreadyPaid).Id;
 
                 _db.SaveChanges();
 

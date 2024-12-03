@@ -7,7 +7,11 @@ namespace Oblak.Mappers
     public class LegalEntityMapper : Profile
     {
         public LegalEntityMapper() {
-            CreateMap<LegalEntity, LegalEntityViewModel>().ReverseMap();
+            CreateMap<LegalEntity, LegalEntityViewModel>()
+                .ForMember(dest => dest.IsRegistered, opt => opt.MapFrom(src => src.Properties.All(a => a.RegDate != null && a.RegDate >= DateTime.Now.Date)))
+                ;
+
+            CreateMap<LegalEntityViewModel, LegalEntity>();
         }
     }
 }

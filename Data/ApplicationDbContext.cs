@@ -61,7 +61,7 @@ namespace Oblak.Data
 			modelBuilder.Entity<IdentityRoleClaim<string>>(b => { b.ToTable("RoleClaims"); });
 			modelBuilder.Entity<IdentityUserRole<string>>(b => { b.ToTable("UserRoles"); });
 
-            modelBuilder.Entity<ApplicationUser>().Property(a => a.Type).HasConversion(new EnumToStringConverter<UserType>());
+            modelBuilder.Entity<ApplicationUser>().Property(a => a.Type).HasConversion(new EnumToStringConverter<UserType>()).HasPrecision(450);
             
             modelBuilder.Entity<LegalEntity>().HasMany(a => a.Properties).WithOne(a => a.LegalEntity).OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<LegalEntity>().HasMany(a => a.Groups).WithOne(a => a.LegalEntity).OnDelete(DeleteBehavior.NoAction);
@@ -71,20 +71,24 @@ namespace Oblak.Data
 			modelBuilder.Entity<LegalEntity>().HasOne(a => a.Administrator).WithMany(a => a.Clients);
 
             modelBuilder.Entity<LegalEntity>().HasOne(a => a.PassThrough);
-            modelBuilder.Entity<LegalEntity>().Property(a => a.Type).HasConversion(new EnumToStringConverter<LegalEntityType>());
-            modelBuilder.Entity<LegalEntity>().Property(a => a.Country).HasConversion(new EnumToStringConverter<CountryEnum>());
+            modelBuilder.Entity<LegalEntity>().Property(a => a.Type).HasConversion(new EnumToStringConverter<LegalEntityType>()).HasPrecision(450);
+            modelBuilder.Entity<LegalEntity>().Property(a => a.Country).HasConversion(new EnumToStringConverter<CountryEnum>()).HasPrecision(450);
 
             modelBuilder.Entity<TaxPayment>().HasOne(a => a.TaxPaymentType);
             modelBuilder.Entity<TaxPayment>().HasOne(a => a.LegalEntity);
             modelBuilder.Entity<TaxPayment>().HasOne(a => a.Agency);
-            modelBuilder.Entity<TaxPayment>().Property(a => a.TaxType).HasConversion(new EnumToStringConverter<TaxType>());
+            modelBuilder.Entity<TaxPayment>().HasOne(a => a.CheckInPoint);
+            modelBuilder.Entity<TaxPayment>().Property(a => a.TaxType).HasConversion(new EnumToStringConverter<TaxType>()).HasPrecision(450);
             modelBuilder.Entity<TaxPayment>().Property(a => a.Amount).HasPrecision(18, 2);
+            modelBuilder.Entity<TaxPayment>().Property(a => a.Fee).HasPrecision(18, 2);
 
             modelBuilder.Entity<TaxPaymentBalance>().HasOne(a => a.LegalEntity);
             modelBuilder.Entity<TaxPaymentBalance>().HasOne(a => a.Agency);
             modelBuilder.Entity<TaxPaymentBalance>().Property(a => a.Balance).HasPrecision(18, 2);
+            modelBuilder.Entity<TaxPaymentBalance>().Property(a => a.TaxType).HasConversion(new EnumToStringConverter<TaxType>()).HasPrecision(450);
 
             modelBuilder.Entity<TaxPaymentType>().HasOne(a => a.Partner);
+            modelBuilder.Entity<TaxPaymentType>().Property(a => a.TaxPaymentStatus).HasConversion(new EnumToStringConverter<TaxPaymentStatus>()).HasPrecision(450);
 
             modelBuilder.Entity<Agency>().HasOne(a => a.Partner);
             modelBuilder.Entity<Agency>().HasOne(a => a.Country);
@@ -99,24 +103,24 @@ namespace Oblak.Data
             modelBuilder.Entity<ExcursionInvoice>().HasOne(a => a.CheckInPoint);
             modelBuilder.Entity<ExcursionInvoice>().Property(a => a.BillingAmount).HasPrecision(18, 2);
             modelBuilder.Entity<ExcursionInvoice>().Property(a => a.BillingFee).HasPrecision(18, 2);
-            modelBuilder.Entity<ExcursionInvoice>().Property(a => a.Status).HasConversion(new EnumToStringConverter<TaxInvoiceStatus>());
+            modelBuilder.Entity<ExcursionInvoice>().Property(a => a.Status).HasConversion(new EnumToStringConverter<TaxInvoiceStatus>()).HasPrecision(450);
 
             modelBuilder.Entity<ExcursionInvoiceItem>().HasOne(a => a.ExcursionInvoice).WithMany(a => a.ExcursionInvoiceItems).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<ExcursionInvoiceItem>().Property(a => a.Price).HasPrecision(18, 2);
             modelBuilder.Entity<ExcursionInvoiceItem>().Property(a => a.Amount).HasPrecision(18, 2);
 
-            modelBuilder.Entity<Partner>().Property(a => a.Country).HasConversion(new EnumToStringConverter<CountryEnum>());
-            modelBuilder.Entity<Partner>().Property(a => a.PartnerType).HasConversion(new EnumToStringConverter<PartnerType>());
+            modelBuilder.Entity<Partner>().Property(a => a.Country).HasConversion(new EnumToStringConverter<CountryEnum>()).HasPrecision(450);
+            modelBuilder.Entity<Partner>().Property(a => a.PartnerType).HasConversion(new EnumToStringConverter<PartnerType>()).HasPrecision(450);
 
-            modelBuilder.Entity<PartnerTaxSetting>().Property(a => a.TaxType).HasConversion(new EnumToStringConverter<TaxType>());
+            modelBuilder.Entity<PartnerTaxSetting>().Property(a => a.TaxType).HasConversion(new EnumToStringConverter<TaxType>()).HasPrecision(450);
             modelBuilder.Entity<PartnerTaxSetting>().Property(a => a.TaxPrice).HasPrecision(18, 2);
 
-            modelBuilder.Entity<Municipality>().Property(a => a.Country).HasConversion(new EnumToStringConverter<Enums.CountryEnum>());
+            modelBuilder.Entity<Municipality>().Property(a => a.Country).HasConversion(new EnumToStringConverter<Enums.CountryEnum>()).HasPrecision(450);
             modelBuilder.Entity<Municipality>().Property(a => a.ResidenceTaxAmount).HasPrecision(18, 2);
             modelBuilder.Entity<Municipality>().HasMany(a => a.Properties).WithOne(a => a.Municipality).OnDelete(DeleteBehavior.NoAction);
 
-			modelBuilder.Entity<LegalEntity>().Property(a => a.Type).HasConversion(new EnumToStringConverter<LegalEntityType>());
-            modelBuilder.Entity<LegalEntity>().Property(a => a.Country).HasConversion(new EnumToStringConverter<CountryEnum>());
+			modelBuilder.Entity<LegalEntity>().Property(a => a.Type).HasConversion(new EnumToStringConverter<LegalEntityType>()).HasPrecision(450);
+            modelBuilder.Entity<LegalEntity>().Property(a => a.Country).HasConversion(new EnumToStringConverter<CountryEnum>()).HasPrecision(450);
 
             modelBuilder.Entity<Property>().HasOne(a => a.LegalEntity);
             modelBuilder.Entity<Property>().HasOne(a => a.Municipality);
@@ -129,12 +133,12 @@ namespace Oblak.Data
 
             modelBuilder.Entity<PropertyUnit>().Property(a => a.Price).HasPrecision(12, 8);
 
-            modelBuilder.Entity<Partner>().Property(a => a.Country).HasConversion(new EnumToStringConverter<CountryEnum>());
+            modelBuilder.Entity<Partner>().Property(a => a.Country).HasConversion(new EnumToStringConverter<CountryEnum>()).HasPrecision(450);
 
             modelBuilder.Entity<Vessel>().HasOne(a => a.Partner);
             modelBuilder.Entity<Vessel>().HasOne(a => a.Country);
             modelBuilder.Entity<Vessel>().HasOne(a => a.LegalEntity);
-			modelBuilder.Entity<Vessel>().Property(a => a.VesselType).HasConversion(new EnumToStringConverter<VesselType>());
+			modelBuilder.Entity<Vessel>().Property(a => a.VesselType).HasConversion(new EnumToStringConverter<VesselType>()).HasPrecision(450);
 			
 			modelBuilder.Entity<Group>().HasOne(a => a.LegalEntity);
             modelBuilder.Entity<Group>().HasMany(a => a.Persons);
@@ -179,7 +183,7 @@ namespace Oblak.Data
 
             modelBuilder.Entity<ResTaxPaymentType>().HasOne(a => a.Partner);
 			modelBuilder.Entity<ResTaxPaymentType>().HasMany(a => a.PaymentFees).WithOne(a => a.ResTaxPaymentType).OnDelete(DeleteBehavior.NoAction); ;
-            modelBuilder.Entity<ResTaxPaymentType>().Property(a => a.PaymentStatus).HasConversion(new EnumToStringConverter<Enums.ResTaxPaymentStatus>());
+            modelBuilder.Entity<ResTaxPaymentType>().Property(a => a.PaymentStatus).HasConversion(new EnumToStringConverter<Enums.TaxPaymentStatus>());
 
 			modelBuilder.Entity<ResTaxFee>().HasOne(a => a.Partner);
 			modelBuilder.Entity<ResTaxFee>().HasOne(a => a.ResTaxPaymentType);

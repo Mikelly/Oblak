@@ -18,7 +18,7 @@ namespace Oblak.Data
         public string Description { get; set; }
 
         [StringLength(450)]
-		public ResTaxPaymentStatus PaymentStatus { get; set; }
+		public TaxPaymentStatus PaymentStatus { get; set; }
         
         [StringLength(450)]        
         public string Status { get; set; }

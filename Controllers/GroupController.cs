@@ -341,7 +341,7 @@ namespace RegBor.Controllers
                 _db.Entry(newGroup).Reference(a => a.Property).Load();
                 _db.Entry(newGroup).Collection(a => a.Persons).Load();
 
-                (_registerClient as MneClient)!.CalcGroupResTax(newGroup, ResTaxPaymentStatus.Card);
+                (_registerClient as MneClient)!.CalcGroupResTax(newGroup, TaxPaymentStatus.Card);
 
 				// Return success or any other relevant information
 				return Json(new[] { newGroup.Id });

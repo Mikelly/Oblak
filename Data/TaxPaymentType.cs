@@ -17,7 +17,9 @@ namespace Oblak.Data
 
         public bool IsCash { get; set; } = false;
 
-		[StringLength(450)]
+        public TaxPaymentStatus TaxPaymentStatus { get; set; }
+
+        [StringLength(450)]
         public string Description { get; set; }
 
 		[StringLength(450)]

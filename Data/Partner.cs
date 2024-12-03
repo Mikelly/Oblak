@@ -51,6 +51,8 @@ namespace Oblak.Data
 
         public int? NauticalTaxProperty { get; set; }
 
+        public int DefaultPaymentId { get; set; } = 1;
+
         public List<LegalEntity> LegalEntities { get; set; }
 
 

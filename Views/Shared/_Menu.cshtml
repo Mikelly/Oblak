@@ -93,10 +93,13 @@
 			<div class="grid-container3">
 				<ul>
 					<li><a href="/clients"><i class="fa fa-bed"></i>Izdavaoci</a></li>
-					<li><a href="/vessels"><i class="fa fa-ship"></i>Plovila</a></li>
-					<li><a href="/check-in-points"><i class="fa fa-shop"></i>Check-In Points</a></li>
+					@if (User.IsInRole("NauticalTax"))
+					{
+						<li><a href="/vessels"><i class="fa fa-ship"></i>Plovila</a></li>
+					}
 					@if(User.IsInRole("TouristOrgAdmin")) 
 					{
+						<li><a href="/check-in-points"><i class="fa fa-shop"></i>Check-In Points</a></li>
 						<li><a href="/restax-fee"><i class="fa fa-percent"></i>Provizije</a></li>
 						<li><a href="/users"><i class="fa fa-users"></i>Korisnici</a></li>					
 						<li><a href="/logs"><i class="fa fa-history"></i>Aktivnosti</a></li>					

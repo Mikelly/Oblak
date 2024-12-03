@@ -482,6 +482,15 @@
             if (checkIn != null) checkIn = kendo.toString(checkIn, "dd.MM.yyyy");
             if (checkOut != null) checkOut = kendo.toString(checkOut, "dd.MM.yyyy");
 
+            debugger;
+
+            if (alreadyPaidIds.includes(parseInt(payType))) {
+                $("#btnExtPay").data("kendoButton").enable(true);
+            }
+            else {
+                $("#btnExtPay").data("kendoButton").enable(false);
+            }
+
             $.ajax({
                 url: `/person/restax?property=${property}&resType=${taxType}&payType=${payType}&birthDate=${birthDate}&checkIn=${checkIn}&checkOut=${checkOut}&group=${group}`,
                 type: 'GET',
@@ -601,6 +610,8 @@
 
         var item = this.dataItem();
 
+        debugger;
+
         if (item) {
             $.ajax({
                 url: `/deferred?property=${item.Id}`,
@@ -610,13 +621,27 @@
                         var dropdownlist = $("#ResTaxPaymentTypeId").data("kendoDropDownList");
                         var dataSource = dropdownlist.dataSource;
 
-                        var itemToRemove = dataSource.data().find(function (item) {
-                            return item.Value === data.Id.toString();
+                        data.Ids.forEach(function (id) {
+                            var itemToRemove = dataSource.data().find(function (item) {
+                                return item.Value === id.toString();
+                            });
+
+                            if (itemToRemove) {
+                                dataSource.remove(itemToRemove);
+                            }
                         });
 
-                        if (itemToRemove) {
-                            dataSource.remove(itemToRemove);
+                        if (data.errInfo != "") {
+                            Swal.fire({ icon: 'error', title: data.errInfo, confirmButtonText: `U redu` });
                         }
+
+                        // var itemToRemove = dataSource.data().find(function (item) {
+                        //     return item.Value === data.Id.toString();
+                        // });
+
+                        // if (itemToRemove) {
+                        //     dataSource.remove(itemToRemove);
+                        // }
                     }
                 },
                 error: function () {
@@ -861,6 +886,6 @@
     .Modal(true)
     .Draggable(false)
     .Width(400)
-    .Height(600)
+    .Height(500)
     .HtmlAttributes(new { style = "padding:40px; font-size:16px" })
 )

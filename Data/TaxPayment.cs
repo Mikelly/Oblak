@@ -13,6 +13,8 @@ namespace Oblak.Data
 
 		public int? LegalEntityId { get; set; }
 
+        public int? CheckInPointId { get; set; }
+
         public int? AgencyId { get; set; }
 
         public int? PersonId { get; set; }
@@ -29,7 +31,9 @@ namespace Oblak.Data
 
 		public decimal Amount { get; set; }
 
-		[StringLength(450)]
+        public decimal? Fee { get; set; }
+
+        [StringLength(450)]
         public string? PaymentRef { get; set; }
 
         [StringLength(450)]
@@ -55,6 +59,8 @@ namespace Oblak.Data
 
 		
 		public LegalEntity? LegalEntity { get; set; }
+
+        public CheckInPoint? CheckInPoint { get; set; }
 
         public Agency? Agency { get; set; }
 

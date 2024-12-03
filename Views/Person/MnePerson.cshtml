@@ -12,6 +12,8 @@
         alert();
     }
 
+    var alreadyPaidIds = @System.Text.Json.JsonSerializer.Serialize((int[])ViewBag.AlreadyPaidIds)
+
     var isto = '@(ViewBag.TO == true)';
     var isdisable = '@(ViewBag.Disable == true)';
     var isgroup = '@((int)ViewBag.Group == 0)'
@@ -540,6 +542,14 @@
                 <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>PRETHODNI<br/>BORAVAK<div>
             </div>"))
 
+    @(Html.Kendo().Button().Name("btnExtPay")
+        .HtmlAttributes(new { type = "button", onclick = $"extPay()", style = "height:95px; width:95px; cursor:pointer; margin-left:10px;" })
+        .Enable((bool)ViewBag.AlreadyPaid)
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
+            <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/virman.png'/>
+            <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>EXTERNA<br/>UPLATA<div>
+            </div>"))
+
     <div style="flex-grow:1"></div>
     @if(dto.GroupId == null)
     {
@@ -570,12 +580,5 @@
                         <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/licence_color.png'/>
                         <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>POTVRDE<br/>O PRIJAVI<div>
                     </div>"))
-
-        @(Html.Kendo().Button().Name("btnExtPay")
-            .HtmlAttributes(new { type = "button", onclick = $"extPay()", style = "height:95px; width:95px; cursor:pointer; margin-left:10px;" })
-            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
-                <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/virman.png'/>
-                <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>EXTERNA<br/>UPLATA<div>
-                </div>"))
     }
 </div>

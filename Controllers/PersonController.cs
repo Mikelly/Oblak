@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DocumentFormat.OpenXml.Drawing.Charts;
+using Humanizer;
 using Kendo.Mvc.Extensions;
 using Kendo.Mvc.UI;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,7 @@ using Oblak.Services.SRB;
 using SQLitePCL;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using static SQLite.SQLite3;
@@ -223,6 +225,8 @@ namespace Oblak.Controllers
             }
             catch (Exception ex) { }
 
+            var partner = _db.Partners.FirstOrDefault(a => a.Id == _appUser.PartnerId);
+            
             var codeLists = await _db.CodeLists
                 .Where(a => a.Country == _appUser.LegalEntity.Country.ToString())
                 .ToListAsync();
@@ -338,11 +342,11 @@ namespace Oblak.Controllers
 
                     ViewBag.Nautical = g?.VesselId != null;
 
-                    if (_appUser.LegalEntity.PartnerId == 3)
+                    if (User.IsInRole("TouristOrg"))
                     {
                         if (dto.ResTaxPaymentTypeId == null)
                         {
-                            dto.ResTaxPaymentTypeId = 2;
+                            dto.ResTaxPaymentTypeId = partner.DefaultPaymentId;
                         }
                     }
                 }
@@ -365,12 +369,37 @@ namespace Oblak.Controllers
                     EntryPointCodeList = codeLists.Where(x => x.Type == "prelaz").ToList(),
                     PersonTypeCodeList = codeLists.Where(x => x.Type == "gost").ToList(),
                     VisaTypeCodeList = codeLists.Where(x => x.Type == "viza").ToList(),
-                    ResTaxPaymentTypes = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId).ToDictionary(a => a.Id.ToString(), b => b.Description),
-                    ResTaxTypes = _db.ResTaxTypes.Where(a => a.PartnerId == _appUser.PartnerId).ToDictionary(a => a.Id.ToString(), b => b.Description)
+                    ResTaxPaymentTypes = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.Status == "A").ToDictionary(a => a.Id.ToString(), b => b.Description),
+                    ResTaxTypes = _db.ResTaxTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.Status == "A").ToDictionary(a => a.Id.ToString(), b => b.Description)
 
                     //ResTaxStatuses = new Dictionary<string, string>() { { "Unpaid", "Nije plaćena" }, { "Cash", "Plaćena gotovinom" }, { "Card", "Plaćena karticom" }, { "BankAccount", "Plaćena virmanski" } },
                     //ResTaxTypes = new Dictionary<string, string>() { { "Unpaid", "Nije plaćena" }, { "Cash", "Plaćena gotovinom" }, { "Card", "Plaćena karticom" }, { "BankAccount", "Plaćena virmanski" } },
                 };
+
+
+
+
+                if (partner.CheckRegistered)
+                {
+                    if (dto.PropertyId != 0)
+                    {
+                        var legalEntity = _db.Properties.FirstOrDefault(a => a.Id == dto.PropertyId).LegalEntityId;
+                        var balance = _db.TaxPaymentBalances.Where(a => a.TaxType == TaxType.ResidenceTax && a.LegalEntityId == legalEntity).FirstOrDefault();
+                        var notRegistered = _db.Properties.Where(a => a.LegalEntityId == legalEntity).Any(a => a.RegDate == null || a.RegDate < DateTime.Now.Date);
+                        if (notRegistered)
+                        {
+                            model.ResTaxPaymentTypes = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && (a.PaymentStatus != TaxPaymentStatus.Unpaid || a.PaymentStatus == TaxPaymentStatus.PaidInAdvance) && a.Status == "A").ToDictionary(a => a.Id.ToString(), b => b.Description);
+                        }
+                        else if (notRegistered == false && balance?.Balance <= 0)
+                        {
+                            model.ResTaxPaymentTypes = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.PaymentStatus != TaxPaymentStatus.Unpaid && a.Status == "A").ToDictionary(a => a.Id.ToString(), b => b.Description);
+                        }
+                    }
+                }
+
+                var restaxpay = _db.ResTaxPaymentTypes.FirstOrDefault(a => a.Id == dto.ResTaxPaymentTypeId);
+                ViewBag.AlreadyPaid = restaxpay != null ? restaxpay.PaymentStatus == TaxPaymentStatus.AlreadyPaid : false;
+                ViewBag.AlreadyPaidIds = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.PaymentStatus == TaxPaymentStatus.AlreadyPaid && a.Status == "A").Select(a => a.Id).ToArray();
 
                 ViewBag.Dto = dto;
 
@@ -557,7 +586,7 @@ namespace Oblak.Controllers
 
             if (pt == null)
             {
-                pt = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == pid).Where(a => a.PaymentStatus == ResTaxPaymentStatus.Cash).FirstOrDefault();
+                pt = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == pid).Where(a => a.PaymentStatus == TaxPaymentStatus.Cash).FirstOrDefault();
 			}
 
             if (pt != null && group == false)
@@ -724,6 +753,7 @@ namespace Oblak.Controllers
                 }
 
                 var newGuest = _mapper.Map<MnePersonDto, MnePerson>(guestDto);
+                _db.Entry(newGuest).Reference(a => a.LegalEntity).Load();
                 var property = _db.Properties.Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == guestDto.PropertyId);
 
                 if (property == null)
@@ -909,6 +939,7 @@ namespace Oblak.Controllers
             {
                 var newGuest = _mapper.Map<SrbPersonDto, SrbPerson>(newGuestDto);
                 newGuest.LegalEntityId = _legalEntityId;
+                _db.Entry(newGuest).Reference(a => a.LegalEntity).Load();
 
                 var validation = _registerClient.Validate(newGuest, newGuest.CheckIn, null);
 
@@ -1053,7 +1084,7 @@ namespace Oblak.Controllers
 
                 if (chekinpointid.HasValue) checkInPoint = chekinpointid;
 
-                var sql = $"EXEC TouristOrgPostOffice '{date.ToString("dd-MMM-yyyy", CultureInfo.InvariantCulture).ToUpper()}', {partner.Id}, {checkInPoint.Value}, '{taxName}', 0, 0, 0";
+                var sql = $"EXEC TouristOrgPostOffice '{date.ToString("dd-MMM-yyyy", CultureInfo.InvariantCulture).ToUpper()}', {partner.Id}, {checkInPoint.Value}, '{taxName}', 0, 0, 0, 0";
                 var data = _db.Database.SqlQuery<PostOfficeData>(FormattableStringFactory.Create(sql)).ToList();
 
 
@@ -1148,6 +1179,7 @@ namespace Oblak.Controllers
                     new Telerik.Reporting.Parameter(){ Name = "id", Value = 0 },
                     new Telerik.Reporting.Parameter(){ Name = "g", Value = 0 },
                     new Telerik.Reporting.Parameter(){ Name = "inv", Value = 0 },
+                    new Telerik.Reporting.Parameter(){ Name = "pay", Value = 0 },
                     new Telerik.Reporting.Parameter(){ Name = "CheckInPointName", Value = cp.Name },
                     new Telerik.Reporting.Parameter(){ Name = "TaxTypeName", Value = taxDesc },
                 },
@@ -1182,7 +1214,7 @@ namespace Oblak.Controllers
 
         [HttpGet]
         [Route("print-direct")]
-        public IActionResult PrintDirect(int? id, int? g, int? inv, string tax = "R")
+        public IActionResult PrintDirect(int? id, int? g, int? inv, int? pay, string tax = "R")
         {
             (TaxType taxType, string taxDesc) = DecodeTaxType(tax);
             taxDesc = taxDesc.ToAscii();
@@ -1191,7 +1223,7 @@ namespace Oblak.Controllers
             var partner = _db.Partners.FirstOrDefault(x => x.Id == _appUser.PartnerId);
             var settings = _db.PartnerTaxSettings.Where(a => a.PartnerId == _appUser.PartnerId && a.TaxType == taxType).FirstOrDefault();
 
-			var sql = $"EXEC TouristOrgPostOffice '{DateTime.Now.Date.ToString("dd-MMM-yyyy", CultureInfo.InvariantCulture).ToUpper()}', {partner.Id}, {0}, '{taxName}', {id ?? 0}, {g ?? 0}, {inv ?? 0}";
+			var sql = $"EXEC TouristOrgPostOffice '{DateTime.Now.Date.ToString("dd-MMM-yyyy", CultureInfo.InvariantCulture).ToUpper()}', {partner.Id}, {0}, '{taxName}', {id ?? 0}, {g ?? 0}, {inv ?? 0}, {pay ?? 0}";
 			var po = _db.Database.SqlQuery<PostOfficeData>(FormattableStringFactory.Create(sql)).ToList().FirstOrDefault();
 
             if (id.HasValue)

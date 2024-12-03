@@ -1,11 +1,12 @@
 ﻿namespace Oblak.Data.Enums
 {
-    public enum ResTaxPaymentStatus
+    public enum TaxPaymentStatus
     {
         Unpaid,
         AlreadyPaid,
         Cash,
         Card,
-        BankAccount        
+        BankAccount,
+        PaidInAdvance
     }
 }

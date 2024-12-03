@@ -761,7 +761,7 @@ namespace Oblak.Services.MNE
                         mnePerson.ResTaxAmount = resTaxType.Amount * days;
                     }
 
-                    var resPaymentType = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.PaymentStatus == ResTaxPaymentStatus.Unpaid);
+                    var resPaymentType = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.PaymentStatus == TaxPaymentStatus.Unpaid);
                     mnePerson.ResTaxPaymentTypeId = resPaymentType.Id;
                 }
             }
@@ -779,7 +779,7 @@ namespace Oblak.Services.MNE
         }
 
 
-        public void CalcGroupResTax(Group g, ResTaxPaymentStatus pay = ResTaxPaymentStatus.Card)
+        public void CalcGroupResTax(Group g, TaxPaymentStatus pay = TaxPaymentStatus.Card)
         {
             var partner = _db.Properties.Include(x => x.LegalEntity).ThenInclude(x => x.Partner).Where(x => x.Id == g.PropertyId).FirstOrDefault().LegalEntity.Partner;
 
@@ -816,7 +816,7 @@ namespace Oblak.Services.MNE
                         if (days < 0) days = 0;
                         p.ResTaxAmount = resTaxType.Amount * days;
 
-                        var resPaymentType = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.PaymentStatus == ResTaxPaymentStatus.Card);
+                        var resPaymentType = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.PaymentStatus == TaxPaymentStatus.Card);
                         p.ResTaxPaymentTypeId = resPaymentType.Id;
 
                         p.ResTaxFee = CalcResTaxFee(p.ResTaxAmount ?? 0, partner.Id, p.ResTaxPaymentTypeId ?? 0);
@@ -893,6 +893,7 @@ namespace Oblak.Services.MNE
             _db.Entry(group).Collection(a => a.Persons).Load();
             foreach (MnePerson p in group.Persons)
             {
+                _db.Entry(p).Reference(a => a.LegalEntity).Load();
                 var one = Validate(p, checkInDate, checkOutDate);
                 if (one.ValidationErrors.Any()) result.Add(one);
             }
@@ -924,6 +925,12 @@ namespace Oblak.Services.MNE
             if (string.IsNullOrEmpty(p.DocumentNumber)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.DocumentNumber), Error = "Morate unijeti broj ličnog dokumenta gosta." });
             if (string.IsNullOrEmpty(p.DocumentCountry)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.DocumentCountry), Error = "Morate unijeti državu izdavanja ličnog dokumenta gosta." });
             if (string.IsNullOrEmpty(p.DocumentIssuer)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.DocumentIssuer), Error = "Morate unijeti izdavaoca ličnog dokumenta gosta." });
+
+            if (_legalEntity.PartnerId == 4 && p.PersonType == "4")
+            {
+                if (string.IsNullOrEmpty(p.EntryPoint)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.EntryPoint), Error = "Morate unijeti granični prelaz." });
+                if (p.EntryPointDate == null) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.EntryPointDate), Error = "Morate unijeti datum ulaska u Crnu Goru." });
+            }
 
             return err;
         }

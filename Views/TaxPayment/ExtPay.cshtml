@@ -29,16 +29,16 @@
             .Enable((bool)ViewBag.Enable)
             .HtmlAttributes(new { style = "width:100%; font-family: 'Noto Sans Mono', monospace;" })
             )
-    </div>
+    </div> 
     <div class="one" style="margin-top:15px;>
         <label for="Reference">Broj uplatnice</label>
         @(Html.Kendo().TextBox().Value((string)dto.Reference ?? "")
             .Name("Reference")
             .Enable((bool)ViewBag.Enable)
-            .HtmlAttributes(new { style = "width:320px;" })
+            .HtmlAttributes(new { style = "width:305px;" })
             )
     </div>
-    <div class="one" style="margin-top:15px;>
+@*     <div class="one" style="margin-top:15px;>
         <label for="TaxPaymentTypeId">Način plaćanja</label>
         @(Html.Kendo().DropDownList()
             .Name("TaxPaymentTypeId")            
@@ -46,7 +46,7 @@
             .Value((dto.TaxPaymentTypeId != 0) ? dto.TaxPaymentTypeId.ToString() : ((ViewBag.PaymentTypes as SelectList).First().Value))
             .HtmlAttributes(new { style = "width:310px;" })
             )
-    </div>
+    </div> *@
 
 </form>
 

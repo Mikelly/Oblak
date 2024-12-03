@@ -230,6 +230,7 @@ namespace Oblak.Controllers
 				parameters.Add(new Parameter() { Name = "id", Value = 0 });
                 parameters.Add(new Parameter() { Name = "g", Value = 0 });
                 parameters.Add(new Parameter() { Name = "inv", Value = 0 });
+                parameters.Add(new Parameter() { Name = "pay", Value = 0 });
             }
             else if (report == "ResTax")
             {

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oblak.Data;
 
@@ -11,9 +12,11 @@ using Oblak.Data;
 namespace Oblak.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241201180706_TaxPaymentCheckInPoint")]
+    partial class TaxPaymentCheckInPoint
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2466,10 +2469,6 @@ namespace Oblak.Migrations
                     b.Property<int?>("CheckInPointId")
                         .HasColumnType("int");
 
-                    b.Property<decimal?>("Fee")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<int?>("GroupId")
                         .HasColumnType("int");
 
@@ -2549,9 +2548,8 @@ namespace Oblak.Migrations
                     b.Property<int?>("LegalEntityId")
                         .HasColumnType("int");
 
-                    b.Property<string>("TaxType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("TaxType")
+                        .HasColumnType("int");
 
                     b.Property<string>("UserCreated")
                         .HasMaxLength(450)

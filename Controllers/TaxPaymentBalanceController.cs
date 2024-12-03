@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.VariantTypes;
 using Kendo.Mvc.Extensions;
 using Kendo.Mvc.UI;
 using Microsoft.AspNetCore.Mvc;
@@ -11,6 +12,7 @@ using Oblak.Models.Api;
 using Oblak.Services;
 using Oblak.Services.MNE;
 using Oblak.Services.SRB;
+using Telerik.SvgIcons;
 
 namespace Oblak.Controllers
 {
@@ -57,30 +59,59 @@ namespace Oblak.Controllers
         {
             //var calc = _db.GetBalance("ReseidenceTax", legalEntity, 0);
 
-            var le = 0;
+            var partner = _db.Partners.FirstOrDefault(a => a.Id == _appUser.PartnerId);
+            var errInfo = string.Empty;
 
-            if (legalEntity.HasValue)
+            if (partner.CheckRegistered)
             {
-                le = legalEntity.Value;
-            }
-            else if (Property.HasValue)
-            {
-                le = _db.Properties.FirstOrDefault(a => a.Id == Property)!.LegalEntityId;
+                var le = 0;
+
+                if (legalEntity.HasValue)
+                {
+                    le = legalEntity.Value;
+                }
+                else if (Property.HasValue)
+                {
+                    var prop = _db.Properties.FirstOrDefault(a => a.Id == Property);
+                    le = prop!.LegalEntityId;
+                    if (prop.RegDate != null)
+                    { 
+                        var date = prop.RegDate.Value;
+                        var diff = date - DateTime.Now.Date;
+                        if(diff.TotalDays <= 30 && diff.TotalDays > 0)
+                        {
+                            errInfo = $"Rješenje ističe za {diff.TotalDays.ToString("0")} dana, tj. {date.ToString("dd.MM.yyyy")}";
+                        }
+                    }
+                }
+                else
+                {
+
+                }
+
+                var balance = _db.TaxPaymentBalances.Where(a => a.TaxType == TaxType.ResidenceTax && a.LegalEntityId == le).FirstOrDefault();
+
+                var unpaid = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.PaymentStatus == TaxPaymentStatus.Unpaid).Select(a => a.Id).ToList();
+                var advance = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.PaymentStatus == TaxPaymentStatus.PaidInAdvance).Select(a => a.Id).ToList();
+
+                var not_registered = _db.Properties.Where(a => a.LegalEntityId == le).Any(a => a.RegDate == null || a.RegDate < DateTime.Now.Date);
+
+                if (balance?.Balance > 0 && not_registered == false)
+                {
+                    return Json(new { allowed = true, not_registered, errInfo, Ids = new List<int>() });
+                }
+                if (balance?.Balance <= 0 && not_registered == false)
+                {
+                    return Json(new { allowed = true, not_registered, errInfo, Ids = advance });
+                }
+                else
+                {
+                    return Json(new { allowed = false, not_registered, errInfo, Ids = unpaid.Union(advance).ToList() });
+                }
             }
             else
-            { 
-            
-            }
-            
-            var balance = _db.TaxPaymentBalances.Where(a => a.TaxType == TaxType.ResidenceTax && a.LegalEntityId == le).FirstOrDefault();
-
-            if (balance?.Balance > 0)
             {
-                return Json(new { allowed = true, Id = 4 });
-            }
-            else
-            {
-                return Json(new { allowed = false, Id = 4 });
+                return Json(new { allowed = true, registered = true, errInfo, Ids = new List<int>() });
             }
         }
 

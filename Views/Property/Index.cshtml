@@ -185,7 +185,7 @@
             @* col.Bound(g => g.PropertyName).Title("Naziv objekta").Width(100); *@
             columns.Bound(g => g.Address).Title("Adresa").Width("100%");
             columns.Bound(g => g.RegNumber).Title("Broj registr").Width(150);
-            columns.Bound(g => g.RegDate).Title("Datum registr").Width(150);
+            columns.Bound(g => g.RegDate).Title("Datum registr").Format("{0:dd.MM.yyyy}").EditorTemplateName("Date").Width(150);
             columns.ForeignKey(g => g.Type, tl).Title("Vrsta").Width(250);
             columns.ForeignKey(g => g.Status, ssl).Title("Status").Width(110);
 

@@ -137,7 +137,7 @@ namespace Oblak.Controllers
 
                 if (regDate != null)
                 {
-                    DateTime.TryParseExact(regDate, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeLocal, out var date);
+                    DateTime.TryParseExact(regDate, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var date);
                     prop.RegDate = date;
                 }
 			}
@@ -228,7 +228,7 @@ namespace Oblak.Controllers
             var username = _context.User.Identity.Name;
             var appUser = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username);
 
-            var data = await _db.LegalEntities.Where(x => x.PartnerId == appUser.PartnerId).OrderByDescending(x => x.Id).ToListAsync();
+            var data = await _db.LegalEntities.Include(a => a.Properties).Where(x => x.PartnerId == appUser.PartnerId).OrderByDescending(x => x.Id).ToListAsync();
 
             var legalEntities = _mapper.Map<List<LegalEntityViewModel>>(data);
 

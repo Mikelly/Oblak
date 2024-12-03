@@ -11,7 +11,7 @@ namespace Oblak.Helpers
         {
             using (var command = _db.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "EXEC CalcBalance @taxType, @legalEntity, @agency";
+                command.CommandText = "SELECT dbo.CalcBalance(@taxType, @legalEntity, @agency)";
                 command.CommandType = System.Data.CommandType.Text;
                 command.Parameters.Add(new SqlParameter("@taxType", SqlDbType.NVarChar) { Value = taxType });
                 command.Parameters.Add(new SqlParameter("@legalEntity", SqlDbType.Int) { Value = legalEntity ?? 0 });

@@ -261,6 +261,7 @@
                 }
                 if (data.info != "") {
                     var grid = $('#mnePersonGrid').data('kendoGrid');
+                    $('#groupdesc').load('/group-desc?groupid=@ViewBag.Group');
                     grid.dataSource.read();
                     Swal.fire({ icon: 'success', title: 'Uspješno sačuvane izmjene!', confirmButtonText: `U redu`, timer: 1000 });
                     if (isgroup == false) {

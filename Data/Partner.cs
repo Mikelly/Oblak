@@ -53,6 +53,11 @@ namespace Oblak.Data
 
         public int DefaultPaymentId { get; set; } = 1;
 
+        [StringLength(450)]
+        public string Culture { get; set; }
+
+        public bool UseEntryPointInGroup { get; set; } = false;
+
         public List<LegalEntity> LegalEntities { get; set; }
 
 

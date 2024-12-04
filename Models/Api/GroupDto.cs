@@ -14,7 +14,8 @@
         public DateTime? CheckOut { get; set; }        
         public string? Email { get; set; }        
         public string? Status { get; set; }
-
+        public string? EntryPoint { get; set; }
+        public DateTime? EntryPointDate { get; set; }
         public decimal ResTaxAmount { get; set; }
         public decimal ResTaxFee { get; set;}
         public bool ResTaxCalculated { get; set; }

@@ -5,6 +5,7 @@
     ViewBag.Title = "Prijave gostiju";
     Layout = "~/Views/Shared/_LayoutINV.cshtml";
     var nautical = (bool)ViewBag.Nautical;
+    var entrypoint = (bool)ViewBag.EntryPoint;
 }
 
 <script type="text/javascript">
@@ -92,13 +93,28 @@
         var formattedCheckInDate = kendo.toString(checkInDate, "yyyy-MM-ddTHH:mm:ss");
         var formattedCheckOutDate = kendo.toString(checkOutDate, "yyyy-MM-ddTHH:mm:ss");
 
+        debugger;
+
         // Get selected Property and PropertyUnit values from dropdowns
-        var propertyId = $("#PropertyId").data("kendoMultiColumnComboBox").value();
+        var propertyId = null;
+        if ($("#PropertyId").length > 0) propertyId = $("#PropertyId").data("kendoMultiColumnComboBox").value();
         var vesselId = null;
         if ($("#VesselId").length > 0) vesselId = $("#VesselId").data("kendoMultiColumnComboBox").value();
         var nauticalLegalEntityId = null;
-        if ($("#NauticalLegalEntityId") > 0) nauticalLegalEntityId = $("#NauticalLegalEntityId").data("kendoMultiColumnComboBox").value();
+        if ($("#NauticalLegalEntityId").length > 0) nauticalLegalEntityId = $("#NauticalLegalEntityId").data("kendoMultiColumnComboBox").value();
         var resTaxPaymentTypeId = $("#ResTaxPaymentTypeId").data("kendoDropDownList").value();
+        var entryPoint = null;
+        if ($("#EntryPoint").length > 0) entryPoint = $("#EntryPoint").data("kendoDropDownList").value();
+        var formattedEntryPointDate = null;
+        if ($("#EntryPointDate").length > 0) {
+            var entryPointDate = $("#EntryPointDate").data("kendoDatePicker").value();
+            formattedEntryPointDate = kendo.toString(entryPointDate, "yyyy-MM-ddTHH:mm:ss");
+        }
+
+        if (propertyId == null || propertyId == "") {
+            Swal.fire({ icon: 'error', title: 'Morate odabrati smještajni objekat', confirmButtonText: `U redu` });
+            return;
+        }
 
         // Add dates, PropertyId, and PropertyUnitId to the groupDto
         groupDto.CheckIn = formattedCheckInDate;
@@ -107,6 +123,8 @@
         groupDto.VesselId = vesselId
         groupDto.NauticalLegalEntityId = nauticalLegalEntityId;
         groupDto.ResTaxPaymentTypeId = resTaxPaymentTypeId;
+        groupDto.EntryPoint = entryPoint;
+        groupDto.EntryPointDate = formattedEntryPointDate;
 
         $.ajax({
             url: '@Url.Action("Create", "Group")',
@@ -472,8 +490,8 @@
     .Visible(false)
     .Modal(true)
     .Draggable(false)
-    .Width(450)
-    .Height(nautical ? 700 : 575)
+    .Width(500)
+    .Height(575 + (nautical ? 125 : 0) + (entrypoint ? 125 : 0))
     .HtmlAttributes(new { style = "padding:40px;" })
     .Content(@<text>
         <div id="newGroupForm">
@@ -558,35 +576,52 @@
         @(Html.Kendo().DatePicker()
                 .Name("checkInDate")
                 .HtmlAttributes(new { style = "width:100%" })
-                .Value(DateTime.Now) // Set a default value, or use any other default logic
-            )
+                .Value(DateTime.Now.Date))
+
         <br /><br />
 
         <label for="checkOutDate"><b>Očekivani datum odlaska:</b></label>
-            @(Html.Kendo().DatePicker()
+        @(Html.Kendo().DatePicker()
             .Name("checkOutDate")
             .HtmlAttributes(new { style = "width:100%;" })
-            .Value(DateTime.Now.AddDays(1)) // Set a default value, or use any other default logic
-            )
-        <br /><br />
-            <label for="email">E-mail:</label>
-            @(Html.Kendo().TextBox()
-            .Name("email")
-            .HtmlAttributes(new { style = "width:100%;" })
-            )
+            .Value(DateTime.Now.Date.AddDays(1)))
 
         <br /><br />
+            
+        <label for="email">E-mail:</label>
+        @(Html.Kendo().TextBox()
+            .Name("email")
+            .HtmlAttributes(new { style = "width:100%;" }))
+
+        @if(entrypoint)  
+        {
+            <br /> <br />
+
+            <label for="EntryPoint"><b>Mjesto ulaska u CG:</b></label>
+            @(Html.Kendo().DropDownList()
+                .Name("EntryPoint")
+                .BindTo(ViewBag.EntryPoints as SelectList)
+                .HtmlAttributes(new { id = "EntryPoint", style = "width:100%" }))
+
+            <br /> <br />
+
+        <label for="EntryPointDate"><b>Datum ulaska u CG:</b></label>
+        @(Html.Kendo().DatePicker()
+                .Name("EntryPointDate")
+                .HtmlAttributes(new { id = "EntryPointDate", style = "width:100%" })
+                .Value(DateTime.Now.Date))
+        }
 
         @if(User.IsInRole("TouristOrg"))
         {
+            <br /><br />
+
             <label for="resTaxPaymentType"><b>Naplata takse:</b></label>
             @(Html.Kendo().DropDownList()
                 .Name("ResTaxPaymentTypeId")
                 .BindTo(ViewBag.ResTaxPaymentTypes as SelectList)
-                .HtmlAttributes(new { id = "ResTaxPaymentTypeId", style = "width:100%" })                
-            )
-        }
-        
+                .HtmlAttributes(new { id = "ResTaxPaymentTypeId", style = "width:100%" }))
+        }        
 
         <br /><br /><br />
 

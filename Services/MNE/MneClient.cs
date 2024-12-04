@@ -729,9 +729,10 @@ namespace Oblak.Services.MNE
                     mnePerson.ResTaxAmount = resTaxType.Amount * days;
                 }
 
-                if (mnePerson.ResTaxPaymentTypeId != null)
+                if (mnePerson.ResTaxPaymentTypeId != null && mnePerson.GroupId != 0)
                 {
                     var resTaxPayment = _db.ResTaxPaymentTypes.Include(a => a.PaymentFees).FirstOrDefault(a => a.Id == mnePerson.ResTaxPaymentTypeId);
+
                     if (resTaxPayment.PaymentFees.Any())
                     {
                         var resTaxFee = resTaxPayment.PaymentFees.Where(a => a.LowerLimit <= mnePerson.ResTaxAmount && mnePerson.ResTaxAmount <= a.UpperLimit).FirstOrDefault();
@@ -741,6 +742,14 @@ namespace Oblak.Services.MNE
                             if (resTaxFee.FeePercentage.HasValue) mnePerson.ResTaxFee = resTaxFee.FeePercentage.Value / 100m * mnePerson.ResTaxAmount;
                         }
                     }
+                    else
+                    {
+                        mnePerson.ResTaxFee = 0;
+                    }
+                }
+                else
+                {
+                    mnePerson.ResTaxFee = 0;
                 }
             }
             else
@@ -797,7 +806,7 @@ namespace Oblak.Services.MNE
                     .FirstOrDefault();
 
                 g.ResTaxAmount = tax?.Amount;
-                g.ResTaxFee = CalcResTaxFee(g.ResTaxAmount ?? 0, partner.Id, g.ResTaxPaymentTypeId ?? 0);
+                //g.ResTaxFee = CalcResTaxFee(g.ResTaxAmount ?? 0, partner.Id, g.ResTaxPaymentTypeId ?? 0);
             }
             else
             {
@@ -818,10 +827,12 @@ namespace Oblak.Services.MNE
                         if (days < 0) days = 0;
                         p.ResTaxAmount = resTaxType.Amount * days;
 
-                        var resPaymentType = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.PaymentStatus == TaxPaymentStatus.Card);
-                        p.ResTaxPaymentTypeId = resPaymentType.Id;
+                        //var resPaymentType = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.PaymentStatus == TaxPaymentStatus.Card);
+                        //p.ResTaxPaymentTypeId = resPaymentType.Id;
 
-                        p.ResTaxFee = CalcResTaxFee(p.ResTaxAmount ?? 0, partner.Id, p.ResTaxPaymentTypeId ?? 0);
+                        //p.ResTaxFee = CalcResTaxFee(p.ResTaxAmount ?? 0, partner.Id, p.ResTaxPaymentTypeId ?? 0);
+
+                        p.ResTaxFee = 0;
 
                         _db.SaveChanges();
                     }
@@ -840,6 +851,10 @@ namespace Oblak.Services.MNE
                 g.ResTaxFee = CalcResTaxFee(g.ResTaxAmount ?? 0, partner.Id, g.ResTaxPaymentTypeId ?? 0);
                 g.ResTaxCalculated = true;
                 g.ResTaxPaid = false;
+            }
+            else
+            {
+                g.ResTaxFee = CalcResTaxFee(g.ResTaxAmount ?? 0, partner.Id, g.ResTaxPaymentTypeId ?? 0);
             }
 
             _db.SaveChanges();

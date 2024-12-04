@@ -274,6 +274,8 @@ namespace Oblak.Controllers
                             dto.PropertyName = g.Property.Name;
                             dto.CheckIn = g.CheckIn.Value;
                             dto.CheckOut = g.CheckOut.Value;
+                            dto.EntryPoint = g.EntryPoint;
+                            dto.EntryPointDate = g.EntryPointDate;
                         }
 
                         if (mrz != null)
@@ -1298,7 +1300,8 @@ namespace Oblak.Controllers
                 .Replace("\r", " ")
                 .Trim();
 
-            var ci = _appUser.PartnerId == 4 ? new CultureInfo("en-US") : new CultureInfo("de-DE");
+            var ci = new CultureInfo("de-DE");
+            if(partner.Culture != null) ci = new CultureInfo(partner.Culture);
 
             var data = new VirmanData();
             data.from = $"{po.PayeeName}\n{address}";

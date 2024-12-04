@@ -47,6 +47,11 @@ namespace Oblak.Data
         [StringLength(450)]
         public string Status { get; set; } = "A";
 
+        [StringLength(450)]
+        public string? EntryPoint { get; set; }
+
+        public DateTime? EntryPointDate { get; set; }
+
 		public int? ResTaxPaymentTypeId { get; set; }
 
 		public ResTaxPaymentType ResTaxPaymentType { get; set; }

@@ -62,6 +62,8 @@ namespace RegBor.Controllers
             var username = _context!.User!.Identity!.Name;
             var appUser = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username);
 
+            var partner = _db.Partners.Where(a => a.Id == appUser.PartnerId).FirstOrDefault();
+
             var sl = _db.ResTaxPaymentTypes
                 .Where(a => a.PartnerId == appUser.PartnerId)
                 .Select(a =>
@@ -69,6 +71,16 @@ namespace RegBor.Controllers
                 ).ToList();
 
             ViewBag.ResTaxPaymentTypes = new SelectList(sl, "Value", "Text");
+
+            var sl2 = _db.CodeLists
+                .Where(a => a.Country == "MNE" && a.Type == "prelaz")
+                .Select(a =>
+                    new SelectListItem() { Text = a.Name, Value = a.ExternalId.ToString() }
+                ).ToList();
+
+            ViewBag.EntryPoints = new SelectList(sl2, "Value", "Text");
+
+            ViewBag.EntryPoint = partner.UseEntryPointInGroup;
 
             return View();
 		}
@@ -321,9 +333,11 @@ namespace RegBor.Controllers
                     UnitId = groupDto.UnitId,
 					LegalEntityId = _legalEntityId,
                     VesselId = groupDto.VesselId,
+                    EntryPoint = groupDto.EntryPoint,
+                    EntryPointDate = groupDto.EntryPointDate,
                     NauticalLegalEntityId = groupDto.NauticalLegalEntityId,
                     ResTaxPaymentTypeId = groupDto.ResTaxPaymentTypeId,
-					Guid = new Guid().ToString(),
+					Guid = Guid.NewGuid().ToString(),
 					PropertyExternalId = groupDto.PropertyId,
                 };
 
@@ -339,9 +353,13 @@ namespace RegBor.Controllers
 				//}
 
                 _db.Entry(newGroup).Reference(a => a.Property).Load();
+                _db.Entry(newGroup).Reference(a => a.ResTaxPaymentType).Load();
                 _db.Entry(newGroup).Collection(a => a.Persons).Load();
 
-                (_registerClient as MneClient)!.CalcGroupResTax(newGroup, TaxPaymentStatus.Card);
+                var taxstatus = TaxPaymentStatus.AlreadyPaid;
+                if(newGroup.ResTaxPaymentType != null) taxstatus = newGroup.ResTaxPaymentType.PaymentStatus;
+
+                (_registerClient as MneClient)!.CalcGroupResTax(newGroup, taxstatus);
 
 				// Return success or any other relevant information
 				return Json(new[] { newGroup.Id });

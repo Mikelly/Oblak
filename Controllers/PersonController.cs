@@ -1298,6 +1298,8 @@ namespace Oblak.Controllers
                 .Replace("\r", " ")
                 .Trim();
 
+            var ci = _appUser.PartnerId == 4 ? new CultureInfo("en-US") : new CultureInfo("de-DE");
+
             var data = new VirmanData();
             data.from = $"{po.PayeeName}\n{address}";
             data.to = $"{po.RecipientName}{(po.CheckInPointName != null ? Environment.NewLine + po.CheckInPointName : "")}";
@@ -1305,15 +1307,15 @@ namespace Oblak.Controllers
             data.refcre = po.TIN;
             if (partner.SplitTaxAndFee)
             {
-                data.tax = (po.Tax).ToString("#,##0.00", new CultureInfo("de-DE"));
-                data.fee = (po.Fee).ToString("#,##0.00", new CultureInfo("de-DE"));
-                data.amount = (po.Tax).ToString("#,##0.00", new CultureInfo("de-DE"));
+                data.tax = (po.Tax).ToString("#,##0.00", ci);
+                data.fee = (po.Fee).ToString("#,##0.00", ci);
+                data.amount = (po.Tax).ToString("#,##0.00", ci);
             }
             else
             {
                 data.tax = "";
                 data.fee = "";
-                data.amount = (po.Tax + po.Fee).ToString("#,##0.00", new CultureInfo("de-DE"));
+                data.amount = (po.Tax + po.Fee).ToString("#,##0.00", ci);
             }
             data.addr = settings.PaymentAddress;
             data.desc = $"{po.Description}";

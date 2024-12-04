@@ -768,6 +768,8 @@ namespace Oblak.Services.MNE
 
             //_mapper.Map(dto, mnePerson);
 
+            _db.Entry(mnePerson).Reference(a => a.Group).Load();
+
             if (mnePerson.Group != null)
             {
                 this.CalcGroupResTax(mnePerson.Group);

@@ -645,101 +645,108 @@ namespace Oblak.Services.MNE
 
         public override async Task<Person> Person(object person)
         {
-            MnePerson mnePerson;
-            var dto = person as MnePersonDto;
-
-            if (dto.Id == 0)
+            try
             {
-                mnePerson = new MnePerson();
-                dto.Guid = Guid.NewGuid().ToString();
-                _db.MnePersons.Add(mnePerson);
-            }
-            else
-            {
-                mnePerson = _db.MnePersons.Include(a => a.Group).FirstOrDefault(a => a.Id == dto.Id)!;
-            }
+                MnePerson mnePerson;
+                var dto = person as MnePersonDto;
 
-            _logger.LogDebug("Mne Person Legal Entity:" + _legalEntity.Id);
-
-            mnePerson.LegalEntityId = _legalEntity.Id;
-            //mnePerson.Id = dto.Id;
-            //mnePerson.ExternalId = dto.ExternalId;
-            //mnePerson.Guid = dto.Guid;
-            //mnePerson.LegalEntityId = dto.LegalEntity.Id;
-            //mnePerson.LegalEntityName = dto.LegalEntityName;
-            //mnePerson.PropertyExternalId = dto.PropertyExternalId;
-            mnePerson.PropertyId = dto.PropertyId;
-            mnePerson.GroupId = dto.GroupId;
-            //mnePerson.UnitId = dto.UnitId;
-            mnePerson.LastName = dto.LastName;
-            mnePerson.FirstName = dto.FirstName;
-            mnePerson.PersonalNumber = dto.PersonalNumber;
-            mnePerson.Gender = dto.Gender;
-            mnePerson.BirthDate = dto.BirthDate;
-            mnePerson.IsDeleted = dto.IsDeleted;
-            mnePerson.Status = dto.Status;
-            mnePerson.Error = dto.Error;
-            mnePerson.BirthPlace = dto.BirthPlace;
-            mnePerson.BirthCountry = dto.BirthCountry;
-            mnePerson.Nationality = dto.Nationality;
-            mnePerson.PersonType = dto.PersonType;
-            mnePerson.PermanentResidenceCountry = dto.PermanentResidenceCountry;
-            mnePerson.PermanentResidencePlace = dto.PermanentResidencePlace;
-            mnePerson.PermanentResidenceAddress = dto.PermanentResidenceAddress;
-            //mnePerson.ResidencePlace = dto.ResidencePlace;
-            //mnePerson.ResidenceAddress = dto.ResidenceAddress;
-            mnePerson.CheckIn = dto.CheckIn.Date;
-            mnePerson.CheckOut = dto.CheckOut;
-            mnePerson.DocumentType = dto.DocumentType;
-            mnePerson.DocumentNumber = dto.DocumentNumber;
-            mnePerson.DocumentValidTo = dto.DocumentValidTo;
-            mnePerson.DocumentCountry = dto.DocumentCountry;
-            mnePerson.DocumentIssuer = dto.DocumentIssuer;
-            mnePerson.VisaType = dto.VisaType;
-            mnePerson.VisaNumber = dto.VisaNumber;
-            mnePerson.VisaValidFrom = dto.VisaValidFrom;
-            mnePerson.VisaValidTo = dto.VisaValidTo;
-            mnePerson.VisaIssuePlace = dto.VisaIssuePlace;
-            mnePerson.EntryPoint = dto.EntryPoint;
-            mnePerson.EntryPointDate = dto.EntryPointDate;
-            mnePerson.Other = dto.Other;
-            mnePerson.ResTaxTypeId = dto.ResTaxTypeId;
-            mnePerson.ResTaxPaymentTypeId = dto.ResTaxPaymentTypeId;
-            mnePerson.ResTaxAmount = dto.ResTaxAmount;
-
-            if (_user != null && mnePerson.CheckInPointId == null)
-            {
-                mnePerson.CheckInPointId = _user.CheckInPointId;
-            }
-
-            var partner = _db.Properties.Include(x => x.LegalEntity).ThenInclude(x => x.Partner).Where(x => x.Id == dto.PropertyId).FirstOrDefault().LegalEntity.Partner;
-
-            if (mnePerson.ResTaxTypeId != null)
-            {
-                if (mnePerson.ResTaxTypeId > 3)
+                if (dto.Id == 0)
                 {
-                    mnePerson.ResTaxAmount = 0;
-                    mnePerson.ResTaxFee = 0;
+                    mnePerson = new MnePerson();
+                    dto.Guid = Guid.NewGuid().ToString();
+                    _db.MnePersons.Add(mnePerson);
+                }
+                else
+                {
+                    mnePerson = _db.MnePersons.Include(a => a.Group).FirstOrDefault(a => a.Id == dto.Id)!;
                 }
 
-                var resTaxType = _db.ResTaxTypes.FirstOrDefault(a => a.Id == mnePerson.ResTaxTypeId);
-                if (mnePerson.CheckOut.HasValue)
+                _logger.LogDebug("Mne Person Legal Entity:" + _legalEntity.Id);
+
+                mnePerson.LegalEntityId = _legalEntity.Id;
+                //mnePerson.Id = dto.Id;
+                //mnePerson.ExternalId = dto.ExternalId;
+                //mnePerson.Guid = dto.Guid;
+                //mnePerson.LegalEntityId = dto.LegalEntity.Id;
+                //mnePerson.LegalEntityName = dto.LegalEntityName;
+                //mnePerson.PropertyExternalId = dto.PropertyExternalId;
+                mnePerson.PropertyId = dto.PropertyId;
+                mnePerson.GroupId = dto.GroupId;
+                //mnePerson.UnitId = dto.UnitId;
+                mnePerson.LastName = dto.LastName;
+                mnePerson.FirstName = dto.FirstName;
+                mnePerson.PersonalNumber = dto.PersonalNumber;
+                mnePerson.Gender = dto.Gender;
+                mnePerson.BirthDate = dto.BirthDate;
+                mnePerson.IsDeleted = dto.IsDeleted;
+                mnePerson.Status = dto.Status;
+                mnePerson.Error = dto.Error;
+                mnePerson.BirthPlace = dto.BirthPlace;
+                mnePerson.BirthCountry = dto.BirthCountry;
+                mnePerson.Nationality = dto.Nationality;
+                mnePerson.PersonType = dto.PersonType;
+                mnePerson.PermanentResidenceCountry = dto.PermanentResidenceCountry;
+                mnePerson.PermanentResidencePlace = dto.PermanentResidencePlace;
+                mnePerson.PermanentResidenceAddress = dto.PermanentResidenceAddress;
+                //mnePerson.ResidencePlace = dto.ResidencePlace;
+                //mnePerson.ResidenceAddress = dto.ResidenceAddress;
+                mnePerson.CheckIn = dto.CheckIn.Date;
+                mnePerson.CheckOut = dto.CheckOut;
+                mnePerson.DocumentType = dto.DocumentType;
+                mnePerson.DocumentNumber = dto.DocumentNumber;
+                mnePerson.DocumentValidTo = dto.DocumentValidTo;
+                mnePerson.DocumentCountry = dto.DocumentCountry;
+                mnePerson.DocumentIssuer = dto.DocumentIssuer;
+                mnePerson.VisaType = dto.VisaType;
+                mnePerson.VisaNumber = dto.VisaNumber;
+                mnePerson.VisaValidFrom = dto.VisaValidFrom;
+                mnePerson.VisaValidTo = dto.VisaValidTo;
+                mnePerson.VisaIssuePlace = dto.VisaIssuePlace;
+                mnePerson.EntryPoint = dto.EntryPoint;
+                mnePerson.EntryPointDate = dto.EntryPointDate;
+                mnePerson.Other = dto.Other;
+                mnePerson.ResTaxTypeId = dto.ResTaxTypeId;
+                mnePerson.ResTaxPaymentTypeId = dto.ResTaxPaymentTypeId;
+                mnePerson.ResTaxAmount = dto.ResTaxAmount;
+
+                if (_user != null && mnePerson.CheckInPointId == null)
                 {
-                    var days = (int)(mnePerson.CheckOut.Value.Date - mnePerson.CheckIn.Date).TotalDays;
-                    mnePerson.ResTaxAmount = resTaxType.Amount * days;
+                    mnePerson.CheckInPointId = _user.CheckInPointId;
                 }
 
-                if (mnePerson.ResTaxPaymentTypeId != null && mnePerson.GroupId != 0)
-                {
-                    var resTaxPayment = _db.ResTaxPaymentTypes.Include(a => a.PaymentFees).FirstOrDefault(a => a.Id == mnePerson.ResTaxPaymentTypeId);
+                var partner = _db.Properties.Include(x => x.LegalEntity).ThenInclude(x => x.Partner).Where(x => x.Id == dto.PropertyId).FirstOrDefault().LegalEntity.Partner;
 
-                    if (resTaxPayment.PaymentFees.Any())
+                if (mnePerson.ResTaxTypeId != null)
+                {
+                    if (mnePerson.ResTaxTypeId > 3)
                     {
-                        var resTaxFee = resTaxPayment.PaymentFees.Where(a => a.LowerLimit <= mnePerson.ResTaxAmount && mnePerson.ResTaxAmount <= a.UpperLimit).FirstOrDefault();
-                        if (resTaxFee != null)
+                        mnePerson.ResTaxAmount = 0;
+                        mnePerson.ResTaxFee = 0;
+                    }
+
+                    var resTaxType = _db.ResTaxTypes.FirstOrDefault(a => a.Id == mnePerson.ResTaxTypeId);
+                    if (mnePerson.CheckOut.HasValue)
+                    {
+                        var days = (int)(mnePerson.CheckOut.Value.Date - mnePerson.CheckIn.Date).TotalDays;
+                        mnePerson.ResTaxAmount = resTaxType.Amount * days;
+                    }
+
+                    if (mnePerson.ResTaxPaymentTypeId != null && mnePerson.GroupId != 0)
+                    {
+                        var resTaxPayment = _db.ResTaxPaymentTypes.Include(a => a.PaymentFees).FirstOrDefault(a => a.Id == mnePerson.ResTaxPaymentTypeId);
+
+                        if (resTaxPayment.PaymentFees.Any())
                         {
-                            if (resTaxFee.FeeAmount.HasValue) mnePerson.ResTaxFee = resTaxFee.FeeAmount.Value;
-                            if (resTaxFee.FeePercentage.HasValue) mnePerson.ResTaxFee = resTaxFee.FeePercentage.Value / 100m * mnePerson.ResTaxAmount;
+                            var resTaxFee = resTaxPayment.PaymentFees.Where(a => a.LowerLimit <= mnePerson.ResTaxAmount && mnePerson.ResTaxAmount <= a.UpperLimit).FirstOrDefault();
+                            if (resTaxFee != null)
+                            {
+                                if (resTaxFee.FeeAmount.HasValue) mnePerson.ResTaxFee = resTaxFee.FeeAmount.Value;
+                                if (resTaxFee.FeePercentage.HasValue) mnePerson.ResTaxFee = resTaxFee.FeePercentage.Value / 100m * mnePerson.ResTaxAmount;
+                            }
+                        }
+                        else
+                        {
+                            mnePerson.ResTaxFee = 0;
                         }
                     }
                     else
@@ -749,44 +756,43 @@ namespace Oblak.Services.MNE
                 }
                 else
                 {
-                    mnePerson.ResTaxFee = 0;
-                }
-            }
-            else
-            {
-                var zero = new DateTime(1, 1, 1);
-                var span = (DateTime.Now.Date - mnePerson.BirthDate.Date);
-                var age = (zero + span).Year - 1;
+                    var zero = new DateTime(1, 1, 1);
+                    var span = (DateTime.Now.Date - mnePerson.BirthDate.Date);
+                    var age = (zero + span).Year - 1;
 
-                var resTaxType = _db.ResTaxTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.AgeFrom <= age && age <= a.AgeTo);
-                if (resTaxType != null)
-                {
-                    mnePerson.ResTaxTypeId = resTaxType.Id;
-
-                    if (mnePerson.CheckOut.HasValue)
+                    var resTaxType = _db.ResTaxTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.AgeFrom <= age && age <= a.AgeTo);
+                    if (resTaxType != null)
                     {
-                        var days = (int)(mnePerson.CheckOut.Value.Date - mnePerson.CheckIn.Date).TotalDays;
-                        if (days < 0) days = 0;
-                        mnePerson.ResTaxAmount = resTaxType.Amount * days;
+                        mnePerson.ResTaxTypeId = resTaxType.Id;
+
+                        if (mnePerson.CheckOut.HasValue)
+                        {
+                            var days = (int)(mnePerson.CheckOut.Value.Date - mnePerson.CheckIn.Date).TotalDays;
+                            if (days < 0) days = 0;
+                            mnePerson.ResTaxAmount = resTaxType.Amount * days;
+                        }
+
+                        var resPaymentType = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.PaymentStatus == TaxPaymentStatus.Unpaid);
+                        mnePerson.ResTaxPaymentTypeId = resPaymentType.Id;
                     }
-
-                    var resPaymentType = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.PaymentStatus == TaxPaymentStatus.Unpaid);
-                    mnePerson.ResTaxPaymentTypeId = resPaymentType.Id;
                 }
+
+                //_mapper.Map(dto, mnePerson);
+
+                _db.Entry(mnePerson).Reference(a => a.Group).Load();
+
+                if (mnePerson.Group != null)
+                {
+                    this.CalcGroupResTax(mnePerson.Group);
+                }
+
+                _db.SaveChanges();
+                return mnePerson;
             }
-
-            //_mapper.Map(dto, mnePerson);
-
-            _db.Entry(mnePerson).Reference(a => a.Group).Load();
-
-            if (mnePerson.Group != null)
+            catch (Exception ex)
             {
-                this.CalcGroupResTax(mnePerson.Group);
+                return null;
             }
-
-            _db.SaveChanges();
-
-            return mnePerson;
         }
 
 

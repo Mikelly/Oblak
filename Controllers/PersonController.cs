@@ -146,7 +146,6 @@ namespace Oblak.Controllers
                     .Select(a => _mapper.Map<Property, PropertyDto>(a)).ToList();
             }
 
-
             ViewBag.Properties = properties;
 
             if (_appUser.LegalEntity.Country == CountryEnum.SRB)
@@ -156,6 +155,16 @@ namespace Oblak.Controllers
 
             else if (_appUser.LegalEntity.Country == CountryEnum.MNE)
             {
+                if (group != null)
+                {
+                    var restaxpay = _db.ResTaxPaymentTypes.FirstOrDefault(a => a.Id == group.ResTaxPaymentTypeId);
+                    ViewBag.AlreadyPaid = restaxpay != null ? restaxpay.PaymentStatus == TaxPaymentStatus.AlreadyPaid : false;
+                }
+                else
+                {                
+                    ViewBag.AlreadyPaid = false; 
+                }            
+
                 return View("MnePersons");
             }
 
@@ -178,7 +187,7 @@ namespace Oblak.Controllers
             return Ok();
         }
 
-        void ParseMrz(MrzDto mrz, MnePersonEnrichedDto dto, List<CodeList> codeLists, int? vesselId, int? groupId)
+        void ParseMrz(MrzDto mrz, MnePersonEnrichedDto dto, List<CodeList> codeLists, int? vesselId, int? groupId, int? payType, int? exemptType)
         {
             var country = codeLists.Where(a => a.Type == "drzava" && a.ExternalId == mrz.DocIssuer.Replace("<", "")).FirstOrDefault();
             dto.PersonType = country.ExternalId == "MNE" ? "1" : "4";
@@ -193,19 +202,18 @@ namespace Oblak.Controllers
             dto.DocumentNumber = (mrz.DocNumber ?? "").Replace("<", "");
             dto.DocumentValidTo = mrz.DocExpiryDate();
             dto.DocumentType = mrz.DocType == "IcaoTd1" || mrz.DocType == "IcaoTd2" ? "2" : "1";
-            dto.CheckIn = DateTime.Now;
-            dto.CheckOut = DateTime.Now.AddDays(1);
             dto.BirthCountry = country.ExternalId;
             dto.PermanentResidenceCountry = country.ExternalId;
             dto.BirthPlace = country.Name;
             dto.PermanentResidenceAddress = country.Name;
             dto.PermanentResidencePlace = country.Name;
             dto.DocumentIssuer = country.ExternalId;
-            var restax = ResTaxFoo(null, null, dto.BirthDate, dto.CheckIn, dto.CheckOut, vesselId != null, groupId != null);
+            var restax = ResTaxFoo(null, payType, exemptType, dto.BirthDate, dto.CheckIn, dto.CheckOut, vesselId != null, groupId != null);
             dto.ResTaxTypeId = restax.ResType;
             dto.ResTaxPaymentTypeId = restax.PayType;
             dto.ResTaxAmount = restax.Tax;
             dto.ResTaxFee = restax.Fee;
+            dto.ResTaxExemptionTypeId = null;
             if (User.IsInRole("TouristOrg"))
             {
                 if ((dto.PersonalNumber ?? "") == "")
@@ -276,17 +284,23 @@ namespace Oblak.Controllers
                             dto.CheckOut = g.CheckOut.Value;
                             dto.EntryPoint = g.EntryPoint;
                             dto.EntryPointDate = g.EntryPointDate;
+                            dto.ResTaxPaymentTypeId = g.ResTaxPaymentTypeId;
                         }
 
                         if (mrz != null)
-                        { 
-                            ParseMrz(mrz, dto, codeLists, g.VesselId, g.Id);
+                        {
+                            ParseMrz(mrz, dto, codeLists, g.VesselId, g.Id, g.ResTaxPaymentTypeId, null);
                         }
+
+
                     }
                     else
                     {
                         if (mrz != null)
                         {
+                            dto.CheckIn = DateTime.Now;
+                            dto.CheckOut = DateTime.Now.AddDays(1);
+
                             var country = codeLists.Where(a => a.Type == "drzava" && a.ExternalId == mrz.DocIssuer.Replace("<", "")).FirstOrDefault();
                             dto.PersonType = country.ExternalId == "MNE" ? "1" : "4";
                             dto.LastName = mrz.HolderNamePrimary;
@@ -300,15 +314,13 @@ namespace Oblak.Controllers
                             dto.DocumentNumber = (mrz.DocNumber ?? "").Replace("<", "");
                             dto.DocumentValidTo = mrz.DocExpiryDate();
                             dto.DocumentType = mrz.DocType == "IcaoTd1" || mrz.DocType == "IcaoTd2" ? "2" : "1";
-                            dto.CheckIn = DateTime.Now;
-                            dto.CheckOut = DateTime.Now.AddDays(1);
                             dto.BirthCountry = country.ExternalId;
                             dto.PermanentResidenceCountry = country.ExternalId;
                             dto.BirthPlace = country.Name;                            
                             dto.PermanentResidenceAddress = country.Name;
                             dto.PermanentResidencePlace = country.Name;
                             dto.DocumentIssuer = country.ExternalId;
-                            var restax = ResTaxFoo(null, null, dto.BirthDate, dto.CheckIn, dto.CheckOut, false, false);
+                            var restax = ResTaxFoo(null, null, null, dto.BirthDate, dto.CheckIn, dto.CheckOut, false, false);
                             dto.ResTaxTypeId = restax.ResType;
                             dto.ResTaxPaymentTypeId = restax.PayType;
                             dto.ResTaxAmount = restax.Tax;
@@ -372,14 +384,12 @@ namespace Oblak.Controllers
                     PersonTypeCodeList = codeLists.Where(x => x.Type == "gost").ToList(),
                     VisaTypeCodeList = codeLists.Where(x => x.Type == "viza").ToList(),
                     ResTaxPaymentTypes = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.Status == "A").ToDictionary(a => a.Id.ToString(), b => b.Description),
+                    ResTaxExemptionTypes = _db.ResTaxExemptionTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.Status == "A").ToDictionary(a => a.Id.ToString(), b => b.Description),
                     ResTaxTypes = _db.ResTaxTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.Status == "A").ToDictionary(a => a.Id.ToString(), b => b.Description)
 
                     //ResTaxStatuses = new Dictionary<string, string>() { { "Unpaid", "Nije plaćena" }, { "Cash", "Plaćena gotovinom" }, { "Card", "Plaćena karticom" }, { "BankAccount", "Plaćena virmanski" } },
                     //ResTaxTypes = new Dictionary<string, string>() { { "Unpaid", "Nije plaćena" }, { "Cash", "Plaćena gotovinom" }, { "Card", "Plaćena karticom" }, { "BankAccount", "Plaćena virmanski" } },
                 };
-
-
-
 
                 if (partner.CheckRegistered)
                 {
@@ -390,11 +400,11 @@ namespace Oblak.Controllers
                         var notRegistered = _db.Properties.Where(a => a.LegalEntityId == legalEntity).Any(a => a.RegDate == null || a.RegDate < DateTime.Now.Date);
                         if (notRegistered)
                         {
-                            model.ResTaxPaymentTypes = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && (a.PaymentStatus != TaxPaymentStatus.Unpaid || a.PaymentStatus == TaxPaymentStatus.PaidInAdvance) && a.Status == "A").ToDictionary(a => a.Id.ToString(), b => b.Description);
+                            model.ResTaxPaymentTypes = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && (a.PaymentStatus != TaxPaymentStatus.Unpaid && a.PaymentStatus != TaxPaymentStatus.PaidInAdvance) && a.Status == "A").ToDictionary(a => a.Id.ToString(), b => b.Description);
                         }
                         else if (notRegistered == false && balance?.Balance <= 0)
                         {
-                            model.ResTaxPaymentTypes = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.PaymentStatus != TaxPaymentStatus.Unpaid && a.Status == "A").ToDictionary(a => a.Id.ToString(), b => b.Description);
+                            model.ResTaxPaymentTypes = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.PaymentStatus != TaxPaymentStatus.PaidInAdvance && a.Status == "A").ToDictionary(a => a.Id.ToString(), b => b.Description);
                         }
                     }
                 }
@@ -447,6 +457,8 @@ namespace Oblak.Controllers
             if (last != null)
             {
                 ViewBag.Last = last;
+                var ep = last.EntryPoint ?? "";
+                ViewBag.EntryPointName = _db.CodeLists.Where(a => a.Country == "MNE" && a.Type == "prelaz" && a.ExternalId == ep).Select(a => a.Name).FirstOrDefault() ?? "";
                 return PartialView();
                 //return Json(new { info = "OK", error = "", propertyId = last.PropertyId, propertyName = last.Property.Name, checkIn = last.CheckIn, checkOut = last.CheckOut ?? DateTime.Now.Date.AddDays(1) });
             }
@@ -456,7 +468,7 @@ namespace Oblak.Controllers
             }
         }
 
-        public ActionResult ResTax(int? resType, int? payType, string birthDate, string checkIn, string checkOut, int group)
+        public ActionResult ResTax(int? resType, int? payType, int? exemptType, string birthDate, string checkIn, string checkOut, int group)
         {
             /*var p = _db.Properties.Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == property);
             var pid = p.LegalEntity.PartnerId;
@@ -527,7 +539,7 @@ namespace Oblak.Controllers
 				co = DateTime.ParseExact(checkOut, "dd.MM.yyyy", null);
 			}
 
-			var result = ResTaxFoo(resType, payType, bd, ci, co, false, group != 0);
+			var result = ResTaxFoo(resType, payType, exemptType, bd, ci, co, false, group != 0);
 
             return Json(new { tax = result.Tax, fee = result.Fee, resType = result.ResType, payType = result.PayType });
         }
@@ -542,13 +554,12 @@ namespace Oblak.Controllers
 		}
 
 
-		private RestTaxResult ResTaxFoo(int? resType, int? payType, DateTime? birthDate, DateTime? checkIn, DateTime? checkOut, bool nautical, bool group)
+		private RestTaxResult ResTaxFoo(int? resType, int? payType, int? exemptType, DateTime? birthDate, DateTime? checkIn, DateTime? checkOut, bool nautical, bool group)
 		{
-            if (new int[] { 1, 2, 3, 27, 28, 29 }.ToList().Contains(resType ?? 0) == false && resType != null)
+            if (new int[] { 1, 2, 3, 27, 28, 29 }.ToList().Contains(resType ?? 0) == false && resType != null || exemptType != null)
             {
                 return new RestTaxResult { Tax = 0, Fee = 0, ResType = resType.Value, PayType = 1 };
             }
-
 
             //var p = _db.Properties.Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == property);
             //var pid = p.LegalEntity.PartnerId;
@@ -660,7 +671,7 @@ namespace Oblak.Controllers
                 .Where(x => x.Type == "isprava")
                 .ToDictionary(x => x.ExternalId, x => x.Name);
 
-            var query = _db.MnePersons.Include(a => a.Property).Include(a => a.CheckInPoint)
+            var query = _db.MnePersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.CheckInPoint)
                 .Where(a => a.GroupId == groupId && groupId != 0 || groupId == 0 && a.GroupId == null)
                 .Where(a => a.LegalEntityId == _legalEntityId);
 
@@ -673,6 +684,10 @@ namespace Oblak.Controllers
             if (groupId != 0)
             {
                 query = query.Where(a => a.GroupId == groupId);
+                if (User.IsInRole("TouristOrgOperator"))
+                {
+                    query = query.Where(a => a.CheckInPointId == _appUser.CheckInPointId);
+                }
             }
             else
             {
@@ -733,7 +748,8 @@ namespace Oblak.Controllers
                     Deleted = a.IsDeleted,
                     UserCreated = a.UserCreated,
                     UserCreatedDate = a.UserCreatedDate,
-                    CheckInPointName = a.CheckInPoint.Name
+                    CheckInPointName = a.CheckInPoint.Name,
+                    LegalEntityName = a.Property.LegalEntity.Name
                 });
 
             return Json(await data.ToDataSourceResultAsync(request));
@@ -745,14 +761,15 @@ namespace Oblak.Controllers
         {
             try
             {
-                if (User.IsInRole("TouristOrgOperator"))
+                var partner = _db.Partners.FirstOrDefault(a => a.Id == _appUser.PartnerId);
+                var guest = _db.MnePersons.FirstOrDefault(a => a.Id == guestDto.Id);
+                if (guest != null && guest.ResTaxStatus == ResTaxStatus.Closed)
                 {
-                    var g = _db.MnePersons.FirstOrDefault(a => a.Id == guestDto.Id);
-                    if (g != null && (g.ExternalId ?? 0) != 0)
+                    if (User.IsInRole("TouristOrgOperator"))
                     {
                         return Json(new BasicDto() { info = "", error = "Nemate prava da vršite izmjene na već prijavljenom gostu!" });
                     }
-                }
+                }                
 
                 var newGuest = _mapper.Map<MnePersonDto, MnePerson>(guestDto);
                 _db.Entry(newGuest).Reference(a => a.LegalEntity).Load();
@@ -765,7 +782,7 @@ namespace Oblak.Controllers
 
 				//newGuest.LegalEntityId = property.LegalEntityId;
 
-				if (User.IsInRole("TouristOrgOperator") || User.IsInRole("TouristOrgAdmin") || User.IsInRole("TouristController"))
+				if (User.IsInRole("TouristOrgOperator") || User.IsInRole("TouristOrgAdmin") || User.IsInRole("TouristOrgControllor"))
 				{
 
                 }
@@ -777,7 +794,7 @@ namespace Oblak.Controllers
                     return Json(new BasicDto() { info = "", error = "", errors = validation.ValidationErrors });
                 }
 
-                if (User.IsInRole("TouristOrgOperator") || User.IsInRole("TouristOrgAdmin") || User.IsInRole("TouristController"))
+                if (User.IsInRole("TouristOrgOperator") || User.IsInRole("TouristOrgAdmin") || User.IsInRole("TouristOrgControllor"))
                 {
 					var pass = property.LegalEntity.PassThroughId;
 					if (pass.HasValue)
@@ -791,23 +808,63 @@ namespace Oblak.Controllers
                     await _registerClient.Initialize(property.LegalEntity);
                 }
 
-                var person = await _registerClient.Person(guestDto);
-
-                if (person.GroupId != null)
+				var hist = new ResTaxHistory();
+                if (guest != null)
                 {
-                    var g = _db.Groups.FirstOrDefault(a => a.Id == person.GroupId);
-
-                    if (g.VesselId == null)
-                    {
-
-                        g.ResTaxAmount = _db.MnePersons.Where(a => a.GroupId == g.Id).Select(a => a.ResTaxAmount).Sum();
-                        g.ResTaxFee = (_registerClient as MneClient).CalcResTaxFee(g.ResTaxAmount ?? 0, _appUser.PartnerId ?? 1, g.ResTaxPaymentTypeId ?? 0);
-                        g.ResTaxCalculated = true;
-                        g.ResTaxPaid = false;
-                    }
+                    hist.PersonId = guest.Id;
+                    hist.PrevCheckIn = guest.CheckIn;
+                    hist.PrevCheckOut = guest.CheckOut;
+                    hist.PrevResTaxAmount = guest.ResTaxAmount;
+                    hist.PrevResTaxPaymentTypeId = guest.ResTaxPaymentTypeId;
+                    hist.PrevResTaxExemptionTypeId = guest.ResTaxExemptionTypeId;
+                    hist.PrevResTaxTypeId = guest.ResTaxTypeId;
                 }
 
-                return Json(new BasicDto() { info = "Uspješno sačuvan gost", error = "", id = person.Id });
+				var person = await _registerClient.Person(guestDto);
+
+                if ((User.IsInRole("TouristOrgControllor") || User.IsInRole("TouristOrgAdmin")) && guest != null && guest.ResTaxStatus == ResTaxStatus.Closed)
+                {
+                    _db.ResTaxHistory.Add(hist);
+                    _db.SaveChanges();
+                }
+
+                //if (person.GroupId != null)
+                //{
+                //    var g = _db.Groups.FirstOrDefault(a => a.Id == person.GroupId);
+
+                //    if (g.VesselId == null)
+                //    {
+                //        g.ResTaxAmount = _db.MnePersons.Where(a => a.GroupId == g.Id).Select(a => a.ResTaxAmount).Sum();
+                //        if (g.ResTaxPaymentTypeId != null)
+                //        {
+                //            g.ResTaxFee = (_registerClient as MneClient).CalcResTaxFee(g.ResTaxAmount ?? 0, _appUser.PartnerId ?? 1, g.ResTaxPaymentTypeId ?? 0);
+                //            g.ResTaxCalculated = true;
+                //            g.ResTaxPaid = false;
+                //        }
+                //    }
+                //}
+
+                _db.Entry(person).Reference(a => a.LegalEntity).Load();
+                _db.Entry(person).Reference(a => a.Property).Load();
+
+                if (partner.CheckRegistered)
+                {
+					var balance = _db.GetBalance("ResidenceTax", person.Property.LegalEntityId, 0);
+                    var balance_record = _db.TaxPaymentBalances.Where(a => a.LegalEntityId == person.LegalEntityId && a.TaxType == TaxType.ResidenceTax).FirstOrDefault();
+                    if(balance_record == null)
+                    {
+                        balance_record = new TaxPaymentBalance();
+                        balance_record.TaxType = TaxType.ResidenceTax;
+                        balance_record.LegalEntityId = person.Property.LegalEntityId;
+                        _db.TaxPaymentBalances.Add(balance_record);
+                    }
+                    balance_record.Balance = balance;
+                    _db.SaveChanges();
+				}
+
+                var mnep = person as MnePerson;
+
+                return Json(new { info = "Uspješno sačuvan gost", error = "", id = person.Id, mnep.ResTaxTypeId, mnep.ResTaxAmount, mnep.ResTaxFee });
             }
             catch (Exception ex)
             {
@@ -821,16 +878,53 @@ namespace Oblak.Controllers
         {
             try
             {
-                var guest = _db.MnePersons.Find(guestId);
+                var guest = _db.MnePersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity).FirstOrDefault(a => a.Id == guestId);
+                var partner = _db.Partners.FirstOrDefault(a => a.Id == _appUser.PartnerId);
+                int? le = null;
 
                 if (guest != null)
                 {
                     if (User.IsInRole("TouristOrgOperator"))
                     {
                         return Json(new { error = "Nemate prava brisati gosta", info = "" });
-                    }                    
-                    _db.MnePersons.Remove(guest);
+                    }
+
+                    le = guest.Property.LegalEntityId;
+
+                    var hist = new ResTaxHistory();
+					hist.PrevCheckIn = guest.CheckIn;
+					hist.PrevCheckOut = guest.CheckOut;
+					hist.PrevResTaxAmount = guest.ResTaxAmount;
+					hist.PrevResTaxPaymentTypeId = guest.ResTaxPaymentTypeId;
+					hist.PrevResTaxExemptionTypeId = guest.ResTaxExemptionTypeId;
+					hist.PrevResTaxTypeId = guest.ResTaxTypeId;
+
+					_db.MnePersons.Remove(guest);
                     _db.SaveChanges();
+
+                    if (User.IsInRole("TouristOrg"))
+                    {
+                        _db.ResTaxHistory.Add(hist);
+                        _db.SaveChanges();
+                    }
+
+                    if (partner.CheckRegistered)
+                    {
+                        var balance = _db.TaxPaymentBalances.Where(a => a.LegalEntityId == le && a.TaxType == TaxType.ResidenceTax).FirstOrDefault();
+                        if (balance == null)
+                        {
+                            balance = new TaxPaymentBalance();
+                            balance.LegalEntityId = le;  
+                            balance.TaxType = TaxType.ResidenceTax;
+                            _db.Add(balance);
+                            _db.SaveChanges();
+                        }
+
+                        var calc = _db.GetBalance("ResidenceTax", le, 0);
+                        balance.Balance = calc;
+                        _db.SaveChanges();
+                    }
+
                     return Json(new { info = "Gost je uspješno obrisan", error = "" });
                 }
                 else

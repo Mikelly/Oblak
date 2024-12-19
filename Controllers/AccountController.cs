@@ -259,6 +259,71 @@ namespace Oblak.Controllers
             return View();
         }
 
+        public async Task<bool> IsPasswordValidAsync(UserManager<IdentityUser> userManager, IdentityUser user, string password)
+        {
+            // Loop through all password validators configured in Identity
+            foreach (var validator in userManager.PasswordValidators)
+            {
+                var result = await validator.ValidateAsync(userManager, user, password);
+                if (!result.Succeeded)
+                {
+                    // If validation fails, return false or handle errors as needed
+                    return false;
+                }
+            }
+            return true; // All validations passed
+        }
+
+        [HttpGet("change-password")]
+        public async Task<IActionResult> ChangePasswordView()
+        { 
+            return View("ChangePassword");
+        }
+
+        [HttpPost("do-change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Get the currently authenticated user
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Unauthorized("User is not logged in.");
+            }
+
+            if (model.NewPassword != model.ConfirmPassword)
+            {
+                return Ok(new { error = "Nova loznika i potvrda se ne poklapaju!" });
+            }
+
+            if ((await IsPasswordValidAsync(_userManager, user, model.NewPassword)) == false)
+            {
+                return Ok(new { error = "Nova loznika ne zadovoljava uslove (minimum 8 karaktera, veliko i malo slovo, broj i specijalni karakter)!" });
+            }
+
+            // Change the password
+            var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+            if (!result.Succeeded)
+            {
+                foreach (var r in result.Errors)
+                { 
+                    if(r.Code == "PasswordMismatch") return Ok(new { error = "Netačna stara lozinka!" });
+                }
+
+                // Return the error details
+                return BadRequest(result.Errors);
+            }
+
+            // Refresh the sign-in to update authentication cookies
+            await _signInManager.RefreshSignInAsync(user);
+
+            return Ok(new { info = "Lozinka upješno promijenjena!" });
+        }
+
         [HttpPost]
         public async Task<IActionResult> ResetPassword(string password)
         {

@@ -1,0 +1,163 @@
+﻿@using Oblak.Models.Api
+
+@{
+    var nautical = (bool)ViewBag.Nautical;
+    var entrypoint = (bool)ViewBag.EntryPoint;
+    var dto = (GroupEnrichedDto)ViewBag.Dto;
+}
+
+<div id="newGroupForm">
+
+    @Html.Hidden("Id", dto.Id)
+
+    <label for="propertyDropdown"><b>Izaberite smještajni objekat:</b></label>
+    @(Html.Kendo().MultiColumnComboBox()
+        .Name("PropertyId")
+        .Placeholder("Izaberite objekat")
+        .DataTextField("Name")
+        .DataValueField("Id")
+        .Enable(true)
+        .Columns(columns =>
+        {
+            columns.Add().Field("Name").Title("Naziv").Width("200px");
+            columns.Add().Field("Address").Title("Adresa").Width("250px");
+            columns.Add().Field("LegalEntity").Title("Vlasnik").Width("200px");
+            columns.Add().Field("TIN").Title("JMBG").Width("150px");
+        })
+        .HtmlAttributes(new { id = "PropertyId", style = "width:100%;", autocomplete = "off", autocorrect = "off", autocapitalize = "off", spellcheck = "false" })
+        .DropDownWidth("400px")
+        .Messages(m => m.NoData("Nema podataka").Clear("Poništi"))
+        .Filter("contains").FilterFields(new string[] { "Name" })
+        .AutoBind(false)
+        .MinLength(3)
+        //.Events(e => e.Change("propertyChanged"))
+        //.ValuePrimitive(true)
+        .Value(dto.PropertyId == null ? "" : dto.PropertyId.ToString())
+        //.Text(dto.PropertyName)
+        .Events(e => e.Change("propertyChanged"))
+        .DataSource(source => { source.Read(read => { read.Action("ReadAdmin", "Property"); }).ServerFiltering(true); })
+        )
+    <br /><br />
+
+    @if (nautical)
+    {
+        <label for="vesselDropdown"><b>Izaberite plovni objekat:</b></label>
+        @(Html.Kendo().MultiColumnComboBox()
+            .Name("VesselId")
+            .Placeholder("Izaberite plovni objekat")
+            .DataTextField("Name")
+            .DataValueField("Id")
+            .Enable(true)
+            .Columns(columns =>
+            {
+                columns.Add().Field("Name").Title("Naziv").Width("200px");
+                columns.Add().Field("Registration").Title("Registracija").Width("250px");
+            })
+            .HtmlAttributes(new { id = "VesselId", style = "width:100%;", autocomplete = "off", autocorrect = "off", autocapitalize = "off", spellcheck = "false" })
+            .DropDownWidth("400px")
+            .Messages(m => m.NoData("Nema podataka").Clear("Poništi"))
+            .Filter("contains").FilterFields(new string[] { "Name" })
+            .Value(dto.VesselId == null ? "" : dto.VesselId.ToString())
+            .AutoBind(false)
+            .MinLength(1)
+            .Events(e => e.Change("vesselChanged"))
+            .DataSource(source => { source.Read(read => { read.Action("ReadAdmin", "Vessel"); }).ServerFiltering(true); })
+            )
+        <br />
+
+        <br />
+
+        <label for="legalEntityDropdown"><b>Izaberite izdavaoca:</b></label>
+        @(Html.Kendo().MultiColumnComboBox()
+            .Name("NauticalLegalEntityId")
+            .Placeholder("Izaberite izdavaoca")
+            .DataTextField("Name")
+            .DataValueField("Id")
+            .Enable(true)
+            .Columns(columns =>
+            {
+                columns.Add().Field("Name").Title("Naziv").Width("200px");
+                columns.Add().Field("Address").Title("Adresa").Width("250px");
+            })
+            .HtmlAttributes(new { id = "NauticalLegalEntityId", style = "width:100%;", autocomplete = "off", autocorrect = "off", autocapitalize = "off", spellcheck = "false" })
+            .DropDownWidth("400px")
+            .Messages(m => m.NoData("Nema podataka").Clear("Poništi"))
+            .Filter("contains").FilterFields(new string[] { "Name" })
+            .Value(dto.NauticalLegalEntityId == null ? "" : dto.NauticalLegalEntityId.ToString())
+            .AutoBind(false)
+            .MinLength(1)
+            .Events(e => e.Change("nauticalLeChanged"))
+            .DataSource(source => { source.Read(read => { read.Action("ReadAdmin", "LegalEntity"); }).ServerFiltering(true); })
+            )
+        <br />
+
+        <br />
+    }
+
+    <label for="checkInDate"><b>Očekivani datum dolaska:</b></label>
+    @(Html.Kendo().DatePicker()
+        .Name("checkInDate")
+        .HtmlAttributes(new { style = "width:100%" })
+        .Value(dto.CheckIn ?? DateTime.Now.Date))
+
+    <br /><br />
+
+    <label for="checkOutDate"><b>Očekivani datum odlaska:</b></label>
+    @(Html.Kendo().DatePicker()
+        .Name("checkOutDate")
+        .HtmlAttributes(new { style = "width:100%;" })
+        .Value(dto.CheckOut ?? DateTime.Now.Date.AddDays(1)))
+
+    <br /><br />
+
+    <label for="email">E-mail:</label>
+    @(Html.Kendo().TextBox()
+        .Name("email")
+        .Value(dto.Email ?? "")
+        .HtmlAttributes(new { style = "width:100%;" }))
+
+    @if (entrypoint)
+    {
+        <br /> <br />
+
+        <label for="EntryPoint"><b>Mjesto ulaska u CG:</b></label>
+        @(Html.Kendo().DropDownList()
+            .Name("EntryPoint")
+            .BindTo(ViewBag.EntryPoints as SelectList)
+            .Value(dto.EntryPoint ?? "")
+            .HtmlAttributes(new { id = "EntryPoint", style = "width:100%" }))
+
+        <br /> <br />
+
+        <label for="EntryPointDate"><b>Datum ulaska u CG:</b></label>
+        @(Html.Kendo().DatePicker()
+            .Name("EntryPointDate")
+            .Value(dto.EntryPointDate ?? DateTime.Now.Date)
+            .HtmlAttributes(new { id = "EntryPointDate", style = "width:100%" }))
+    }
+
+    @if (User.IsInRole("TouristOrg"))
+    {
+        <br />
+
+        <br />
+
+        <label for="resTaxPaymentType"><b>Naplata takse:</b></label>
+        @(Html.Kendo().DropDownList()
+            .Name("ResTaxPaymentTypeId")
+            .BindTo(ViewBag.ResTaxPaymentTypes as SelectList)
+            .Value(dto.ResTaxPaymentTypeId == null ? "" : dto.ResTaxPaymentTypeId.ToString())
+            .HtmlAttributes(new { id = "ResTaxPaymentTypeId", style = "width:100%" }))
+    }
+
+    <br /><br /><br />
+
+    <div style="display: flex; flex-direction: column; align-items: center;">
+        @(Html.Kendo().Button().Name("btnSubmitNewGroup")
+            .HtmlAttributes(new { type = "button", onclick = "submitNewGroup()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+        <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/user_group_new.png'/>
+        <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>SAČUVAJ<br/>PRIJAVU<div>
+        </div>"))
+    </div>
+</div>

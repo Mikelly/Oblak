@@ -3,7 +3,7 @@
 }
 
 <div style="text-align:center;">
-    Zadnja prijava boravka za gosta
+    Poslednja prijava boravka za gosta
     <br />
     <b>@last.FirstName @last.LastName</b>    
 </div>
@@ -27,16 +27,77 @@
 
 <br />
 
-<div>
-    Prijava:
-    <br />
-    @Html.Kendo().DatePicker().Name("Last.CheckIn").Value(last.CheckIn).Format("dd.MM.yyyy").HtmlAttributes(new { @readonly = "readonly", style = "font-size:16px; font-family: 'Roboto Mono'" })
+<div style="display:flex;">
+    <div style="flex-basis:50%; padding-right:10px;">
+        Prijava:
+        <br />
+        @Html.Kendo().DatePicker().Name("Last.CheckIn").Value(last.CheckIn).Format("dd.MM.yyyy").HtmlAttributes(new { @readonly = "readonly", style = "font-size:16px; font-family: 'Roboto Mono'" })
+    </div>    
+
+    <div style="flex-basis:50%; padding-left:10px;">
+        Odjava:
+        <br />
+        @Html.Kendo().DatePicker().Name("Last.CheckOut").Value(last.CheckOut ?? DateTime.Now.AddDays(1)).Format("dd.MM.yyyy").HtmlAttributes(new { @readonly = "readonly", style = "font-size:16px; font-family: 'Roboto Mono'" })
+    </div>
+
 </div>
 
 <br />
 
-<div>
-    Odjava:
-    <br />
-    @Html.Kendo().DatePicker().Name("Last.CheckOut").Value(last.CheckOut ?? DateTime.Now.AddDays(1)).Format("dd.MM.yyyy").HtmlAttributes(new { @readonly = "readonly", style = "font-size:16px; font-family: 'Roboto Mono'" })
+<div style="display:flex;">
+    <div style="flex-basis:50%; padding-right:10px;">
+        Datum ulaska u CG:
+        <br />
+        @Html.Kendo().DatePicker().Name("Last.EntryPointDate").Value(last.EntryPointDate ?? null).Format("dd.MM.yyyy").HtmlAttributes(new { id = "Last_EntryPointDate", @readonly = "readonly", style = "font-size:16px; font-family: 'Roboto Mono'" })
+    </div>
+
+    <div style="flex-basis:50%; padding-left:10px;">
+        Mjesto ulaska u CG:
+        @Html.Hidden("Last.EntryPoint", last.EntryPoint ?? "", new { id = "Last_EntryPoint" })        
+        <br />
+        @Html.Kendo().TextBox().Name("Last.EntryPointName").Value(ViewBag.EntryPointName).HtmlAttributes(new { @readonly = "readonly", style = "font-size:16px" })
+    </div>
+
 </div>
+
+<br />
+
+<div style="display:flex;">
+    <div style="flex-basis:50%; padding-right:10px;">
+        Preostalo (za boravak do 30 dana)
+        @{
+            var used = (int)DateTime.Now.Date.Subtract(last.EntryPointDate ?? DateTime.Now.Date).TotalDays;
+            var remain = 30 - used; if (remain < 0) remain = 0;
+        }
+        <br />
+        @Html.Kendo().IntegerTextBox().Name("Remain30").Value(remain).HtmlAttributes(new { @readonly = "readonly", style = "font-size:16px; font-family: 'Roboto Mono'" })
+    </div>
+
+    <div style="flex-basis:50%; padding-left:10px;">
+        Preostalo (za boravak do 90 dana)
+        @{
+            remain = 90 - used; if (remain < 0) remain = 0;
+        }
+        <br />
+        @Html.Kendo().IntegerTextBox().Name("Remain90").Value(remain).HtmlAttributes(new { @readonly = "readonly", style = "font-size:16px; font-family: 'Roboto Mono'" })
+    </div>
+</div>
+
+<br />
+<br />
+
+<div style="display:flex;  justify-content: center;">
+    @(Html.Kendo().Button().Name("btnAddUser2")
+        .HtmlAttributes(new { type = "button", onclick = "copyPrev()", style = "height:65px; width:210px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:210px; height:65px; justify-content:space-around; align-items: center; display:flex;'>
+                <img style='width:50px;height:50px;text-align:center;display:inline-block;' src='/Content/Icons/copy2.png'/>
+                <div style='font-weight:bold;display:inline-block;position:relative;top:2px;line-height:110%;font-size:100%'>PREUZMI PODATKE<div>
+            </div>"))
+</div>
+
+<script type="text/javascript">
+    function copyPrev() { 
+        $('#person_EntryPoint').data('kendoDropDownList').value($('#Last_EntryPoint').val())
+        $('#person_EntryPointDate').data('kendoDatePicker').value($('#Last_EntryPointDate').data('kendoDatePicker').value())
+    }
+</script>

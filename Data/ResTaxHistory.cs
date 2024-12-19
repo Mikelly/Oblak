@@ -9,13 +9,22 @@ namespace Oblak.Data
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
-        public int PersonId { get; set; }
+        public int? PersonId { get; set; }
 
-        public DateTime OldCheckIn { get; set; }
+        public DateTime PrevCheckIn { get; set; }
 
-        public DateTime OldCheckOut { get; set; }
+        public DateTime? PrevCheckOut { get; set; }
 
-        public decimal OldResTaxAmount { get; set; }
+        public decimal? PrevResTaxAmount { get; set; }
+
+        public decimal? PrevResFeeAmount { get; set; }
+
+        public int? PrevResTaxTypeId { get; set; }
+
+        public int? PrevResTaxPaymentTypeId { get; set; }
+
+        public int? PrevResTaxExemptionTypeId { get; set; }
+
 
         [StringLength(450)]
         public string? UserCreated { get; set; }

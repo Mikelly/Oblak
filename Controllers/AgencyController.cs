@@ -99,6 +99,8 @@ namespace Oblak.Controllers
                 await _db.Agencies.AddAsync(agency);
                 await _db.SaveChangesAsync();
 
+                _db.Entry(agency).Reference(a => a.Country).Load();
+
                 return Json(new[] { _mapper.Map(agency, input) }.ToDataSourceResult(request, ModelState));
             }
             catch (Exception ex)

@@ -138,7 +138,10 @@ namespace Oblak.Controllers
                 _db.Add(exc);
                 await _db.SaveChangesAsync();
 
-                return Json(new[] { _mapper.Map(exc, dto) }.ToDataSourceResult(request, ModelState));
+                _db.Entry(exc).Reference(a => a.Country).Load();
+				_db.Entry(exc).Reference(a => a.Agency).Load();
+
+				return Json(new[] { _mapper.Map(exc, dto) }.ToDataSourceResult(request, ModelState));
 
 
                 var excursions = _db.Excursions.Include(a => a.Agency).Include(a => a.Country).Where(x => x.AgencyId == AgencyId || (AgencyId ?? 0) == 0)

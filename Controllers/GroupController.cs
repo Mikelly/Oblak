@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
+using Humanizer;
 using Kendo.Mvc.Extensions;
 using Kendo.Mvc.UI;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Oblak;
 using Oblak.Data;
 using Oblak.Data.Enums;
 using Oblak.Helpers;
@@ -15,6 +17,7 @@ using Oblak.Services.MNE;
 using Oblak.Services.SRB;
 using SQLitePCL;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Text;
 
 namespace RegBor.Controllers
@@ -78,12 +81,117 @@ namespace RegBor.Controllers
                     new SelectListItem() { Text = a.Name, Value = a.ExternalId.ToString() }
                 ).ToList();
 
+
             ViewBag.EntryPoints = new SelectList(sl2, "Value", "Text");
 
             ViewBag.EntryPoint = partner.UseEntryPointInGroup;
 
             return View();
 		}
+
+
+        [Route("edit-group")]
+        [HttpGet]
+        public ActionResult EditGroup(bool nautical = false, int? id = null)
+        {
+            ViewBag.Nautical = nautical;
+
+            var username = _context!.User!.Identity!.Name;
+            var appUser = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username);
+
+            var partner = _db.Partners.Where(a => a.Id == appUser.PartnerId).FirstOrDefault();
+
+            var sl = _db.ResTaxPaymentTypes
+                .Where(a => a.PartnerId == appUser.PartnerId)
+                .Select(a =>
+                    new SelectListItem() { Text = a.Description, Value = a.Id.ToString() }
+                ).ToList();
+
+            ViewBag.ResTaxPaymentTypes = new SelectList(sl, "Value", "Text");
+
+            var sl2 = _db.CodeLists
+                .Where(a => a.Country == "MNE" && a.Type == "prelaz")
+                .Select(a =>
+                    new SelectListItem() { Text = a.Name, Value = a.ExternalId.ToString() }
+                ).ToList();
+
+            ViewBag.EntryPoints = new SelectList(sl2, "Value", "Text");
+
+            ViewBag.EntryPoint = partner.UseEntryPointInGroup;
+
+            GroupEnrichedDto dto = null;
+
+            if (id.HasValue)
+            {
+                var g = _db.Groups.FirstOrDefault(a => a.Id == id);
+                dto = _mapper.Map<GroupEnrichedDto>(g);
+            }
+            else
+            {
+                dto = new GroupEnrichedDto();
+            }
+
+            ViewBag.Dto = dto;
+            return PartialView();
+        }
+
+        [Route("save-group")]
+        [HttpPost]
+        public ActionResult Create(GroupDto groupDto, [DataSourceRequest] DataSourceRequest request)
+        {
+            try
+            {
+                //var property = _db.Properties.Where(p => p.Id == groupDto.PropertyId).First();
+
+                // Map GroupDto properties to your Group entity properties
+                var newGroup = new Group
+                {
+                    Date = DateTime.Now,
+                    CheckIn = groupDto.CheckIn,
+                    CheckOut = groupDto.CheckOut,
+                    Email = groupDto.Email,
+                    // Map other properties as needed
+                    PropertyId = groupDto.PropertyId ?? 0,
+                    UnitId = groupDto.UnitId,
+                    LegalEntityId = _legalEntityId,
+                    VesselId = groupDto.VesselId,
+                    EntryPoint = groupDto.EntryPoint,
+                    EntryPointDate = groupDto.EntryPointDate,
+                    NauticalLegalEntityId = groupDto.NauticalLegalEntityId,
+                    ResTaxPaymentTypeId = groupDto.ResTaxPaymentTypeId,
+                    Guid = Guid.NewGuid().ToString(),
+                    PropertyExternalId = groupDto.PropertyId ?? 0,
+                };
+
+                if (_appUser != null && newGroup.CheckInPointId == null)
+                {
+                    newGroup.CheckInPointId = _appUser.CheckInPointId;
+                }
+
+                //if (ModelState.IsValid)
+                //{
+                _db.Groups.Add(newGroup);
+                _db.SaveChanges();
+                //}
+
+                _db.Entry(newGroup).Reference(a => a.Property).Load();
+                _db.Entry(newGroup).Reference(a => a.ResTaxPaymentType).Load();
+                _db.Entry(newGroup).Collection(a => a.Persons).Load();
+
+                var taxstatus = TaxPaymentStatus.AlreadyPaid;
+                if (newGroup.ResTaxPaymentType != null) taxstatus = newGroup.ResTaxPaymentType.PaymentStatus;
+
+                (_registerClient as MneClient)!.CalcGroupResTax(newGroup, taxstatus);
+
+                // Return success or any other relevant information
+                return Json(new[] { newGroup.Id });
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions and return error information
+                return Json(new DataSourceResult { Errors = ex.Message });
+            }
+        }
 
         [HttpGet]
         [Route("nautical-groups", Name = "NauticalGroups")]
@@ -224,8 +332,44 @@ namespace RegBor.Controllers
 			return properties;
 		}
 
+		public static void CalcPeriod(DateTime now, string period, string start, string end, out DateTime Od, out DateTime Do)
+		{
+			if (period == "D")
+			{
+				Od = now.Date;
+				Do = now.Date.AddDays(1).AddSeconds(-1);
+			}
+			else if (period == "W")
+			{
+				Od = now.StartOfWeek(DayOfWeek.Monday);
+				Do = now.EndOfWeek(DayOfWeek.Monday);
+			}
+			else if (period == "M")
+			{
+				Od = new DateTime(now.Year, now.Month, 1, 0, 0, 0);
+				Do = Od.AddMonths(1).AddSeconds(-1);
+			}
+			else if (period == "Y")
+			{
+				Od = new DateTime(now.Year, 1, 1, 0, 0, 0);
+				Do = Od.AddMonths(12).AddSeconds(-1);
+			}
+			else if (period == "C")
+			{
+				if ((start ?? "") != "") Od = DateTime.ParseExact(start, "dd.MM.yyyy", CultureInfo.InvariantCulture);
+				else Od = now;
 
-		public virtual async Task<ActionResult> Read([DataSourceRequest] DataSourceRequest request, bool nautical = false)
+				if ((end ?? "") != "") Do = DateTime.ParseExact(end, "dd.MM.yyyy", CultureInfo.InvariantCulture);
+				else Do = now;
+			}
+			else
+			{
+				Od = now;
+				Do = now;
+			}
+		}
+
+		public virtual async Task<ActionResult> Read([DataSourceRequest] DataSourceRequest request, bool nautical = false, string period = "D", string dtmod = null, string dtmdo = null)
         {
 			//var isPropertyAdmin = User.IsInRole("PropertyAdmin");
 			//var legalEntityId = _appUser!.LegalEntityId;
@@ -251,11 +395,30 @@ namespace RegBor.Controllers
 
             if (nautical == false)
             {
-                data = _db.Groups
-                    //.Where(a => propertyIds.Contains(a.Id))
+                var groups = _db.Groups.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.LegalEntity).Where(a => true);
+
+
+				if (User.IsInRole("TouristOrgOperator"))
+                {
+                    groups = groups.Where(a => a.CheckInPointId == _appUser.CheckInPointId);
+                }
+
+				DateTime now = DateTime.Now;
+				DateTime Od = now.Date;
+				DateTime Do = now.Date;
+
+				CalcPeriod(now, period, dtmod, dtmdo, out Od, out Do);
+
+				data = groups
+					//.Where(a => propertyIds.Contains(a.Id))
+					.Where(a => a.UserCreatedDate >= Od && a.UserCreatedDate <= Do)
                     .Where(a => a.VesselId == null)
                     .Where(a => a.LegalEntityId == _legalEntityId)
                     .Include(a => a.Property)
+					.ThenInclude(a => a.LegalEntity)
+					.Include(a => a.CheckInPoint)
+                    .Include(a => a.ResTaxPaymentType)
+                    .Include(a => a.LegalEntity)
                     .OrderByDescending(x => x.Date)
                     .Select(a => new GroupEnrichedDto
                     {
@@ -264,23 +427,38 @@ namespace RegBor.Controllers
                         PropertyName = a.Property.PropertyName,
                         VesselDesc = "",
                         NauticalLegalEntity = "",
+                        LegalEntity = a.Property.LegalEntity.Name,
                         CheckIn = a.CheckIn,
                         CheckOut = a.CheckOut,
                         Email = a.Email,
                         ResTaxAmount = a.ResTaxAmount ?? 0m,
                         ResTaxFee = a.ResTaxFee ?? 0m,                        
-                        Guests = _db.GuestList(a.Id)
+                        Guests = _db.GuestList(a.Id),
+                        UserCreated = a.UserCreated,
+                        CheckInPointName = a.CheckInPoint == null ? "" : a.CheckInPoint.Name,
+                        ResTaxPaymentTypeName = a.ResTaxPaymentType == null ? "" : a.ResTaxPaymentType.Description
                     });
             }
             else
             {
-                data = _db.Groups
+                var groups = _db.Groups.Where(a => true);
+
+                if (User.IsInRole("TouristOrgOperator"))
+                {
+                    groups = groups.Where(a => a.CheckInPointId == _appUser.CheckInPointId);
+                }
+
+                data = groups
                     //.Where(a => propertyIds.Contains(a.Id))
                     .Where(a => a.VesselId != null)
                     .Where(a => a.LegalEntityId == _legalEntityId)
                     .Include(a => a.Property)
+                    .ThenInclude(a => a.LegalEntity)
                     .Include(a => a.Vessel)
                     .Include(a => a.NauticalLegalEntity)
+                    .Include(a => a.LegalEntity)
+                    .Include(a => a.CheckInPoint)
+                    .Include(a => a.ResTaxPaymentType)
                     .OrderByDescending(x => x.Date)
                     .Select(a => new GroupEnrichedDto
                     {
@@ -289,12 +467,15 @@ namespace RegBor.Controllers
                         PropertyName = a.Property.PropertyName,
                         VesselDesc = a.Vessel.Name + ", " + a.Vessel.Registration,
                         NauticalLegalEntity = a.NauticalLegalEntity.Name,
+                        LegalEntity = a.Property.LegalEntity.Name,
                         CheckIn = a.CheckIn,
                         CheckOut = a.CheckOut,
                         Email = a.Email,     
                         ResTaxAmount = a.ResTaxAmount ?? 0m,
                         ResTaxFee = a.ResTaxFee ?? 0m,
-                        Guests = _db.GuestList(a.Id)
+                        Guests = _db.GuestList(a.Id),
+                        CheckInPointName = a.CheckInPoint == null ? "" : a.CheckInPoint.Name,
+                        ResTaxPaymentTypeName = a.ResTaxPaymentType == null ? "" : a.ResTaxPaymentType.Description
                     });
             }
 
@@ -313,70 +494,14 @@ namespace RegBor.Controllers
             return Json(propertyUnits);
         }
 
-        [Route("save-group")]
-        [HttpPost]
-        public ActionResult Create(GroupDto groupDto, [DataSourceRequest] DataSourceRequest request)
-        {
-            try
-            {
-                //var property = _db.Properties.Where(p => p.Id == groupDto.PropertyId).First();
-
-                // Map GroupDto properties to your Group entity properties
-                var newGroup = new Group
-                {
-					Date = DateTime.Now,
-                    CheckIn = groupDto.CheckIn,
-                    CheckOut = groupDto.CheckOut,
-                    Email = groupDto.Email,
-                    // Map other properties as needed
-                    PropertyId = groupDto.PropertyId,
-                    UnitId = groupDto.UnitId,
-					LegalEntityId = _legalEntityId,
-                    VesselId = groupDto.VesselId,
-                    EntryPoint = groupDto.EntryPoint,
-                    EntryPointDate = groupDto.EntryPointDate,
-                    NauticalLegalEntityId = groupDto.NauticalLegalEntityId,
-                    ResTaxPaymentTypeId = groupDto.ResTaxPaymentTypeId,
-					Guid = Guid.NewGuid().ToString(),
-					PropertyExternalId = groupDto.PropertyId,
-                };
-
-                if (_appUser != null && newGroup.CheckInPointId == null)
-                {
-                    newGroup.CheckInPointId = _appUser.CheckInPointId;
-                }
-
-                //if (ModelState.IsValid)
-                //{
-                _db.Groups.Add(newGroup);
-					_db.SaveChanges();
-				//}
-
-                _db.Entry(newGroup).Reference(a => a.Property).Load();
-                _db.Entry(newGroup).Reference(a => a.ResTaxPaymentType).Load();
-                _db.Entry(newGroup).Collection(a => a.Persons).Load();
-
-                var taxstatus = TaxPaymentStatus.AlreadyPaid;
-                if(newGroup.ResTaxPaymentType != null) taxstatus = newGroup.ResTaxPaymentType.PaymentStatus;
-
-                (_registerClient as MneClient)!.CalcGroupResTax(newGroup, taxstatus);
-
-				// Return success or any other relevant information
-				return Json(new[] { newGroup.Id });
-            }
-            catch (Exception ex)
-            {
-                // Handle exceptions and return error information
-                return Json(new DataSourceResult { Errors = ex.Message });
-            }
-        }
+        
 
         [HttpGet("group-desc")]        
         public ActionResult Desc(int groupId)
         {
             try
             {
-                var g = _db.Groups.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.Vessel).Include(a => a.NauticalLegalEntity).FirstOrDefault(a => a.Id == groupId);
+                var g = _db.Groups.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.Vessel).Include(a => a.NauticalLegalEntity).Include(a => a.ResTaxPaymentType).FirstOrDefault(a => a.Id == groupId);
                 if (g != null)
                 {
                     ViewBag.Property = $"{g.Property.Name} - {g.Property.LegalEntity.Name}";
@@ -388,6 +513,7 @@ namespace RegBor.Controllers
                     ViewBag.ResidenceTaxAmount = g.ResTaxAmount ?? 0m;
                     ViewBag.ResidenceTaxFee = g.ResTaxFee ?? 0m;
                     ViewBag.ResidenceTaxTotal = (g.ResTaxAmount ?? 0m) + (g.ResTaxFee ?? 0m);
+                    ViewBag.PaymentDesc = g.ResTaxPaymentType.Description;
                 }
                 return PartialView();
             }

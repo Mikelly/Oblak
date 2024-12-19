@@ -223,13 +223,15 @@ namespace Oblak.Controllers
             text = (text ?? "") .ToLower();
 
             List<PropertyEnrichedDto> data = properties
-                .Where(a => a.Name.ToLower().Contains(text) || a.LegalEntity.Name.ToLower().Contains(text))
+                .Where(a => a.Name.ToLower().Contains(text) || a.LegalEntity.Name.ToLower().Contains(text) || a.LegalEntity.TIN.Contains(text))
                 .Select(a => {
                     var mapped = _mapper.Map<Property, PropertyEnrichedDto>(a);
                     mapped.PropertyName = a.Name;
                     mapped.LegalEntity = a.LegalEntity.Name;
+                    mapped.TIN = a.LegalEntity.TIN;
                     return mapped;
                 })
+                .Take(50)
                 .ToList();
 
             return Json(data);

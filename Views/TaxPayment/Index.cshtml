@@ -79,9 +79,9 @@
         </div>"))
 
     <div style="display: flex; flex:1; justify-content: center; align-items: center; font-size:large; font-weight:bold; text-align:center;">
-        Saldo obaveza:
+        <span style="margin-right:20px;">Saldo obaveza:</span>
         <br />
-        @(((decimal)ViewBag.Balance).ToString("#,##0.00"))
+        @(Html.Kendo().NumericTextBox().Name("Balance").Spinners(false).Value((double)ViewBag.Balance).Format("{0:n2}").HtmlAttributes(new { style = "width:200px; text-align:center; margin-left: 2px; font-weight:bold; font-size:20px; font-family: 'Roboto Mono'", @readonly = "readonly" }))
     </div>
 
 

@@ -707,7 +707,9 @@ namespace Oblak.Services.MNE
                 mnePerson.Other = dto.Other;
                 mnePerson.ResTaxTypeId = dto.ResTaxTypeId;
                 mnePerson.ResTaxPaymentTypeId = dto.ResTaxPaymentTypeId;
+                mnePerson.ResTaxExemptionTypeId = dto.ResTaxExemptionTypeId;
                 mnePerson.ResTaxAmount = dto.ResTaxAmount;
+                mnePerson.Note = dto.Note;
 
                 if (_user != null && mnePerson.CheckInPointId == null)
                 {
@@ -716,90 +718,125 @@ namespace Oblak.Services.MNE
 
                 var partner = _db.Properties.Include(x => x.LegalEntity).ThenInclude(x => x.Partner).Where(x => x.Id == dto.PropertyId).FirstOrDefault().LegalEntity.Partner;
 
-                if (mnePerson.ResTaxTypeId != null)
-                {
-                    if (mnePerson.ResTaxTypeId > 3)
-                    {
-                        mnePerson.ResTaxAmount = 0;
-                        mnePerson.ResTaxFee = 0;
-                    }
-
-                    var resTaxType = _db.ResTaxTypes.FirstOrDefault(a => a.Id == mnePerson.ResTaxTypeId);
-                    if (mnePerson.CheckOut.HasValue)
-                    {
-                        var days = (int)(mnePerson.CheckOut.Value.Date - mnePerson.CheckIn.Date).TotalDays;
-                        mnePerson.ResTaxAmount = resTaxType.Amount * days;
-                    }
-
-                    if (mnePerson.ResTaxPaymentTypeId != null && mnePerson.GroupId != 0)
-                    {
-                        var resTaxPayment = _db.ResTaxPaymentTypes.Include(a => a.PaymentFees).FirstOrDefault(a => a.Id == mnePerson.ResTaxPaymentTypeId);
-
-                        if (resTaxPayment.PaymentFees.Any())
-                        {
-                            var resTaxFee = resTaxPayment.PaymentFees.Where(a => a.LowerLimit <= mnePerson.ResTaxAmount && mnePerson.ResTaxAmount <= a.UpperLimit).FirstOrDefault();
-                            if (resTaxFee != null)
-                            {
-                                if (resTaxFee.FeeAmount.HasValue) mnePerson.ResTaxFee = resTaxFee.FeeAmount.Value;
-                                if (resTaxFee.FeePercentage.HasValue) mnePerson.ResTaxFee = resTaxFee.FeePercentage.Value / 100m * mnePerson.ResTaxAmount;
-                            }
-                        }
-                        else
-                        {
-                            mnePerson.ResTaxFee = 0;
-                        }
-                    }
-                    else
-                    {
-                        mnePerson.ResTaxFee = 0;
-                    }
-                }
-                else
+                // Ako nije definisan tip gosta za plaćanje, zaključi ga na osnovu datuma rođenja                
+                // if (mnePerson.ResTaxTypeId == null)
                 {
                     var zero = new DateTime(1, 1, 1);
                     var span = (DateTime.Now.Date - mnePerson.BirthDate.Date);
                     var age = (zero + span).Year - 1;
 
                     var resTaxType = _db.ResTaxTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.AgeFrom <= age && age <= a.AgeTo);
+
                     if (resTaxType != null)
                     {
                         mnePerson.ResTaxTypeId = resTaxType.Id;
+                    }
+                }
+                _db.Entry(mnePerson).Reference(a => a.ResTaxType).Load();
 
+                // Ako je već definisan tip gosta za plaćanje                
+                if (mnePerson.ResTaxTypeId != null)
+                {
+                    // Ovo je da eliminišemo ako je oslobođenje
+                    if (new List<int>() { 1, 2, 3, 27, 28, 29 }.Contains(mnePerson.ResTaxTypeId.Value) == false || mnePerson.ResTaxExemptionTypeId != null)
+                    {
+                        mnePerson.ResTaxAmount = 0;
+                        mnePerson.ResTaxFee = 0;
+                    }
+                    else
+                    {
+                        // Nađemo tip gosta za plaćanje i sračunamo mu taksu 
+                        var resTaxType = _db.ResTaxTypes.FirstOrDefault(a => a.Id == mnePerson.ResTaxTypeId);
                         if (mnePerson.CheckOut.HasValue)
                         {
                             var days = (int)(mnePerson.CheckOut.Value.Date - mnePerson.CheckIn.Date).TotalDays;
-                            if (days < 0) days = 0;
                             mnePerson.ResTaxAmount = resTaxType.Amount * days;
                         }
 
-                        var resPaymentType = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.PaymentStatus == TaxPaymentStatus.Unpaid);
-                        mnePerson.ResTaxPaymentTypeId = resPaymentType.Id;
+                        // Sad računamo proviziju za gosta.
+                        // Prvo ako je individualni gost, onda imamo što računati
+                        if (mnePerson.ResTaxPaymentTypeId != null && mnePerson.GroupId == null)
+                        {
+                            // Nađemo način plaćanja
+                            var resTaxPayment = _db.ResTaxPaymentTypes.Include(a => a.PaymentFees).FirstOrDefault(a => a.Id == mnePerson.ResTaxPaymentTypeId);
+
+                            // Ako taj način plaćanja ima proviziju, i nju računamo
+                            if (resTaxPayment.PaymentFees.Any())
+                            {
+                                var resTaxFee = resTaxPayment.PaymentFees.Where(a => a.LowerLimit <= mnePerson.ResTaxAmount && mnePerson.ResTaxAmount <= a.UpperLimit).FirstOrDefault();
+                                if (resTaxFee != null)
+                                {
+                                    if (resTaxFee.FeeAmount.HasValue) mnePerson.ResTaxFee = resTaxFee.FeeAmount.Value;
+                                    if (resTaxFee.FeePercentage.HasValue) mnePerson.ResTaxFee = resTaxFee.FeePercentage.Value / 100m * mnePerson.ResTaxAmount;
+                                }
+                            }
+                            // A, ako nema, onda je provizija 0.
+                            else
+                            {
+                                mnePerson.ResTaxFee = 0;
+                            }
+                        }
+                        // A, ako je gost iz grupe, odma mu je provizija 0, sračunaće se na nivou grupe
+                        else
+                        {
+                            mnePerson.ResTaxFee = 0;
+                        }
                     }
                 }
 
-                //_mapper.Map(dto, mnePerson);
+                _db.SaveChanges();
 
-                _db.Entry(mnePerson).Reference(a => a.Group).Load();
+                // Ako ne znamo koji je tip gosta za plaćanje, prvo to sračunamo
+                // Ovo mi možda prvo trebao, ali to ću poslije, kada dodam kolonu za tip gosta za plaćanje
+                //else
+                //{
+                //    var zero = new DateTime(1, 1, 1);
+                //    var span = (DateTime.Now.Date - mnePerson.BirthDate.Date);
+                //    var age = (zero + span).Year - 1;
 
-                if (mnePerson.Group != null)
+                //    var resTaxType = _db.ResTaxTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.AgeFrom <= age && age <= a.AgeTo);
+                //    if (resTaxType != null)
+                //    {
+                //        mnePerson.ResTaxTypeId = resTaxType.Id;
+
+                //        if (mnePerson.CheckOut.HasValue)
+                //        {
+                //            var days = (int)(mnePerson.CheckOut.Value.Date - mnePerson.CheckIn.Date).TotalDays;
+                //            if (days < 0) days = 0;
+                //            mnePerson.ResTaxAmount = resTaxType.Amount * days;
+                //        }
+
+                //        var resPaymentType = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.PaymentStatus == TaxPaymentStatus.None);
+                //        mnePerson.ResTaxPaymentTypeId = resPaymentType?.Id;
+                //    }
+                //}
+
+                // Na kraju, računamo taksu i proviziju grupe
+
+                                
+                if (mnePerson.GroupId != null)
                 {
-                    this.CalcGroupResTax(mnePerson.Group);
+                    _db.Entry(mnePerson).Reference(a => a.Group).Load();
+                    _db.Entry(mnePerson.Group!).Reference(a => a.ResTaxPaymentType).Load();
+                    this.CalcGroupResTax(mnePerson.Group, mnePerson.Group?.ResTaxPaymentType?.PaymentStatus ?? TaxPaymentStatus.None);
                 }
 
                 _db.SaveChanges();
+
                 return mnePerson;
             }
             catch (Exception ex)
             {
-                return null;
+                throw;
             }
         }
 
 
-        public void CalcGroupResTax(Group g, TaxPaymentStatus pay = TaxPaymentStatus.Card)
+        public void CalcGroupResTax(Group g, TaxPaymentStatus pay = TaxPaymentStatus.None)
         {
             var partner = _db.Properties.Include(x => x.LegalEntity).ThenInclude(x => x.Partner).Where(x => x.Id == g.PropertyId).FirstOrDefault().LegalEntity.Partner;
 
+            // Ako je nautička taksa u pitanju, onda je računamo na potpuno drugačiji način
             if (g.VesselId.HasValue)
             {
                 _db.Entry(g).Reference(a => a.Vessel).Load();
@@ -814,6 +851,8 @@ namespace Oblak.Services.MNE
                 g.ResTaxAmount = tax?.Amount;
                 //g.ResTaxFee = CalcResTaxFee(g.ResTaxAmount ?? 0, partner.Id, g.ResTaxPaymentTypeId ?? 0);
             }
+
+            /*
             else
             {
                 foreach (MnePerson p in g.Persons)
@@ -844,23 +883,35 @@ namespace Oblak.Services.MNE
                     }
                 }
             }
+            */
 
-            if (g.ResTaxPaymentTypeId != null)
+            // Pokušamo da nađemo način plaćanja grupe
+            if (g.ResTaxPaymentTypeId == null && pay != TaxPaymentStatus.None)
             {
                 var payId = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner.Id).FirstOrDefault(a => a.PaymentStatus == pay);
-                g.ResTaxPaymentTypeId = payId.Id;
+                g.ResTaxPaymentTypeId = payId?.Id;
             }
 
+            // I onda računamo proviziju grupe
             if (g.VesselId == null)
             {
+                var persons = _db.MnePersons.Where(a => a.GroupId == g.Id).ToList();
                 g.ResTaxAmount = _db.MnePersons.Where(a => a.GroupId == g.Id).Select(a => a.ResTaxAmount).Sum();
-                g.ResTaxFee = CalcResTaxFee(g.ResTaxAmount ?? 0, partner.Id, g.ResTaxPaymentTypeId ?? 0);
-                g.ResTaxCalculated = true;
-                g.ResTaxPaid = false;
+                if (g.ResTaxPaymentTypeId != null)
+                {
+                    g.ResTaxFee = CalcResTaxFee(g.ResTaxAmount ?? 0, partner.Id, g.ResTaxPaymentTypeId ?? 0);
+                    g.ResTaxCalculated = true;
+                    g.ResTaxPaid = false;
+                }
             }
             else
             {
-                g.ResTaxFee = CalcResTaxFee(g.ResTaxAmount ?? 0, partner.Id, g.ResTaxPaymentTypeId ?? 0);
+                if (g.ResTaxPaymentTypeId != null)
+                {
+                    g.ResTaxFee = CalcResTaxFee(g.ResTaxAmount ?? 0, partner.Id, g.ResTaxPaymentTypeId ?? 0);
+                    g.ResTaxCalculated = true;
+                    g.ResTaxPaid = false;
+                }
             }
 
             _db.SaveChanges();
@@ -868,14 +919,17 @@ namespace Oblak.Services.MNE
 
         public decimal CalcResTaxFee(decimal amount, int partnerId, int paymentTypeId)
         {
-            var resTaxPayment = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partnerId).Include(a => a.PaymentFees).FirstOrDefault(a => a.Id == paymentTypeId);
-            if (resTaxPayment.PaymentFees.Any())
+            if (paymentTypeId != 0)
             {
-                var resTaxFee = resTaxPayment.PaymentFees.Where(a => a.LowerLimit <= amount && amount <= a.UpperLimit).FirstOrDefault();
-                if (resTaxFee != null)
+                var resTaxPayment = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partnerId).Include(a => a.PaymentFees).FirstOrDefault(a => a.Id == paymentTypeId);
+                if (resTaxPayment != null && resTaxPayment.PaymentFees.Any())
                 {
-                    if (resTaxFee.FeeAmount.HasValue) return resTaxFee.FeeAmount.Value;
-                    if (resTaxFee.FeePercentage.HasValue) return resTaxFee.FeePercentage.Value / 100m * amount;
+                    var resTaxFee = resTaxPayment.PaymentFees.Where(a => a.LowerLimit <= amount && amount <= a.UpperLimit).FirstOrDefault();
+                    if (resTaxFee != null)
+                    {
+                        if (resTaxFee.FeeAmount.HasValue) return resTaxFee.FeeAmount.Value;
+                        if (resTaxFee.FeePercentage.HasValue) return resTaxFee.FeePercentage.Value / 100m * amount;
+                    }
                 }
             }
             return 0;

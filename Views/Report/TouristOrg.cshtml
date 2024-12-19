@@ -7,8 +7,14 @@
 		{ $"{prtnid}GuestList", "Boravišne prijave za period" }, 
 		{ $"{prtnid}GuestListByPlace", "Gosti po lokaciji" },
 		{ $"{prtnid}PostOffice", "Izvještaj za poštu" },
-		{ $"{prtnid}ResTax", "Naplata boravišne takse" },
+		{ $"{prtnid}ResTax", "Naplata boravišne takse" },		
 	};
+
+	if(User.IsInRole("TouristOrgAdmin"))
+	{
+		reports.Add($"{prtnid}ResTaxHistory", "Istorija izmjena");
+	}
+
 	var formats = new Dictionary<string, string>() { { $"PDF", "PDF dokument" }, { $"XLSX", "Excel fajl" } };
 	var admin = ViewBag.Admin;
 }
@@ -48,7 +54,7 @@
 				$('#user').show();
 			}
 		}
-		else if (report == "GuestListByPlace" || report == "ResTax" || report == "CountryStatsPeriod") {
+		else if (report == "GuestListByPlace" || report == "ResTax" || report == "CountryStatsPeriod" || report == "ResTaxHistory") {
 			$('#datumOd').show();
 			$('#datumDo').show();			
 		}

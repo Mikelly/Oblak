@@ -69,7 +69,22 @@ namespace Oblak.Controllers
 
             ViewBag.PaymentMethods = new SelectList(paymethods, "Value", "Text");
 
-            ViewBag.Balance = _db.TaxPaymentBalances.Where(a => a.TaxType == TaxType.ResidenceTax).Select(a => a.Balance).FirstOrDefault();
+			var balance = _db.TaxPaymentBalances.Where(a => a.LegalEntityId == le && a.TaxType == TaxType.ResidenceTax).FirstOrDefault();
+			if (balance == null)
+			{
+				balance = new TaxPaymentBalance();
+				balance.LegalEntityId = le;
+				balance.AgencyId = ag;
+				balance.TaxType = TaxType.ResidenceTax;
+				_db.Add(balance);
+				await _db.SaveChangesAsync();
+			}
+
+			var calc = _db.GetBalance("ResidenceTax", le, 0);
+			balance.Balance = calc;
+			await _db.SaveChangesAsync();
+
+			ViewBag.Balance = _db.TaxPaymentBalances.Where(a => a.TaxType == TaxType.ResidenceTax && a.LegalEntityId == le).Select(a => a.Balance).FirstOrDefault();
 
 			return PartialView();
         }
@@ -99,6 +114,11 @@ namespace Oblak.Controllers
                 if (payment == null)
                 {
                     return Json(new DataSourceResult { Errors = "Entity not found." });
+                }
+
+                if (_db.TaxPayments.Any(a => a.Reference == dto.Reference && a.Id != payment.Id))
+                {
+                    return Json(new DataSourceResult { Errors = "Uplatnica je već iskorišćena." });
                 }
 
                 _mapper.Map(dto, payment);
@@ -132,6 +152,11 @@ namespace Oblak.Controllers
                 var pay = new TaxPayment();
 
                 //_mapper.Map(dto, pay);
+
+                if (_db.TaxPayments.Any(a => a.Reference == dto.Reference))
+                {
+                    return Json(new DataSourceResult { Errors = "Uplatnica je već iskorišćena." });
+                }
 
                 pay.Amount = dto.Amount ?? 0;
                 pay.TransactionDate = dto.TransactionDate ?? DateTime.Now;
@@ -188,6 +213,11 @@ namespace Oblak.Controllers
         {
             try
             {
+                if (User.IsInRole("TouristOrgAdmin") == false && User.IsInRole("TouristOrgControllor") == false)
+                {
+                    return Unauthorized();
+                }
+
                 var pay = _db.TaxPayments.Find(dto.Id);                    
 
                 if (pay != null)
@@ -223,13 +253,15 @@ namespace Oblak.Controllers
 
                 TaxPayment tp = null;
 
+                int? le = null;
+
                 if (g.HasValue)
                 {
                     tp = _db.TaxPayments.Where(a => a.GroupId == g).FirstOrDefault();
                 }
                 else if (p.HasValue)
                 {
-                    tp = _db.TaxPayments.Where(a => a.PersonId == p).FirstOrDefault();
+                    tp = _db.TaxPayments.Where(a => a.PersonId == p).FirstOrDefault();                    
                 }
                 else if (inv.HasValue)
                 {
@@ -243,7 +275,7 @@ namespace Oblak.Controllers
                 if (tp != null)
                 {
                     dto = _mapper.Map<TaxPaymentDto>(tp);
-                    ViewBag.Amount = dto.Amount;
+                    ViewBag.Amount = tp.Amount;
                     if (person != null)
                     {
                         ViewBag.Enable = person.ResTaxStatus == ResTaxStatus.Open;
@@ -267,6 +299,11 @@ namespace Oblak.Controllers
                 }
 
                 ViewBag.Dto = dto;
+
+                if (User.IsInRole("TouristOrgAdmin"))
+                { 
+                    ViewBag.Enable = true;
+                }
 
                 //var sl = _db.TaxPaymentTypes
                 //    .Where(a => a.PartnerId == _appUser.PartnerId)
@@ -299,27 +336,49 @@ namespace Oblak.Controllers
 
                 TaxPayment pay = null;
 
-                if(id == 0)
-                {
-                    pay = new TaxPayment();
-                }   
-                else
-                {
-                    pay  = _db.TaxPayments.FirstOrDefault(a => a.Id == id);                    
-                }
-                
-                _mapper.Map(dto, pay);
+                int? le = null;
+                int? ag = null;
 
-                if (dto.Id == null)
-                { 
-                    _db.Entry(pay).State = EntityState.Modified;
-                    _db.TaxPayments.Attach(pay);
-                }
-                else
+                if (dto.PersonId.HasValue)
                 {
+                    pay = _db.TaxPayments.Where(a => a.PersonId == dto.PersonId).FirstOrDefault();
+                    var p = _db.MnePersons.Include(a => a.Property).FirstOrDefault(a => a.Id == dto.PersonId);
+                    le = p.Property.LegalEntityId;
+                }
+                else if (dto.GroupId.HasValue)
+                {
+                    pay = _db.TaxPayments.Where(a => a.GroupId == dto.GroupId).FirstOrDefault();
+                    var g = _db.Groups.Include(a => a.Property).FirstOrDefault(a => a.Id == dto.GroupId);
+                    le = g.Property.LegalEntityId;
+                }
+                else if (dto.InvoiceId.HasValue)
+                {
+                    pay = _db.TaxPayments.Where(a => a.InvoiceId == dto.InvoiceId).FirstOrDefault();
+                    var i = _db.ExcursionInvoices.FirstOrDefault(a => a.Id == dto.InvoiceId);
+                    ag = i.AgencyId;
+                }
+
+                if (pay == null)
+                {
+                    var exists = _db.TaxPayments.Any(a => a.Reference == dto.Reference);
+                    if (exists) return Json(new { error = "Broj uplatnice već postoji!.", info = "" });
+
+                    pay = new TaxPayment();
                     _db.TaxPayments.Add(pay);
                 }
+                else
+                {
+					var exists = _db.TaxPayments.Any(a => a.Reference == dto.Reference && a.Id != pay.Id);
+					if (exists) return Json(new { error = "Broj uplatnice već postoji!.", info = "" });
+				}    
 
+                pay.Amount = dto.Amount ?? 0;
+                pay.PersonId = dto.PersonId;
+                pay.GroupId = dto.GroupId;
+                pay.Reference = dto.Reference;
+                pay.LegalEntityId = le;
+                pay.AgencyId = ag;
+                pay.TransactionDate = dto.TransactionDate ?? DateTime.Now;
                 pay.TaxPaymentTypeId = _db.TaxPaymentTypes.FirstOrDefault(a => a.TaxPaymentStatus == TaxPaymentStatus.AlreadyPaid).Id;
 
                 _db.SaveChanges();
@@ -330,7 +389,7 @@ namespace Oblak.Controllers
             }
             catch (Exception ex)
             {
-                return Json(new { error = "Došlo je do greške prilikom brisanja uplate." });
+                return Json(new { error = "Došlo je do greške prilikom brisanja uplate.", info = "" });
             }
         }
     }

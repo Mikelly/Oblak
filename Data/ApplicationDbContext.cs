@@ -158,8 +158,9 @@ namespace Oblak.Data
             modelBuilder.Entity<MnePerson>().HasOne(a => a.Group);
             modelBuilder.Entity<MnePerson>().HasOne(a => a.Property);
 			modelBuilder.Entity<MnePerson>().HasOne(a => a.ResTaxType);
-            modelBuilder.Entity<MnePerson>().HasOne(a => a.CheckInPoint);
             modelBuilder.Entity<MnePerson>().HasOne(a => a.ResTaxPaymentType);
+            modelBuilder.Entity<MnePerson>().HasOne(a => a.ResTaxExemptionType);
+            modelBuilder.Entity<MnePerson>().HasOne(a => a.CheckInPoint);			
 			modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxAmount).HasPrecision(18, 2);
 			modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxFee).HasPrecision(18, 2);
             modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxStatus).HasConversion(new EnumToStringConverter<ResTaxStatus>());
@@ -180,6 +181,12 @@ namespace Oblak.Data
 
 			modelBuilder.Entity<ResTaxType>().HasOne(a => a.Partner);
             modelBuilder.Entity<ResTaxType>().Property(a => a.Amount).HasPrecision(18, 2);
+
+            modelBuilder.Entity<ResTaxExemptionType>().HasOne(a => a.Partner);
+
+			modelBuilder.Entity<ResTaxHistory>().HasOne(a => a.Person).WithMany(a => a.ResTaxHistory).OnDelete(DeleteBehavior.ClientNoAction);
+			modelBuilder.Entity<ResTaxHistory>().Property(a => a.PrevResTaxAmount).HasPrecision(18, 2);
+            modelBuilder.Entity<ResTaxHistory>().Property(a => a.PrevResFeeAmount).HasPrecision(18, 2);
 
             modelBuilder.Entity<ResTaxPaymentType>().HasOne(a => a.Partner);
 			modelBuilder.Entity<ResTaxPaymentType>().HasMany(a => a.PaymentFees).WithOne(a => a.ResTaxPaymentType).OnDelete(DeleteBehavior.NoAction); ;
@@ -310,9 +317,11 @@ namespace Oblak.Data
         public DbSet<ResTaxCalc> ResTaxCalc { get; set; }
         public DbSet<ResTaxCalcItem> ResTaxCalcItems { get; set; }
 		public DbSet<ResTaxType> ResTaxTypes { get; set; }
-		public DbSet<ResTaxPaymentType> ResTaxPaymentTypes { get; set; }
+        public DbSet<ResTaxExemptionType> ResTaxExemptionTypes { get; set; }
+        public DbSet<ResTaxPaymentType> ResTaxPaymentTypes { get; set; }
 		public DbSet<ResTaxFee> ResTaxFees { get; set; }
-		public DbSet<NauticalTax> NauticalTax { get; set; }
+        public DbSet<ResTaxHistory> ResTaxHistory { get; set; }
+        public DbSet<NauticalTax> NauticalTax { get; set; }
 		public DbSet<UserDevice> UserDevices { get; set; }
         public DbSet<Report> Reports { get; set; }
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; }

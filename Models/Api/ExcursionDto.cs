@@ -8,7 +8,7 @@ namespace Oblak.Models.Api
 
         public int AgencyId { get; set; }
 
-		public string AgencyName { get; set; }
+		public string? AgencyName { get; set; }
 
 		public DateTime Date { get; set; }
 
@@ -16,9 +16,7 @@ namespace Oblak.Models.Api
 
         public int? CountryId { get; set; }
 
-        public string CountryName { get; set; }
-
-        public string Status { get; set; }
+        public string? CountryName { get; set; }
 
         public int NoOfPersons { get; set; }
 

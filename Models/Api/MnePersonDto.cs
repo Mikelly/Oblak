@@ -50,6 +50,8 @@ namespace Oblak.Models.Api
 		public string? Note { get; set; }
 		public int? ResTaxTypeId { get; set; }        
         public int? ResTaxPaymentTypeId { get; set; }
+        public int? ResTaxExemptionTypeId { get; set; }
+        public int? ResTaxStatus { get; set; }
         public decimal? ResTaxAmount { get; set; }
         public decimal? ResTaxFee { get; set; }
         public string? UserCreated { get; set; }
@@ -102,7 +104,8 @@ namespace Oblak.Models.Api
             mnePerson.ResTaxAmount = this.ResTaxAmount;
             mnePerson.ResTaxFee = this.ResTaxFee;
             mnePerson.ResTaxTypeId = this.ResTaxTypeId;
-            mnePerson.ResTaxPaymentTypeId = this.ResTaxPaymentTypeId;            
+            mnePerson.ResTaxPaymentTypeId = this.ResTaxPaymentTypeId;
+            mnePerson.ResTaxExemptionTypeId = this.ResTaxExemptionTypeId;
             //mnePerson.ResTaxStatus = this.ResTaxStatus switch 
             //{
             //    "Unpaid" => Data.Enums.ResTaxPaymentStatus.Unpaid,
@@ -163,6 +166,7 @@ namespace Oblak.Models.Api
                 ResTaxFee = mnePerson.ResTaxFee,
                 ResTaxTypeId = mnePerson.ResTaxTypeId,
                 ResTaxPaymentTypeId = mnePerson.ResTaxPaymentTypeId,
+                ResTaxExemptionTypeId = mnePerson.ResTaxExemptionTypeId,
                 UserCreated = mnePerson.UserCreated,
                 UserCreatedDate = mnePerson.UserCreatedDate,
                 CheckInPointName = mnePerson.CheckInPoint.Name,

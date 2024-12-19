@@ -135,7 +135,7 @@ namespace Oblak.Services
 			}
 
             m.LegalEntityId = legalEntity.Id;
-            m.PropertyId = group.PropertyId;
+            m.PropertyId = group.PropertyId ?? 0;
             m.PropertyExternalId = property.ExternalId;
             m.Email = group.Email;
             if (group.CheckIn.HasValue) m.CheckIn = group.CheckIn.Value; else m.CheckIn = DateTime.Now;

@@ -17,6 +17,7 @@ namespace Oblak.Models
         public List<CodeList> ReasonForStayCodeList { get; set; } = new List<CodeList>();
         public List<CodeList> DiscountReasonCodeList { get; set; } = new List<CodeList>();
         public Dictionary<string, string> ResTaxPaymentTypes { get; set; } = new Dictionary<string, string>();
+        public Dictionary<string, string> ResTaxExemptionTypes { get; set; } = new Dictionary<string, string>();
         public Dictionary<string, string> ResTaxTypes { get; set; } = new Dictionary<string, string>();
     }
 }

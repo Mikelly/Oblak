@@ -9,58 +9,40 @@
 }
 
 <script type="text/javascript">
-    // $(document).ready(function () {
-    //     $("#btnNewGroup").click(function () {
-    //         $("#wndNewGroup").data("kendoWindow").center().open();
-    //     });
 
-    //     $("#btnSubmitNewGroup").click(function () {
-    //         // Gather input values
-    //         var checkInDate = $("#checkInDate").data("kendoDatePicker").value();
-    //         var checkOutDate = $("#checkOutDate").data("kendoDatePicker").value();
-    //         var email = $("#email").val();
-
-    //         // Create GroupDto object
-    //         var groupDto = {
-    //             CheckIn: checkInDate,
-    //             CheckOut: checkOutDate,
-    //             Email: email
-    //         };
-
-    //         // Call the controller method to save the new group
-    //         saveNewGroup(groupDto);
-    //     });
-
-    //     $(document).ready(function () {
-    //         var propertyDropdown = $("#propertyDropdown").data("kendoDropDownList");
-    //         var propertyUnitDropdown = $("#propertyUnitDropdown").data("kendoDropDownList");
-
-    //         propertyDropdown.bind("change", function () {
-    //             var propertyId = this.value();
-    //             if (propertyId) {
-    //                 // Fetch PropertyUnits based on the selected Property
-    //                 $.ajax({
-    //                     url: '@Url.Action("GetPropertyUnits", "Group")',
-    //                     type: 'GET',
-    //                     data: { propertyId: propertyId },
-    //                     success: function (data) {
-    //                         propertyUnitDropdown.setDataSource(new kendo.data.DataSource({ data: data }));
-    //                         propertyUnitDropdown.enable(true);
-    //                     }
-    //                 });
-    //             } else {
-    //                 // Reset and disable PropertyUnit dropdown if no Property is selected
-    //                 propertyUnitDropdown.value("");
-    //                 propertyUnitDropdown.enable(false);
-    //             }
-    //         });
-    //     });
-    // });
-
-
-    function newGroup() {
+    function new1Group() {
         $("#wndNewGroup").data("kendoWindow").center().open();
     }
+
+    function newGroup() {
+        $.ajax({
+            url: `/edit-group?nautical=@nautical`,
+            type: 'GET',
+            success: function (data, status, xhr) {
+                $('#wndGroup').data('kendoWindow').content(data).center().open();                
+            }
+        });
+    }
+
+    function editGroup() {
+
+        var grid = $('#groupGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) {
+            Swal.fire({ icon: 'error', title: 'Morate odabrati prijavu', confirmButtonText: `U redu` });
+        }
+
+        $.ajax({
+            url: `/edit-group?nautical=@nautical&id=${item.Id}`,
+            type: 'GET',
+            success: function (data, status, xhr) {
+                $('#wndGroup').data('kendoWindow').content(data).center().open();
+            }
+        });
+    }
+
+
 
     function submitNewGroup() {
 
@@ -306,8 +288,8 @@
 
         debugger;
 
-        var grid = $('#mnePersonGrid').data('kendoGrid');
-        grid.dataSource.transport.options.read.url = `/Person/ReadMnePersons?groupId=@ViewBag.Group&period=${period}&dtmod=${cod}&dtmdo=${cdo}`;
+        var grid = $('#groupGrid').data('kendoGrid');
+        grid.dataSource.transport.options.read.url = `/Group/Read?nautical=@nautical&period=${period}&dtmod=${cod}&dtmdo=${cdo}`;
         grid.dataSource.read();
     }
 
@@ -318,6 +300,36 @@
     function dtmChanged() {
         //$('#grpPeriod').data('kendoButtonGroup').trigger('select');
         periodSelect({ indices: 4 });
+    }
+
+    function propertyChanged(e) {
+
+        var item = this.dataItem();
+
+        debugger;
+
+        if (item) {
+            $.ajax({
+                url: `/payments?property=${item.Id}`,
+                type: 'GET',
+                success: function (data, status, xhr) {
+                    var dropdown = $("#ResTaxPaymentTypeId").data("kendoDropDownList");
+                    dropdown.dataTextField = "Text";
+                    dropdown.dataValueField = "Value";
+                    dropdown.setDataSource(data.payments);
+                    dropdown.refresh();                     
+                        
+                    if (data.errInfo != "") {
+                        Swal.fire({ icon: 'error', title: data.errInfo, confirmButtonText: `U redu` });
+                    }                    
+                },
+                error: function () {
+                    Swal.fire({ icon: 'error', title: 'Došlo je do greške!', confirmButtonText: `U redu` });
+                }
+            });
+        } else {
+            console.log("No item selected.");
+        }
     }
 
 
@@ -338,6 +350,10 @@
         margin-bottom: 5px;
     }
 
+    .k-input-loading-icon {
+        padding: 0px !important;
+    }
+
 </style>
 
 <div style="display:flex; margin-left:15px; margin-top:25px; margin-right:15px;">
@@ -346,7 +362,14 @@
         .HtmlAttributes(new { type = "button", onclick = "newGroup()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
         .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
                 <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/user_group_new.png'/>
-                <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>NOVA PRIJAVA<br/>GOSTIJU<div>
+                <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>GRUPNA<br/>PRIJAVA<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnEditGroup")
+        .HtmlAttributes(new { type = "button", onclick = "editGroup()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/edit_color.png'/>
+                <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>IZMIJENI<br/>PRIJAVU<div>
                 </div>"))
 
     @(Html.Kendo().Button().Name("btnOpenGuest")
@@ -442,6 +465,7 @@
                         {
                             col.Bound(c => c.Date).Title("Datum").Format("{0:dd.MM.yyyy}").Width(100).HtmlAttributes(new { style = "text-align:center;" });
                             col.Bound(c => c.PropertyName).Title("Smještajni objekat").Width(200);
+                            col.Bound(c => c.LegalEntity).Title("Izdavalac").Width(200);
                             col.Bound(c => c.CheckIn).Title("Dolazak").Format("{0:dd.MM.yyyy}").Width(100).HtmlAttributes(new { style = "text-align:center;" }); ;
                             col.Bound(c => c.CheckOut).Title("Odlazak").Format("{0:dd.MM.yyyy}").Width(100).HtmlAttributes(new { style = "text-align:center;" }); ;                            
                             col.Bound(c => c.Guests).Title("Gosti").Width(500);
@@ -449,9 +473,12 @@
 
                     columns.Group(g => 
                         g.Title("Boravišna taksa").Columns(col =>
-                        {                            
+                        {
+                            col.Bound(c => c.ResTaxPaymentTypeName).Title("Plaćanje").Width(170);
                             col.Bound(c => c.ResTaxAmount).Title("Taksa").Width(85).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" });
-                            col.Bound(c => c.ResTaxFee).Title("Proviz").Width(85).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" });                            
+                            col.Bound(c => c.ResTaxFee).Title("Proviz").Width(85).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" });
+                            col.Bound(c => c.UserCreated).Title("Operater").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(140).HtmlAttributes(new { style = "text-align:center;" });
+                            col.Bound(c => c.CheckInPointName).Title("Punkt").Width(120).Format("{0:n2}");                            
                         }));
                 }
 
@@ -484,167 +511,6 @@
     )
 </div>
 
-
-@(Html.Kendo().Window().Name("wndNewGroup")
-    .Title("Nova prijava")
-    .Visible(false)
-    .Modal(true)
-    .Draggable(false)
-    .Width(500)
-    .Height(575 + (nautical ? 125 : 0) + (entrypoint ? 125 : 0))
-    .HtmlAttributes(new { style = "padding:40px;" })
-    .Content(@<text>
-        <div id="newGroupForm">
-
-        <label for="propertyDropdown"><b>Izaberite smještajni objekat:</b></label>
-        @(Html.Kendo().MultiColumnComboBox()
-            .Name("PropertyId")
-            .Placeholder("Izaberite objekat")
-            .DataTextField("Name")
-            .DataValueField("Id")
-            .Enable(true)
-            .Columns(columns =>
-            {
-                columns.Add().Field("Name").Title("Naziv").Width("200px");
-                columns.Add().Field("Address").Title("Adresa").Width("250px");
-                columns.Add().Field("LegalEntity").Title("Vlasnik").Width("200px");
-            })
-            .HtmlAttributes(new { id = "PropertyId", style = "width:100%;", autocomplete = "off", autocorrect = "off", autocapitalize = "off", spellcheck = "false" })
-            .DropDownWidth("400px")
-            .Messages(m => m.NoData("Nema podataka").Clear("Poništi"))
-            .Filter("contains").FilterFields(new string[] { "Name" })
-            .AutoBind(false)
-            .MinLength(3)
-            //.Events(e => e.Change("propertyChanged"))
-            //.ValuePrimitive(true)
-            //.Value(dto.PropertyId.ToString())
-            //.Text(dto.PropertyName)
-            .DataSource(source => { source.Read(read => { read.Action("ReadAdmin", "Property"); }).ServerFiltering(true); })
-        )
-        <br /><br />
-
-        @if(nautical)
-        {
-            <label for="vesselDropdown"><b>Izaberite plovni objekat:</b></label>
-            @(Html.Kendo().MultiColumnComboBox()
-                .Name("VesselId")
-                .Placeholder("Izaberite plovni objekat")
-                .DataTextField("Name")
-                .DataValueField("Id")
-                .Enable(true)
-                .Columns(columns =>
-                {
-                    columns.Add().Field("Name").Title("Naziv").Width("200px");
-                    columns.Add().Field("Registration").Title("Registracija").Width("250px");                
-                })
-                .HtmlAttributes(new { id = "VesselId", style = "width:100%;", autocomplete = "off", autocorrect = "off", autocapitalize = "off", spellcheck = "false" })
-                .DropDownWidth("400px")
-                .Messages(m => m.NoData("Nema podataka").Clear("Poništi"))
-                .Filter("contains").FilterFields(new string[] { "Name" })
-                .AutoBind(false)
-                .MinLength(1)      
-                .Events(e => e.Change("vesselChanged"))
-                .DataSource(source => { source.Read(read => { read.Action("ReadAdmin", "Vessel"); }).ServerFiltering(true); })
-            )
-            <br /><br />
-
-            <label for="legalEntityDropdown"><b>Izaberite izdavaoca:</b></label>
-            @(Html.Kendo().MultiColumnComboBox()
-                .Name("NauticalLegalEntityId")
-                .Placeholder("Izaberite izdavaoca")
-                .DataTextField("Name")
-                .DataValueField("Id")
-                .Enable(true)
-                .Columns(columns =>
-                {
-                    columns.Add().Field("Name").Title("Naziv").Width("200px");
-                    columns.Add().Field("Address").Title("Adresa").Width("250px");
-                })
-                .HtmlAttributes(new { id = "NauticalLegalEntityId", style = "width:100%;", autocomplete = "off", autocorrect = "off", autocapitalize = "off", spellcheck = "false" })
-                .DropDownWidth("400px")
-                .Messages(m => m.NoData("Nema podataka").Clear("Poništi"))
-                .Filter("contains").FilterFields(new string[] { "Name" })
-                .AutoBind(false)
-                .MinLength(1)
-                .Events(e => e.Change("nauticalLeChanged"))
-                .DataSource(source => { source.Read(read => { read.Action("ReadAdmin", "LegalEntity"); }).ServerFiltering(true); })
-            )
-            <br /><br />
-        }
-
-        <label for="checkInDate"><b>Očekivani datum dolaska:</b></label>
-        @(Html.Kendo().DatePicker()
-                .Name("checkInDate")
-                .HtmlAttributes(new { style = "width:100%" })
-                .Value(DateTime.Now.Date))
-
-        <br /><br />
-
-        <label for="checkOutDate"><b>Očekivani datum odlaska:</b></label>
-        @(Html.Kendo().DatePicker()
-            .Name("checkOutDate")
-            .HtmlAttributes(new { style = "width:100%;" })
-            .Value(DateTime.Now.Date.AddDays(1)))
-
-        <br /><br />
-            
-        <label for="email">E-mail:</label>
-        @(Html.Kendo().TextBox()
-            .Name("email")
-            .HtmlAttributes(new { style = "width:100%;" }))
-
-        @if(entrypoint)  
-        {
-            <br /> <br />
-
-            <label for="EntryPoint"><b>Mjesto ulaska u CG:</b></label>
-            @(Html.Kendo().DropDownList()
-                .Name("EntryPoint")
-                .BindTo(ViewBag.EntryPoints as SelectList)
-                .HtmlAttributes(new { id = "EntryPoint", style = "width:100%" }))
-
-            <br /> <br />
-
-        <label for="EntryPointDate"><b>Datum ulaska u CG:</b></label>
-        @(Html.Kendo().DatePicker()
-                .Name("EntryPointDate")
-                .HtmlAttributes(new { id = "EntryPointDate", style = "width:100%" })
-                .Value(DateTime.Now.Date))
-        }
-
-        @if(User.IsInRole("TouristOrg"))
-        {
-            <br /><br />
-
-            <label for="resTaxPaymentType"><b>Naplata takse:</b></label>
-            @(Html.Kendo().DropDownList()
-                .Name("ResTaxPaymentTypeId")
-                .BindTo(ViewBag.ResTaxPaymentTypes as SelectList)
-                .HtmlAttributes(new { id = "ResTaxPaymentTypeId", style = "width:100%" }))
-        }        
-
-        <br /><br /><br />
-
-            <div style="display: flex; flex-direction: column; align-items: center;">
-                @(Html.Kendo().Button().Name("btnSubmitNewGroup")
-                    .HtmlAttributes(new { type = "button", onclick = "submitNewGroup()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
-                    .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
-                        <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/user_group_new.png'/>
-                        <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>NOVA PRIJAVA<br/>GOSTIJU<div>
-                    </div>"))
-            </div>
-
-@*             <div style="display: flex; flex-direction: column; align-items: center;">
-                @(Html.Kendo().Button().Name("btnSubmitNewGroup")
-                    .Content("<img style='width:52px;height:52px;text-align:center; position:relative; top:-3px;' src='/Content/Icons/user_group_new.png'></img>")
-                    .HtmlAttributes(new { type="button", style = "width:80px; height:80px; border-radius:50%; margin-top: 10px;", onclick = "submitNewGroup()" })
-                    )
-                <div style="margin-top:3px;"><b>Nova prijava</b></div>
-            </div> *@
-
-        </div>
-    </text>)
-)
-
-
 @Html.Kendo().Window().Name("wndSendLink").Title("Slanje linka").Visible(false).Modal(true).Draggable(false).Width(400).Height(450).HtmlAttributes(new { style = "padding:40px;" })
+
+@Html.Kendo().Window().Name("wndGroup").Title("Podaci o grupi").Visible(false).Modal(true).Draggable(false).Width(500).Height(580 + (nautical ? 125 : 0) + (entrypoint ? 125 : 0)).HtmlAttributes(new { style = "padding:40px;" })

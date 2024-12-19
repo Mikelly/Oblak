@@ -2,6 +2,7 @@
 {
     public enum TaxPaymentStatus
     {
+        None,
         Unpaid,
         AlreadyPaid,
         Cash,

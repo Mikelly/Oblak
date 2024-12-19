@@ -87,30 +87,7 @@
         });
     }
 
-    function doExtPay() {
-        $.ajax({
-            url: '/do-ext-pay',
-            type: 'POST',
-            data: $('#extPayForm').serialize(),
-            success: function (data) {
-                if (data.id != null) {
-                    $('#PayId').val(data.id);
-                }
-                if (data.info != "") {                                        
-                    Swal.fire({ icon: 'success', title: 'Uspješno sačuvane izmjene!', confirmButtonText: `U redu`, timer: 1000 });                    
-                    var wnd = $("#wndExtPay").data("kendoWindow");
-                    wnd.close();
-                    
-                }
-                else if (data.error != "") {
-                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
-                }                
-            },
-            error: function () {
-                alert("Došlo je do greške.");
-            }
-        });
-    }
+
 
 </script>
 
@@ -173,6 +150,15 @@
             </div>
             <fieldset class="fieldset">
                 <div class="one" style="flex:0 1 calc(48% + 20px)">
+                    @{
+                        var htmls = new Dictionary<string, object>();                        
+                        htmls.Add("id", "PropertyId");
+                        htmls.Add("style", "width: 100%;");
+                        htmls.Add("autocomplete", "off");
+                        htmls.Add("autocapitalize", "off");
+                        htmls.Add("spellcheck", "off");
+                        if (groupId != 0) htmls.Add("readonly", "readonly");
+                    }
                     <label for="firstname">Izaberite objekat<span style="color: red;">*</span></label>
                     @(Html.Kendo().MultiColumnComboBox()
                         .Name("PropertyId")
@@ -185,8 +171,10 @@
                             columns.Add().Field("Name").Title("Naziv").Width("200px");
                             columns.Add().Field("Address").Title("Adresa").Width("250px");
                             columns.Add().Field("LegalEntity").Title("Vlasnik").Width("200px");
+                            columns.Add().Field("TIN").Title("JMBG").Width("150px");
                         })
-                        .HtmlAttributes(new { id = "PropertyId", style = "width:100%;", autocomplete = "off", autocorrect = "off", autocapitalize = "off", spellcheck = "false" })
+                        //.HtmlAttributes(new { id = "PropertyId", style = "width:100%;", autocomplete = "off", autocorrect = "off", autocapitalize = "off", spellcheck = "false", @readonly = "readonly" })
+                        .HtmlAttributes(htmls)
                         .DropDownWidth("400px")
                         .Messages(m => m.NoData("Nema podataka").Clear("Poništi"))
                         .Filter("contains").FilterFields(new string[] { "Name" })
@@ -242,7 +230,7 @@
                         .Max(DateTime.Now.Date)
                         .Min(DateTime.Now.Date.AddYears(-100))
                         .Events(e => e.Change("resTaxCalc"))
-                        .HtmlAttributes(new { style = "width:100%" })
+                        .HtmlAttributes(new { style = "width:100%; font-family: 'Noto Sans Mono', monospace;" })
                         )
                 </div>
                 <div class="one" style="">
@@ -361,7 +349,7 @@
                     @(Html.Kendo().DatePicker().Value(dto.DocumentValidTo)
                         .Name("DocumentValidTo")
                         .Format("dd.MM.yyyy")
-                        .Min(DateTime.Now.Date)                        
+                        .Min(DateTime.Now.Date)
                         .HtmlAttributes(new { style = "width:100%; font-family: 'Noto Sans Mono', monospace;" })
                         )
                 </div>
@@ -402,7 +390,7 @@
                         .Max(DateTime.Now.Date)
                         .Min(DateTime.Now.Date.AddMonths(-3))
                         .Events(e => e.Change("resTaxCalc"))
-                        .HtmlAttributes(new { id = "CheckIn", style = "width:100%" })
+                        .HtmlAttributes(new { id = "CheckIn", style = "width:100%; font-family: 'Noto Sans Mono', monospace;" })
                         )
                 </div>
                 <div class="one">
@@ -412,7 +400,7 @@
                         .Min(1)
                         .Max(90)                        
                         .Events(e => e.Change("durationCalc"))
-                        .HtmlAttributes(new { id = "Duration", style = "width:100%" })
+                        .HtmlAttributes(new { id = "Duration", style = "width:100%; font-family: 'Noto Sans Mono', monospace;" })
                         )
                 </div>
                 <div class="one">
@@ -423,7 +411,7 @@
                         .Min(DateTime.Now.Date)
                         .Max(DateTime.Now.Date.AddMonths(12))
                         .Events(e => e.Change("resTaxCalc"))
-                        .HtmlAttributes(new { id = "CheckOut", style = "width:100%" })
+                        .HtmlAttributes(new { id = "CheckOut", style = "width:100%; font-family: 'Noto Sans Mono', monospace;" })
                         )
                 </div>
                 <div class="one">
@@ -434,7 +422,7 @@
                         .DataValueField("ExternalId")
                         .OptionLabel("Izaberite mjesto ulaska")
                         .BindTo(Model.EntryPointCodeList)
-                        .HtmlAttributes(new { style = "width:100%" })
+                        .HtmlAttributes(new { style = "width:100%;", id = "person_EntryPoint" })
                         )
                 </div>
                 <div class="one">
@@ -442,7 +430,7 @@
                     @(Html.Kendo().DatePicker().Value(dto.EntryPointDate)
                         .Name("EntryPointDate")
                         .Format("dd.MM.yyyy")
-                        .HtmlAttributes(new { style = "width:100%" })
+                        .HtmlAttributes(new { style = "width:100%; font-family: 'Noto Sans Mono', monospace;", id = "person_EntryPointDate" })
                         )
                 </div>
             </fieldset>
@@ -457,58 +445,73 @@
                 </div>
                 <fieldset class="fieldset">
                     <div class="one">
-                        <label for="ResTaxType">Vrsta oslobođenja<span style="color: red;">*</span></label>
-                        @(
-                            Html.Kendo().DropDownList().Value(dto.ResTaxTypeId.ToString())
-                                .Name("ResTaxTypeId")
-                                .DataTextField("Text")
-                                .DataValueField("Value")
-                                .OptionLabel("Izaberite vrstu boravišne takse")
-                                .AutoWidth(true)
-                                .Events(e => e.Change("resTaxCalc"))
-                                .BindTo(new SelectList(Model.ResTaxTypes as Dictionary<string, string>, "Key", "Value"))
-                                .Value((dto.ResTaxTypeId ?? 0).ToString())
-                                .HtmlAttributes(new { style = "width:100%" })
-                                )
+                        <label for="ResTaxType">Tip boravišne takse</label>
+                        @(Html.Kendo().DropDownList().Value(dto.ResTaxTypeId.ToString())
+                            .Name("ResTaxTypeId")
+                            .DataTextField("Text")
+                            .DataValueField("Value")
+                            //.OptionLabel("Izaberite vrstu boravišne takse")
+                            .AutoWidth(true)
+                            .Events(e => e.Change("resTaxCalc"))
+                            .BindTo(new SelectList(Model.ResTaxTypes as Dictionary<string, string>, "Key", "Value"))
+                            .Value((dto.ResTaxTypeId ?? 0).ToString())                            
+                            .HtmlAttributes(new { id = "ResTaxTypeId", style = "width:100%", @readonly = "readonly" })
+                            )
                     </div>
                     <div class="one">
+                        <label for="ResTaxType">Vrsta oslobođenja</label>
+                        @(Html.Kendo().DropDownList().Value(dto.ResTaxTypeId.ToString())
+                            .Name("ResTaxExemptionTypeId")
+                            .DataTextField("Text")
+                            .DataValueField("Value")
+                            .OptionLabel("Izaberite vrstu oslobođenja")
+                            .AutoWidth(true)
+                            .Events(e => e.Change("resTaxCalc"))
+                            .BindTo(new SelectList(Model.ResTaxExemptionTypes as Dictionary<string, string>, "Key", "Value"))
+                            .Value((dto.ResTaxExemptionTypeId ?? 0).ToString())
+                            .HtmlAttributes(new { id = "ResTaxExemptionTypeId", style = "width:100%" })
+                            )
+                    </div>
+                    <div class="one">
+                        @{
+                            var htmls2 = new Dictionary<string, object>();
+                            htmls2.Add("id", "ResTaxPaymentTypeId");
+                            htmls2.Add("style", "width: 100%;");
+                            if (groupId != 0) htmls2.Add("readonly", "readonly");
+                        }
                         <label for="ResTaxPaymentTypeId">Plaćanje boravišne takse<span style="color: red;">*</span></label>
-                        @(
-                            Html.Kendo().DropDownList().Value(dto.ResTaxPaymentTypeId.ToString())
-                                .Name("ResTaxPaymentTypeId")
-                                .DataTextField("Text")
-                                .DataValueField("Value")
-                                .OptionLabel("Izaberite način plaćanja")
-                                .AutoWidth(true)
-                                .Events(e => e.Change("resTaxCalc"))
-                                .BindTo(new SelectList(Model.ResTaxPaymentTypes as Dictionary<string, string>, "Key", "Value"))
+                        @(Html.Kendo().DropDownList().Value(dto.ResTaxPaymentTypeId.ToString())
+                            .Name("ResTaxPaymentTypeId")
+                            .DataTextField("Text")
+                            .DataValueField("Value")
+                            .OptionLabel("Izaberite način plaćanja")
+                            .AutoWidth(true)
+                            .Events(e => e.Change("resTaxCalc"))                            
+                            .BindTo(new SelectList(Model.ResTaxPaymentTypes as Dictionary<string, string>, "Key", "Value"))
                             .HtmlAttributes(new { id = "ResTaxPaymentTypeId", style = "width:100%" })
-                                )
+                            .HtmlAttributes(htmls2)
+                            )
                     </div>
                     <div class="one">
-                        <label for="ResTaxAmount">Iznos boravišne takse<span style="color: red;">*</span></label>
+                        <label for="ResTaxAmount">Iznos boravišne takse</label>
                         @(
                             Html.Kendo().NumericTextBox().Value((double)(dto.ResTaxAmount ?? 0m))
                                 .Name("ResTaxAmount")
                                 .Min(0)
-                                .Enable(false)
-                                .HtmlAttributes(new { style = "width:100%; font-family: 'Noto Sans Mono', monospace;" })
+                                .HtmlAttributes(new { style = "width:100%; font-family: 'Noto Sans Mono', monospace;", @readonly = "readonly" })
                                 )
                     </div>
                     <div class="one">
-                        <label for="ResTaxFee">Iznos provizije<span style="color: red;">*</span></label>
-                        @(
-                            Html.Kendo().NumericTextBox().Value((double)(dto.ResTaxFee ?? 0m))
+                        <label for="ResTaxFee">Iznos provizije</label>
+                        @(Html.Kendo().NumericTextBox().Value((double)(dto.ResTaxFee ?? 0m))
                                 .Name("ResTaxFee")
-                                .Min(0)
-                                .Enable(false)
-                                .HtmlAttributes(new { style = "width:100%; font-family: 'Noto Sans Mono', monospace;" })
+                                .Min(0)                                                                
+                                .HtmlAttributes(new { style = "width:100%; font-family: 'Noto Sans Mono', monospace;", @readonly = "readonly" })
                                 )
                     </div>
                     <div class="one">
                         <label for="ResTaxFee">Napomena</label>
-                        @(
-                            Html.Kendo().TextBox().Value(dto.Note)
+                        @(Html.Kendo().TextBox().Value(dto.Note)
                             .Name("Note")                                                        
                             .HtmlAttributes(new { style = "width:100%" })
                             )
@@ -542,24 +545,28 @@
                 <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>PRETHODNI<br/>BORAVAK<div>
             </div>"))
 
-    @(Html.Kendo().Button().Name("btnExtPay")
-        .HtmlAttributes(new { type = "button", onclick = $"extPay()", style = "height:95px; width:95px; cursor:pointer; margin-left:10px;" })
-        .Enable((bool)ViewBag.AlreadyPaid)
-        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
-            <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/virman.png'/>
-            <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>EXTERNA<br/>UPLATA<div>
-            </div>"))
+    @if(groupId == 0)
+    {
+        @(Html.Kendo().Button().Name("btnExtPay")
+            .HtmlAttributes(new { type = "button", onclick = $"extPay()", style = "height:95px; width:95px; cursor:pointer; margin-left:10px;" })
+            .Enable((bool)ViewBag.AlreadyPaid)
+            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
+                <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/virman.png'/>
+                <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>EXTERNA<br/>UPLATA<div>
+                </div>"))
+    }
 
     <div style="flex-grow:1"></div>
-    @if(dto.GroupId == null)
-    {
-        @(Html.Kendo().Button().Name("btnRegisterGuestW")
-            .HtmlAttributes(new { type = "button", onclick = "registerGuest()", style = "height:95px; width:95px; margin-right:10px;" })
-            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0; cursor:pointer;'>
-                        <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/police.png'/>
-                        <div style='font-weight:bold;display:block;position:relative;top:6px;line-height:110%;font-size:90%'>PRIJAVI<br/>GOSTA<div>
-                    </div>"))    
 
+    @(Html.Kendo().Button().Name("btnRegisterGuestW")
+        .HtmlAttributes(new { type = "button", onclick = "registerGuest()", style = "height:95px; width:95px; margin-right:10px;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0; cursor:pointer;'>
+            <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/police.png'/>
+            <div style='font-weight:bold;display:block;position:relative;top:6px;line-height:110%;font-size:90%'>PRIJAVI<br/>GOSTA<div>
+            </div>"))
+
+    @if (groupId == 0)
+    {
         @(Html.Kendo().Button().Name("btnVirmanW")
             .HtmlAttributes(new { type = "button", onclick = $"virman()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
             .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
@@ -567,18 +574,18 @@
                 <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>ŠTAMPA<br/>UPLATNICE<div>
                 </div>"))
 
-        @(Html.Kendo().Button().Name("btnVirmanW2")
+@*         @(Html.Kendo().Button().Name("btnVirmanW2")
             .HtmlAttributes(new { type = "button", onclick = $"virmanfoo()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
             .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
                 <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/print_invoice_color.png'/>
                 <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>ŠTAMPA<br/>UPLATNICE<div>
-                </div>"))
-
-        @(Html.Kendo().Button().Name("btnCertW2")
-            .HtmlAttributes(new { type = "button", onclick = $"sendCert()", style = "height:95px; width:95px; cursor:pointer;" })
-            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
-                        <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/licence_color.png'/>
-                        <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>POTVRDE<br/>O PRIJAVI<div>
-                    </div>"))
+                </div>")) *@
     }
+
+    @(Html.Kendo().Button().Name("btnCertW2")
+        .HtmlAttributes(new { type = "button", onclick = $"sendCert(0, {dto.Id})", style = "height:95px; width:95px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
+            <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/licence_color.png'/>
+            <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>POTVRDE<br/>O PRIJAVI<div>
+            </div>"))
 </div>

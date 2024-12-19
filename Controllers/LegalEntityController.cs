@@ -79,7 +79,8 @@ namespace Oblak.Controllers
             var errors = string.Empty;
             if (string.IsNullOrEmpty(name)) errors += "Morate unijeti naziv izdavaoca!" + Environment.NewLine;
             if (string.IsNullOrEmpty(type)) errors += "Morate unijeti tip izdavaoca!" + Environment.NewLine;
-            if (string.IsNullOrEmpty(tin)) errors += "Morate unijeti poreski broj izdavaoca!" + Environment.NewLine;
+            if (string.IsNullOrEmpty(tin)) errors += "Morate unijeti JMBG izdavaoca!" + Environment.NewLine;
+            if ((tin ?? "").Length != 13) errors += "Uneseni JMBG nema 13 karaktera!" + Environment.NewLine;
             if (string.IsNullOrEmpty(address)) errors += "Morate unijeti adresu izdavaoca!" + Environment.NewLine;
 
             if (errors != string.Empty) return Json(new BasicDto() { error = errors, info = "" });

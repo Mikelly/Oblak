@@ -28,8 +28,12 @@
 					@if (User.IsInRole("TouristOrg"))
 					{
 						<li><a href="/guest-list"><i class="fa fa-book"></i>Knjiga gostiju</a></li>
-						<li><a href="/reports-tourist-org"><i class="fa fa-print"></i>Izvještaji</a></li>
+						
 						<li><a href="/post-office"><i style="margin-left:-4px; margin-right:10px;" class="fa-solid fa-truck"></i>Export za Poštu CG</a></li>
+					}					
+					@if (User.IsInRole("TouristOrgAdmin"))
+					{
+						<li><a href="/reports-tourist-org"><i class="fa fa-print"></i>Izvještaji</a></li>
 					}
 					else
 					{

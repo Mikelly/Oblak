@@ -69,7 +69,11 @@ namespace Oblak.Data
 
         public ResTaxType? ResTaxType { get; set; }
 
-		public int? ResTaxPaymentTypeId { get; set; }
+        public int? ResTaxExemptionTypeId { get; set; }
+
+        public ResTaxExemptionType? ResTaxExemptionType { get; set; }
+
+        public int? ResTaxPaymentTypeId { get; set; }
 
 		public ResTaxPaymentType ResTaxPaymentType { get; set; }
 
@@ -78,5 +82,7 @@ namespace Oblak.Data
         public decimal? ResTaxAmount { get; set; }
 
 		public decimal? ResTaxFee { get; set; }
+
+        public List<ResTaxHistory> ResTaxHistory { get; set; }
 	}
 }

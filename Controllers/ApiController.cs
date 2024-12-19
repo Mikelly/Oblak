@@ -1029,12 +1029,11 @@ namespace Oblak.Controllers
         [Route("resTaxCalcPay")]
         public async Task<ActionResult> ResTaxCalcPay(int group)
         {
-
             try
             {
                 var g = db.Groups.Include(a => a.Persons).FirstOrDefault(a => a.Id == group);
                 var rb90Client = _registerClient as MneClient;
-                rb90Client.CalcGroupResTax(g);
+                rb90Client.CalcGroupResTax(g, TaxPaymentStatus.Card);
                 var result = await GroupGet(group);
                 return Json(result);
             }

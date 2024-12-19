@@ -6,7 +6,7 @@
     Layout = "~/Views/Shared/_LayoutINV.cshtml";
     var admin = User.IsInRole("TouristOrgAdmin");
     var control = User.IsInRole("TouristOrgControllor");
-    
+    var grp = ViewBag.Group != null;
 }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
@@ -255,9 +255,17 @@
             type: 'POST',
             data: $('#mnePersonForm').serialize(),
             success: function (data) {
-                if(data.id != null)
-                {
+                if(data.id != null) {
                     $('#Id').val(data.id);
+                }
+                if (data.ResTaxTypeId != null) {
+                    $('#ResTaxTypeId').data('kendoDropDownList').value(data.ResTaxTypeId);
+                }
+                if (data.ResTaxAmount != null) {
+                    $('#ResTaxAmount').data('kendoNumericTextBox').value(data.ResTaxAmount);
+                }
+                if (data.ResTaxFee != null) {
+                    $('#ResTaxFee').data('kendoNumericTextBox').value(data.ResTaxFee);
                 }
                 if (data.info != "") {
                     var grid = $('#mnePersonGrid').data('kendoGrid');
@@ -382,10 +390,64 @@
         });
     }
 
-    function sendCert() {    
+    function extPayGroup() {
 
-        var g = 0;
-        var p = $('#Id').val();
+        var g = @(ViewBag.Group ?? 0);
+
+        $.ajax({
+            url: `/ext-pay?g=${g}`,
+            type: 'GET',
+            success: function (data, status, jqXHR) {
+
+                const contentType = jqXHR.getResponseHeader("content-type") || "";
+
+                if (contentType.includes("application/json")) {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+                else if (contentType.includes("text/html")) {
+                    var wnd = $("#wndExtPay").data("kendoWindow");
+                    wnd.content(data);
+                    wnd.center().open();
+                }
+                else {
+                    console.log("Other response type:", contentType);
+                }
+            },
+            complete: function (data) {
+
+            }
+        });
+    }
+
+    function doExtPay() {
+        $.ajax({
+            url: '/do-ext-pay',
+            type: 'POST',
+            data: $('#extPayForm').serialize(),
+            success: function (data) {
+                if (data.id != null) {
+                    $('#PayId').val(data.id);
+                }
+                if (data.info != "") {
+                    Swal.fire({ icon: 'success', title: 'Uspješno sačuvane izmjene!', confirmButtonText: `U redu`, timer: 1000 });
+                    var wnd = $("#wndExtPay").data("kendoWindow");
+                    wnd.close();
+
+                }
+                else if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+            },
+            error: function () {
+                alert("Došlo je do greške.");
+            }
+        });
+    }
+
+    function sendCert(g, p) {    
+
+        //var g = 0;
+        //var p = $('#Id').val();
 
         var html =
             `<label for="latefisc" class="swal2-input-label">e-Mail adresa na koju želite poslati potvrde:</label>` +
@@ -407,7 +469,7 @@
         swal.close();
 
         $.ajax({
-            url: `/api/certificatepdf?grupa=${g}&person=${p}&email=${email}`,
+            url: `/api/certificatepdf?group=${g}&person=${p}&email=${email}`,
             type: 'POST',
             success: function (data) {
                 if (data.info != "") {
@@ -462,7 +524,7 @@
     }
 
     function certprint(g, p) {
-        window.open(`/api/certificatepdf?grupa=${g}&person=${p}`, "_blank");
+        window.open(`/api/certificatepdf?group=${g}&person=${p}`, "_blank");
     }
 
     function resTaxCalc() { 
@@ -473,6 +535,7 @@
             var property = $('#PropertyId').data('kendoMultiColumnComboBox').value();
             var taxType = $('#ResTaxTypeId').data('kendoDropDownList').value();
             var payType = $('#ResTaxPaymentTypeId').data('kendoDropDownList').value();
+            var exemptType = $('#ResTaxExemptionTypeId').data('kendoDropDownList').value();
 
             if (checkIn != null && checkOut != null) {
                 if (checkIn > checkOut) Swal.fire({ icon: 'error', title: 'Datum odjave mora biti veći od datuma odjave!', confirmButtonText: `U redu` });
@@ -485,15 +548,17 @@
 
             debugger;
 
-            if (alreadyPaidIds.includes(parseInt(payType))) {
-                $("#btnExtPay").data("kendoButton").enable(true);
-            }
-            else {
-                $("#btnExtPay").data("kendoButton").enable(false);
+            if (group == 0) {
+                if (alreadyPaidIds.includes(parseInt(payType))) {
+                    $("#btnExtPay").data("kendoButton").enable(true);
+                }
+                else {
+                    $("#btnExtPay").data("kendoButton").enable(false);
+                }
             }
 
             $.ajax({
-                url: `/person/restax?property=${property}&resType=${taxType}&payType=${payType}&birthDate=${birthDate}&checkIn=${checkIn}&checkOut=${checkOut}&group=${group}`,
+                url: `/person/restax?property=${property}&resType=${taxType}&payType=${payType}&exemptType=${exemptType}&birthDate=${birthDate}&checkIn=${checkIn}&checkOut=${checkOut}&group=${group}`,
                 type: 'GET',
                 success: function (data) {
                     $('#ResTaxTypeId').data('kendoDropDownList').value(data.resType);
@@ -608,42 +673,21 @@
     }
 
     function propertyChanged(e) {
-
+        
         var item = this.dataItem();
 
         debugger;
 
         if (item) {
             $.ajax({
-                url: `/deferred?property=${item.Id}`,
+                url: `/payments?property=${item.Id}`,
                 type: 'GET',
                 success: function (data, status, xhr) {
-                    if (data.allowed == false) {
-                        var dropdownlist = $("#ResTaxPaymentTypeId").data("kendoDropDownList");
-                        var dataSource = dropdownlist.dataSource;
-
-                        data.Ids.forEach(function (id) {
-                            var itemToRemove = dataSource.data().find(function (item) {
-                                return item.Value === id.toString();
-                            });
-
-                            if (itemToRemove) {
-                                dataSource.remove(itemToRemove);
-                            }
-                        });
-
-                        if (data.errInfo != "") {
-                            Swal.fire({ icon: 'error', title: data.errInfo, confirmButtonText: `U redu` });
-                        }
-
-                        // var itemToRemove = dataSource.data().find(function (item) {
-                        //     return item.Value === data.Id.toString();
-                        // });
-
-                        // if (itemToRemove) {
-                        //     dataSource.remove(itemToRemove);
-                        // }
-                    }
+                    var dropdown = $("#ResTaxPaymentTypeId").data("kendoDropDownList");
+                    dropdown.dataTextField = "Text";
+                    dropdown.dataValueField = "Value";
+                    dropdown.setDataSource(data.payments);
+                    dropdown.refresh();
                 },
                 error: function () {
                     Swal.fire({ icon: 'error', title: 'Došlo je do greške!', confirmButtonText: `U redu` });
@@ -688,12 +732,16 @@
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>OBRIŠI<br/>GOSTA<div>
                 </div>"))
 
-@*     @(Html.Kendo().Button().Name("btnDeleteGuestRb90")
-        .HtmlAttributes(new { type = "button", onclick = "deleteGuestFromRb90(event)", style = "height:95px; width:95px; cursor:pointer;" })
-        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
-                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/eraser_color.png'/>
-                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>OBRIŠI GOSTA<br/>IZ RB90<div>
-                </div>")) *@
+    @if(grp)
+    {
+        @(Html.Kendo().Button().Name("btnExtPayGroup")
+            .HtmlAttributes(new { type = "button", onclick = $"extPayGroup()", style = "height:95px; width:95px; cursor:pointer;" })
+            .Enable((bool)ViewBag.AlreadyPaid)
+            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
+                        <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/virman.png'/>
+                        <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>EXTERNA<br/>UPLATA<div>
+                    </div>"))
+    }
 
     <div style="flex-basis:50px"></div>
 
@@ -773,12 +821,13 @@
                         .Columns(col =>
                             {
                                 col.Bound(g => g.PropertyName).Title("Smještajni objekat").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(250);
-                                col.Bound(g => g.FullName).Title("Ime i prezime").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(250);
+                                col.Bound(g => g.LegalEntityName).Title("Izdavaoc").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(200);
+                                col.Bound(g => g.FullName).Title("Ime i prezime").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(200);
                                 //col.Bound(g => g.PersonType).Title("Tip gosta").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(150).ClientTemplate("#= PersonType == 1 ? 'Domaći gost' : 'Strani gost' #");
                                 col.Bound(g => g.CheckIn).Title("Prijava").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Format("{0:dd.MM.yyyy}").Width(90).HtmlAttributes(new { style = "text-align:center;" });
                                 col.Bound(g => g.CheckOut).Title("Odjava").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Format("{0:dd.MM.yyyy}").Width(90).HtmlAttributes(new { style = "text-align:center;" });
                                 col.Bound(g => g.Registered).Title("MUP?").Width(80).ClientTemplate("#= Registered ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
-                                if (admin)
+                                if (admin || control)
                                 {
                                     col.Bound(g => g.UserCreatedDate).Title("Vrijeme").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Format("{0:dd.MM.yyyy HH:mm}").Width(130).HtmlAttributes(new { style = "text-align:center;" });
                                 }
@@ -805,10 +854,10 @@
                         {
                             col.Bound(g => g.ResTaxAmount).Title("Iznos").Width(80).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" }).ClientFooterTemplate("<div style='text-align:right'>#=kendo.toString(sum, '0.00')#<div>");
                             col.Bound(g => g.ResTaxFee).Title("Provizija").Width(80).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" }).ClientFooterTemplate("<div style='text-align:right'>#=kendo.toString(sum, '0.00')#<div>");
-                            if (admin)
+                            if (admin || control)
                             { 
                                 col.Bound(g => g.UserCreated).Title("Operater").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(140).HtmlAttributes(new { style = "text-align:center;" });
-                                col.Bound(g => g.CheckInPointName).Title("Punkt").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(110).HtmlAttributes(new { style = "text-align:center;" });
+                                col.Bound(g => g.CheckInPointName).Title("Punkt").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(120).HtmlAttributes(new { style = "text-align:center;" });
                             }
                         })
                 );
@@ -874,10 +923,10 @@
     .Title("Prethodni boravak")
     .Visible(false)
     .Modal(true)
-    .Draggable(false)
-    .Width(400)
-    .Height(500)
-    .HtmlAttributes(new { style = "padding:40px; font-size:16px" })
+    .Draggable(true)
+    .Width(700)
+    .Height(650)
+    .HtmlAttributes(new { style = "padding:25px; font-size:16px" })
 )
 
 

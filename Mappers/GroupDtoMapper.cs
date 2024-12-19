@@ -19,7 +19,10 @@ namespace Oblak.Mappers
     {
         public GroupEnrichedDtoMapper()
         {
-            CreateMap<Group, GroupEnrichedDto>();
+            CreateMap<Group, GroupEnrichedDto>()
+                .ForMember(dest => dest.CheckInPointName, opt => opt.MapFrom(src => src.CheckInPoint == null ? "" : src.CheckInPoint!.Name))
+                .ForMember(dest => dest.ResTaxPaymentTypeName, opt => opt.MapFrom(src => src.ResTaxPaymentType == null ? "" : src.ResTaxPaymentType!.Description))
+                ;
         }
     }
 }

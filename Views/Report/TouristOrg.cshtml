@@ -10,6 +10,12 @@
 		{ $"{prtnid}ResTax", "Naplata boravišne takse" },		
 	};
 
+	var resTaxGroups = new Dictionary<string, string>() { 
+		{ $"CheckInPoint", "po punktu" },
+		{ $"Operator", "po operatoru" },
+		{ $"Place", "po naselju" },
+	};
+
 	if(User.IsInRole("TouristOrgAdmin"))
 	{
 		reports.Add($"{prtnid}ResTaxHistory", "Istorija izmjena");
@@ -62,6 +68,15 @@
 			$('#datum').show();
 			$('#checkInPoint').show();
 		}
+
+		if(report == "ResTax")
+		{
+			$('#resTaxGroup').show();		
+		}
+		else
+		{
+			$('#resTaxGroup').hide();		
+		}
 	}
 
 	function runReport() {
@@ -75,6 +90,7 @@
 		$('#fdateTo').val(kendo.toString($('#DateTo').data('kendoDatePicker').value(), 'ddMMyyyy'));
 		$('#fcheckInPointId').val($('#CheckInPointId').val());
 		$('#fuserName').val($('#UserName').val());		
+		$('#fresTaxGroup').val($('#ResTaxGroup').val());		
 
 		$('#reportForm').submit();
 	}
@@ -95,6 +111,7 @@
 	<input type="hidden" id="fdateTo" name="dateTo" />
 	<input type="hidden" id="fcheckInPointId" name="checkInPointId" />
 	<input type="hidden" id="fuserName" name="userName" />
+	<input type="hidden" id="fresTaxGroup" name="resTaxGroup" />
 </form>
 
 <div style="width:400px; margin-left:auto; margin-right:auto; margin-top:50px; font-size:larger;">
@@ -140,6 +157,16 @@
 				.BindTo(ViewBag.CheckInPoints as List<CheckInPoint>)				
 				.DataValueField("Id")
 				.DataTextField("Name")
+				)
+		<br />
+	</div>
+
+	<div class="parameter" style="display:none" id="resTaxGroup">
+		Izaberite način prikaza
+		@(Html.Kendo().DropDownList().Name("ResTaxGroup")
+				.AutoWidth(true)
+				.OptionLabel("Izaberite ")
+				.BindTo(new SelectList(resTaxGroups as Dictionary<string, string>, "Key", "Value"))
 				)
 		<br />
 	</div>

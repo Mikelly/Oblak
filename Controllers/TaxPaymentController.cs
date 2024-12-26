@@ -16,11 +16,14 @@ using System.Data;
 using Microsoft.Data.SqlClient;
 using Oblak.Helpers;
 using Microsoft.OpenApi.Writers;
+using DocumentFormat.OpenXml.Office2016.Excel;
+using System.Threading.Tasks;
 
 namespace Oblak.Controllers
 {
     public class TaxPaymentController : Controller
     {
+        private readonly MneClient _mneClient;
         private readonly ILogger<TaxPaymentController> _logger;
         private readonly ApplicationDbContext _db;
         private readonly IMapper _mapper;
@@ -29,7 +32,8 @@ namespace Oblak.Controllers
         private LegalEntity _legalEntity;
 
         public TaxPaymentController(
-            ILogger<TaxPaymentController> logger, 
+            ILogger<TaxPaymentController> logger,
+            MneClient mneClient,
             ApplicationDbContext db, 
             IMapper mapper,
             IServiceProvider serviceProvider,
@@ -39,6 +43,7 @@ namespace Oblak.Controllers
             _logger = logger;            
             _db = db;
             _mapper = mapper;
+            _mneClient = mneClient;
 
             var username = httpContextAccessor.HttpContext?.User?.Identity?.Name;
             if (username != null)
@@ -89,6 +94,28 @@ namespace Oblak.Controllers
 			return PartialView();
         }
 
+        [HttpGet("get-balance")]
+        public async Task<IActionResult> GetBalance(int le)
+        {
+            var balance = _db.TaxPaymentBalances.Where(a => a.LegalEntityId == le && a.TaxType == TaxType.ResidenceTax).FirstOrDefault();
+            if (balance == null)
+            {
+                balance = new TaxPaymentBalance();
+                balance.LegalEntityId = le;                
+                balance.TaxType = TaxType.ResidenceTax;
+                _db.Add(balance);
+                await _db.SaveChangesAsync();
+            }
+
+            var calc = _db.GetBalance("ResidenceTax", le, 0);
+            balance.Balance = calc;
+            await _db.SaveChangesAsync();
+
+            var result = _db.TaxPaymentBalances.Where(a => a.TaxType == TaxType.ResidenceTax && a.LegalEntityId == le).Select(a => a.Balance).FirstOrDefault();
+
+            return Ok(new { balance = result });
+        }
+
         [HttpPost]
         public async Task<IActionResult> Read([DataSourceRequest] DataSourceRequest request, int? le, int? ag, string taxType)
         {      
@@ -116,7 +143,7 @@ namespace Oblak.Controllers
                     return Json(new DataSourceResult { Errors = "Entity not found." });
                 }
 
-                if (_db.TaxPayments.Any(a => a.Reference == dto.Reference && a.Id != payment.Id))
+                if (string.IsNullOrEmpty(dto.Reference) == false && _db.TaxPayments.Any(a => a.Reference == dto.Reference && a.Id != payment.Id))
                 {
                     return Json(new DataSourceResult { Errors = "Uplatnica je već iskorišćena." });
                 }
@@ -153,7 +180,7 @@ namespace Oblak.Controllers
 
                 //_mapper.Map(dto, pay);
 
-                if (_db.TaxPayments.Any(a => a.Reference == dto.Reference))
+                if (string.IsNullOrEmpty(dto.Reference) == false && _db.TaxPayments.Any(a => a.Reference == dto.Reference))
                 {
                     return Json(new DataSourceResult { Errors = "Uplatnica je već iskorišćena." });
                 }
@@ -175,10 +202,19 @@ namespace Oblak.Controllers
 
                 pay.UserModified = User.Identity.Name;
                 pay.UserModifiedDate = DateTime.Now;
-
                 _db.Add(pay);
+                await _db.SaveChangesAsync();
 
-                await _db.SaveChangesAsync();                
+                _db.Entry(pay).Reference(a => a.TaxPaymentType).Load();
+
+                if (pay.TaxPaymentType.IsCash)
+                {
+                    var partner = _appUser.PartnerId ?? 0;
+                    var cash = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner && a.PaymentStatus == TaxPaymentStatus.Cash).FirstOrDefault();
+                    var fee = _mneClient.CalcResTaxFee(pay.Amount, partner, cash.Id);
+                    pay.Fee = fee;
+                    _db.SaveChanges();
+                }
 
                 var balance = _db.TaxPaymentBalances.Where(a => (a.LegalEntityId == (le ?? -1) || a.AgencyId == (ag ?? -1)) && a.TaxType == tt).FirstOrDefault();
                 if (balance == null)

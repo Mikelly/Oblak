@@ -10,6 +10,7 @@ namespace Oblak.Mappers
     {
         public ExcursionInvoiceItemDtoMapper() {
             CreateMap<ExcursionInvoiceItem, ExcursionInvoiceItemDto>()
+                .ForMember(dest => dest.CountryName, opt => opt.MapFrom(src => src.Country!.CountryName))
                 .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Price * src.NoOfPersons));
 
             CreateMap<ExcursionInvoiceItemDto, ExcursionInvoiceItem>();

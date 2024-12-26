@@ -87,7 +87,7 @@ namespace Oblak.Controllers
         [HttpPost("excursion-invoice-items-read")]
         public async Task<IActionResult> Read([DataSourceRequest] DataSourceRequest request, [FromQuery] int? InvoiceId)
         {                    
-            var items = _db.ExcursionInvoiceItems
+            var items = _db.ExcursionInvoiceItems.Include(a => a.Country)
                 .Where(x => x.ExcursionInvoiceId == InvoiceId)
                 .Select(_mapper.Map<ExcursionInvoiceItemDto>)
                 .ToList();

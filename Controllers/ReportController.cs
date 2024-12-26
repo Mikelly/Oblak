@@ -173,9 +173,10 @@ namespace Oblak.Controllers
             var dateTo = Request.Form["DateTo"];
             var checkInPoint = Request.Form["CheckInPointId"];
             var username = Request.Form["UserName"];
+			var resTaxGroup = Request.Form["ResTaxGroup"];
 
-            //Dictionary<string, object> parameters = new Dictionary<string, object>();
-            List<Parameter> parameters = new List<Parameter>();
+			//Dictionary<string, object> parameters = new Dictionary<string, object>();
+			List<Parameter> parameters = new List<Parameter>();
 
             if (report == "CountryStats")
             {
@@ -215,7 +216,8 @@ namespace Oblak.Controllers
                 parameters.Add(new Parameter() { Name = "PartnerId", Value = _legalEntity.PartnerId });
                 parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
-            }
+				parameters.Add(new Parameter() { Name = "Group", Value = resTaxGroup });
+			}
             else if (report == "PostOffice")
             {
                 var cpid = int.Parse(checkInPoint);

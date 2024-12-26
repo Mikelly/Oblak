@@ -439,7 +439,7 @@ namespace Oblak.Controllers
 
             if (last != null)
             {
-                return Json(new { info = "OK", error = "", propertyId = last.PropertyId, propertyName = last.Property.Name, checkIn = last.CheckIn, checkOut = last.CheckOut ?? DateTime.Now.Date.AddDays(1) });
+                return Json(new { info = "OK", error = "", propertyId = last.PropertyId, propertyName = last.Property.Name, checkIn = last.CheckIn, checkOut = last.CheckOut ?? DateTime.Now.Date.AddDays(1), entryPoint = last.EntryPoint, entryPointDate = last.EntryPointDate });
             }
             else
             {

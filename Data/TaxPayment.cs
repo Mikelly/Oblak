@@ -42,6 +42,7 @@ namespace Oblak.Data
         [StringLength(450)]
         public string? Reference { get; set; }
 
+
         #region Audit Properties
 
         [StringLength(450)]

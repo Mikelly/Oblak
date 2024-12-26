@@ -62,6 +62,10 @@
         var id = $('#Id').val();
         var g = $('#GroupId').val();
 
+        if (id == 0) {
+            Swal.fire({ icon: 'error', title: 'Morate sačuvati prijavu, prije nego što unesete externu uplatu', confirmButtonText: `U redu` });
+        }
+
         $.ajax({
             url: `/ext-pay/?payid=${payid}&p=${id}&g=${g}`,
             type: 'GET',
@@ -226,10 +230,11 @@
                     <label for="birthdate">Datum rođenja</label>
                     @(Html.Kendo().DatePicker().Value(dto.BirthDate)
                         .Name("BirthDate")
-                        .Format("dd.MM.yyyy")
+                        .Format("{0:dd.MM.yyyy}")
                         .Max(DateTime.Now.Date)
                         .Min(DateTime.Now.Date.AddYears(-100))
-                        .Events(e => e.Change("resTaxCalc"))
+                        .Events(e => e.Change("guestDateChanged"))
+                        //.Events(e => e.Change("resTaxCalc"))
                         .HtmlAttributes(new { style = "width:100%; font-family: 'Noto Sans Mono', monospace;" })
                         )
                 </div>
@@ -348,7 +353,8 @@
                     <label for="DocumentValidTo">Rok važenja<span style="color: red;">*</span></label>
                     @(Html.Kendo().DatePicker().Value(dto.DocumentValidTo)
                         .Name("DocumentValidTo")
-                        .Format("dd.MM.yyyy")
+                        .Events(e => e.Change("dtchng"))
+                        .Format("{0:dd.MM.yyyy}")
                         .Min(DateTime.Now.Date)
                         .HtmlAttributes(new { style = "width:100%; font-family: 'Noto Sans Mono', monospace;" })
                         )
@@ -385,11 +391,12 @@
                 <div class="one">
                     <label for="CheckIn">Datum prijave<span style="color: red;">*</span></label>
                     @(Html.Kendo().DatePicker().Value(dto.CheckIn.Date)
-                        .Name("CheckIn")
-                        .Format("dd.MM.yyyy")
+                        .Name("CheckIn")                        
+                        .Format("{0:dd.MM.yyyy}")
                         .Max(DateTime.Now.Date)
                         .Min(DateTime.Now.Date.AddMonths(-3))
-                        .Events(e => e.Change("resTaxCalc"))
+                        .Events(e => e.Change("guestDateChanged"))
+                        //.Events(e => e.Change("resTaxCalc"))
                         .HtmlAttributes(new { id = "CheckIn", style = "width:100%; font-family: 'Noto Sans Mono', monospace;" })
                         )
                 </div>
@@ -406,11 +413,12 @@
                 <div class="one">
                     <label for="CheckOut">Datum odjave<span style="color: red;">*</span></label>
                     @(Html.Kendo().DatePicker().Value(dto.CheckOut)
-                        .Name("CheckOut")
-                        .Format("dd.MM.yyyy")
+                        .Name("CheckOut")                        
+                        .Format("{0:dd.MM.yyyy}")
                         .Min(DateTime.Now.Date)
                         .Max(DateTime.Now.Date.AddMonths(12))
-                        .Events(e => e.Change("resTaxCalc"))
+                        .Events(e => e.Change("guestDateChanged"))
+                        //.Events(e => e.Change("resTaxCalc"))
                         .HtmlAttributes(new { id = "CheckOut", style = "width:100%; font-family: 'Noto Sans Mono', monospace;" })
                         )
                 </div>
@@ -428,8 +436,9 @@
                 <div class="one">
                     <label for="EntryPointDate">Datum ulaska u CG<span style="color: red;">*</span></label>
                     @(Html.Kendo().DatePicker().Value(dto.EntryPointDate)
-                        .Name("EntryPointDate")
-                        .Format("dd.MM.yyyy")
+                        .Name("EntryPointDate")                        
+                        .Events(e => e.Change("dtchng"))
+                        .Format("{0:dd.MM.yyyy}")
                         .HtmlAttributes(new { style = "width:100%; font-family: 'Noto Sans Mono', monospace;", id = "person_EntryPointDate" })
                         )
                 </div>

@@ -447,7 +447,7 @@
     function sendCert(g, p) {    
 
         //var g = 0;
-        //var p = $('#Id').val();
+        var p = $('#Id').val();
 
         var html =
             `<label for="latefisc" class="swal2-input-label">e-Mail adresa na koju želite poslati potvrde:</label>` +
@@ -499,9 +499,11 @@
                     
                     const out = Date.parse(data.checkOut);
                     const ind = Date.parse(data.checkIn);
+                    const epd = Date.parse(data.entryPointDate);
 
                     var indate = new Date(ind);
                     var outdate = new Date(out);
+                    var entdate = new Date(epd);
                     
                     debugger;
                     
@@ -511,7 +513,15 @@
                         $('#CheckOut').data("kendoDatePicker").value(outdate);
                     }
 
+                    if (isNaN(epd) == false) {
+                        $('#person_EntryPointDate').data("kendoDatePicker").value(entdate);
+                    }
+
+                    var epdd = $('#person_EntryPoint').data("kendoDropDownList");
+                    epdd.value(data.entryPoint)
+
                     resTaxCalc();
+                    //$('#CheckIn').data("kendoDatePicker").trigger('change');
                 }
                 if (data.error != "") {
                     Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
@@ -527,7 +537,13 @@
         window.open(`/api/certificatepdf?group=${g}&person=${p}`, "_blank");
     }
 
-    function resTaxCalc() { 
+    function guestDateChanged(e) { 
+        dtchng(e);
+        resTaxCalc();
+    }
+
+    function resTaxCalc() {         
+
         if (isto) {
             var birthDate = $('#BirthDate').data('kendoDatePicker').value();
             var checkIn = $('#CheckIn').data('kendoDatePicker').value();
@@ -583,6 +599,8 @@
         checkOut.value(out);
 
         resTaxCalc();
+
+        //$('#CheckIn').data('kendoDatePicker').trigger(change);
     }
 
     function addDays(date, days) {
@@ -857,7 +875,7 @@
                             if (admin || control)
                             { 
                                 col.Bound(g => g.UserCreated).Title("Operater").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(140).HtmlAttributes(new { style = "text-align:center;" });
-                                col.Bound(g => g.CheckInPointName).Title("Punkt").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(120).HtmlAttributes(new { style = "text-align:center;" });
+                                col.Bound(g => g.CheckInPointName).Title("Punkt").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(135).HtmlAttributes(new { style = "text-align:center;" });
                             }
                         })
                 );

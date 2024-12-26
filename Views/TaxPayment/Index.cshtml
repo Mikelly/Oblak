@@ -60,6 +60,23 @@
         }
     }
 
+    function requestEnd(e) {
+        genericRequestEnd(e);
+
+        debugger;
+
+        $.ajax({
+            url: `/get-balance?le=@ViewBag.le&tax='R'`,
+            type: 'GET',
+            success: function (data) {
+                $('#le_Balance').data('kendoNumericTextBox').value(data.balance);
+            },
+            complete: function (data) {
+
+            }
+        });
+    }
+
 
     function newpayment() {
         var grid = $("#taxPaymentsGrid").data("kendoGrid");
@@ -81,7 +98,7 @@
     <div style="display: flex; flex:1; justify-content: center; align-items: center; font-size:large; font-weight:bold; text-align:center;">
         <span style="margin-right:20px;">Saldo obaveza:</span>
         <br />
-        @(Html.Kendo().NumericTextBox().Name("Balance").Spinners(false).Value((double)ViewBag.Balance).Format("{0:n2}").HtmlAttributes(new { style = "width:200px; text-align:center; margin-left: 2px; font-weight:bold; font-size:20px; font-family: 'Roboto Mono'", @readonly = "readonly" }))
+        @(Html.Kendo().NumericTextBox().Name("Balance").Spinners(false).Value((double)ViewBag.Balance).Format("{0:n2}").HtmlAttributes(new { id="le_Balance", style = "width:200px; text-align:center; margin-left: 2px; font-weight:bold; font-size:20px; font-family: 'Roboto Mono'", @readonly = "readonly" }))
     </div>
 
 
@@ -117,6 +134,7 @@
             columns.ForeignKey(g => g.TaxPaymentTypeId, (SelectList)ViewBag.PaymentMethods).Title("Vrsta uplate").Width(250).HtmlAttributes(new { style = "text-align:left;" });
             columns.Bound(g => g.TransactionDate).Title("Datum uplate").Format("{0:dd.MM.yyyy}").EditorTemplateName("Date").Width(135).HtmlAttributes(new { style = "text-align:center;" });
             columns.Bound(g => g.Amount).Title("Iznos uplate").Format("{0:n2}").Width(150).HtmlAttributes(new { style = "text-align:right;" });
+            columns.Bound(g => g.Fee).Title("Provizija").Format("{0:n2}").Width(100).HtmlAttributes(new { style = "text-align:right;" });
             columns.Bound(g => g.Reference).Title("Uplatnica").Width("20%").HtmlAttributes(new { style = "text-align:center;" });
             columns.Bound(g => g.Note).Title("Napomena").Width("30%").HtmlAttributes(new { style = "text-align:center;" });
             columns.Bound(g => g.UserModified).Title("Izmijenio").Width(125).HtmlAttributes(new { style = "text-align:center;" });
@@ -136,15 +154,18 @@
             {
                 m.Id(g => g.Id);
                 m.Field(g => g.Id).Editable(false);
-                m.Field(g => g.TransactionDate);
+                m.Field(g => g.TransactionDate).DefaultValue(DateTime.Now.Date);
                 m.Field(g => g.Amount);
+                m.Field(g => g.Fee).Editable(false);
+                m.Field(g => g.Reference);
+                m.Field(g => g.Note);
                 m.Field(g => g.LegalEntityId);
                 m.Field(g => g.UserCreated).Editable(false);
                 m.Field(g => g.UserModified).Editable(false);
                 m.Field(g => g.UserCreatedDate).Editable(false);
                 m.Field(g => g.UserModifiedDate).Editable(false);
         })
-        .Events(e => e.Error("paymentError").RequestStart("requestStart").Sync("genericSync").RequestEnd("genericRequestEnd"))        
+        .Events(e => e.Error("paymentError").RequestStart("requestStart").Sync("genericSync").RequestEnd("requestEnd"))
         .Create(a => a.Action("Create", "TaxPayment", new { le = ViewBag.le, ag = ViewBag.ag, taxType = ViewBag.taxType }))
         .Read(a => a.Action("Read", "TaxPayment", new { le = ViewBag.le, ag = ViewBag.ag, taxType = ViewBag.taxType }))
         .Update(a => a.Action("Update", "TaxPayment", new { le = ViewBag.le, ag = ViewBag.ag, taxType = ViewBag.taxType }))

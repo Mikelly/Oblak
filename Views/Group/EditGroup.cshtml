@@ -97,6 +97,8 @@
     <label for="checkInDate"><b>Očekivani datum dolaska:</b></label>
     @(Html.Kendo().DatePicker()
         .Name("checkInDate")
+        .Events(e => e.Change("dtchng"))
+        .Format("{0:dd.MM.yyyy}")
         .HtmlAttributes(new { style = "width:100%" })
         .Value(dto.CheckIn ?? DateTime.Now.Date))
 
@@ -105,6 +107,8 @@
     <label for="checkOutDate"><b>Očekivani datum odlaska:</b></label>
     @(Html.Kendo().DatePicker()
         .Name("checkOutDate")
+        .Events(e => e.Change("dtchng"))
+        .Format("{0:dd.MM.yyyy}")
         .HtmlAttributes(new { style = "width:100%;" })
         .Value(dto.CheckOut ?? DateTime.Now.Date.AddDays(1)))
 

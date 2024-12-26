@@ -111,6 +111,128 @@
         idleTime = 0;
     });
 
+    function dtchng2() {
+        var inputValue = datePicker.element.val().trim(); // Get and trim the user input
+        var currentYear = new Date().getFullYear();
+
+        // Allow empty input as a valid case
+        if (inputValue === "") {
+            datePicker.value(null); // Clear the value
+            return;
+        }
+
+        // Regex to match day, month, and optional year
+        var regex = /^(\d{1,2})\.(\d{1,2})(?:\.(\d{2}|\d{4})?)?\.?$/;
+        var match = inputValue.match(regex);
+
+        if (match) {
+            var day = parseInt(match[1], 10);
+            var month = parseInt(match[2], 10);
+            var year = match[3] ? parseInt(match[3], 10) : currentYear;
+
+            // Handle two-digit years
+            if (year < 100) {
+                year += year < 50 ? 2000 : 1900;
+            }
+
+            var newDate = new Date(year, month - 1, day);
+
+            if (
+                newDate.getDate() === day &&
+                newDate.getMonth() === month - 1 &&
+                newDate.getFullYear() === year
+            ) {
+                datePicker.value(newDate); // Set valid value
+            } else {
+                datePicker.value(null); // Reset to null for invalid date
+            }
+        } else {
+            // Invalid input, clear the value but trigger change
+            datePicker.value(null); // Clear the DatePicker value
+        }
+    }
+
+
+    function dtchng (e) {
+
+        var datePickerElement;
+        if (e && e.sender) {
+            datePickerElement = e.sender.element; // Get the DatePicker element from Kendo event
+        } else {
+            datePickerElement = $(e); // Assume e is a DOM element or jQuery selector
+        }
+
+        var datePicker = $(datePickerElement).data("kendoDatePicker");
+
+        if (!datePickerElement.data("alertShown")) {
+            datePickerElement.data("alertShown", false);
+        }
+
+        var alertShown = datePickerElement.data("alertShown");
+
+        //var datePicker = this;
+        var inputValue = datePicker.element.val().trim(); // Get and trim the user input
+
+        if (inputValue === "") {
+            datePicker.value(null); // Clear the DatePicker value
+            datePicker.trigger("change"); // Trigger the change event
+            datePickerElement.data("alertShown", false); // Reset the alert flag
+        }
+        else {
+            var currentYear = new Date().getFullYear();
+
+            // Regex to match day, month, and optional year (handles single/double digits)
+            //var regex = /^(\d{1,2})\.(\d{1,2})(?:\.(\d{2}|\d{4})?)?\.?$/;
+            var regex = /^(\d{1,2})[.,](\d{1,2})(?:[.,](\d{2}|\d{4}))?[.,]?$/;
+
+            var match = inputValue.match(regex);
+
+            if (match) {
+                var day = parseInt(match[1], 10); // Parse day (e.g., 1 or 01)
+                var month = parseInt(match[2], 10); // Parse month (e.g., 8 or 08)
+                var year = match[3] ? parseInt(match[3], 10) : currentYear; // Default year to currentYear
+
+                // Handle two-digit years (e.g., "24" -> 2024)
+                if (year < 100) {
+                    year += year < 50 ? 2000 : 1900; // Customize as needed
+                }
+
+                // Create a new date with the parsed values
+                var newDate = new Date(year, month - 1, day);
+
+                debugger;
+
+                // Validate the date to ensure it exists
+                if (
+                    newDate.getDate() === day &&
+                    newDate.getMonth() === month - 1 &&
+                    newDate.getFullYear() === year
+                ) {
+                    // Update the DatePicker's value with a formatted date
+                    datePicker.value(newDate);
+                    datePickerElement.data("alertShown", false); // Reset the alert flag
+                }
+                else if (!alertShown) {
+                    alert("Neispravan unos datum. Provjerite unesene podatke.");
+                    datePickerElement.data("alertShown", true); // Set the alert flag for this instance
+                }
+            } 
+            else if (!alertShown) {
+                alert("Neispravan unos datum. Provjerite unesene podatke.");
+                datePickerElement.data("alertShown", true); // Set the alert flag for this instance
+            }
+
+            datePicker.element.off("blur").on("blur", function () {
+                var inputValue = datePicker.element.val().trim();
+
+                if (inputValue !== "" && !datePicker.value()) {
+                    // Trigger the change event if the value is invalid
+                    datePicker.trigger("change");
+                }
+            });
+        }
+    }
+
     function formError(args) {
         if (args.Errors) {
 

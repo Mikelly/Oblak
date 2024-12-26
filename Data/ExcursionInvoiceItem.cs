@@ -20,6 +20,8 @@ namespace Oblak.Data
 
         public int NoOfPersons { get; set; }
 
+        public int? CountryId { get; set; }
+
         public decimal Price { get; set; }
 
         public decimal Amount { get; set; }
@@ -41,6 +43,8 @@ namespace Oblak.Data
 
 
         public ExcursionInvoice ExcursionInvoice { get; set; }
+
+        public Country? Country { get; set; }
 
     }
 }

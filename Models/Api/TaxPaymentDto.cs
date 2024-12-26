@@ -15,6 +15,7 @@ namespace Oblak.Models.Api
         public TaxType TaxType { get; set; }
 		public DateTime? TransactionDate { get; set; }
 		public decimal? Amount { get; set; }
+        public decimal? Fee { get; set; }
         public string? Note { get; set; }
         public string? Reference { get; set; }
         public string? UserCreated { get; set; }

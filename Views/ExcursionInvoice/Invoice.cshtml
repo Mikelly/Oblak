@@ -236,6 +236,16 @@
         });
     }
 
+    function onCountryChange(e) {
+        var grid = $("#ExcursionInvoiceItemsGrid").data("kendoGrid");
+        var val = $("#CountryId").val();        
+        var dataItem = grid.dataItem(grid.select());
+        dataItem.CountryId = val;
+        dataItem.dirty = true;
+        grid.trigger("change");
+    }
+
+
     function print() {        
         window.open(`/excursion-invoice-pdf?invoice=@i.Id`, `_blank`);
     };
@@ -264,13 +274,14 @@
 
     .k-numerictextbox input
     {
+        font-size:12px;
         text-align:center;
         font-family:'Roboto Mono'
     }
 
     .k-datepicker input
     {
-        font-size:13px;
+        font-size:12px;
         text-align:center;
         font-family:'Roboto Mono'
     }
@@ -521,8 +532,9 @@
                 columns.Bound(g => g.VoucherNo).Title("Vaučer").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(250);
                 columns.Bound(g => g.Date).Title("Datum").Format("{0:dd.MM.yyyy}").EditorTemplateName("Date").Width(150).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
                 columns.Bound(g => g.NoOfPersons).Title("Broj osoba").EditorTemplateName("Integer").Width(150).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
-                columns.Bound(g => g.Price).Title("Cijena").Format("{0:n2}").Width(150).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:right;" });
-                columns.Bound(g => g.Amount).Title("Iznos").Format("{0:n2}").Width(150).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:right;" });                
+                columns.Bound(g => g.CountryId).Title("Nacionalnost").ClientTemplate("#= CountryName ?? '' #").EditorTemplateName("Country").EditorViewData(new { Foo = "onCountryChange", ValueField = "Id", TextField = "CountryName" }).Width(250);
+                columns.Bound(g => g.Price).Title("Cijena").EditorTemplateName("Decimal").Format("{0:n2}").Width(150).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:right; font-family: 'Roboto Mono'; font-size: 11px;" });
+                columns.Bound(g => g.Amount).Title("Iznos").Format("{0:n2}").Width(150).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:right; font-family: 'Roboto Mono'; font-size: 11px;" });                
                 columns.Bound(g => g.Note).Title("Napomena").Format("{0:n2}").Width("90%").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" });
         })
         .Pageable(p => p.Refresh(true))

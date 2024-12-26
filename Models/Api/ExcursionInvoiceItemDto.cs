@@ -16,6 +16,10 @@ namespace Oblak.Models.Api
 
         public int NoOfPersons { get; set; }
 
+        public int? CountryId { get; set; }
+
+        public string? CountryName { get; set; }
+
         public decimal Price { get; set; }
 
         public decimal Amount { get; set; }

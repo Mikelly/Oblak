@@ -106,6 +106,7 @@ namespace Oblak.Data
             modelBuilder.Entity<ExcursionInvoice>().Property(a => a.Status).HasConversion(new EnumToStringConverter<TaxInvoiceStatus>()).HasPrecision(450);
 
             modelBuilder.Entity<ExcursionInvoiceItem>().HasOne(a => a.ExcursionInvoice).WithMany(a => a.ExcursionInvoiceItems).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<ExcursionInvoiceItem>().HasOne(a => a.Country);
             modelBuilder.Entity<ExcursionInvoiceItem>().Property(a => a.Price).HasPrecision(18, 2);
             modelBuilder.Entity<ExcursionInvoiceItem>().Property(a => a.Amount).HasPrecision(18, 2);
 

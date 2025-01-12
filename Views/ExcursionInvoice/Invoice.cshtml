@@ -13,7 +13,10 @@
     var le = -1;
 
     $(document).ready(function () {
-        
+        setTimeout(function () {
+            console.log('initialize native messaging');
+            window.postMessage({ type: "FROM_PAGE", message: { type: "Initialize" } }, "*");
+        }, 500);
     });
 
     function newinvoiceitem() {
@@ -53,43 +56,16 @@
         });
     }
 
-    function excursions() {
-        var grid = $('#AgenciesGrid').data('kendoGrid');
-        var item = grid.dataItem(grid.select());
-
-        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati agenciju', confirmButtonText: `U redu` });
-
-        ag = item.Id;
-
-        $.ajax({
-            url: `agency-excursions?&agency=${ag}`,
-            type: 'GET',
-            success: function (data) {
-                console.log(data);
-                var wnd = $("#wndPayments").data("kendoWindow");
-                wnd.title(`Unos izleta - ${item.Name}`);
-                wnd.content(data);
-                wnd.setOptions({
-                    width: $(window).width() * 0.80,
-                    height: $(window).height() * 0.80
-                });
-                wnd.center().open();
-            },
-            error: function (error) {
-                console.error(error);
-                Swal.fire({ icon: 'error', title: 'Došlo je do greške', confirmButtonText: `U redu` });
-            },
-            complete: function () {
-            }
-        });
-    }
-
-    function invoiceSync(e) {
-        
+    function invoiceSync(e) {        
         if (e.sender.shouldSync) {
             this.read();
-        
-            $.ajax({
+            updateTotals();
+        }
+    }
+
+
+    function updateTotals() {
+        $.ajax({
             url: `excursion-invoice-totals?invoiceId=@ViewBag.InvoiceId`,
             type: 'GET',
             success: function (data) {
@@ -97,21 +73,21 @@
                 $('#BillingFee').data('kendoNumericTextBox').value(data.Fee);
                 $('#BillingTotal').data('kendoNumericTextBox').value(data.Total);
             },
-            error: function (error) {                
+            error: function (error) {
                 Swal.fire({ icon: 'error', title: 'Došlo je do greške', confirmButtonText: `U redu` });
             },
             complete: function () {
             }
         });
-        }
     }
+
 
     function invoiceRequestEnd(e) {
         var response = e.response;
         var type = e.type;
         var grid = e.sender;
 
-        if (e.type == "update" || e.type == "create") {
+        if (e.type == "update" || e.type == "create" || e.type == "destroy") {
             var errors = e.response.Errors;
             if (errors != undefined) grid.shouldSync = false;
             else grid.shouldSync = true;
@@ -203,6 +179,7 @@
                     Swal.fire({ icon: 'success', title: data.info, confirmButtonText: `U redu`, timer: 1000 });
                     var grid = $('#ExcursionInvoiceItemsGrid').data('kendoGrid');
                     grid.dataSource.read();
+                    updateTotals();
                 }
                 else if (data.error != "") {
                     Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
@@ -219,7 +196,7 @@
         var id = $('#Id').val();
         
         $.ajax({
-            url: `/print-direct?i=${id}&tax='E'`,
+            url: `/print-direct?i=${id}&inv=@i.Id&tax=E`,
             type: 'GET',
             success: function (data) {
                 window.postMessage({
@@ -465,7 +442,7 @@
             <div style="display: flex; width:150px; margin-top:5px;">
                 @(
                     Html.Kendo().Button().Name("btnReceipt")
-                                .HtmlAttributes(new { type = "button", onclick = "receipt()", style = "height:42px; width:150px; margin-left:10px;; cursor:pointer;" })
+                                .HtmlAttributes(new { type = "button", onclick = "virman()", style = "height:42px; width:150px; margin-left:10px;; cursor:pointer;" })
                                 .Content(@"<div style='width:100%;display:flex;align-items:center;'>
                         <img style='width:32px;height:32px;display:inline-block; margin-left:5px;' src='/Content/Icons/receipt.png'/>
                         <div style='font-weight:bold;display:inline-block;line-height:110%;font-size:90%;display:flex;flex:1;justify-content:center;text-align:center;'>ŠTAMPAJ<br/>UPLATNICU<div>

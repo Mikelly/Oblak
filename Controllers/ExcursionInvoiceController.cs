@@ -145,6 +145,8 @@ namespace Oblak.Controllers
                 if (dto.Id == 0)
                 {
                     invoice = new ExcursionInvoice();
+                    invoice.UserCreated = User.Identity.Name;
+                    invoice.UserCreatedDate = DateTime.Now;
                     _db.ExcursionInvoices.Add(invoice);
                 }
                 else
@@ -162,13 +164,39 @@ namespace Oblak.Controllers
                     return Ok(new { id = invoice.Id, info = "", error = "Morate unijeti agenciju!" });
                 }
 
-                await _db.SaveChangesAsync();
+                _db.SaveChanges();
 
                 return Ok(new { id = invoice.Id, info = "OK", error = "" });
             }
             catch (Exception ex)
             {
                 return Ok(new { id = 0, info = "", error = ex.Message });                
+            }
+        }
+
+
+        [HttpPost("excursion-invoice-delete")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                ExcursionInvoice invoice = _db.ExcursionInvoices.FirstOrDefault(a => a.Id == id)!;
+
+                if (invoice.Status == TaxInvoiceStatus.Active || invoice.Status == TaxInvoiceStatus.Opened)
+                {
+                    _db.Remove(invoice);
+                    _db.SaveChanges();
+
+                    return Ok(new { id = invoice.Id, info = "Uspješno obrisana faktura", error = "" });
+                }
+                else
+                {
+                    return Ok(new { id = invoice.Id, info = "Ne možete brisati zaključenu fakturu", error = "" });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Ok(new { id = 0, info = "", error = ex.Message });
             }
         }
 
@@ -194,7 +222,7 @@ namespace Oblak.Controllers
         {
             try
             {
-                var inv = _db.ExcursionInvoices.FirstOrDefault(a => a.Id == invoiceId);
+                var inv = _db.ExcursionInvoices.Include(a => a.TaxPaymentType).FirstOrDefault(a => a.Id == invoiceId);
                 var dateFrom = inv.BillingPeriodFrom;
                 var dateTo = inv.BillingPeriodTo;
 
@@ -205,16 +233,32 @@ namespace Oblak.Controllers
 
                 var exursions = _db.Excursions.Where(a => a.AgencyId == inv.AgencyId && a.Date >= dateFrom.Value && a.Date <= dateTo.Value).ToList();
 
-                foreach (var e in exursions.GroupBy(a => new { a.Date, a.VoucherNo, a.ExcursionTaxAmount }))
+                foreach (var e in exursions.GroupBy(a => new { a.Date, a.VoucherNo, a.ExcursionTaxAmount, a.CountryId }))
                 {
                     var ei = new ExcursionInvoiceItem();
                     ei.ExcursionInvoiceId = invoiceId;
                     ei.Price = e.Key.ExcursionTaxAmount;
                     ei.VoucherNo = e.Key.VoucherNo;
                     ei.Date = e.Key.Date;
+                    ei.CountryId = e.Key.CountryId;
                     ei.NoOfPersons = e.Sum(a => a.NoOfPersons);
+                    ei.Amount = ei.NoOfPersons * ei.Price;
                     _db.ExcursionInvoiceItems.Add(ei);
                 }
+                _db.SaveChanges();
+
+                var totalAmount = _db.ExcursionInvoiceItems.Where(a => a.ExcursionInvoiceId == inv.Id).Select(a => a.Amount).Sum();
+                inv.BillingAmount = totalAmount;
+                if (inv.TaxPaymentType.IsCash)
+                {
+                    var fee = CalcTaxFee(totalAmount);
+                    inv.BillingFee = fee;
+                }
+                else
+                {
+                    inv.BillingFee = 0;
+                }
+
                 _db.SaveChanges();
 
                 return Json(new { info = "Uspješno uneseni izleti u fakturu!", error = "" });
@@ -260,6 +304,23 @@ namespace Oblak.Controllers
             {
                 return Json(new { info = "", error = ex.Message });
             }
+        }
+
+        private decimal CalcTaxFee(decimal amount)
+        {
+            var type = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.PaymentStatus == TaxPaymentStatus.Cash).FirstOrDefault();
+
+            var result = _db.ResTaxFees.Where(a => a.ResTaxPaymentTypeId == type!.Id && a.PartnerId == _appUser.PartnerId)
+                .Where(a => a.LowerLimit <= amount && amount <= a.UpperLimit)
+                .FirstOrDefault();
+
+            if (result != null)
+            {
+                if (result.FeeAmount.HasValue) return result.FeeAmount ?? 0m;
+                else if (result.FeePercentage.HasValue) return amount * (result.FeePercentage ?? 0m) / 100m;
+                else return 0;
+            }
+            else return 0;
         }
     }
 }

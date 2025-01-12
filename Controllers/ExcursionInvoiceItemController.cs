@@ -114,10 +114,20 @@ namespace Oblak.Controllers
 
                 await _db.SaveChangesAsync();
 
+                _db.Entry(item).Reference(a => a.ExcursionInvoice).Load();
+                _db.Entry(item.ExcursionInvoice).Reference(a => a.TaxPaymentType).Load();
+
                 var totalAmount = _db.ExcursionInvoiceItems.Where(a => a.ExcursionInvoiceId == InvoiceId).Select(a => a.Amount).Sum();
                 item.ExcursionInvoice.BillingAmount = totalAmount;
-                var fee = CalcTaxFee(totalAmount);
-                item.ExcursionInvoice.BillingFee = fee;
+                if (item.ExcursionInvoice.TaxPaymentType.IsCash)
+                {
+                    var fee = CalcTaxFee(totalAmount);
+                    item.ExcursionInvoice.BillingFee = fee;
+                }
+                else
+                {
+                    item.ExcursionInvoice.BillingFee = 0;
+                }
 
                 await _db.SaveChangesAsync();
 
@@ -151,12 +161,19 @@ namespace Oblak.Controllers
                 await _db.SaveChangesAsync();
 
                 _db.Entry(item).Reference(a => a.ExcursionInvoice).Load();
+                _db.Entry(item.ExcursionInvoice).Reference(a => a.TaxPaymentType).Load();
 
                 var totalAmount = _db.ExcursionInvoiceItems.Include(a => a.ExcursionInvoice).Include(a => a.ExcursionInvoice).Where(a => a.ExcursionInvoiceId == InvoiceId).Select(a => a.Amount).Sum();
                 item.ExcursionInvoice.BillingAmount = totalAmount;
-                var fee = CalcTaxFee(totalAmount);
-                item.ExcursionInvoice.BillingFee = fee;
-
+                if (item.ExcursionInvoice.TaxPaymentType.IsCash)
+                {
+                    var fee = CalcTaxFee(totalAmount);
+                    item.ExcursionInvoice.BillingFee = fee;
+                }
+                else
+                {
+                    item.ExcursionInvoice.BillingFee = 0;
+                }
                 await _db.SaveChangesAsync();
 
                 return Json(new[] { _mapper.Map(item, dto) }.ToDataSourceResult(request, ModelState));
@@ -172,12 +189,26 @@ namespace Oblak.Controllers
         {
             try
             {
-                var item = _db.ExcursionInvoiceItems.Find(dto.Id);
+                var item = _db.ExcursionInvoiceItems.Include(a => a.ExcursionInvoice).ThenInclude(a => a.TaxPaymentType).FirstOrDefault(a => a.Id == dto.Id);
+                var inv = item.ExcursionInvoice;
 
                 if (item != null)
                 {
                     _db.ExcursionInvoiceItems.Remove(item);
                     _db.SaveChanges();
+
+                    var totalAmount = _db.ExcursionInvoiceItems.Where(a => a.ExcursionInvoiceId == inv.Id).Select(a => a.Amount).Sum();
+                    item.ExcursionInvoice.BillingAmount = totalAmount;
+                    if (item.ExcursionInvoice.TaxPaymentType.IsCash)
+                    {
+                        var fee = CalcTaxFee(totalAmount);
+                        item.ExcursionInvoice.BillingFee = fee;
+                    }
+                    else
+                    {
+                        item.ExcursionInvoice.BillingFee = 0;
+                    }
+                    await _db.SaveChangesAsync();
 
                     return Json(new[] { dto }.ToDataSourceResult(request, ModelState));
                 }

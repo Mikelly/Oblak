@@ -8,7 +8,23 @@
 		{ $"{prtnid}GuestListByPlace", "Gosti po lokaciji" },
 		{ $"{prtnid}PostOffice", "Izvještaj za poštu" },
 		{ $"{prtnid}ResTax", "Naplata boravišne takse" },		
+		{ $"{prtnid}GuestBook", "Knjiga gostiju izdavaoca" },
+		{ $"{prtnid}LegalEntities", "Pregled izdavaoca" },
+		{ $"{prtnid}TaxExemptions", "Oslobođenja od boravišne takse" },
 	};
+
+	if (User.IsInRole("TouristOrgAdmin"))
+	{
+		reports.Add($"{prtnid}ResTaxHistory", "Istorija izmjena");
+	}
+
+	if ((string)ViewBag.TaxType == "E")
+	{
+		reports = new Dictionary<string, string>() {
+			{ $"{prtnid}ExcursionTaxCash", "Naplata izletničke takse - Gotovina" },
+			{ $"{prtnid}ExcursionTaxVoucher", "Naplata izletničke takse - Vaučeri" },
+		};	
+	}
 
 	var resTaxGroups = new Dictionary<string, string>() { 
 		{ $"CheckInPoint", "po punktu" },
@@ -16,14 +32,23 @@
 		{ $"Place", "po naselju" },
 	};
 
-	if(User.IsInRole("TouristOrgAdmin"))
-	{
-		reports.Add($"{prtnid}ResTaxHistory", "Istorija izmjena");
-	}
+	var legalEntityStatuses = new Dictionary<string, string>() {
+		{ $"Registered", "Registrovani" },
+		{ $"Unregistered", "Neregistrovani" },
+		{ $"All", "Svi izdavaoci" },
+	};
 
 	var formats = new Dictionary<string, string>() { { $"PDF", "PDF dokument" }, { $"XLSX", "Excel fajl" } };
 	var admin = ViewBag.Admin;
 }
+
+<style type="text/css">
+
+	.k-input-loading-icon {
+		padding: 0px !important;
+	}
+
+</style>
 
 <script type="text/javascript">
 	
@@ -60,7 +85,7 @@
 				$('#user').show();
 			}
 		}
-		else if (report == "GuestListByPlace" || report == "ResTax" || report == "CountryStatsPeriod" || report == "ResTaxHistory") {
+		else if (report == "GuestListByPlace" || report == "ResTax" || report == "CountryStatsPeriod" || report == "ResTaxHistory" || report == "GuestBook" || report == "TaxExemptions" || report.startsWith("ExcursionTax")) {
 			$('#datumOd').show();
 			$('#datumDo').show();			
 		}
@@ -69,13 +94,34 @@
 			$('#checkInPoint').show();
 		}
 
-		if(report == "ResTax")
-		{
-			$('#resTaxGroup').show();		
+		if (report == "ResTax") {
+			$('#resTaxGroup').show();
 		}
-		else
-		{
-			$('#resTaxGroup').hide();		
+		else {
+			$('#resTaxGroup').hide();
+		}
+
+		if (report == "GuestBook") {
+			$('#legalEntity').show();
+		}
+		else {
+			$('#legalEntity').hide();
+		}
+
+		if (report == "ExcursionTax") {
+			$('#taxPaymentType').show();
+		}
+		else {
+			$('#taxPaymentType').hide();
+		}
+
+		if (report == "LegalEntities") {
+			$('#legalEntityStatus').show();
+			$('#place').show();
+		}
+		else {
+			$('#legalEntityStatus').hide();
+			$('#place').hide();
 		}
 	}
 
@@ -90,7 +136,11 @@
 		$('#fdateTo').val(kendo.toString($('#DateTo').data('kendoDatePicker').value(), 'ddMMyyyy'));
 		$('#fcheckInPointId').val($('#CheckInPointId').val());
 		$('#fuserName').val($('#UserName').val());		
-		$('#fresTaxGroup').val($('#ResTaxGroup').val());		
+		$('#fresTaxGroup').val($('#ResTaxGroup').val());
+		$('#flegalEntity').val($('#LegalEntity').val());
+		$('#flegalEntityStatus').val($('#LegalEntityStatus').val());
+		$('#fplace').val($('#Place').val());
+		$('#ftaxPaymentType').val($('#TaxPaymentType').val());
 
 		$('#reportForm').submit();
 	}
@@ -112,6 +162,10 @@
 	<input type="hidden" id="fcheckInPointId" name="checkInPointId" />
 	<input type="hidden" id="fuserName" name="userName" />
 	<input type="hidden" id="fresTaxGroup" name="resTaxGroup" />
+	<input type="hidden" id="flegalEntity" name="legalEntity" />
+	<input type="hidden" id="flegalEntityStatus" name="legalEntityStatus" />
+	<input type="hidden" id="fplace" name="place" />
+	<input type="hidden" id="ftaxPaymentType" name="taxPaymentType" />
 </form>
 
 <div style="width:400px; margin-left:auto; margin-right:auto; margin-top:50px; font-size:larger;">
@@ -122,6 +176,7 @@
 			.HtmlAttributes(new { style = "font-weight:bold;"})
 			.OptionLabel("Izaberite izvještaj")
 			.AutoWidth(true)
+			.Height(250)
 			.BindTo(new SelectList(reports as Dictionary<string, string>, "Key", "Value"))
 			.Events(e => e.Change("reportChanged"))		
 		)
@@ -130,6 +185,63 @@
 	<br />
 	<br />
 	<br />
+
+	<div class="parameter" style="display:none" id="legalEntity">
+		Odaberite izdavaoca:
+		@(Html.Kendo().MultiColumnComboBox()
+				.Name("LegalEntity")
+				.Placeholder("Izaberite izdavaoca")
+				.DataTextField("Name")
+				.DataValueField("Id")
+				.Enable(true)
+				.Columns(columns =>
+				{
+					columns.Add().Field("Name").Title("Naziv").Width("200px");
+					columns.Add().Field("Address").Title("Adresa").Width("250px");
+				})
+				.HtmlAttributes(new { id = "LegalEntity", style = "width:100%;", autocomplete = "off", autocorrect = "off", autocapitalize = "off", spellcheck = "false" })
+				.DropDownWidth("400px")
+				.Messages(m => m.NoData("Nema podataka").Clear("Poništi"))
+				.Filter("contains").FilterFields(new string[] { "Name" })
+				.AutoBind(false)
+				.MinLength(3)
+				.DataSource(source => { source.Read(read => { read.Action("ReadAdmin", "LegalEntity"); }).ServerFiltering(true); })
+				)
+		<br />
+	</div>
+
+	<div class="parameter" style="display:none" id="place">
+		Odaberite naselje:
+		@(Html.Kendo().DropDownList().Name("Place")
+			.OptionLabel("Izaberite naselje")
+			.AutoWidth(true)
+			.BindTo(ViewBag.Places as List<CodeList>)
+			.DataValueField("ExternalId")
+			.DataTextField("Name")
+			)
+		<br />
+	</div>
+
+	<div class="parameter" style="display:none" id="taxPaymentType">
+		Odaberite naselje:
+		@(Html.Kendo().DropDownList().Name("TaxPaymentType")
+			.OptionLabel("Izaberite način plaćanja")
+			.AutoWidth(true)
+			.BindTo(ViewBag.TaxPayTypes as SelectList)
+			)
+		<br />
+	</div>
+
+	<div class="parameter" style="display:none" id="legalEntityStatus">
+		Odaberite status izdavaoca:
+		@(Html.Kendo().DropDownList().Name("LegalEntityStatus")
+			.AutoWidth(true)
+			.Height(250)
+			.Value("All")
+			.BindTo(new SelectList(legalEntityStatuses as Dictionary<string, string>, "Key", "Value"))
+			)
+		<br />
+	</div>
 
 	<div class="parameter" style="display:none" id="datum">
 		Unesite datum:

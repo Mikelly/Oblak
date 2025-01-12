@@ -103,6 +103,59 @@
         window.location = `excursion-invoice-create`;
     }
 
+    function print() {
+        var grid = $('#ExcursionInvoicesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati fakturu', confirmButtonText: `U redu` });
+
+        id = item.Id;
+
+        window.open(`/excursion-invoice-pdf?invoice=${id}`, `_blank`);
+    }
+
+    function deleteInvoice() {
+        var grid = $('#ExcursionInvoicesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati agenciju', confirmButtonText: `U redu` });
+
+        var inv = item.Id;
+
+        Swal.fire({
+            title: 'Da li ste sigurni?',
+            text: "Ovo je nepovratna operacija!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Da, obriši fakturu!',
+            cancelButtonText: 'Ne, otkaži brisanje!',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/excursion-invoice-delete?id=${inv}`,
+                    type: 'POST',
+                    success: function (data) {
+                        if (data.info != "") {
+                            Swal.fire({ icon: 'info', title: data.info, confirmButtonText: `U redu` });
+                            grid.dataSource.read();
+                        }
+                        else if (data.error != "") {
+                            Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                        }
+                    },
+                    error: function () {
+                        alert("Došlo je do greške.");
+                    }
+                });
+            } 
+        });
+
+       
+
+        
+    }
+
 </script>
 
 <style type="text/css">
@@ -131,6 +184,25 @@
                 <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>U DRUGOM<br/>PROZORU<div>
             </div>"))
 
+    <div style="display: flex; flex-grow: 1; width:150px; height:95px;">
+    </div>
+
+    @(Html.Kendo().Button().Name("btnPrint")
+        .HtmlAttributes(new { type = "button", onclick = "print()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/print_invoice_color.png'/>
+                <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>ŠTAMPAJ<br/>FAKTURU<div>
+            </div>"))
+
+    @(Html.Kendo().Button().Name("btnDelete")
+        .HtmlAttributes(new { type = "button", onclick = "deleteInvoice()", style = "height:95px; width:95px; margin-right:0px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/remove.png'/>
+                <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>OBRIŠI<br/>FAKTURU<div>
+            </div>"))
+
+
+
     
 
 @*     <div style="display: flex; margin-left:auto;">
@@ -149,11 +221,11 @@
         .Name("ExcursionInvoicesGrid")
         .Columns(columns =>
         {
-
             columns.Group(g => g.Title("Faktura").Columns(c =>
             {
                 columns.Bound(g => g.AgencyName).Title("Agencija").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(250);
                 columns.Bound(g => g.Date).Title("Datum").Format("{0:dd.MM.yyyy}").Width(100).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+                columns.Bound(g => g.InvoiceNo).Title("Broj").Width(100).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
                 columns.Bound(g => g.InvoiceNumber).Title("Broj").Width(150).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
                 columns.Bound(g => g.DueDate).Title("Valuta").Format("{0:dd.MM.yyyy}").Width(100).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
             }));
@@ -163,9 +235,9 @@
                 columns.Bound(g => g.BillingAmount).Title("Iznos").Width(100).Format("{0:n2}").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:right;" });
                 columns.Bound(g => g.BillingFee).Title("Provizija").Width(100).Format("{0:n2}").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:right;" });
                 columns.Bound(g => g.BillingTotal).Title("Ukupno").Width(100).Format("{0:n2}").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:right;" });
-                columns.Bound(g => g.TaxPaymentTypeDescription).Title("Način plaćanja").Width(120).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+                columns.Bound(g => g.TaxPaymentTypeDescription).Title("Način plaćanja").Width(220).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
                 columns.Bound(g => g.Status).Title("Status").Width(120).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
-                columns.Bound(g => g.Note).Title("Napomena").Width(200).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" });
+                //columns.Bound(g => g.Note).Title("Napomena").Width(200).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" });
             }));           
             
         })
@@ -179,6 +251,10 @@
         .DataSource(ds => ds
             .Ajax()
             .PageSize(20)
+            .Sort(sort =>
+            {
+                sort.Add(c => c.Date).Descending();
+            })
             .Model(m =>
             {
                 m.Id(g => g.Id);

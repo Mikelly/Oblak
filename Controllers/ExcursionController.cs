@@ -134,7 +134,10 @@ namespace Oblak.Controllers
 
                 var exc = new Excursion();
                 _mapper.Map(dto, exc);
-                exc.AgencyId = AgencyId.Value;
+                if (AgencyId.HasValue)
+                {
+                    exc.AgencyId = AgencyId.Value;
+                }
                 _db.Add(exc);
                 await _db.SaveChangesAsync();
 
@@ -159,11 +162,11 @@ namespace Oblak.Controllers
         {
             try
             {
-                var exc = _db.NauticalTax.Find(dto.Id);                    
+                var exc = _db.Excursions.Find(dto.Id);                    
 
                 if (exc != null)
                 {                    
-                    _db.NauticalTax.Remove(exc);
+                    _db.Excursions.Remove(exc);
                     _db.SaveChanges();
 
                     return Json(new[] { _mapper.Map(exc, dto) }.ToDataSourceResult(request, ModelState));

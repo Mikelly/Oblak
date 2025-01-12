@@ -142,8 +142,22 @@ namespace Oblak.Controllers
         }
 
         [HttpGet]
+        [Route("reports-res-tax")]
+        public ActionResult TouristOrgResTax()
+        {
+            return TouristOrg("R");
+        }
+
+        [HttpGet]
+        [Route("reports-exc-tax")]
+        public ActionResult TouristOrgExcTax()
+        {
+            return TouristOrg("E");
+        }
+
+        [HttpGet]
         [Route("reports-tourist-org")]
-        public ActionResult TouristOrg()
+        public ActionResult TouristOrg(string taxType)
         {
             var admin = HttpContext.User.IsInRole("TouristOrgAdmin") || HttpContext.User.IsInRole("TouristOrgController");
             var oper = !admin;
@@ -158,7 +172,17 @@ namespace Oblak.Controllers
             var users = _db.Users.Where(a => a.PartnerId == _legalEntity.PartnerId).ToList();
             ViewBag.Users = new SelectList(users, "UserName", "PersonName");
 
-            return View();
+            var taxPayTypes = _db.TaxPaymentTypes.Where(a => a.PartnerId == _legalEntity.PartnerId).ToList();
+            ViewBag.TaxPayTypes = new SelectList(taxPayTypes, "Id", "Description");
+
+            var mun = _appUser.PartnerId == 3 ? "20010" : "20036";
+
+			var places = _db.CodeLists.Where(a => a.Country == "MNE" && a.Type == "mjesto" && a.Param1 == mun).ToList();
+			
+            ViewBag.Places = places;
+            ViewBag.TaxType = taxType;
+
+			return View("TouristOrg");
         }
 
 
@@ -174,18 +198,28 @@ namespace Oblak.Controllers
             var checkInPoint = Request.Form["CheckInPointId"];
             var username = Request.Form["UserName"];
 			var resTaxGroup = Request.Form["ResTaxGroup"];
+			var place = Request.Form["Place"];
+			var legalEntityStatus = Request.Form["LegalEntityStatus"];
+            var legalEntity = Request.Form["LegalEntity"];
+            var taxPaymentType = Request.Form["TaxPaymentType"];
 
-			//Dictionary<string, object> parameters = new Dictionary<string, object>();
-			List<Parameter> parameters = new List<Parameter>();
+            //Dictionary<string, object> parameters = new Dictionary<string, object>();
+            List<Parameter> parameters = new List<Parameter>();
 
             if (report == "CountryStats")
             {
                 parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
                 parameters.Add(new Parameter() { Name = "Date", Value = DateTime.ParseExact(date, "ddMMyyyy", null) });
             }
-            else if (report == "CountryStatsPeriod" || report == "ResTaxHistory")
+            else if (report == "CountryStatsPeriod" || report == "ResTaxHistory" || report == "TaxExemptions" || report.ToString().StartsWith("ExcursionTax"))
             {
                 parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
+                parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
+                parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
+            }
+            else if (report == "GuestBook")
+            {
+                parameters.Add(new Parameter() { Name = "LegalEntity", Value = legalEntity });
                 parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
             }
@@ -218,7 +252,20 @@ namespace Oblak.Controllers
                 parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
 				parameters.Add(new Parameter() { Name = "Group", Value = resTaxGroup });
 			}
-            else if (report == "PostOffice")
+            else if (report == "ExcursionTax")
+            {
+                parameters.Add(new Parameter() { Name = "PartnerId", Value = _legalEntity.PartnerId });
+                parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
+                parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
+                parameters.Add(new Parameter() { Name = "TaxPaymentType", Value = taxPaymentType });
+            }
+            else if (report == "LegalEntities")
+			{
+				parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId }); 
+                parameters.Add(new Parameter() { Name = "Status", Value = legalEntityStatus }); 
+                parameters.Add(new Parameter() { Name = "Place", Value = place });
+			}
+			else if (report == "PostOffice")
             {
                 var cpid = int.Parse(checkInPoint);
 				var cp = _db.CheckInPoints.FirstOrDefault(a => a.Id == cpid);

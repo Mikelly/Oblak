@@ -2,28 +2,61 @@
 @using Oblak.Models.EFI;
 
 @{
-    ViewBag.Title = "Agencije";
+    ViewBag.Title = "Izleti";
     Layout = "~/Views/Shared/_LayoutINV.cshtml";
 }
+
+<style type="text/css">
+
+    .k-input-loading-icon {
+        padding: 0px !important;
+    }
+
+</style>
 
 <script type="text/javascript">
     $(document).ready(function () {
 
     });
 
+    function onCountryChange(e) {
+        var grid = $("#ExcursionsGrid").data("kendoGrid");
+        var val = $("#CountryId").val();        
+        var dataItem = grid.dataItem(grid.select());
+        dataItem.CountryId = val;
+        dataItem.dirty = true;
+        grid.trigger("change");
+    }
+
+    function onAgencyChange(e) {
+        var grid = $("#ExcursionsGrid").data("kendoGrid");
+        var val = $("#AgencyId").val();
+        var dataItem = grid.dataItem(grid.select());
+        dataItem.AgencyId = val;
+        dataItem.dirty = true;
+        grid.trigger("change");
+    }
+
 </script>
 
 <div style="position:absolute; top:25px; bottom: 15px; left: 15px; right:15px;">
     @(Html.Kendo().Grid<ExcursionDto>()
-        .Name("ExcursionsGrid")        
+        .Name("ExcursionsGrid")
+        .ToolBar(t => t.Create().Text("Novi izlet"))
         .Columns(columns =>
         {
-            columns.Bound(g => g.AgencyName).Title("Agencija").Width("90%").HtmlAttributes(new { style = "text-align:left;" });
-            columns.Bound(g => g.Date).Title("Datum").Format("{0:dd.MM.yyyy}").EditorTemplateName("Date").Width(150).HtmlAttributes(new { style = "text-align:center;" });
-            columns.Bound(g => g.VoucherNo).Title("Vaučer").Width(200).HtmlAttributes(new { style = "text-align:left;" });
-            columns.Bound(g => g.NoOfPersons).Title("Broj osoba").EditorTemplateName("Integer").Format("{0:n0}").Width(150).HtmlAttributes(new { style = "text-align:right;" });
+            columns.Command(command => { 
+                command.Edit().Text(" ").UpdateText(" ").CancelText(" "); 
+                command.Destroy().Text(" "); 
+            })
+            .Width(70);
+            columns.Bound(g => g.AgencyId).Title("Agencija").ClientTemplate("#= AgencyName ?? '' #").EditorTemplateName("Agency").EditorViewData(new { Foo = "onAgencyChange", ValueField = "Id", TextField = "Name" }).Width("30%");
+            columns.Bound(g => g.Date).Title("Datum").Format("{0:dd.MM.yyyy}").EditorTemplateName("Date").Width(140).HtmlAttributes(new { style = "text-align:center;" });
+            columns.Bound(g => g.VoucherNo).Title("Vaučer").Width("25%").HtmlAttributes(new { style = "text-align:left;" });
+            columns.Bound(g => g.NoOfPersons).Title("Broj osoba").EditorTemplateName("Integer").Format("{0:n0}").Width(120).HtmlAttributes(new { style = "text-align:center;" });
+            columns.Bound(g => g.CountryId).Title("Nacionalnost").ClientTemplate("#= CountryName ?? '' #").EditorTemplateName("Country").EditorViewData(new { Foo = "onCountryChange", ValueField = "Id", TextField = "CountryName" }).Width("30%");
             columns.Bound(g => g.ExcursionTaxAmount).Title("Iznos takse").Width(150).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" });
-            columns.Bound(g => g.ExcursionTaxTotal).Title("Ukupno").Width(150).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" });
+            columns.Bound(g => g.ExcursionTaxTotal).Title("Ukupno").Width(150).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" });            
         })
         .Pageable(p => p.Refresh(true))
         .Sortable()
@@ -40,15 +73,18 @@
                 m.Id(g => g.Id);
                 m.Field(g => g.Id).Editable(false);
                 m.Field(g => g.AgencyId);
-                m.Field(g => g.AgencyName);
                 m.Field(g => g.Date);
                 m.Field(g => g.VoucherNo);
                 m.Field(g => g.NoOfPersons);
-                m.Field(g => g.ExcursionTaxAmount);
-                m.Field(g => g.ExcursionTaxTotal);
+                m.Field(g => g.ExcursionTaxAmount).DefaultValue(1);
+                m.Field(g => g.ExcursionTaxTotal).Editable(false);
             })
+            .Events(e => e.Sync("genericSync").RequestEnd("genericRequestEnd"))
             .Sort(a => a.Add(b => b.Date).Descending())
+            .Create(a => a.Action("Create", "Excursion", new { AgencyId = ViewBag.Agency }))
             .Read(a => a.Action("Read", "Excursion", new { AgencyId = ViewBag.Agency }))
+            .Update(a => a.Action("Update", "Excursion", new { AgencyId = ViewBag.Agency }))
+            .Destroy(a => a.Action("Destroy", "Excursion", new { AgencyId = ViewBag.Agency }))
         )
     )
 </div>

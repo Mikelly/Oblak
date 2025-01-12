@@ -136,6 +136,8 @@
         <label for="EntryPointDate"><b>Datum ulaska u CG:</b></label>
         @(Html.Kendo().DatePicker()
             .Name("EntryPointDate")
+            .Events(e => e.Change("dtchng"))
+            .Format("{0:dd.MM.yyyy}")
             .Value(dto.EntryPointDate ?? DateTime.Now.Date)
             .HtmlAttributes(new { id = "EntryPointDate", style = "width:100%" }))
     }

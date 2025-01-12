@@ -6,12 +6,12 @@
 <script type="text/javascript">
     function exportpost() {
         var datum = kendo.toString($('#Datum').data('kendoDatePicker').value(), 'dd.MM.yyyy');
-        window.location = `/post-office-export?datum=${datum}`;
+        window.location = `/post-office-export?datum=${datum}&tax=@ViewBag.Tax`;
     };
 
     function reportpost() {
         var datum = kendo.toString($('#Datum').data('kendoDatePicker').value(), 'dd.MM.yyyy');
-        window.open(`/post-office-report?datum=${datum}`, `_blank`);
+        window.open(`/post-office-report?datum=${datum}&tax=@ViewBag.Tax`, `_blank`);
     };
 
 </script>

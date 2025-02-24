@@ -2,27 +2,34 @@
 	Layout = "~/Views/Shared/_LayoutINV.cshtml";
 	var prtnid = (string)ViewBag.PartnerId;
 	var reports = new Dictionary<string, string>() { 
-		{ $"{prtnid}CountryStats", "Statistika po državama" },
-		{ $"{prtnid}CountryStatsPeriod", "Statistika po državama za period" },
-		{ $"{prtnid}GuestList", "Boravišne prijave za period" }, 
-		{ $"{prtnid}GuestListByPlace", "Gosti po lokaciji" },
-		{ $"{prtnid}PostOffice", "Izvještaj za poštu" },
-		{ $"{prtnid}ResTax", "Naplata boravišne takse" },		
-		{ $"{prtnid}GuestBook", "Knjiga gostiju izdavaoca" },
-		{ $"{prtnid}LegalEntities", "Pregled izdavaoca" },
-		{ $"{prtnid}TaxExemptions", "Oslobođenja od boravišne takse" },
+		{ $"CountryStats", "Statistika po državama" },
+		{ $"CountryStatsPeriod", "Statistika po državama za period" },
+		{ $"GuestList", "Boravišne prijave za period" }, 
+		{ $"GuestListByPlace", "Gosti po lokaciji" },
+		{ $"PostOffice", "Izvještaj za poštu" },
+		{ $"ResTax", "Naplata boravišne takse" },		
+		{ $"GuestBook", "Knjiga gostiju izdavaoca" },
+		{ $"GuestBookPayments", "Knjiga gostiju sa plaćanjima" },
+		{ $"LegalEntities", "Pregled izdavaoca" },
+		{ $"Debt", "Pregled dugovanja" },
+		{ $"TaxExemptions", "Oslobođenja od boravišne takse" },
 	};
+
+	if (prtnid == "4")
+	{
+		reports.Add($"Ledger", "Kartica izdavaoca");
+	}
 
 	if (User.IsInRole("TouristOrgAdmin"))
 	{
-		reports.Add($"{prtnid}ResTaxHistory", "Istorija izmjena");
+		reports.Add($"ResTaxHistory", "Istorija izmjena");
 	}
 
 	if ((string)ViewBag.TaxType == "E")
 	{
 		reports = new Dictionary<string, string>() {
-			{ $"{prtnid}ExcursionTaxCash", "Naplata izletničke takse - Gotovina" },
-			{ $"{prtnid}ExcursionTaxVoucher", "Naplata izletničke takse - Vaučeri" },
+			{ $"ExcursionTaxCash", "Naplata izletničke takse - Gotovina" },
+			{ $"ExcursionTaxVoucher", "Naplata izletničke takse - Vaučeri" },
 		};	
 	}
 
@@ -74,10 +81,17 @@
 		var prtnid = '@prtnid';
 		$('.parameter').hide();
 		var report = $('#report').val().replace(prtnid, '');
+		
 		if (report == "CountryStats") {
 			$('#datum').show();
 		}
-		else if (report == "GuestList") {
+
+		if (report == "CountryStatsPeriod") {
+			$('#datumOd').show();
+			$('#datumDo').show();	
+		}
+
+		if (report == "GuestList") {
 			$('#datumOd').show();
 			$('#datumDo').show();
 			if (admin == 'True') {
@@ -85,44 +99,61 @@
 				$('#user').show();
 			}
 		}
-		else if (report == "GuestListByPlace" || report == "ResTax" || report == "CountryStatsPeriod" || report == "ResTaxHistory" || report == "GuestBook" || report == "TaxExemptions" || report.startsWith("ExcursionTax")) {
+
+		if (report == "GuestListByPlace") {
 			$('#datumOd').show();
-			$('#datumDo').show();			
+			$('#datumDo').show();
 		}
-		else if (report == "PostOffice") {
+
+		if (report == "PostOffice") {
 			$('#datum').show();
 			$('#checkInPoint').show();
 		}
-
+		
 		if (report == "ResTax") {
+			$('#datumOd').show();
+			$('#datumDo').show();	
 			$('#resTaxGroup').show();
-		}
-		else {
-			$('#resTaxGroup').hide();
 		}
 
 		if (report == "GuestBook") {
-			$('#legalEntity').show();
-		}
-		else {
-			$('#legalEntity').hide();
+			$('#datumOd').show();
+			$('#datumDo').show();	
+			$('#legalEntity').show();			
 		}
 
-		if (report == "ExcursionTax") {
-			$('#taxPaymentType').show();
+		if (report == "GuestBookPayments") {
+			$('#datumOd').show();
+			$('#datumDo').show();	
+			$('#legalEntity').show();			
 		}
-		else {
-			$('#taxPaymentType').hide();
+
+		if (report == "Ledger") {
+			$('#datumOd').show();
+			$('#datumDo').show();	
+			$('#legalEntity').show();			
 		}
 
 		if (report == "LegalEntities") {
 			$('#legalEntityStatus').show();
 			$('#place').show();
+			$('#datumOd').show();
+			$('#datumDo').show();
 		}
-		else {
-			$('#legalEntityStatus').hide();
-			$('#place').hide();
+
+		if (report == "ExcursionTaxVoucher" || report == "ExcursionTaxCash") {						
+			$('#datumOd').show();
+			$('#datumDo').show();
 		}
+
+		if (report == "TaxExemptions") {
+			$('#datumOd').show();
+			$('#datumDo').show();					
+			$('#legalEntity').show();	
+			$('#checkInPoint').show();
+			$('#user').show();
+		}	
+
 	}
 
 	function runReport() {
@@ -223,7 +254,7 @@
 	</div>
 
 	<div class="parameter" style="display:none" id="taxPaymentType">
-		Odaberite naselje:
+		Odaberite način plaćanja:
 		@(Html.Kendo().DropDownList().Name("TaxPaymentType")
 			.OptionLabel("Izaberite način plaćanja")
 			.AutoWidth(true)
@@ -277,7 +308,7 @@
 		Izaberite način prikaza
 		@(Html.Kendo().DropDownList().Name("ResTaxGroup")
 				.AutoWidth(true)
-				.OptionLabel("Izaberite ")
+				.OptionLabel("Izaberite prikaz")
 				.BindTo(new SelectList(resTaxGroups as Dictionary<string, string>, "Key", "Value"))
 				)
 		<br />

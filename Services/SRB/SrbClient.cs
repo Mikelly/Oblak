@@ -411,10 +411,10 @@ public class SrbClient : Register
 
         if (person.Property.Type != "10" && person.Property.Type != "12")
         {
-            request.PodaciOBoravku.SmestajneJedinice = new SmestajnaJedinica[] 
+            request.PodaciOBoravku.SmestajneJedinice = new SmestajnaJedinica[]
             {
                 new SmestajnaJedinica()
-                { 
+                {
                     BrojSmestajneJedinice = "1",
                     SpratSmestajneJedinice = "1",
                     JedinstveniIdentifikator = 0,
@@ -424,6 +424,10 @@ public class SrbClient : Register
                 }
             };
         }
+        else
+        {
+            request.PodaciOBoravku.SmestajneJedinice = new SmestajnaJedinica[0];
+        }    
 
         return request;
     }
@@ -633,29 +637,29 @@ public class SrbClient : Register
     {
 		try
 		{
-			if (p.ExternalId2 == null)			
-			{
-				var confirmationPdfEndpoint = _configuration["SRB:Endpoints:Persons"]!.Trim('/');
-				var request = new RestRequest(confirmationPdfEndpoint, Method.Post);
-				request.AddHeader("Authorization", $"Bearer {_token}");
-				request.AddHeader("RefreshToken", $"{_refreshToken}");
-				var tr = new TuristRequest()
-				{
-					ime = p.FirstName,
-					prezime = p.LastName,
-					datumIvremeDolaskaOd = p.CheckIn!.Value.Date.ToString("yyyy-MM-ddTHH:mm:00.0000Z"),
-					datumIvremeDolaskaDo = p.CheckIn!.Value.Date.AddDays(1).AddMinutes(-1).ToString("yyyy-MM-ddTHH:mm:00.0000Z"),
-					casDolaskaOd = p.CheckIn!.Value.AddMinutes(-1).ToString("HH:mm"),
-					casDolaskaDo = p.CheckIn!.Value.AddMinutes(+1).ToString("HH:mm"),
-					pageIndex = 0,
-					pageSize = 1000
-				};
-				var json = JsonSerializer.Serialize(tr);
-				request.AddJsonBody(json);
-				var response = await _client.ExecutePostAsync(request);
-				var result = JsonSerializer.Deserialize<TuristResponse>(response.Content!)!;
-				if (result.totalRowsCount >= 1)
-				{
+            if (p.ExternalId2 == null)
+            {
+                var confirmationPdfEndpoint = _configuration["SRB:Endpoints:Persons"]!.Trim('/');
+                var request = new RestRequest(confirmationPdfEndpoint, Method.Post);
+                request.AddHeader("Authorization", $"Bearer {_token}");
+                request.AddHeader("RefreshToken", $"{_refreshToken}");
+                var tr = new TuristRequest()
+                {
+                    ime = p.FirstName,
+                    prezime = p.LastName,
+                    datumIvremeDolaskaOd = p.CheckIn!.Value.Date.ToString("yyyy-MM-ddTHH:mm:00.0000Z"),
+                    datumIvremeDolaskaDo = p.CheckIn!.Value.Date.AddDays(1).AddMinutes(-1).ToString("yyyy-MM-ddTHH:mm:00.0000Z"),
+                    casDolaskaOd = p.CheckIn!.Value.AddMinutes(-1).ToString("HH:mm"),
+                    casDolaskaDo = p.CheckIn!.Value.AddMinutes(+1).ToString("HH:mm"),
+                    pageIndex = 0,
+                    pageSize = 1000
+                };
+                var json = JsonSerializer.Serialize(tr);
+                request.AddJsonBody(json);
+                var response = await _client.ExecutePostAsync(request);
+                var result = JsonSerializer.Deserialize<TuristResponse>(response.Content!)!;
+                if (result.totalRowsCount >= 1)
+                {
                     if (result.totalRowsCount == 1)
                     {
                         p.ExternalId2 = result.data.First().turistaId;
@@ -670,7 +674,7 @@ public class SrbClient : Register
                         if (hit != null)
                         {
                             p.ExternalId2 = hit;
-					        _db.SaveChanges();
+                            _db.SaveChanges();
                             return p.ExternalId2;
                         }
                         else
@@ -678,8 +682,9 @@ public class SrbClient : Register
                             return null;
                         }
                     }
-				}
-			}
+                }
+            }
+            else return p.ExternalId2;
 
             return null;
 		}

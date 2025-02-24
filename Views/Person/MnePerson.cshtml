@@ -4,6 +4,7 @@
     var dto = (MnePersonEnrichedDto)ViewBag.Dto;
     var group = (int)ViewBag.Group == 0;
     var groupId = (int?)ViewBag.Group;
+    var nautical = false;
 }
 
 <script type="text/javascript">
@@ -164,31 +165,32 @@
                         if (groupId != 0) htmls.Add("readonly", "readonly");
                     }
                     <label for="firstname">Izaberite objekat<span style="color: red;">*</span></label>
-                    @(Html.Kendo().MultiColumnComboBox()
-                        .Name("PropertyId")
-                        .Placeholder("Izaberite objekat")
-                        .DataTextField("Name")
-                        .DataValueField("Id")
-                        .Enable(true)
-                        .Columns(columns =>
-                        {
-                            columns.Add().Field("Name").Title("Naziv").Width("200px");
-                            columns.Add().Field("Address").Title("Adresa").Width("250px");
-                            columns.Add().Field("LegalEntity").Title("Vlasnik").Width("200px");
-                            columns.Add().Field("TIN").Title("JMBG").Width("150px");
-                        })
-                        //.HtmlAttributes(new { id = "PropertyId", style = "width:100%;", autocomplete = "off", autocorrect = "off", autocapitalize = "off", spellcheck = "false", @readonly = "readonly" })
-                        .HtmlAttributes(htmls)
-                        .DropDownWidth("400px")
-                        .Messages(m => m.NoData("Nema podataka").Clear("Poništi"))
-                        .Filter("contains").FilterFields(new string[] { "Name" })
-                        .AutoBind(false)
-                        .MinLength(1)
-                        .ValuePrimitive(true)
-                        .Value(dto.PropertyId.ToString())
-                        .Text(dto.PropertyName)
-                        .Events(e => e.Change("propertyChanged"))
-                        .DataSource(source => { source.Read(read => { read.Action("ReadAdmin", "Property"); }).ServerFiltering(true); })
+                    @(
+                        Html.Kendo().MultiColumnComboBox()
+                            .Name("PropertyId")
+                            .Placeholder("Izaberite objekat")
+                            .DataTextField("Name")
+                            .DataValueField("Id")
+                            .Enable(true)
+                            .Columns(columns =>
+                            {
+                                columns.Add().Field("Name").Title("Naziv").Width("200px");
+                                columns.Add().Field("Address").Title("Adresa").Width("250px");
+                                columns.Add().Field("LegalEntity").Title("Vlasnik").Width("200px");
+                                columns.Add().Field("TIN").Title("JMBG").Width("150px");
+                            })
+                            //.HtmlAttributes(new { id = "PropertyId", style = "width:100%;", autocomplete = "off", autocorrect = "off", autocapitalize = "off", spellcheck = "false", @readonly = "readonly" })
+                            .HtmlAttributes(htmls)
+                            .DropDownWidth("400px")
+                            .Messages(m => m.NoData("Nema podataka").Clear("Poništi"))
+                            .Filter("contains").FilterFields(new string[] { "Name" })
+                            .AutoBind(false)
+                            .MinLength(1)
+                            .ValuePrimitive(true)
+                            .Value(dto.PropertyId.ToString())
+                            .Text(dto.PropertyName)
+                            .Events(e => { if (nautical == false) e.Change("propertyChanged"); })
+                            .DataSource(source => { source.Read(read => { read.Action("ReadAdmin", "Property"); }).ServerFiltering(true); })
                         )
                 </div>
                 <div class="one" style="flex:0 1 calc(32% + 10px)">
@@ -475,7 +477,7 @@
                             .DataValueField("Value")
                             .OptionLabel("Izaberite vrstu oslobođenja")
                             .AutoWidth(true)
-                            .Events(e => e.Change("resTaxCalc"))
+                            .Events(e => { if (nautical == false) e.Change("resTaxCalc"); })
                             .BindTo(new SelectList(Model.ResTaxExemptionTypes as Dictionary<string, string>, "Key", "Value"))
                             .Value((dto.ResTaxExemptionTypeId ?? 0).ToString())
                             .HtmlAttributes(new { id = "ResTaxExemptionTypeId", style = "width:100%" })
@@ -495,7 +497,7 @@
                             .DataValueField("Value")
                             .OptionLabel("Izaberite način plaćanja")
                             .AutoWidth(true)
-                            .Events(e => e.Change("resTaxCalc"))                            
+                            .Events(e => { if(nautical == false) e.Change("resTaxCalc");} )                            
                             .BindTo(new SelectList(Model.ResTaxPaymentTypes as Dictionary<string, string>, "Key", "Value"))
                             .HtmlAttributes(new { id = "ResTaxPaymentTypeId", style = "width:100%" })
                             .HtmlAttributes(htmls2)

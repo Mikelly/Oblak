@@ -128,6 +128,7 @@ namespace Oblak.Controllers
             var group = await _db.Groups.Where(x => x.Id == groupId).FirstOrDefaultAsync();
             ViewBag.Group = groupId;
             ViewBag.TaxType = group?.VesselId == null ? "R" : "N";
+            ViewBag.Nautical = group == null || group.VesselId == null ? "false" : "true";
 
             var isPropertyAdmin = User.IsInRole("PropertyAdmin");
             var legalEntityId = _appUser!.LegalEntityId;
@@ -240,6 +241,7 @@ namespace Oblak.Controllers
                 .ToListAsync();
 
             ViewBag.Group = group;
+            ViewBag.Nautical = false;
 
             if (_appUser.LegalEntity.Country == CountryEnum.SRB)
             {

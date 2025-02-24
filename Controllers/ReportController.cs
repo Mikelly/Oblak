@@ -181,6 +181,7 @@ namespace Oblak.Controllers
 			
             ViewBag.Places = places;
             ViewBag.TaxType = taxType;
+            ViewBag.PartnerId = _legalEntity.PartnerId.ToString();
 
 			return View("TouristOrg");
         }
@@ -211,15 +212,28 @@ namespace Oblak.Controllers
                 parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
                 parameters.Add(new Parameter() { Name = "Date", Value = DateTime.ParseExact(date, "ddMMyyyy", null) });
             }
-            else if (report == "CountryStatsPeriod" || report == "ResTaxHistory" || report == "TaxExemptions" || report.ToString().StartsWith("ExcursionTax"))
+            else if (report == "CountryStatsPeriod" || report == "ResTaxHistory" || report.ToString().StartsWith("ExcursionTax"))
             {
                 parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
                 parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
             }
-            else if (report == "GuestBook")
+            else if (report == "TaxExemptions")
             {
-                parameters.Add(new Parameter() { Name = "LegalEntity", Value = legalEntity });
+                int.TryParse(checkInPoint, out var cpid);
+                var cp = _db.CheckInPoints.FirstOrDefault(a => a.Id == cpid);
+
+                parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
+                parameters.Add(new Parameter() { Name = "LegalEntity", Value = (string)legalEntity == "" ? "-1" : (string)legalEntity });
+                parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
+                parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
+                parameters.Add(new Parameter() { Name = "CheckInPoint", Value = cpid == 0 ? -1 : cp.Id });
+                parameters.Add(new Parameter() { Name = "UserName", Value = ((string)username == "") ? "-1" : username });
+            }
+            else if (report == "GuestBook" || report == "GuestBookPayments" || report == "Ledger")
+            {
+				parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
+				parameters.Add(new Parameter() { Name = "LegalEntity", Value = legalEntity });
                 parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
             }
@@ -264,6 +278,12 @@ namespace Oblak.Controllers
 				parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId }); 
                 parameters.Add(new Parameter() { Name = "Status", Value = legalEntityStatus }); 
                 parameters.Add(new Parameter() { Name = "Place", Value = place });
+                parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
+                parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
+            }
+			else if (report == "Debt")
+			{
+				parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
 			}
 			else if (report == "PostOffice")
             {

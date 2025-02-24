@@ -258,8 +258,11 @@
 
         var nautical = $("#NauticalLegalEntityId").data("kendoMultiColumnComboBox")
 
+        nautical.dataSource.data([{ id: item.LegalEntityId, text: item.LegalEntityName }]);
+
         nautical.value(item.LegalEntityId);
         nautical.text(item.LegalEntityName);
+        $("#NauticalLegalEntityId").val(item.LegalEntityId);
     }
 
 

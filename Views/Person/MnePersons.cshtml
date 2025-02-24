@@ -15,6 +15,7 @@
     
     var dsbl = '@((bool)admin == false && (bool)control == false)';
     var group = '@(ViewBag.Group ?? 0)';
+    var nautical = @ViewBag.Nautical;
     
     $(document).ready(function () {
 
@@ -196,8 +197,6 @@
         });
     }
 
-
-
     function guest(person) {
         
         $.ajax({
@@ -259,13 +258,13 @@
                     $('#Id').val(data.id);
                 }
                 if (data.ResTaxTypeId != null) {
-                    $('#ResTaxTypeId').data('kendoDropDownList').value(data.ResTaxTypeId);
+                    $('#ResTaxTypeId').data('kendoDropDownList')?.value(data.ResTaxTypeId);
                 }
                 if (data.ResTaxAmount != null) {
-                    $('#ResTaxAmount').data('kendoNumericTextBox').value(data.ResTaxAmount);
+                    $('#ResTaxAmount').data('kendoNumericTextBox')?.value(data.ResTaxAmount);
                 }
                 if (data.ResTaxFee != null) {
-                    $('#ResTaxFee').data('kendoNumericTextBox').value(data.ResTaxFee);
+                    $('#ResTaxFee').data('kendoNumericTextBox')?.value(data.ResTaxFee);
                 }
                 if (data.info != "") {
                     var grid = $('#mnePersonGrid').data('kendoGrid');
@@ -493,9 +492,13 @@
             success: function (data) {
                 if (data.info != "") {
                     var mccb = $('#PropertyId').data("kendoMultiColumnComboBox");
+
+                    mccb.dataSource.data([{ id: data.propertyId, text: data.propertyName }]);
+
                     mccb.value(data.propertyId);
-                    mccb.text(data.propertyName);
+                    mccb.text(data.propertyName);   
                     
+                    $('#PropertyId').val(data.propertyId);
                     
                     const out = Date.parse(data.checkOut);
                     const ind = Date.parse(data.checkIn);
@@ -520,8 +523,7 @@
                     var epdd = $('#person_EntryPoint').data("kendoDropDownList");
                     epdd.value(data.entryPoint)
 
-                    resTaxCalc();
-                    //$('#CheckIn').data("kendoDatePicker").trigger('change');
+                    if(nautical == false) resTaxCalc();                    
                 }
                 if (data.error != "") {
                     Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
@@ -539,11 +541,10 @@
 
     function guestDateChanged(e) { 
         dtchng(e);
-        resTaxCalc();
+        if (nautical == false) resTaxCalc();
     }
 
-    function resTaxCalc() {         
-
+    function resTaxCalc() {                 
         if (isto) {
             var birthDate = $('#BirthDate').data('kendoDatePicker').value();
             var checkIn = $('#CheckIn').data('kendoDatePicker').value();

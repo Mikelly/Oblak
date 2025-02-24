@@ -1,0 +1,41 @@
+﻿@{
+    ViewBag.Title = "MUP Excel";
+    Layout = "~/Views/Shared/_LayoutINV.cshtml";
+}
+
+
+<div style="width:500px; margin-left:auto; margin-right:auto;">
+
+    <h2 style="margin-top:25px;">Upload podataka iz MUP-a</h2>
+
+
+    @(Html.Kendo().Upload()
+        .Name("file")
+        .Async(a => a
+        .Save("UploadExcel", "MneMup"))
+        //.AutoUpload(true))
+        .Multiple(false)
+        )
+
+</div>
+
+@* 
+
+
+<script>
+    $(document).ready(function () {
+        $("#files").kendoUpload({
+            async: {
+                saveUrl: "/api/upload/excel",
+                autoUpload: true
+            },
+            success: function (e) {
+                alert("File uploaded successfully!");
+            },
+            error: function (e) {
+                alert("Error uploading file.");
+            }
+        });
+    });
+</script>
+ *@

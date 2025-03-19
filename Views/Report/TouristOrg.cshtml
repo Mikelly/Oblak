@@ -13,6 +13,7 @@
 		{ $"LegalEntities", "Pregled izdavaoca" },
 		{ $"Debt", "Pregled dugovanja" },
 		{ $"TaxExemptions", "Oslobođenja od boravišne takse" },
+		{ $"GuestHistory", "Istorija posjete gosta" },
 	};
 
 	if (prtnid == "4")
@@ -31,6 +32,24 @@
 			{ $"ExcursionTaxCash", "Naplata izletničke takse - Gotovina" },
 			{ $"ExcursionTaxVoucher", "Naplata izletničke takse - Vaučeri" },
 		};	
+	}
+
+	if ((string)ViewBag.TaxType == "M")
+	{
+		reports = new Dictionary<string, string>() {
+			{ $"CountryMupStatsPeriod", "Statistika po državama" },
+			{ $"CountryMupAgeStatsPeriod", "Statistika po izdavaocima" },
+		};
+	}
+
+	if ((string)ViewBag.TaxType == "O")
+	{
+		reports = new Dictionary<string, string>() {			
+			{ $"GuestBookPayments", "Knjiga gostiju sa plaćanjima" },			
+			{ $"Debt", "Pregled dugovanja" },
+			{ $"Ledger", "KarticaIzdavaoca" },
+			{ $"GuestHistory", "Istorija posjete gosta" },
+		};
 	}
 
 	var resTaxGroups = new Dictionary<string, string>() { 
@@ -146,13 +165,23 @@
 			$('#datumDo').show();
 		}
 
+		if (report == "CountryMupStatsPeriod" || report == "CountryMupAgeStatsPeriod") {
+			$('#datumOd').show();
+			$('#datumDo').show();
+		}
+
 		if (report == "TaxExemptions") {
 			$('#datumOd').show();
 			$('#datumDo').show();					
 			$('#legalEntity').show();	
 			$('#checkInPoint').show();
 			$('#user').show();
-		}	
+		}
+		if (report == "GuestHistory") {
+			$('#firstName').show();
+			$('#lastName').show();
+			$('#documentNumber').show();			
+		}
 
 	}
 
@@ -172,6 +201,9 @@
 		$('#flegalEntityStatus').val($('#LegalEntityStatus').val());
 		$('#fplace').val($('#Place').val());
 		$('#ftaxPaymentType').val($('#TaxPaymentType').val());
+		$('#ffirstName').val($('#FirstName').val());
+		$('#flastName').val($('#LastName').val());
+		$('#fdocumentNumber').val($('#DocumentNumber').val());
 
 		$('#reportForm').submit();
 	}
@@ -196,6 +228,9 @@
 	<input type="hidden" id="flegalEntity" name="legalEntity" />
 	<input type="hidden" id="flegalEntityStatus" name="legalEntityStatus" />
 	<input type="hidden" id="fplace" name="place" />
+	<input type="hidden" id="ffirstName" name="firstName" />
+	<input type="hidden" id="flastName" name="lastName" />
+	<input type="hidden" id="fdocumentNumber" name="documentNumber" />
 	<input type="hidden" id="ftaxPaymentType" name="taxPaymentType" />
 </form>
 
@@ -324,6 +359,23 @@
 		<br />
 	</div>
 
+	<div class="parameter" style="display:none" id="firstName">
+		Unesite ime
+		@(Html.Kendo().TextBox().Name("FirstName"))				
+		<br />
+	</div>
+
+	<div class="parameter" style="display:none" id="lastName">
+		Unesite prezime
+		@(Html.Kendo().TextBox().Name("LastName"))
+		<br />
+	</div>
+
+	<div class="parameter" style="display:none" id="documentNumber">
+		Unesite broj dokumenta
+		@(Html.Kendo().TextBox().Name("DocumentNumber"))
+		<br />
+	</div>
 	<br />
 	<br />
 

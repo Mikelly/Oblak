@@ -1,0 +1,84 @@
+﻿@{
+    ViewBag.Title = "MUP Excel";
+    Layout = "~/Views/Shared/_LayoutINV.cshtml";
+}
+
+
+<div style="width:500px; margin-left:auto; margin-right:auto;">
+
+    <h2 style="margin-top:50px;">Upload podataka iz MUP-a</h2>
+
+    <h3 style="margin-top:50px;">Odaberite mjesec i godinu</h3>
+
+    @(Html.Kendo().DatePicker()
+        .Name("date")
+        .Value(DateTime.Now)
+        .Start(CalendarView.Year)   // Sets the view to display months when opened
+        .Depth(CalendarView.Year)    // Prevents navigation to days
+        .Format("MMMM yyyy")  // Displays only the month and year
+        //.Events(e => e.Open("onDatePickerOpen"))
+        .Footer(false)        
+
+        //.Footer("#= data ? kendo.toString(data, 'MMMM yyyy') : '' #")
+
+        )
+
+    <h3 style="margin-top:20px;">Odaberite excel fajl</h3>
+
+    @(Html.Kendo().Upload()
+        .Name("file")
+        .DropZone("")
+        .Async(a => a
+        .Save("UploadExcel", "MneMup").AutoUpload(false))
+        .Events(e => e.Upload("onUpload").Error("onError").Success("onSuccess"))        
+        .Multiple(false)
+        .Messages(m => m
+            .Remove("Uklonite excel fajl")
+            .UploadSelectedFiles("Upload excel fajla")
+            .Select("Odaberite excel fajl")
+            .ClearSelectedFiles("Uklonite excel fajl")        
+            .UploadSuccess("Excel fajl je uspješno uploadovan")
+        )
+        )
+
+</div>
+
+
+
+
+<script>
+
+    function onUpload(e) {
+        var dateValue = $("#date").val(); // Get date value from input
+        var date = kendo.toString($("#date").data('kendoDatePicker').value(), 'dd.MM.yyyy');
+
+        e.data = {
+            date: date // Append it to the request
+        };
+    }
+
+    function onError(e) {
+        debugger;
+        Swal.fire({ icon: 'error', title: e.XMLHttpRequest.responseText, confirmButtonText: `U redu` });
+    }
+
+    function onSuccess(e) {
+        debugger;
+        Swal.fire({ icon: 'success', title: "Excel fajl je uspješno uploadovan", confirmButtonText: `U redu` });
+    }
+
+    // $(document).ready(function () {
+    //     $("#files").kendoUpload({
+    //         async: {
+    //             saveUrl: "/api/upload/excel",
+    //             autoUpload: true
+    //         },
+    //         success: function (e) {
+    //             alert("File uploaded successfully!");
+    //         },
+    //         error: function (e) {
+    //             alert("Error uploading file.");
+    //         }
+    //     });
+    // });
+</script>

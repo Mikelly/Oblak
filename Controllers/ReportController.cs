@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -143,19 +144,36 @@ namespace Oblak.Controllers
 
         [HttpGet]
         [Route("reports-res-tax")]
+        [Authorize(Roles = "TouristOrgControllor,TouristOrgAdmin")]
         public ActionResult TouristOrgResTax()
         {
             return TouristOrg("R");
         }
 
-        [HttpGet]
+		[HttpGet]
+		[Route("reports-res-tax-o")]
+		public ActionResult TouristOrgResTaxOperater()
+		{
+			return TouristOrg("O");
+		}
+
+		[HttpGet]
         [Route("reports-exc-tax")]
-        public ActionResult TouristOrgExcTax()
+		[Authorize(Roles = "TouristOrgControllor,TouristOrgAdmin")]
+		public ActionResult TouristOrgExcTax()
         {
             return TouristOrg("E");
         }
 
-        [HttpGet]
+		[HttpGet]
+		[Route("reports-mup")]
+		[Authorize(Roles = "TouristOrgControllor,TouristOrgAdmin")]
+		public ActionResult TouristOrgMup()
+		{
+			return TouristOrg("M");
+		}
+
+		[HttpGet]
         [Route("reports-tourist-org")]
         public ActionResult TouristOrg(string taxType)
         {
@@ -203,16 +221,19 @@ namespace Oblak.Controllers
 			var legalEntityStatus = Request.Form["LegalEntityStatus"];
             var legalEntity = Request.Form["LegalEntity"];
             var taxPaymentType = Request.Form["TaxPaymentType"];
+			var firstName = Request.Form["FirstName"];
+			var lastName = Request.Form["LastName"];
+			var documentNumber = Request.Form["DocumentNumber"];
 
-            //Dictionary<string, object> parameters = new Dictionary<string, object>();
-            List<Parameter> parameters = new List<Parameter>();
+			//Dictionary<string, object> parameters = new Dictionary<string, object>();
+			List<Parameter> parameters = new List<Parameter>();
 
             if (report == "CountryStats")
             {
                 parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
                 parameters.Add(new Parameter() { Name = "Date", Value = DateTime.ParseExact(date, "ddMMyyyy", null) });
             }
-            else if (report == "CountryStatsPeriod" || report == "ResTaxHistory" || report.ToString().StartsWith("ExcursionTax"))
+            else if (report == "CountryStatsPeriod" || report == "ResTaxHistory" || report.ToString().StartsWith("ExcursionTax") || report.ToString().StartsWith("CountryMup"))
             {
                 parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
                 parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
@@ -266,12 +287,11 @@ namespace Oblak.Controllers
                 parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
 				parameters.Add(new Parameter() { Name = "Group", Value = resTaxGroup });
 			}
-            else if (report == "ExcursionTax")
+            else if (report.ToString().StartsWith("ExcursionTax"))
             {
                 parameters.Add(new Parameter() { Name = "PartnerId", Value = _legalEntity.PartnerId });
                 parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
-                parameters.Add(new Parameter() { Name = "TaxPaymentType", Value = taxPaymentType });
             }
             else if (report == "LegalEntities")
 			{
@@ -281,6 +301,13 @@ namespace Oblak.Controllers
                 parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
             }
+			else if (report == "GuestHistory")
+			{
+				parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
+				parameters.Add(new Parameter() { Name = "FirstName", Value = firstName });
+				parameters.Add(new Parameter() { Name = "LastName", Value = lastName });
+				parameters.Add(new Parameter() { Name = "DocumentNumber", Value = documentNumber });				
+			}
 			else if (report == "Debt")
 			{
 				parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });

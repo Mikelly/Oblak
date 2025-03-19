@@ -1,6 +1,8 @@
 ﻿@{
 	Layout = null;
 	var baseurl = (string)ViewBag.BaseUrl ?? "";
+	var username = (string?)ViewBag.UserName;
+	var isDisabled = username != null;
 }
 
 
@@ -91,7 +93,7 @@
 							<form method="POST">
 								<div class="form-group">
 									<div class="fxt-transformY-50 fxt-transition-delay-14">
-										<input type="text" class="form-control" name="username" placeholder="Korisničko ime ili email adresa" required="required">
+										<input @(isDisabled ? "disabled" : null) value="@username" type="text" class="form-control" name="username" placeholder="Korisničko ime ili email adresa" required="required">
 									</div>
 								</div>
 								<div class="form-group">

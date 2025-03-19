@@ -76,7 +76,8 @@ public class UserController : Controller
             PartnerId = a.PartnerId,
             LegalEntityId = a.LegalEntityId,
             Type = a.Type.ToString(),
-            CheckInPointId = a.CheckInPointId
+            CheckInPointId = a.CheckInPointId,
+            IsCertRequired = a.IsCertRequired,
         });
 
         return Json(await users.ToDataSourceResultAsync(request));
@@ -100,6 +101,7 @@ public class UserController : Controller
             user.PersonName = dto.PersonName;
             user.Type = (UserType)Enum.Parse(typeof(UserType), dto.Type);
             user.CheckInPointId = dto.CheckInPointId;   
+            user.IsCertRequired = dto.IsCertRequired;
 
             await _db.SaveChangesAsync();
                         
@@ -131,7 +133,8 @@ public class UserController : Controller
                     PartnerId = a.PartnerId,
                     LegalEntityId = a.LegalEntityId,
                     Type = a.Type.ToString(),
-                    CheckInPointId = a.CheckInPointId
+                    CheckInPointId = a.CheckInPointId,
+                    IsCertRequired = dto.IsCertRequired,
                 });
 
                 return Json(await new[] { u }.ToDataSourceResultAsync(request));

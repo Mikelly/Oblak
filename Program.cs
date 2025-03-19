@@ -30,12 +30,17 @@ using System.Globalization;
 using Oblak.Services.Reporting;
 using Oblak.Services.Payten;
 using Oblak.Services.Payment;
+using Oblak.Middleware;
+using Microsoft.AspNetCore.Http.Features;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpContextAccessor();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var hangfireConnectionString = builder.Configuration.GetConnectionString("HangfireConnection");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
 
 builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Configuration(context.Configuration));
@@ -167,13 +172,21 @@ builder.Services.AddSendGrid(options =>
     options.ApiKey = builder.Configuration["SendGrid:ApiKey"];
 });
 
-builder.Services.AddHangfire(configuration => configuration
-        .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-        .UseSimpleAssemblyNameTypeSerializer()
-        .UseRecommendedSerializerSettings()
-        .UseSqlServerStorage(builder.Configuration.GetConnectionString("HangfireConnection")));
+if (hangfireConnectionString != null)
+{
+    builder.Services.AddHangfire(configuration => configuration
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UseSqlServerStorage(hangfireConnectionString));
 
-builder.Services.AddHangfireServer();
+    builder.Services.AddHangfireServer();
+}
+
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 524288000; // 500MB    
+});
 
 //builder.Services.AddTransient<RB90Scheduler>();
 builder.Services.AddTransient<SelfRegisterService>();
@@ -212,6 +225,20 @@ builder.Services.AddScoped(provider => new rb90Client(
 
 
 var app = builder.Build();
+
+
+app.Use(async (context, next) =>
+{
+	var sw = Stopwatch.StartNew();
+	Serilog.Log.Information("Request started: {Method} {Path} at {TimeUtc}",
+		context.Request.Method, context.Request.Path, DateTime.UtcNow);
+
+	await next();
+
+	sw.Stop();
+	Serilog.Log.Information("Request ended: {Method} {Path}, took {ElapsedMs} ms at {TimeUtc}",
+		context.Request.Method, context.Request.Path, sw.ElapsedMilliseconds, DateTime.UtcNow);
+});
 
 
 if (!app.Environment.IsDevelopment())
@@ -269,31 +296,33 @@ app.UseSession();
 app.UseRouting();
 
 app.UseAuthentication();
+//app.UseMiddleware<ClientCertMiddleware>();
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-app.UseHangfireDashboard("/dashboard", new DashboardOptions
+
+
+if (hangfireConnectionString != null)
 {
-	Authorization = new[] { new DashboardAuthFilter() },
-    IgnoreAntiforgeryToken = true
-});
+    app.UseHangfireDashboard("/dashboard", new DashboardOptions
+    {
+        Authorization = new[] { new DashboardAuthFilter() },
+        IgnoreAntiforgeryToken = true
+    });
 
+    app.MapHangfireDashboard();
 
+    if (!app.Environment.IsDevelopment())
+    {
+        RecurringJob.AddOrUpdate<SrbScheduler>("HourlyCheckOutSrb", a => a.HourlyCheckOut(), builder.Configuration["SRB:Schedulers:HourlyCheckOut"]);
+    }
 
-app.MapHangfireDashboard();
-
-if (!app.Environment.IsDevelopment())
-{
     RecurringJob.AddOrUpdate<SrbScheduler>("HourlyCheckOutSrb", a => a.HourlyCheckOut(), builder.Configuration["SRB:Schedulers:HourlyCheckOut"]);
+    RecurringJob.AddOrUpdate<UpdateRegisteredScheduler>("UpdateRegisteredScheduler", a => a.Update(), builder.Configuration["MNE:Schedulers:UpdateRegistered"]);
 }
-
-RecurringJob.AddOrUpdate<SrbScheduler>("HourlyCheckOutSrb", a => a.HourlyCheckOut(), builder.Configuration["SRB:Schedulers:HourlyCheckOut"]);
-RecurringJob.AddOrUpdate<UpdateRegisteredScheduler>("UpdateRegisteredScheduler", a => a.Update(), builder.Configuration["MNE:Schedulers:UpdateRegistered"]);
-
-
 
 app.MapHub<MessageHub>("/messageHub");
 

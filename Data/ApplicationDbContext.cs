@@ -330,6 +330,7 @@ namespace Oblak.Data
         public DbSet<Municipality> Municipalities { get; set; }
         public DbSet<Country> Countries { get; set; }
         public DbSet<Log> Logs { get; set; }
+		public DbSet<MneMupData> MneMupData { get; set; }
 
 		public string GuestList(int id) => throw new NotImplementedException();
         public string GroupDesc(int id) => throw new NotImplementedException();

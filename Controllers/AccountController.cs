@@ -1,4 +1,5 @@
-﻿using Kendo.Mvc.UI;
+﻿using DocumentFormat.OpenXml.InkML;
+using Kendo.Mvc.UI;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -11,6 +12,7 @@ using Oblak.Models.Account;
 using Oblak.Models.Api;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace Oblak.Controllers
@@ -89,16 +91,36 @@ namespace Oblak.Controllers
         [HttpGet]
         [AllowAnonymous]
         [Route("sign-in", Name = "signIn")]
-        public IActionResult SignIn(string? returnUrl = null)
+        public IActionResult SignIn(string? username = null, string? returnUrl = null)
         {
             var model = new SignInViewModel();
+            if(username != null) model.UserName = username;
 
             ViewBag.BaseUrl = HttpContext.Request.BaseUrl();
 
             ViewData["ReturnUrl"] = returnUrl;
             ViewBag.Error = "";
 
+            ViewBag.Username = username;
+
             return View(model);
+        }
+
+        private string ExtractCommonName(string subject)
+        {
+            const string cnPrefix = "CN=";
+            int startIndex = subject.IndexOf(cnPrefix, StringComparison.OrdinalIgnoreCase);
+            if (startIndex >= 0)
+            {
+                startIndex += cnPrefix.Length;
+                int endIndex = subject.IndexOf(',', startIndex);
+                if (endIndex < 0)
+                {
+                    endIndex = subject.Length;
+                }
+                return subject.Substring(startIndex, endIndex - startIndex).Trim();
+            }
+            return string.Empty;
         }
 
         [HttpPost]
@@ -117,10 +139,43 @@ namespace Oblak.Controllers
 
                 if (user != null)
                 {
-                    if (!user.EmailConfirmed && false)
+					var au = _db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.PassThrough).FirstOrDefault(u => u.Id == user.Id);
+
+					if (!user.EmailConfirmed && false)
                     {
                         return RedirectToRoute("CompanyResendVerification", new { id = user.Id });
                     }
+
+                    if (au.IsCertRequired)
+                    {
+                        //HttpContext.Items.TryGetValue("ClientCertCN", out var clientCert);
+
+                        string clientCert = null;
+
+                        X509Certificate2 cc = await HttpContext.Connection.GetClientCertificateAsync();
+                        if (cc != null)
+                        {
+                            string subject = cc.Subject;
+                            string cn = ExtractCommonName(subject);
+                            clientCert = cn;
+                        }
+
+                        _logger.LogInformation("CLIENT CERT ON SIGN-IN: " + (clientCert ?? ""));
+
+                        if (clientCert == null)
+                        {
+							ModelState.AddModelError(string.Empty, "Neuspješan pokušaj prijave - Nepostojeći certifikat.");
+							ViewBag.Error = "Neuspješan pokušaj prijave - Nepostojeći certifikat.";
+							return View(model);
+						}
+
+                        if (((string)clientCert).ToLower() != au.UserName!.ToLower())
+                        {
+							ModelState.AddModelError(string.Empty, "Neuspješan pokušaj prijave - Certifikat se ne poklapa sa korisničkim imenom.");
+							ViewBag.Error = "Neuspješan pokušaj prijave - Certifikat se ne poklapa sa korisničkim imenom.";
+							return View(model);
+						}
+					}
 
                     var checkPassword = await _signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: false);
 
@@ -129,7 +184,7 @@ namespace Oblak.Controllers
                         await _signInManager.SignInAsync(user, true);
                         if (User.IsInRole("TouristOrgOperator"))
                         {
-                            var au = _db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.PassThrough).FirstOrDefault(u => u.Id == user.Id);
+                            
                             if (au.LegalEntity.PassThroughId != null)
                             {
                                 _db.Logs.Add(new Log() { Action = "Login", LegalEntityId = au.LegalEntity.PassThroughId.Value, PartnerId = au.LegalEntity.PassThrough.PartnerId.Value, UserName = user.UserName });

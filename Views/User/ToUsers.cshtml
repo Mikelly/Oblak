@@ -1,10 +1,10 @@
 ﻿@using Oblak.Models.Api;
 @using Oblak.Models.EFI;
-@{
+@using Kendo.Mvc.UI;
 
+@{
         ViewBag.Title = "Korisnici";            
-        Layout = "~/Views/Shared/_LayoutINV.cshtml";
-    
+        Layout = "~/Views/Shared/_LayoutINV.cshtml";    
 }
 
 <script type="text/javascript">
@@ -148,7 +148,8 @@
             //columns.Bound(g => g.Id).Title("ID").Width(280).HtmlAttributes(new { style = "text-align:center;" });
             columns.Bound(g => g.UserName).Title("Korisničko ime").Width("30%");
             columns.Bound(g => g.PersonName).Title("Ime i prezime").Width("30%");
-            columns.Bound(g => g.Email).Title("E-Mail").Width("30%");            
+            columns.Bound(g => g.Email).Title("E-Mail").Width("30%");
+            columns.Bound(g => g.IsCertRequired).Title("CERT?").Width("100px").ClientTemplate("#= IsCertRequired ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
             columns.ForeignKey(g => g.Type, ViewBag.TPS as SelectList).Title("Vrsta").Width("20%");
             columns.ForeignKey(g => g.CheckInPointId, ViewBag.CPS as SelectList).Title("Check-In Point").Width("30%");
             
@@ -172,6 +173,7 @@
                     m.Field(g => g.Email);
                     m.Field(g => g.PersonName);
                     m.Field(g => g.CheckInPointId);
+                    m.Field(g => g.IsCertRequired);
                     m.Field(g => g.Type).DefaultValue("TO_Operator");
                 })
         .Events(e => e.Sync("genericSync").RequestEnd("genericRequestEnd"))

@@ -33,11 +33,20 @@
 					}					
 					@if (User.IsInRole("TouristOrgAdmin"))
 					{
-						<li><a href="/reports-res-tax"><i class="fa fa-print"></i>Izvještaji</a></li>
+						<li aria-haspopup="true">
+							<a href="#"><i class="fa fa-person-military-pointing"></i>Podaci iz MUP-a</a>
+							<div class="grid-container3">
+								<ul>
+									<li><a href="/mnemup"><i class="fa fa-upload"></i>Upload podataka</a></li>
+									<li><a href="/reports-mup"><i class="fa fa-print"></i>Izvještaji</a></li>
+								</ul>
+							</div>
+						</li>
+						<li><a href="/reports-res-tax"><i class="fa fa-print"></i>Izvještaji</a></li>						
 					}
 					else
 					{
-						<li><a href="/reports"><i class="fa fa-print"></i>Izvještaji</a></li>
+						<li><a href="/reports-res-tax-o"><i class="fa fa-print"></i>Izvještaji</a></li>
 					}
 				</ul>
 			</div>

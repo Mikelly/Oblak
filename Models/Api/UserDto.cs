@@ -27,5 +27,8 @@ namespace Oblak.Models.Api
         public int? CheckInPointId { get; set; }
 
         public string Type { get; set; }
-    }
+
+		public bool IsCertRequired { get; set; }
+
+	}
 }

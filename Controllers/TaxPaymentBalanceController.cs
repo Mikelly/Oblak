@@ -123,12 +123,13 @@ namespace Oblak.Controllers
             //var calc = _db.GetBalance("ReseidenceTax", legalEntity, 0);
 
             var partner = _db.Partners.FirstOrDefault(a => a.Id == _appUser.PartnerId);
-            var errInfo = string.Empty;
+            string errInfo = string.Empty, debtInfo = string.Empty;
+
             var all = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId).Select(a => new { Value = a.Id.ToString(), Text = a.Description }).ToList();
 
             if (partner.CheckRegistered)
             {
-                var le = 0;
+                int le = 0;
 
                 if (legalEntity.HasValue)
                 {
@@ -138,50 +139,62 @@ namespace Oblak.Controllers
                 {
                     var prop = _db.Properties.FirstOrDefault(a => a.Id == property);
                     le = prop!.LegalEntityId;
-                    if (prop.RegDate != null)
+                    if (prop.RegDate != null && le > 0)
                     {
                         var date = prop.RegDate.Value;
-                        var diff = date - DateTime.Now.Date;
+                        var diff = date - DateTime.Now.Date; 
                         if (diff.TotalDays <= 30 && diff.TotalDays > 0)
                         {
-                            errInfo = $"Rješenje ističe za {diff.TotalDays.ToString("0")} dana, tj. {date.ToString("dd.MM.yyyy")}";
+                            errInfo = $"Rješenje ističe za {diff.TotalDays.ToString("0")} dana, tj. <b>{date.ToString("dd.MM.yyyy")}</b>";
                         }
-                    }
+                        else if (diff.TotalDays <= 0)
+                        {
+                            errInfo = $"Rješenje je isteklo! Datum isteka: <b>{date.ToString("dd.MM.yyyy")}</b>";
+                        }  
+                    }  
                 }
                 else
                 {
+
+                }
+
+                if (_appUser.PartnerId == 4)
+                {
+                    decimal? debt = _db.Database.SqlQuery<decimal?>($"SELECT dbo.CalcLegalEntityDebt({le},{_appUser.PartnerId}) as Value").FirstOrDefault();
+                    if (debt.HasValue && debt > 0)
+                        debtInfo = $"Postoji dug stariji od 30 dana! Iznos duga: <b>{debt}</b> €";
 
                 }
 
                 var balance = _db.TaxPaymentBalances.Where(a => a.TaxType == TaxType.ResidenceTax && a.LegalEntityId == le).FirstOrDefault();
-
-                
+                 
                 var unpaid = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.PaymentStatus == TaxPaymentStatus.Unpaid).Select(a => new { Value = a.Id.ToString(), Text = a.Description }).ToList();
                 var advance = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.PaymentStatus == TaxPaymentStatus.PaidInAdvance).Select(a => new { Value = a.Id.ToString(), Text = a.Description }).ToList();
                 
-                var not_registered = _db.Properties.Where(a => a.LegalEntityId == le).Any(a => a.RegDate == null || a.RegDate < DateTime.Now.Date);
+                var is_registered = !_db.Properties.Where(a => a.LegalEntityId == le).Any(a => a.RegDate == null || a.RegDate < DateTime.Now.Date);
 
                 if (_appUser.PartnerId == 3)
                 {
-                    return Json(new { allowed = true, not_registered, errInfo, Ids = new List<int>(), payments = all });
+                    errInfo = debtInfo = string.Empty;
+                    return Json(new { allowed = true, is_registered, errInfo, debtInfo, Ids = new List<int>(), payments = all });
                 }
 
-                if ((balance?.Balance > 0 || balance == null) && not_registered == false)
+                if ((balance?.Balance > 0 || balance == null) && is_registered == true)
                 {
-                    return Json(new { allowed = true, not_registered, errInfo, Ids = new List<int>(), payments = all });
+                    return Json(new { allowed = true, is_registered, errInfo, debtInfo, Ids = new List<int>(), payments = all });
                 }
-                if ((balance?.Balance <= 0 || balance == null) && not_registered == false)
+                if ((balance?.Balance <= 0 || balance == null) && is_registered == true)
                 {
-                    return Json(new { allowed = true, not_registered, errInfo, Ids = advance, payments = all.Except(advance) });
+                    return Json(new { allowed = true, is_registered, errInfo, debtInfo, Ids = advance, payments = all.Except(advance) });
                 }
                 else
                 {
-                    return Json(new { allowed = false, not_registered, errInfo, Ids = unpaid.Union(advance).ToList(), payments = all.Except(unpaid).Except(advance) });
+                    return Json(new { allowed = false, is_registered, errInfo, debtInfo, Ids = unpaid.Union(advance).ToList(), payments = all.Except(unpaid).Except(advance) });
                 }
             }
             else
             {
-                return Json(new { allowed = true, registered = true, errInfo, Ids = new List<int>(), payments = all });
+                return Json(new { allowed = true, registered = true, errInfo, debtInfo, Ids = new List<int>(), payments = all });
             }
         }
 

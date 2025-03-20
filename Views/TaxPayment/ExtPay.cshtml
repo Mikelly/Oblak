@@ -14,7 +14,8 @@
     <div class="one">
         <label for="TransactionDate">Datum uplate</label>
         @(
-            Html.Kendo().DatePicker().Value(dto.TransactionDate ?? DateTime.Now)
+            Html.Kendo().DateTimePicker().Value(dto.TransactionDate ?? DateTime.Now)
+            .Format("dd.MM.yyyy HH:mm")
             .Name("TransactionDate")
             .Enable((bool)ViewBag.Enable)
             .HtmlAttributes(new { style = "width:100%; font-family: 'Noto Sans Mono', monospace;" })

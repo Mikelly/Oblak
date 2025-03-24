@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using NuGet.DependencyResolver;
 using Oblak.Data;
 using Oblak.Data.Enums;
-using Oblak.Helpers;
+using Oblak.Helpers; 
 using Oblak.Models;
 using Oblak.Models.Api;
 using Oblak.Services;
@@ -461,6 +461,7 @@ namespace Oblak.Controllers
                 ViewBag.Last = last;
                 var ep = last.EntryPoint ?? "";
                 ViewBag.EntryPointName = _db.CodeLists.Where(a => a.Country == "MNE" && a.Type == "prelaz" && a.ExternalId == ep).Select(a => a.Name).FirstOrDefault() ?? "";
+                ViewBag.PartnerId = _appUser.PartnerId;
                 return PartialView();
                 //return Json(new { info = "OK", error = "", propertyId = last.PropertyId, propertyName = last.Property.Name, checkIn = last.CheckIn, checkOut = last.CheckOut ?? DateTime.Now.Date.AddDays(1) });
             }
@@ -1391,7 +1392,7 @@ namespace Oblak.Controllers
                 ViewBag.PropertyId = "0";
                 ViewBag.PropertyName = "";
             }
-
+            ViewBag.PartnerId = _appUser.PartnerId?.ToString() ?? "";
             ViewBag.Properties = properties.Select(a => { var b = _mapper.Map<Property, PropertyDto>(a); b.LegalEntityName = a.LegalEntity.Name; return b; }).ToList();
 
             return View();
@@ -1439,7 +1440,7 @@ namespace Oblak.Controllers
 
         [HttpGet]
         [Route("guest-list-print")]
-        public async Task<FileResult> GuestListPrint(int objekat, string datumod, string datumdo)
+        public async Task<FileResult> GuestListPrint(int objekat, string datumod, string datumdo, int? partnerId)
         {
             //var OD = DateTime.ParseExact(datumod, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
             //var DO = DateTime.ParseExact(datumdo, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
@@ -1456,7 +1457,7 @@ namespace Oblak.Controllers
 
             var a = 10;
 
-            var stream = await _registerClient.GuestListPdf(objekat, datumod, datumdo);
+            var stream = await _registerClient.GuestListPdf(objekat, datumod, datumdo, partnerId);
 
             stream.Seek(0, SeekOrigin.Begin);
             var fsr = new FileStreamResult(stream, "application/pdf");

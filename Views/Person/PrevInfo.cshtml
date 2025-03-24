@@ -1,5 +1,6 @@
 ﻿@{
     var last = (MnePerson)ViewBag.Last;
+    var partnerId = (int)ViewBag.PartnerId;
 }
 
 <div style="text-align:center;">
@@ -86,6 +87,8 @@
 <br />
 <br />
 
+<input type="hidden" id="hiddenNote" value="@(partnerId == 4 ? last.Note : "")" />
+
 <div style="display:flex;  justify-content: center;">
     @(Html.Kendo().Button().Name("btnAddUser2")
         .HtmlAttributes(new { type = "button", onclick = "copyPrev()", style = "height:65px; width:210px; margin-right:10px; cursor:pointer;" })
@@ -99,5 +102,6 @@
     function copyPrev() { 
         $('#person_EntryPoint').data('kendoDropDownList').value($('#Last_EntryPoint').val())
         $('#person_EntryPointDate').data('kendoDatePicker').value($('#Last_EntryPointDate').data('kendoDatePicker').value())
+        $('#person_Note').data('kendoTextBox').value($("#hiddenNote").val())
     }
 </script>

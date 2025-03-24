@@ -598,11 +598,11 @@ namespace Oblak.Controllers
 
         [HttpPost]
         [Route("guestListPdf")]
-        public async Task<ActionResult> GuestListPdf(int objekat, string datumod, string datumdo)
+        public async Task<ActionResult> GuestListPdf(int objekat, string datumod, string datumdo, int? partnerId)
         {
             try
             {
-                var stream = await _registerClient.GuestListPdf(objekat, datumod, datumdo);
+                var stream = await _registerClient.GuestListPdf(objekat, datumod, datumdo, partnerId);
 
                 stream.Seek(0, SeekOrigin.Begin);
                 var fsr = new FileStreamResult(stream, "application/pdf");
@@ -724,6 +724,11 @@ namespace Oblak.Controllers
                     if (_registerClient is SrbClient) await _registerClient.Authenticate(grp.Property.LegalEntity);
                     if (_registerClient is MneClient) await _registerClient.Initialize(grp.Property.LegalEntity);
                     stream = await _registerClient.ConfirmationGroupPdf(grp);
+
+                    if (stream == null)
+                    { 
+                        return Json(new { info = "Gosti iz ove grupe jos uvjek nisu prijavljeni!", error = "" });
+                    }
                 }
                 else if (person.HasValue && person.Value != 0)
                 {
@@ -739,7 +744,13 @@ namespace Oblak.Controllers
                         await _registerClient.Initialize(prs.Property.LegalEntity);
                     }                    
                     stream = await _registerClient.ConfirmationPersonPdf(prs);
-                }
+
+                    if (stream == null)
+                    {
+                        return Json(new { info = "Gost jos uvjek nije prijavljen!", error = "" });
+                    }
+                } 
+
                 stream.Seek(0, SeekOrigin.Begin);
                 var fsr = new FileStreamResult(stream, "application/pdf");
                 fsr.FileDownloadName = $"Potvrde.pdf";

@@ -412,6 +412,37 @@
         });
     }
 
+    function checkTIN(tin) {
+        if (!tin) return;
+
+        $.ajax({
+            url: '/check-tin',
+            type: 'POST',
+            data: { tin: tin },
+            success: function (exists) {
+                if (exists) {
+                    Swal.fire({
+                        title: "Obavještenje",
+                        text: "JMBG koji ste unijeli već postoji u sistemu. Da li želite nastaviti?",
+                        icon: "info",
+                        showCancelButton: true,
+                        confirmButtonText: "Da, nastavi",
+                        cancelButtonText: "Ne"
+                    }).then((result) => {
+                        if (!result.isConfirmed) {
+                            $("#TIN").val("");
+                        }
+                    });
+                }
+            },
+            error: function () {
+                Swal.fire("Greška!", "Došlo je do greške prilikom provjere JMBG-a.", "error");
+            }
+        });
+    }
+
+
+
     function account() {
 
         var grid = $('#legalEntitiesGrid').data('kendoGrid');
@@ -634,13 +665,14 @@
             }).Width("70px");
 
             columns.Bound(g => g.Id).Title("Id").Width("80px");
-            columns.Bound(g => g.Name).Title("Naziv").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width("40%");
+            columns.Bound(g => g.Name).Title("Naziv").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width("30%");
 @*             columns.Bound(g => g.FirstName).Title("Ime").Width("15%");
             columns.Bound(g => g.LastName).Title("Prezime").Width("25%"); *@
-            columns.ForeignKey(g => g.Type, legalEntityTypes).Title("Vrsta").Width("150px");
+            columns.ForeignKey(g => g.Type, legalEntityTypes).Title("Vrsta").Width("100px");
             if (property_admin && User.IsInRole("TouristOrg") == false) columns.ForeignKey(g => g.AdministratorId, admins).Title("Administrator").Width("250px").HtmlAttributes(new { style = "text-align:center;" });
-            columns.Bound(g => g.TIN).Title("Poreski broj").Width("150px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" }).HtmlAttributes(new { style = "text-align:center;" });
-            columns.Bound(g => g.PhoneNumber).Title("Broj telefona").Width("150px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+            columns.Bound(g => g.TIN).Title("Poreski broj").Width("120px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" }).HtmlAttributes(new { style = "text-align:center;" });
+            columns.Bound(g => g.PhoneNumber).Title("Broj telefona").Width("130px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" });
+            columns.Bound(g => g.Email).Title("Email").Width("200px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
             columns.Bound(g => g.Address).Title("Adresa").Width("40%").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" });
             columns.Bound(g => g.Country).Title("Država").Width("150px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
             columns.Bound(g => g.IsRegistered).Title("Registrovan?").Width("100px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" }).ClientTemplate("#= IsRegistered ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");

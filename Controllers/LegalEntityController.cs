@@ -17,6 +17,11 @@ using System.IO;
 using SkiaSharp;
 using Oblak.Data.Api;
 using Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Oblak.Data.Enums;
+using Oblak.Services.MNE;
+using Oblak.Services.SRB;
 
 
 namespace Oblak.Controllers
@@ -27,6 +32,7 @@ namespace Oblak.Controllers
         HttpContext _context;
         ILogger<LegalEntityController> _logger;
         private readonly IMapper _mapper;
+        private readonly ApplicationUser _appUser;
 
         public LegalEntityController(
             ApplicationDbContext db, 
@@ -38,6 +44,12 @@ namespace Oblak.Controllers
             _logger = logger;
             _mapper = mapper;
             _context = httpAccessor.HttpContext;
+
+            var username = _context?.User?.Identity?.Name;
+            if (username != null)
+            {
+                _appUser = _db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.Properties).FirstOrDefault(a => a.UserName == username)!; 
+            } 
         }
 
         [HttpGet]
@@ -81,10 +93,17 @@ namespace Oblak.Controllers
             if (string.IsNullOrEmpty(type)) errors += "Morate unijeti tip izdavaoca!" + Environment.NewLine;
             if (string.IsNullOrEmpty(tin)) errors += "Morate unijeti JMBG izdavaoca!" + Environment.NewLine;
             if ((tin ?? "").Length != 13) errors += "Uneseni JMBG nema 13 karaktera!" + Environment.NewLine;
-            if (string.IsNullOrEmpty(address)) errors += "Morate unijeti adresu izdavaoca!" + Environment.NewLine;
+            if (string.IsNullOrEmpty(address)) errors += "Morate unijeti adresu izdavaoca!" + Environment.NewLine; ;
+            if (!string.IsNullOrEmpty(regNumber) != !string.IsNullOrEmpty(regDate))
+            {
+                if (string.IsNullOrEmpty(regNumber))
+                    errors += "Morate unijeti broj rješenja!" + Environment.NewLine;
+                else
+                    errors += "Morate unijeti datum isticanja rješenja!" + Environment.NewLine;
+            }
 
             if (errors != string.Empty) return Json(new BasicDto() { error = errors, info = "" });
-
+             
             var newLegalEntity = new LegalEntity();
             newLegalEntity.Name = name;
             newLegalEntity.Address = address;
@@ -165,6 +184,20 @@ namespace Oblak.Controllers
 
             return Json(new BasicDto() { error = "", info = "Sve ok" });
         }
+
+
+        [HttpPost]
+        [Route("check-tin", Name = "checkTIN")]
+        public IActionResult CheckTIN(string tin)
+        {
+            if (_appUser.PartnerId == 4)
+            {
+                bool exists = _db.LegalEntities.Any(le => le.TIN == tin);
+                return Json(exists);
+            }
+            return Json(false);
+        }
+
 
         [HttpGet("clients")]
         public IActionResult Index()

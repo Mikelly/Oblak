@@ -74,12 +74,18 @@
         </div>  *@
         <div class="one" style="flex:0 1 calc(33% - 20px)">
             <label for="lastname">Poreski broj</label>
-            @(Html.Kendo().TextBox().Name("TIN").HtmlAttributes(new { style = "width:100%" }))
+            @(Html.Kendo().TextBox().Name("TIN").HtmlAttributes(new { style = "width:100%", onblur = "checkTIN(this.value)" }))
         </div>
         <div class="one" style="flex: 0 1 calc(33% - 20px)">
-            <label for="gender">Adresa izdavaoca</label>
-            @(Html.Kendo().TextArea().Name("Address").HtmlAttributes(new { style = "width:100%; height:100px;" }))
-        </div>
+            <div style="margin-bottom:23px;">
+                <label for="gender">Adresa izdavaoca</label>
+                @(Html.Kendo().TextArea().Name("Address").HtmlAttributes(new { style = "width:100%;" }).Resize(TextAreaResize.Vertical))
+            </div>
+            <div>
+                <label for="email">Email adresa</label>
+                @(Html.Kendo().TextBox().Name("Email").HtmlAttributes(new { style = "width:100%" }))
+            </div>
+        </div> 
         <div class="one" style="flex: 0 1 calc(33% - 20px); justify-content:space-between; justify-items:space-between;">
             <div style="margin-bottom:23px;">
                 <label for="firstname">Broj telefona</label>

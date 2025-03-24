@@ -126,3 +126,18 @@ public class Exceptions
         return Exceptions.StringException(excp);
     }
 }
+
+public static class ReportHelpers
+{
+    public static string GetPartnerLogoUrl(IConfiguration configuration, int? partnerId)
+    {
+        var resourcesUrl = configuration["REPORTING:MNE:ResourcesUrl"];
+        string logoUrl = partnerId switch
+        {
+            3 => resourcesUrl + "/tobar.png",
+            4 => resourcesUrl + "/tobudva.png",
+            _ => resourcesUrl + "/oblak.png"
+        };
+        return logoUrl;
+    }
+}

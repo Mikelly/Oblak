@@ -482,8 +482,8 @@
                         g.Title("Boravišna taksa").Columns(col =>
                         {
                             col.Bound(c => c.ResTaxPaymentTypeName).Title("Plaćanje").Width(170);
-                            col.Bound(c => c.ResTaxAmount).Title("Taksa").Width(85).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" });
-                            col.Bound(c => c.ResTaxFee).Title("Proviz").Width(85).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" });
+                            col.Bound(c => c.ResTaxAmount).Title("Taksa").Width(85).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" }).ClientFooterTemplate("<div style='text-align:right'>#=kendo.toString(sum, '0.00')#<div>");;
+                            col.Bound(c => c.ResTaxFee).Title("Proviz").Width(85).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" }).ClientFooterTemplate("<div style='text-align:right'>#=kendo.toString(sum, '0.00')#<div>");;
                             col.Bound(c => c.UserCreated).Title("Operater").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(140).HtmlAttributes(new { style = "text-align:center;" });
                             col.Bound(c => c.CheckInPointName).Title("Punkt").Width(120).Format("{0:n2}");                            
                         }));
@@ -500,6 +500,10 @@
             .HtmlAttributes(new { style = "height:100%;" })
             .DataSource(ds => ds
             .Ajax()
+            .Aggregates(a => { 
+                a.Add(b => b.ResTaxAmount).Sum(); 
+                a.Add(b => b.ResTaxFee).Sum(); 
+            })
             .PageSize(20)
             .Model(m =>
             {

@@ -598,7 +598,7 @@ public class SrbClient : Register
         return await new Pdf().Merge(streams);
     }
 
-    public override async Task<Stream> GuestListPdf(int objekat, string datumod, string datumdo)
+    public override async Task<Stream> GuestListPdf(int objekat, string datumod, string datumdo, int? partnerId)
     {
         var obj = _db.Properties.FirstOrDefault(a => a.Id == objekat);
 
@@ -609,7 +609,8 @@ public class SrbClient : Register
             new List<Telerik.Reporting.Parameter>() {
                         new Telerik.Reporting.Parameter("objekat", objekat),
                         new Telerik.Reporting.Parameter("od", OD),
-                        new Telerik.Reporting.Parameter("do", DO),
+                        new Telerik.Reporting.Parameter("do", DO), 
+                        new Telerik.Reporting.Parameter("LogoUrl", ReportHelpers.GetPartnerLogoUrl(_configuration, partnerId)),
                 }
             , "PDF");
 

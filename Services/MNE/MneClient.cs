@@ -1288,7 +1288,7 @@ namespace Oblak.Services.MNE
             throw new NotImplementedException();
         }
 
-        public override async Task<Stream> GuestListPdf(int objekat, string datumod, string datumdo)
+        public override async Task<Stream> GuestListPdf(int objekat, string datumod, string datumdo, int? partnerId)
         {
             var reportProcessor = new Telerik.Reporting.Processing.ReportProcessor();
             var deviceInfo = new System.Collections.Hashtable();
@@ -1305,6 +1305,7 @@ namespace Oblak.Services.MNE
             reportSource.Parameters.Add("Property", objekat);
             reportSource.Parameters.Add("DateFrom", dateFrom);
             reportSource.Parameters.Add("DateTo", dateTo);
+            reportSource.Parameters.Add("LogoUrl", ReportHelpers.GetPartnerLogoUrl(_configuration, partnerId));
 
             Telerik.Reporting.Processing.RenderingResult result = reportProcessor.RenderReport("PDF", reportSource, deviceInfo);
 
@@ -1317,5 +1318,7 @@ namespace Oblak.Services.MNE
                 return null;
             }
         }
+
+        
     }
 }

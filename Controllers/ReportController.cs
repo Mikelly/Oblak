@@ -280,7 +280,7 @@ namespace Oblak.Controllers
                 parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
             }
-            else if (report == "ResTax")
+            else if (report == "ResTax" || report == "ResTaxTotal")
             {
                 parameters.Add(new Parameter() { Name = "PartnerId", Value = _legalEntity.PartnerId });
                 parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });

@@ -78,7 +78,7 @@ namespace Oblak.Services
 
         public abstract Task GuestListMail(int objekat, string datumOo, string datumdo, string email);
 
-        public abstract Task<Stream> GuestListPdf(int objekat, string datumod, string datumdo);
+        public abstract Task<Stream> GuestListPdf(int objekat, string datumod, string datumdo, int? partnerId);
 
         public abstract Task SendGuestToken(int propertyId, int? unitId, string email, string phoneNo, string lang);
 

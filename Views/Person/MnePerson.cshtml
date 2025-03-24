@@ -523,8 +523,8 @@
                     <div class="one">
                         <label for="ResTaxFee">Napomena</label>
                         @(Html.Kendo().TextBox().Value(dto.Note)
-                            .Name("Note")                                                        
-                            .HtmlAttributes(new { style = "width:100%" })
+                            .Name("Note")
+                            .HtmlAttributes(new { style = "width:100%", id = "person_Note" })
                             )
                     </div>
                 </fieldset>

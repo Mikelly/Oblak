@@ -455,7 +455,8 @@
                         {
                             col.Bound(c => c.Date).Title("Datum").Format("{0:dd.MM.yyyy}").Width(150).HtmlAttributes(new { style = "text-align:center;" });
                             col.Bound(c => c.CheckIn).Title("Dolazak").Format("{0:dd.MM.yyyy}").Width(150).HtmlAttributes(new { style = "text-align:center;" }); ;
-                            col.Bound(c => c.CheckOut).Title("Odlazak").Format("{0:dd.MM.yyyy}").Width(150).HtmlAttributes(new { style = "text-align:center;" }); ;                                                        
+                            col.Bound(c => c.CheckOut).Title("Odlazak").Format("{0:dd.MM.yyyy}").Width(150).HtmlAttributes(new { style = "text-align:center;" });
+                            col.Bound(c => c.Date).Title("Vrijeme").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Format("{0:dd.MM.yyyy HH:mm}").Width(130).HtmlAttributes(new { style = "text-align:center;" });
                         }));
 
                     columns.Group(g => 
@@ -476,6 +477,7 @@
                             col.Bound(c => c.CheckIn).Title("Dolazak").Format("{0:dd.MM.yyyy}").Width(100).HtmlAttributes(new { style = "text-align:center;" }); ;
                             col.Bound(c => c.CheckOut).Title("Odlazak").Format("{0:dd.MM.yyyy}").Width(100).HtmlAttributes(new { style = "text-align:center;" }); ;                            
                             col.Bound(c => c.Guests).Title("Gosti").Width(500);
+                            col.Bound(c => c.Date).Title("Vrijeme").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Format("{0:dd.MM.yyyy HH:mm}").Width(130).HtmlAttributes(new { style = "text-align:center;" });
                         }));
 
                     columns.Group(g => 

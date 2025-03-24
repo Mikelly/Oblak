@@ -1,6 +1,7 @@
 ﻿@{
     ViewBag.Title = "Knjiga gostiju";
     Layout = "~/Views/Shared/_LayoutINV.cshtml";
+    var partnerId = ViewBag.PartnerId;
 }
 
 @using Oblak.Models.Api;
@@ -18,8 +19,8 @@
     function guestListPrint() {
         var datumod = kendo.toString($('#DatumOd').data('kendoDatePicker').value(), 'dd.MM.yyyy');
         var datumdo = kendo.toString($('#DatumDo').data('kendoDatePicker').value(), 'dd.MM.yyyy');
-        var objekat = $('#Objekat').val();
-        window.open(`/guest-list-print?datumod=${datumod}&datumdo=${datumdo}&objekat=${objekat}`, "_blank");
+        var objekat = $('#Objekat').val(); 
+        window.open(`/guest-list-print?datumod=${datumod}&datumdo=${datumdo}&objekat=${objekat}&partnerId=@(partnerId)`, "_blank");
     };
 
 </script>

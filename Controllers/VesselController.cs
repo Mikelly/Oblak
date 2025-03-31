@@ -176,7 +176,9 @@ namespace Oblak.Controllers
 
                 await _db.SaveChangesAsync();
 
-                return Json(new[] { _mapper.Map(existingEntity, input) }.ToDataSourceResult(request, ModelState));
+                var vesselDto = _mapper.Map<VesselDto>(existingEntity);
+
+                return Json(new[] { vesselDto }.ToDataSourceResult(request, ModelState));
             }
             catch (Exception ex)
             {

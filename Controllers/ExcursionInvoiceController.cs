@@ -32,13 +32,13 @@ namespace Oblak.Controllers
         private readonly ReportingService _reporting;
         private readonly IWebHostEnvironment _env;
         private readonly ApplicationUser _appUser;
-        private readonly int _legalEntityId;        
+        private readonly int _legalEntityId;
         private LegalEntity _legalEntity;
         private HttpContext _context;
 
         public ExcursionInvoiceController(
-            ILogger<ExcursionInvoiceController> logger, 
-            ApplicationDbContext db, 
+            ILogger<ExcursionInvoiceController> logger,
+            ApplicationDbContext db,
             ReportingService reporting,
             IWebHostEnvironment env,
             IMapper mapper,
@@ -46,7 +46,7 @@ namespace Oblak.Controllers
             IHttpContextAccessor httpContextAccessor
             )
         {
-            _logger = logger;       
+            _logger = logger;
             _reporting = reporting;
             _env = env;
             _db = db;
@@ -77,7 +77,7 @@ namespace Oblak.Controllers
                 .Include(a => a.Agency)
                 .Include(a => a.TaxPaymentType)
                 .Where(x => x.AgencyId == AgencyId || (AgencyId ?? 0) == 0)
-                .Select(_mapper.Map<ExcursionInvoiceDto>);                
+                .Select(_mapper.Map<ExcursionInvoiceDto>);
 
             return Json(await invoices.ToDataSourceResultAsync(request));
         }
@@ -100,30 +100,29 @@ namespace Oblak.Controllers
             return View("Invoice");
         }
 
-
+         
         [HttpGet("excursion-invoice-create")]
         public async Task<IActionResult> Create()
         {
             try
             {
-                var dto = new ExcursionInvoiceDto();
-
-                dto.Date = DateTime.Now;
-                dto.TaxPaymentTypeId = 2;
-                dto.InvoiceNo = _db.ExcursionInvoices.Where(a => a.Date.Year == DateTime.Now.Year).Select(a => a.InvoiceNo).OrderByDescending(x => x).FirstOrDefault() + 1;
-                dto.InvoiceNumber = $"{dto.InvoiceNo.ToString("0")}/{DateTime.Now.Year.ToString("0")}";
-                dto.Status = "U izradi";
+                var dto = new ExcursionInvoiceDto
+                {
+                    Date = DateTime.Now,
+                    TaxPaymentTypeId = 1, //Gotovina - default
+                    Status = "Zaključena", //"U izradi" - turnOn sistem lock/unlock
+                    InvoiceNo = 0,
+                    InvoiceNumber = "0"
+                };
 
                 var sl = _db.TaxPaymentTypes
                     .Where(a => a.PartnerId == _appUser.PartnerId)
-                    .Select(a =>
-                        new SelectListItem() { Text = a.Description, Value = a.Id.ToString() }
-                    ).ToList();
+                    .Select(a => new SelectListItem { Text = a.Description, Value = a.Id.ToString() })
+                    .ToList();
 
                 ViewBag.TaxPaymentTypes = new SelectList(sl, "Value", "Text");
 
                 ViewBag.Invoice = dto;
-
                 ViewBag.InvoiceId = 0;
 
                 return View("Invoice");
@@ -156,6 +155,7 @@ namespace Oblak.Controllers
 
                 _mapper.Map(dto, invoice);
 
+                invoice.Status = TaxInvoiceStatus.Closed; //ukloni - turnOn sistem lock/unlock
                 invoice.CheckInPointId = _appUser.CheckInPointId ?? 0;
                 invoice.DueDate = invoice.Date.AddDays(15);
 
@@ -170,7 +170,7 @@ namespace Oblak.Controllers
             }
             catch (Exception ex)
             {
-                return Ok(new { id = 0, info = "", error = ex.Message });                
+                return Ok(new { id = 0, info = "", error = ex.Message });
             }
         }
 
@@ -182,7 +182,7 @@ namespace Oblak.Controllers
             {
                 ExcursionInvoice invoice = _db.ExcursionInvoices.FirstOrDefault(a => a.Id == id)!;
 
-                if (invoice.Status == TaxInvoiceStatus.Active || invoice.Status == TaxInvoiceStatus.Opened)
+                if (invoice.Status == TaxInvoiceStatus.Active || invoice.Status == TaxInvoiceStatus.Opened || invoice.Status == TaxInvoiceStatus.Closed) //ukloni "|| invoice.Status == TaxInvoiceStatus.Closed" - turnOn sistem lock/unlock
                 {
                     _db.Remove(invoice);
                     _db.SaveChanges();
@@ -277,7 +277,7 @@ namespace Oblak.Controllers
             {
                 var inv = _db.ExcursionInvoices.FirstOrDefault(a => a.Id == invoiceId);
                 inv.Status = TaxInvoiceStatus.Closed;
-                
+
                 _db.SaveChanges();
 
                 return Json(new { info = "Uspješno zaključena faktura!", error = "" });
@@ -322,5 +322,31 @@ namespace Oblak.Controllers
             }
             else return 0;
         }
+
+        [HttpGet("next-invoice-number")]
+        public IActionResult GetNextInvoiceNumber(int taxPaymentTypeId)
+        {
+            try
+            { 
+                if (taxPaymentTypeId == 2)
+                {
+                    int nextInvoiceNo = _db.ExcursionInvoices
+                        .Where(a => a.Date.Year == DateTime.Now.Year)
+                        .Select(a => a.InvoiceNo)
+                        .OrderByDescending(x => x)
+                        .FirstOrDefault() + 1;
+
+                    string invoiceNumber = $"{nextInvoiceNo.ToString("0")}/{DateTime.Now.Year.ToString("0")}";
+
+                    return Json(new {invoiceNo = nextInvoiceNo, invoiceNumber = invoiceNumber });
+                } 
+                return Json(new { info = "", error = "Nepoznata vrednost TaxPaymentTypeId ili je zatražen broj fakture za gotovinsko plaćanje!" }); 
+            }
+            catch (Exception ex)
+            { 
+                return Json(new { info = "", error = ex.Message });
+            }
+        }
+
     }
 }

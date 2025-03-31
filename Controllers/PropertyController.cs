@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Oblak.Data;
 using Oblak.Data.Enums;
+using Oblak.Helpers;
 using Oblak.Models;
 using Oblak.Models.Api;
 using Oblak.Services;
@@ -246,17 +247,20 @@ namespace Oblak.Controllers
                 
         public async Task<IActionResult> Mjesta(int opstina, [DataSourceRequest] DataSourceRequest request)
         {
-            var m = _db.Municipalities.FirstOrDefault(a => a.Id == opstina);
-            var txt = Request.Query["filter[filters][0][value]"].ToString() ?? "";
+            var m = _db.Municipalities.FirstOrDefault(a => a.Id == opstina); 
+            var txt = Request.Query["filter[filters][0][value]"].ToString()?.Trim() ?? "";
+
             var nam = Request.Query["filter[filters][0][field]"].ToString() ?? "";
 
-            var data = _db.CodeLists.Where(a => a.Type == "mjesto" && a.Param1 == m.ExternalId);
+            var data = _db.CodeLists.Where(a => a.Type == "mjesto" && a.Param1 == m.ExternalId)
+                                    .AddMappedLocation(m.ExternalId, "RAFAILOVIĆI", "BEČIĆI");
 
             if (nam == "Name")
             { 
-                data = data.Where(a => a.Name.Contains(txt) || txt == "");
+                data = data.Where(a => a.Name.ToLower().Contains(txt.ToLower()) || string.IsNullOrEmpty(txt)); 
             }
 
+            Console.WriteLine(data.ToQueryString());
             return Json(data.ToList());
         }
     }

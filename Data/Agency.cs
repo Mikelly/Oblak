@@ -26,7 +26,7 @@ namespace Oblak.Data
 		public string Address { get; set; }
 
 		[StringLength(450)]
-		public string Email { get; set; }
+		public string? Email { get; set; }
 
 		[StringLength(450)]
 		public string? PhoneNo { get; set; }

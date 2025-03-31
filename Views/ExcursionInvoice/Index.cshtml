@@ -225,8 +225,8 @@
             {
                 columns.Bound(g => g.AgencyName).Title("Agencija").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(250);
                 columns.Bound(g => g.Date).Title("Datum").Format("{0:dd.MM.yyyy}").Width(100).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
-                columns.Bound(g => g.InvoiceNo).Title("Broj").Width(100).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
-                columns.Bound(g => g.InvoiceNumber).Title("Broj").Width(150).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+                columns.Bound(g => g.InvoiceNo).Title("Broj").Width(100).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" }).ClientTemplate("# if (InvoiceNo != 0) { # #= InvoiceNo # # } #");
+                columns.Bound(g => g.InvoiceNumber).Title("Broj").Width(150).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" }).ClientTemplate("# if (InvoiceNumber != '0') { # #= InvoiceNumber # # } #");
                 columns.Bound(g => g.DueDate).Title("Valuta").Format("{0:dd.MM.yyyy}").Width(100).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
             }));
 
@@ -236,10 +236,9 @@
                 columns.Bound(g => g.BillingFee).Title("Provizija").Width(100).Format("{0:n2}").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:right;" });
                 columns.Bound(g => g.BillingTotal).Title("Ukupno").Width(100).Format("{0:n2}").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:right;" });
                 columns.Bound(g => g.TaxPaymentTypeDescription).Title("Način plaćanja").Width(220).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
-                columns.Bound(g => g.Status).Title("Status").Width(120).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+                //columns.Bound(g => g.Status).Title("Status").Width(120).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
                 //columns.Bound(g => g.Note).Title("Napomena").Width(200).Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" });
-            }));           
-            
+            }));
         })
         .Pageable(p => p.Refresh(true))
         .Editable(e => e.Mode(GridEditMode.InLine))

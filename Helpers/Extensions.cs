@@ -2,6 +2,8 @@
 using Oblak.Data;
 using System.Data;
 using Microsoft.Data.SqlClient;
+using Telerik.SvgIcons;
+using Kendo.Mvc.Extensions;
 
 namespace Oblak.Helpers
 {
@@ -26,6 +28,37 @@ namespace Oblak.Helpers
 
                 return calc;
             }
+        }
+    }
+    public static class CodeListExtensions
+    {
+        public static IQueryable<CodeList> AddMappedLocation(this IQueryable<CodeList> data, string? externalId, string newLocationName, string existingLocationName)
+        {
+            var dataLst = data.ToList();
+
+            if (string.IsNullOrEmpty(externalId) &&
+                dataLst.Where(x => x.Type == "mjesto" && x.Param1 == externalId).Any(x => x.Name == newLocationName))
+                return dataLst.AsQueryable();
+
+            var existingLocation = dataLst.FirstOrDefault(x => x.Type == "mjesto" && x.Param1 == externalId && x.Name == existingLocationName);
+            if (existingLocation != null)
+            {
+                var mappedLocation = new CodeList
+                {
+                    Id = dataLst.Max(a => a.Id) + 1,
+                    Name = newLocationName,
+                    Type = "mjesto",
+                    ExternalId = existingLocation.ExternalId,
+                    Param1 = existingLocation.Param1,
+                    Param2 = existingLocation.Param2,
+                    Param3 = existingLocation.Param3,
+                    Country = existingLocation.Country
+                };
+
+                return dataLst.Append(mappedLocation).AsQueryable();
+            }
+
+            return dataLst.AsQueryable();
         }
     }
 }

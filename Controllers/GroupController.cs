@@ -359,7 +359,7 @@ namespace RegBor.Controllers
 				if ((start ?? "") != "") Od = DateTime.ParseExact(start, "dd.MM.yyyy", CultureInfo.InvariantCulture);
 				else Od = now;
 
-				if ((end ?? "") != "") Do = DateTime.ParseExact(end, "dd.MM.yyyy", CultureInfo.InvariantCulture);
+				if ((end ?? "") != "") Do = DateTime.ParseExact(end, "dd.MM.yyyy", CultureInfo.InvariantCulture).Date.Add(new TimeSpan(23, 59, 59));
 				else Do = now;
 			}
 			else

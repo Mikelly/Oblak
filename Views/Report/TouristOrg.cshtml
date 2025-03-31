@@ -8,7 +8,7 @@
 		{ $"GuestListByPlace", "Gosti po lokaciji" },
 		{ $"PostOffice", "Izvještaj za poštu" },
 		{ $"ResTax", "Naplata boravišne takse" },
-		{ $"ResTaxTotal", "Naplata boravisne takse - ukupno"},
+		{ $"ResTaxTotal", "Naplata boravišne takse - ukupno"},
 		{ $"GuestBook", "Knjiga gostiju izdavaoca" },
 		{ $"GuestBookPayments", "Knjiga gostiju sa plaćanjima" },
 		{ $"LegalEntities", "Pregled izdavaoca" },
@@ -182,6 +182,11 @@
 			$('#firstName').show();
 			$('#lastName').show();
 			$('#documentNumber').show();			
+		}
+
+		if(report == "ResTaxHistory"){
+			$('#datumOd').show();
+			$('#datumDo').show();
 		}
 
 	}

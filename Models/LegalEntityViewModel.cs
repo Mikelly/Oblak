@@ -37,6 +37,7 @@ namespace Oblak.Models
 
         public bool InVat { get; set; }
 
+        public bool IsSuspended { get; set; }
         public bool IsRegistered { get; set; }
 
         public string? Email { get; set; }

@@ -57,7 +57,8 @@ namespace Oblak.Data
         
         public bool InVat { get; set; }
 
-		public bool IsRegistered { get; set; } = false;
+        public bool IsSuspended { get; set; } = false;
+        public bool IsRegistered { get; set; } = false;
 
 		public bool Test { get; set; }
 

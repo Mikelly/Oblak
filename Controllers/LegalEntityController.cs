@@ -211,6 +211,7 @@ namespace Oblak.Controllers
             var admins = _db.LegalEntities.Where(a => a.PartnerId == partner).Where(a => ids.Contains(a.Id)).ToList();
 
             ViewBag.Admins = admins;
+            ViewBag.PartnerId = partner;
 
             return View();
         }
@@ -614,6 +615,22 @@ namespace Oblak.Controllers
             }
 
             return Json(new BasicDto() { info = "Zaglavlje računa uspješno sačuvano!", error = "" });
+        }
+
+        [HttpGet("legal-entity-is-suspended")]
+        public ActionResult IsSuspended(int? legalEntityId)
+        {
+            if (_appUser.PartnerId == 4)
+            {
+                bool le = _db.LegalEntities.Any(x => x.Id == legalEntityId && x.IsSuspended);
+                string errInfo = string.Empty;
+                if (le)
+                {
+                    return Json(new { isSuspended = true, errInfo = "Ovaj stanodavac je <b style=\"color: red;\">suspendovan</b>!" });
+                }
+            } 
+            
+            return Json(new { isSuspended = false });
         }
     }
 }

@@ -698,30 +698,93 @@
         debugger;
 
         if (item) {
+             
             $.ajax({
-                url: `/payments?property=${item.Id}`,
-                type: 'GET',
-                success: function (data, status, xhr) { 
-                    var dropdown = $("#ResTaxPaymentTypeId").data("kendoDropDownList");
-                    dropdown.dataTextField = "Text";
-                    dropdown.dataValueField = "Value";
-                    dropdown.setDataSource(data.payments);
-                    dropdown.refresh();
-                    if(data.errInfo || data.debtInfo){
-                        Swal.fire({ 
-                            icon: 'warning', 
-                            title: 'Upozorenje!',
-                            html: `${data.errInfo} <br> ${data.debtInfo}`,
-                            confirmButtonText: `U redu`,
-                            allowOutsideClick: false });
-                    } 
-                },
-                error: function () {
-                    Swal.fire({ icon: 'error', title: 'Došlo je do greške!', confirmButtonText: `U redu` });
+            url: `/legal-entity-is-suspended?legalEntityId=${item.LegalEntityId}`,
+            type: 'GET',
+            success: function (data, status, xhr) {
+                if (data.isSuspended) {
+
+                    var suspendedErrorInfo = data.errInfo;
+                    var paymentErrorInfo = "";
+                    var paymentDebtInfo = "";
+
+                    $.ajax({
+                            url: `/payments?property=${item.Id}`,
+                            type: 'GET',
+                            success: function (data, status, xhr) { 
+                                if(data.errInfo || data.debtInfo){
+                                    paymentErrorInfo = data.errInfo;
+                                    paymentDebtInfo = data.debtInfo;
+                                }
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Upozorenje!',
+                                    html: `${suspendedErrorInfo} <br> ${paymentErrorInfo} <br> ${paymentDebtInfo} `,
+                                    confirmButtonText: 'U redu',
+                                    allowOutsideClick: false
+                                }).then(function() {
+                                    location.reload();
+                                });
+                            },
+                            error: function () {
+                                paymentErrorInfo = "Greška pri provjeri dugovanja";
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Upozorenje!',
+                                    html: `${suspendedErrorInfo} <br> ${paymentErrorInfo} <br> ${paymentDebtInfo} `,
+                                    confirmButtonText: 'U redu',
+                                    allowOutsideClick: false
+                                }).then(function() {
+                                    location.reload();
+                                });
+                            }
+                        });
+                         
                 }
-            });
+                else{ 
+                    $.ajax({
+                            url: `/payments?property=${item.Id}`,
+                            type: 'GET',
+                            success: function (data, status, xhr) {
+                                var dropdown = $("#ResTaxPaymentTypeId").data("kendoDropDownList");
+                                dropdown.dataTextField = "Text";
+                                dropdown.dataValueField = "Value";
+                                dropdown.setDataSource(data.payments);
+                                dropdown.refresh();
+                                if(data.errInfo || data.debtInfo){
+                                    Swal.fire({
+                                        icon: 'warning',
+                                        title: 'Upozorenje!',
+                                        html: `${data.errInfo} <br> ${data.debtInfo}`,
+                                        confirmButtonText: `U redu`,
+                                        allowOutsideClick: false });
+                                }
+                            },
+                            error: function () {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Došlo je do greške!',
+                                    confirmButtonText: 'U redu',
+                                    allowOutsideClick: false
+                                });
+                            }
+                        }); 
+                } 
+            },
+            error: function () {
+                Swal.fire({ 
+                    icon: 'error',
+                    title: 'Došlo je do greške!',
+                    confirmButtonText: 'U redu',
+                    allowOutsideClick: false
+                }).then(function() {
+                        location.reload();
+                    });
+            }
+        }); 
         } else {
-            console.log("No item selected.");
+            console.log("No item selected."); 
         }
     }
 

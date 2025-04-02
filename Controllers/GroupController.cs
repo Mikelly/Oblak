@@ -500,15 +500,15 @@ namespace RegBor.Controllers
         public ActionResult Desc(int groupId)
         {
             try
-            {
-                var g = _db.Groups.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.Vessel).Include(a => a.NauticalLegalEntity).Include(a => a.ResTaxPaymentType).FirstOrDefault(a => a.Id == groupId);
+            { 
+                var g = _db.Groups.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.ResTaxPaymentType).Include(a => a.Vessel).ThenInclude(v => v!.LegalEntity).FirstOrDefault(a => a.Id == groupId);
                 if (g != null)
                 {
                     ViewBag.Property = $"{g.Property.Name} - {g.Property.LegalEntity.Name}";
                     if (g.VesselId.HasValue)
                     {
-                        ViewBag.Vessel = $"{g.Vessel.Name}, {g.Vessel.Registration}, {g.Vessel.OwnerName}";
-                        ViewBag.NauticalLegalEntity = $"{g.NauticalLegalEntity.Name}";
+                        ViewBag.Vessel = $"{g.Vessel?.Name}, {g.Vessel?.Registration}, {g.Vessel?.OwnerName}";
+                        ViewBag.NauticalLegalEntity = $"{g.Vessel?.LegalEntity?.Name}";
                     }                    
                     ViewBag.ResidenceTaxAmount = g.ResTaxAmount ?? 0m;
                     ViewBag.ResidenceTaxFee = g.ResTaxFee ?? 0m;

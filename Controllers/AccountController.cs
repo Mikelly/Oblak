@@ -707,5 +707,161 @@ namespace Oblak.Controllers
 
             return Ok();
         }
+    
+
+    [HttpPost]
+    [Route("tourist-org-reset-password")]
+    public async Task<ActionResult> ResetPassword(string userid, string password)
+    {
+            try
+            {
+                var user = _db.Users.FirstOrDefault(a => a.Id == userid);
+                user.LockoutEnd = null;
+                _db.SaveChanges();
+
+                string code = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var result = await _userManager.ResetPasswordAsync(user, code, password);
+
+                return Json(new BasicDto() { error = "", errors = null, info = "Uspješno resetovana lozinka!" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new BasicDto() { error = ex.Message, errors = null, info = "" });
+            }
+        }
+
+
+        [HttpPost("legal-entity-reset-password")]
+        public async Task<IActionResult> LegalEntityResetPassword(int legalEntityId, [FromBody] ResetPasswordModel model)
+        {
+            if (string.IsNullOrEmpty(model.NewPassword))
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    error = "Nova lozinka je obavezna."
+                });
+            }
+
+            var le = _db.LegalEntities.Find(legalEntityId);
+
+            if (le == null)
+                return NotFound(new
+                {
+                    success = false,
+                    error = "Korisnik (legal entity) nije pronadjen!"
+                });
+
+            var user = _db.Users.FirstOrDefault(a => a.LegalEntityId == le.Id);
+
+            if (user == null)
+                return NotFound(new
+                {
+                    success = false,
+                    error = "Korisnik nije pronadjen!"
+                });
+
+            string resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var resetPasswordResult = await _userManager.ResetPasswordAsync(user, resetToken, model.NewPassword);
+
+            if (!resetPasswordResult.Succeeded)
+                return BadRequest(new
+                {
+                    success = false,
+                    error = "<div>Resetovanje lozinke nije uspelo!</div>" + string.Join("", resetPasswordResult.Errors.Select(e => $"<div>{e.Description}</div>"))
+
+                });
+
+            var stampResult = await _userManager.UpdateSecurityStampAsync(user);
+
+            if (!stampResult.Succeeded)
+                return BadRequest(new
+                {
+                    success = false,
+                    error = "<div>Neuspjesno azuriranje security stamp-a!</div>" + string.Join("", stampResult.Errors.Select(e => $"<div>{e.Description}</div>"))
+                });
+
+            return Ok(new
+            {
+                success = true,
+                error = "<div>Lozinka je resetovana.</div> <div>Korisnik ce morati ponovo da se uloguje.</div>"
+            });
+        }
+
+        [HttpPost("admin/lockuser/{userId}")]
+        public async Task<IActionResult> LockUnlockUser(string userId, [FromQuery] bool lockUser)
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                return BadRequest(new
+                {
+                    title = "Greška",
+                    message = "Korisnički ID je obavezan."
+                });
+            }
+
+            // Pronađi korisnika po ID-ju
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound(new
+                {
+                    title = "Greška",
+                    message = "Korisnik nije pronađen."
+                });
+            }
+
+            IdentityResult result;
+            if (lockUser)
+            {
+                // Omogući zaključavanje i postavi lockout kraj na daleku budućnost (npr. +100 godina)
+                await _userManager.SetLockoutEnabledAsync(user, true);
+                result = await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddYears(100));
+                // Ažuriraj security stamp za momentalno poništavanje prethodnih JWT tokena
+                await _userManager.UpdateSecurityStampAsync(user);
+
+                if (!result.Succeeded)
+                {
+                    return BadRequest(new
+                    {
+                        title = "Greška",
+                        message = "Zaključavanje korisnika nije uspelo.",
+                        errors = result.Errors.Select(e => e.Description)
+                    });
+                }
+
+                return Ok(new
+                {
+                    title = "Uspešno",
+                    message = "Korisnik je zaključan i trenutno nema pristup aplikaciji."
+                });
+            }
+            else
+            {
+                // Za otključavanje: poništi lockout postavljanjem kraja na sadašnjost i isključi zaključavanje
+                result = await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow);
+                await _userManager.SetLockoutEnabledAsync(user, false);
+                // Ažuriranje security stamp-a tako da se postojeće informacije osveže
+                await _userManager.UpdateSecurityStampAsync(user);
+
+                if (!result.Succeeded)
+                {
+                    return BadRequest(new
+                    {
+                        title = "Greška",
+                        message = "Otključavanje korisnika nije uspelo.",
+                        errors = result.Errors.Select(e => e.Description)
+                    });
+                }
+
+                return Ok(new
+                {
+                    title = "Uspešno",
+                    message = "Korisnik je otključan i sada može ponovo da se uloguje."
+                });
+            }
+        }
+
     }
+
 }

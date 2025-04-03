@@ -626,7 +626,7 @@ namespace Oblak.Controllers
                 string errInfo = string.Empty;
                 if (le)
                 {
-                    return Json(new { isSuspended = true, errInfo = "Ovaj stanodavac je <b style=\"color: red;\">suspendovan</b>!" });
+                    return Json(new { isSuspended = true, errInfo = "Ovaj stanodavac je <b style=\"color: red;\">suspendovan</b> od strane turističke inspekcije!" });
                 }
             } 
             

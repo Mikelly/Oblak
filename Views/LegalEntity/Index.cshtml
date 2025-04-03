@@ -446,22 +446,22 @@
 
     function account() {
 
-    var grid = $('#legalEntitiesGrid').data('kendoGrid');
-    var item = grid.dataItem(grid.select());
+        var grid = $('#legalEntitiesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
 
-    if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati izdavaoca', confirmButtonText: `U redu` });
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati izdavaoca', confirmButtonText: `U redu` });
 
-    le = item.Id;
+        le = item.Id;
 
-    $.ajax({
-    url: `/legal-entity-account?legalentity=${le}`,
-    type: 'GET',
-    success: function (data, status, xhr) {
-    var wnd = $("#wndAccount").data("kendoWindow");
-    wnd.content(data);
-    wnd.center().open();
-    }
-    });
+        $.ajax({
+            url: `/legal-entity-account?legalentity=${le}`,
+            type: 'GET',
+            success: function (data, status, xhr) {
+                var wnd = $("#wndAccount").data("kendoWindow");
+                wnd.content(data);
+                wnd.center().open();
+            }
+        });
     }
 
     function roles() {
@@ -491,44 +491,80 @@
 
     function accountCreate() {
 
-    var grid = $('#legalEntitiesGrid').data('kendoGrid');
-    var item = grid.dataItem(grid.select());
-    le = item.Id;
+        var grid = $('#legalEntitiesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+        le = item.Id;
 
-    $.ajax({
-    url: `/legal-entity-account?legalentity=${le}`,
-    type: 'POST',
-    data: $('#accountForm').serialize(),
-    success: function (data, status, xhr) {
-    if (data.error != "") Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
-    else 
-    {
-    Swal.fire({ icon: 'success', title: data.info, confirmButtonText: `U redu` });
-    var wnd = $("#wndAccount").data("kendoWindow").close();
-    }
-    }
-    });
+        $.ajax({
+            url: `/legal-entity-account?legalentity=${le}`,
+            type: 'POST',
+            data: $('#accountForm').serialize(),
+            success: function (data, status, xhr) {
+                if (data.error != "") Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                else 
+                {
+                Swal.fire({ icon: 'success', title: data.info, confirmButtonText: `U redu` });
+                var wnd = $("#wndAccount").data("kendoWindow").close();
+                }
+            }
+        });
     }
 
     function resetPassword() {
 
-    var grid = $('#legalEntitiesGrid').data('kendoGrid');
-    var item = grid.dataItem(grid.select());
-    le = item.Id;
+         var grid = $('#legalEntitiesGrid').data('kendoGrid');
+         var item = grid.dataItem(grid.select());
+         var leId = item.Id;
+         var newPassVal = $("#Password").val();
 
-    $.ajax({
-    url: `/legal-entity-account?legalentity=${le}`,
-    type: 'POST',
-    data: $('#accountForm').serialize(),
-    success: function (data, status, xhr) {
-    if (data.error != "") Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
-    else {
-    Swal.fire({ icon: 'success', title: data.info, confirmButtonText: `U redu` });
-    var wnd = $("#wndAccount").data("kendoWindow").close();
-    }
-    }
-    });
-    }
+         $.ajax({
+         url: `/legal-entity-reset-password?legalEntityId=${leId}`,
+         type: 'POST',
+         contentType: 'application/json',
+         data: JSON.stringify({ NewPassword: newPassVal }),
+         success: function(data) {
+
+             if(data != null && data.success){
+                 Swal.fire({
+                     icon: 'success',
+                     title: 'Uspješno!',
+                     html: `${data.error}`,
+                     confirmButtonText: 'U redu',
+                     allowOutsideClick: false
+                 }).then(function() {
+                     $("#wndAccount").data("kendoWindow").close();
+                 });
+             }
+             else {
+                 Swal.fire({
+                 icon: 'warning',
+                 title: 'Upozorenje!',
+                 html: `${data.error}`,
+                 confirmButtonText: 'U redu',
+                 allowOutsideClick: false
+             });
+             }
+         },
+         error: function(xhr) {
+             var data = xhr.responseJSON;
+             Swal.fire({
+                     icon: 'warning',
+                     title: 'Upozorenje!',
+                     html: data.error || 'Greška prilikom reseta password-a!',
+                     confirmButtonText: 'U redu',
+                     allowOutsideClick: false
+             });
+         }
+         });
+     }
+
+     function accountLockUnlock(cmd){ 
+         var grid = $('#legalEntitiesGrid').data('kendoGrid');
+         var item = grid.dataItem(grid.select());
+         var leId = item.Id; 
+          
+     }
+      
 
     function payments(taxType) {
     var grid = $('#legalEntitiesGrid').data('kendoGrid');
@@ -569,43 +605,43 @@
 <div style="display:flex; margin-left:15px; margin-top:25px; margin-right:15px;">
 
     @(Html.Kendo().Button().Name("btnNewClient")
-            .HtmlAttributes(new { type = "button", onclick = "register()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
-            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                .HtmlAttributes(new { type = "button", onclick = "register()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+                .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
                     <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/bed.png'/>
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>NOVI<br/>IZDAVALAC<div>
                 </div>"))
 
     @(Html.Kendo().Button().Name("btnProperties")
-            .HtmlAttributes(new { type = "button", onclick = "properties()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
-            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                .HtmlAttributes(new { type = "button", onclick = "properties()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+                .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
                     <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/hotel.png'/>
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>SMJEŠTAJNI<br/>OBJEKTI<div>
                 </div>"))
 
     @(Html.Kendo().Button().Name("btnAccount")
-            .HtmlAttributes(new { type = "button", onclick = "account()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
-            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                .HtmlAttributes(new { type = "button", onclick = "account()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+                .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
                     <img style='width:48px;height:48px;text-align:center;display:block;margin-left:auto;margin-right:auto;margin-top:2px;' src='/Content/Icons/access.png'/>
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>KORISNIČKI<br/>NALOG<div>
                 </div>"))
 
     @(Html.Kendo().Button().Name("btnRoles")
-            .HtmlAttributes(new { type = "button", onclick = "roles()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
-            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                .HtmlAttributes(new { type = "button", onclick = "roles()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+                .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
                     <img style='width:48px;height:48px;text-align:center;display:block;margin-left:auto;margin-right:auto;margin-top:2px;' src='/Content/Icons/user-account.png'/>
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>KORISNIČKE<br/>ULOGE<div>
                 </div>"))
 
     @(Html.Kendo().Button().Name("btnSrbCred")
-            .HtmlAttributes(new { type = "button", onclick = "srbCred()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
-            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                .HtmlAttributes(new { type = "button", onclick = "srbCred()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+                .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
                     <img style='width:48px;height:48px;text-align:center;display:block;margin-left:auto;margin-right:auto;margin-top:2px;' src='/Content/Icons/key-security.png'/>
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>E-TURISTA<br/>KREDENCIJALI<div>
                 </div>"))
 
     @(Html.Kendo().Button().Name("btnMneCert")
-            .HtmlAttributes(new { type = "button", onclick = "mneCert()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
-            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                .HtmlAttributes(new { type = "button", onclick = "mneCert()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+                .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
                     <img style='width:48px;height:48px;text-align:center;display:block;margin-left:auto;margin-right:auto;margin-top:2px;' src='/Content/Icons/licence_color.png'/>
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>RB90<br/>CERTIFIKAT<div>
                 </div>"))
@@ -613,22 +649,22 @@
     @if (User.IsInRole("Invoice") || User.IsInRole("Administrator"))
     {
         @(Html.Kendo().Button().Name("btnLogo")
-                .HtmlAttributes(new { type = "button", onclick = "logo()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
-                .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    .HtmlAttributes(new { type = "button", onclick = "logo()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+                    .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
                         <img style='width:48px;height:48px;text-align:center;display:block;margin-left:auto;margin-right:auto;margin-top:2px;' src='/Content/Icons/logo.png'/>
                         <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>PODESI<br/>LOGO<div>
                     </div>"))
 
         @(Html.Kendo().Button().Name("btnHeader")
-                .HtmlAttributes(new { type = "button", onclick = "header()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
-                .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    .HtmlAttributes(new { type = "button", onclick = "header()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+                    .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
                         <img style='width:48px;height:48px;text-align:center;display:block;margin-left:auto;margin-right:auto;margin-top:2px;' src='/Content/Icons/receipt.png'/>
                         <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>ZAGLAVLJE<br/>RAČUNA<div>
                     </div>"))
 
         @(Html.Kendo().Button().Name("btnEfiCert")
-                .HtmlAttributes(new { type = "button", onclick = "mneEfiCert()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
-                .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    .HtmlAttributes(new { type = "button", onclick = "mneEfiCert()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+                    .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
                         <img style='width:48px;height:48px;text-align:center;display:block;margin-left:auto;margin-right:auto;margin-top:2px;' src='/Content/Icons/licence_color.png'/>
                         <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>EFI<br/>CERTIFIKAT<div>
                     </div>"))
@@ -636,15 +672,15 @@
 
     <div style="display: flex; margin-left:auto;">
         @(Html.Kendo().Button().Name("btnPayments")
-                .HtmlAttributes(new { type = "button", onclick = "payments('ResidenceTax')", style = "height:95px; width:95px; margin-left:10px; cursor:pointer;" })
-                .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    .HtmlAttributes(new { type = "button", onclick = "payments('ResidenceTax')", style = "height:95px; width:95px; margin-left:10px; cursor:pointer;" })
+                    .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
                     <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/deposit.png'/>
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>UNOS<br/>UPLATA<div>
             </div>"))
 
         @(Html.Kendo().Button().Name("btnSaldo")
-                .HtmlAttributes(new { type = "button", onclick = "balance('ResidenceTax')", style = "height:95px; width:95px; margin-left:10px;; cursor:pointer;" })
-                .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    .HtmlAttributes(new { type = "button", onclick = "balance('ResidenceTax')", style = "height:95px; width:95px; margin-left:10px;; cursor:pointer;" })
+                    .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
                     <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/ledger.png'/>
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>SALDO<br/>OBAVEZA<div>
             </div>"))
@@ -656,64 +692,64 @@
 
 <div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
     @(Html.Kendo().Grid<LegalEntityViewModel>()
-            .Name("legalEntitiesGrid")
-            .Columns(columns =>
-            {
-                columns.Command(command =>
+                .Name("legalEntitiesGrid")
+                .Columns(columns =>
                 {
-                    command.Edit().Text(" ").CancelText(" ").UpdateText(" ");
-                    command.Destroy().Text(" ");                
-                }).Width("70px");
+                    columns.Command(command =>
+                    {
+                        command.Edit().Text(" ").CancelText(" ").UpdateText(" ");
+                        command.Destroy().Text(" ");
+                    }).Width("70px");
 
-                columns.Bound(g => g.Id).Title("Id").Width("80px");
-                columns.Bound(g => g.Name).Title("Naziv").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width("30%");
-                @*             columns.Bound(g => g.FirstName).Title("Ime").Width("15%");
+                    columns.Bound(g => g.Id).Title("Id").Width("80px");
+                    columns.Bound(g => g.Name).Title("Naziv").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width("30%");
+                    @*             columns.Bound(g => g.FirstName).Title("Ime").Width("15%");
             columns.Bound(g => g.LastName).Title("Prezime").Width("25%"); *@
-                columns.ForeignKey(g => g.Type, legalEntityTypes).Title("Vrsta").Width("100px");
-                if (property_admin && User.IsInRole("TouristOrg") == false) columns.ForeignKey(g => g.AdministratorId, admins).Title("Administrator").Width("250px").HtmlAttributes(new { style = "text-align:center;" });
-                columns.Bound(g => g.TIN).Title("Poreski broj").Width("120px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" }).HtmlAttributes(new { style = "text-align:center;" });
-                columns.Bound(g => g.PhoneNumber).Title("Broj telefona").Width("130px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" });
-                columns.Bound(g => g.Email).Title("Email").Width("200px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
-                columns.Bound(g => g.Address).Title("Adresa").Width("40%").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" });
-                columns.Bound(g => g.Country).Title("Država").Width("150px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
-                if (partnerId == 4) {
-                    columns.Bound(g => g.IsSuspended).Title("Suspendovan?").Width("100px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" }).ClientTemplate("#= IsSuspended ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"  ><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
-                }
-                columns.Bound(g => g.IsRegistered).Title("Registrovan?").Width("100px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" }).ClientTemplate("#= IsRegistered ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
-                //columns.Bound(g => g.InVat).Title("U PDV-u").Width("100px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" }).ClientTemplate("#= InVat ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
-                columns.Bound(g => g.UserCreated).Title("Korisnik").Width("130px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" });
-                columns.Bound(g => g.UserCreatedDate).Title("Vrijeme").Width("130px").Format("{0:dd.MM.yyyy HH:mm}").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" });
-            })
-            .Pageable(p => p.Refresh(true))
-            .Editable(e => e.Mode(GridEditMode.InLine))
-            .Sortable()
-            .Selectable()
-            .Scrollable()
-            .Filterable()
-            .HtmlAttributes(new { style = "height:100%;" })        
-            .DataSource(ds => ds
-                .Ajax()
-                .PageSize(20)
-                .Model(m =>
-                {
-                    m.Id(g => g.Id);
-                    m.Field(g => g.Id).Editable(false);
-                    m.Field(g => g.Type);
-                    m.Field(g => g.Name);
-                    m.Field(g => g.TIN);
-                    m.Field(g => g.AdministratorId);
-                    m.Field(g => g.Address);
-                    m.Field(g => g.Country);
-                    m.Field(g => g.InVat);
-                    m.Field(g => g.IsSuspended);
-                    m.Field(g => g.IsRegistered);
+                    columns.ForeignKey(g => g.Type, legalEntityTypes).Title("Vrsta").Width("100px");
+                    if (property_admin && User.IsInRole("TouristOrg") == false) columns.ForeignKey(g => g.AdministratorId, admins).Title("Administrator").Width("250px").HtmlAttributes(new { style = "text-align:center;" });
+                    columns.Bound(g => g.TIN).Title("Poreski broj").Width("120px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" }).HtmlAttributes(new { style = "text-align:center;" });
+                    columns.Bound(g => g.PhoneNumber).Title("Broj telefona").Width("130px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" });
+                    columns.Bound(g => g.Email).Title("Email").Width("200px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+                    columns.Bound(g => g.Address).Title("Adresa").Width("40%").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" });
+                    columns.Bound(g => g.Country).Title("Država").Width("150px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+                    if (partnerId == 4) {
+                        columns.Bound(g => g.IsSuspended).Title("Suspendovan?").Width("100px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" }).ClientTemplate("#= IsSuspended ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"  ><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
+                    }
+                    columns.Bound(g => g.IsRegistered).Title("Registrovan?").Width("100px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" }).ClientTemplate("#= IsRegistered ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
+                    //columns.Bound(g => g.InVat).Title("U PDV-u").Width("100px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" }).ClientTemplate("#= InVat ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
+                    columns.Bound(g => g.UserCreated).Title("Korisnik").Width("130px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" });
+                    columns.Bound(g => g.UserCreatedDate).Title("Vrijeme").Width("130px").Format("{0:dd.MM.yyyy HH:mm}").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:left;" });
                 })
-            .Read(a => a.Url("legal-entity-read"))
-            .Create(a => a.Url("legal-entity-create"))
-            .Update(a => a.Url("legal-entity-update"))
-            .Destroy(a => a.Url("legal-entity-destroy"))
-            )
-    )
+                .Pageable(p => p.Refresh(true))
+                .Editable(e => e.Mode(GridEditMode.InLine))
+                .Sortable()
+                .Selectable()
+                .Scrollable()
+                .Filterable()
+                .HtmlAttributes(new { style = "height:100%;" })
+                .DataSource(ds => ds
+                    .Ajax()
+                    .PageSize(20)
+                    .Model(m =>
+                    {
+                        m.Id(g => g.Id);
+                        m.Field(g => g.Id).Editable(false);
+                        m.Field(g => g.Type);
+                        m.Field(g => g.Name);
+                        m.Field(g => g.TIN);
+                        m.Field(g => g.AdministratorId);
+                        m.Field(g => g.Address);
+                        m.Field(g => g.Country);
+                        m.Field(g => g.InVat);
+                        m.Field(g => g.IsSuspended);
+                        m.Field(g => g.IsRegistered);
+                    })
+                .Read(a => a.Url("legal-entity-read"))
+                .Create(a => a.Url("legal-entity-create"))
+                .Update(a => a.Url("legal-entity-update"))
+                .Destroy(a => a.Url("legal-entity-destroy"))
+                )
+        )
 </div>
 
 

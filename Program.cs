@@ -1,4 +1,4 @@
-using Hangfire;
+﻿using Hangfire;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -33,6 +33,7 @@ using Oblak.Services.Payment;
 using Oblak.Middleware;
 using Microsoft.AspNetCore.Http.Features;
 using System.Diagnostics;
+using Oblak;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -76,12 +77,7 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.SignIn.RequireConfirmedEmail = false;
 });
 
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    options.AccessDeniedPath = "/greska/pristup-zabranjen";
-    options.LoginPath = "/";
-});
-
+builder.Services.ConfigureCustomApplicationCookie();
 
 /*
 builder.Services.AddAuthentication(options =>
@@ -297,6 +293,9 @@ app.UseRouting();
 
 app.UseAuthentication();
 //app.UseMiddleware<ClientCertMiddleware>();
+
+app.UseMiddleware<AuthenticationRedirectMiddleware>();
+
 app.UseAuthorization();
 
 app.MapControllerRoute(

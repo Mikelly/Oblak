@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Oblak.Data;
+using Oblak.Helpers;
 using Oblak.Migrations;
 using System.Xml.Linq;
 using Telerik.Reporting;
@@ -134,7 +135,8 @@ namespace Oblak.Controllers
             foreach ((string name, string type, object value) in GetParameters(uriReportSource.Uri))
             {
                 var formValue = "";
-                object v = type switch {
+                object v = type switch
+                {
                     "String" => formValue.ToString(),
                     "Integer" => formValue != null ? int.Parse(formValue.ToString()) : value,
                     _ => ""
@@ -150,30 +152,30 @@ namespace Oblak.Controllers
             return TouristOrg("R");
         }
 
-		[HttpGet]
-		[Route("reports-res-tax-o")]
-		public ActionResult TouristOrgResTaxOperater()
-		{
-			return TouristOrg("O");
-		}
+        [HttpGet]
+        [Route("reports-res-tax-o")]
+        public ActionResult TouristOrgResTaxOperater()
+        {
+            return TouristOrg("O");
+        }
 
-		[HttpGet]
+        [HttpGet]
         [Route("reports-exc-tax")]
-		[Authorize(Roles = "TouristOrgControllor,TouristOrgAdmin")]
-		public ActionResult TouristOrgExcTax()
+        [Authorize(Roles = "TouristOrgControllor,TouristOrgAdmin")]
+        public ActionResult TouristOrgExcTax()
         {
             return TouristOrg("E");
         }
 
-		[HttpGet]
-		[Route("reports-mup")]
-		[Authorize(Roles = "TouristOrgControllor,TouristOrgAdmin")]
-		public ActionResult TouristOrgMup()
-		{
-			return TouristOrg("M");
-		}
+        [HttpGet]
+        [Route("reports-mup")]
+        [Authorize(Roles = "TouristOrgControllor,TouristOrgAdmin")]
+        public ActionResult TouristOrgMup()
+        {
+            return TouristOrg("M");
+        }
 
-		[HttpGet]
+        [HttpGet]
         [Route("reports-tourist-org")]
         public ActionResult TouristOrg(string taxType)
         {
@@ -195,13 +197,13 @@ namespace Oblak.Controllers
 
             var mun = _appUser.PartnerId == 3 ? "20010" : "20036";
 
-			var places = _db.CodeLists.Where(a => a.Country == "MNE" && a.Type == "mjesto" && a.Param1 == mun).ToList();
-			
+            var places = _db.CodeLists.Where(a => a.Country == "MNE" && a.Type == "mjesto" && a.Param1 == mun).ToList();
+
             ViewBag.Places = places;
             ViewBag.TaxType = taxType;
             ViewBag.PartnerId = _legalEntity.PartnerId.ToString();
 
-			return View("TouristOrg");
+            return View("TouristOrg");
         }
 
 
@@ -216,17 +218,17 @@ namespace Oblak.Controllers
             var dateTo = Request.Form["DateTo"];
             var checkInPoint = Request.Form["CheckInPointId"];
             var username = Request.Form["UserName"];
-			var resTaxGroup = Request.Form["ResTaxGroup"];
-			var place = Request.Form["Place"];
-			var legalEntityStatus = Request.Form["LegalEntityStatus"];
+            var resTaxGroup = Request.Form["ResTaxGroup"];
+            var place = Request.Form["Place"];
+            var legalEntityStatus = Request.Form["LegalEntityStatus"];
             var legalEntity = Request.Form["LegalEntity"];
             var taxPaymentType = Request.Form["TaxPaymentType"];
-			var firstName = Request.Form["FirstName"];
-			var lastName = Request.Form["LastName"];
-			var documentNumber = Request.Form["DocumentNumber"];
+            var firstName = Request.Form["FirstName"];
+            var lastName = Request.Form["LastName"];
+            var documentNumber = Request.Form["DocumentNumber"];
 
-			//Dictionary<string, object> parameters = new Dictionary<string, object>();
-			List<Parameter> parameters = new List<Parameter>();
+            //Dictionary<string, object> parameters = new Dictionary<string, object>();
+            List<Parameter> parameters = new List<Parameter>();
 
             if (report == "CountryStats")
             {
@@ -253,8 +255,8 @@ namespace Oblak.Controllers
             }
             else if (report == "GuestBook" || report == "GuestBookPayments" || report == "Ledger")
             {
-				parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
-				parameters.Add(new Parameter() { Name = "LegalEntity", Value = legalEntity });
+                parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
+                parameters.Add(new Parameter() { Name = "LegalEntity", Value = legalEntity });
                 parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
             }
@@ -285,8 +287,8 @@ namespace Oblak.Controllers
                 parameters.Add(new Parameter() { Name = "PartnerId", Value = _legalEntity.PartnerId });
                 parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
-				parameters.Add(new Parameter() { Name = "Group", Value = resTaxGroup });
-			}
+                parameters.Add(new Parameter() { Name = "Group", Value = resTaxGroup });
+            }
             else if (report.ToString().StartsWith("ExcursionTax"))
             {
                 parameters.Add(new Parameter() { Name = "PartnerId", Value = _legalEntity.PartnerId });
@@ -294,36 +296,36 @@ namespace Oblak.Controllers
                 parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
             }
             else if (report == "LegalEntities")
-			{
-				parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId }); 
-                parameters.Add(new Parameter() { Name = "Status", Value = legalEntityStatus }); 
+            {
+                parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
+                parameters.Add(new Parameter() { Name = "Status", Value = legalEntityStatus });
                 parameters.Add(new Parameter() { Name = "Place", Value = place });
                 parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
             }
-			else if (report == "GuestHistory")
-			{
-				parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
-				parameters.Add(new Parameter() { Name = "FirstName", Value = firstName });
-				parameters.Add(new Parameter() { Name = "LastName", Value = lastName });
-				parameters.Add(new Parameter() { Name = "DocumentNumber", Value = documentNumber });				
-			}
-			else if (report == "Debt")
-			{
-				parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
-			}
-			else if (report == "PostOffice")
+            else if (report == "GuestHistory")
+            {
+                parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
+                parameters.Add(new Parameter() { Name = "FirstName", Value = firstName });
+                parameters.Add(new Parameter() { Name = "LastName", Value = lastName });
+                parameters.Add(new Parameter() { Name = "DocumentNumber", Value = documentNumber });
+            }
+            else if (report == "Debt")
+            {
+                parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
+            }
+            else if (report == "PostOffice")
             {
                 var cpid = int.Parse(checkInPoint);
-				var cp = _db.CheckInPoints.FirstOrDefault(a => a.Id == cpid);
+                var cp = _db.CheckInPoints.FirstOrDefault(a => a.Id == cpid);
 
                 parameters.Add(new Parameter() { Name = "PartnerId", Value = _legalEntity.PartnerId });
                 parameters.Add(new Parameter() { Name = "Date", Value = DateTime.ParseExact(date, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "CheckInPoint", Value = cpid });
                 parameters.Add(new Parameter() { Name = "CheckInPointName", Value = cp.Name });
-				parameters.Add(new Parameter() { Name = "TaxType", Value = "ResidenceTax" });
-				parameters.Add(new Parameter() { Name = "TaxTypeName", Value = "Boravišna taksa" });
-				parameters.Add(new Parameter() { Name = "id", Value = 0 });
+                parameters.Add(new Parameter() { Name = "TaxType", Value = "ResidenceTax" });
+                parameters.Add(new Parameter() { Name = "TaxTypeName", Value = "Boravišna taksa" });
+                parameters.Add(new Parameter() { Name = "id", Value = 0 });
                 parameters.Add(new Parameter() { Name = "g", Value = 0 });
                 parameters.Add(new Parameter() { Name = "inv", Value = 0 });
                 parameters.Add(new Parameter() { Name = "pay", Value = 0 });
@@ -342,6 +344,12 @@ namespace Oblak.Controllers
                     parameters.Add(new Parameter() { Name = "Radnik", Value = User.Identity.Name });
                 }
             }
+            else if (report == "ExcursionCountryStats")
+            {
+                parameters.Add(new Parameter() { Name = "PartnerId", Value = _legalEntity.PartnerId });
+                parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
+                parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
+            }
 
             var reportProcessor = new Telerik.Reporting.Processing.ReportProcessor();
             var deviceInfo = new System.Collections.Hashtable();
@@ -353,18 +361,33 @@ namespace Oblak.Controllers
 
             reportSource.Uri = path;
 
-            reportSource.Parameters.AddRange(parameters);
-            Telerik.Reporting.Processing.RenderingResult result = reportProcessor.RenderReport(format, reportSource, deviceInfo);
-
-            if (!result.HasErrors)
+            try
             {
-                Response.Headers.Append("Cache-Control", "private, max-age=1800"); 
-                Response.Headers.Append("Content-Disposition", "inline; filename=Report.pdf");
+                reportSource.Parameters.AddRange(parameters);
+
+                Telerik.Reporting.Processing.RenderingResult result = reportProcessor.RenderReport(format, reportSource, deviceInfo);
+
+                if (result.HasErrors)
+                {
+                    _logger.LogError("Telerik report - greske za {Report}:", report);
+                    foreach (var error in result.Errors)
+                    {
+                        _logger.LogError(" - {Error}", error.Message);
+                    }
+
+                    byte[] errorPdf = new Pdf().GenerateErrorPdf($"Report '{report}' greska pri renderovanju.");
+                    return File(errorPdf, "application/pdf");
+                }
 
                 return File(result.DocumentBytes, "application/pdf");
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception - Telerik report {Report}. Inner: {InnerException}", report, ex.InnerException?.Message);
 
-            return null;
-        }
+                byte[] errorPdf = new Pdf().GenerateErrorPdf($"Report '{report}' exception tokom generisanja.\n{ex.Message}");
+                return File(errorPdf, "application/pdf");
+            }
+        }  
     }
 }

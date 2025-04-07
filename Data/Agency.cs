@@ -17,13 +17,13 @@ namespace Oblak.Data
         public string Name { get; set; }
 
         [StringLength(450)]
-        public string TIN { get; set; }
+        public string? TIN { get; set; }
 
 		[StringLength(450)]
 		public string? TAX { get; set; }
 
 		[StringLength(450)]
-		public string Address { get; set; }
+		public string? Address { get; set; }
 
 		[StringLength(450)]
 		public string? Email { get; set; }

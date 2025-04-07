@@ -217,13 +217,13 @@
     });
     }
 
-    function onCountryChange(e) {
-    var grid = $("#ExcursionInvoiceItemsGrid").data("kendoGrid");
-    var val = $("#CountryId").val();        
-    var dataItem = grid.dataItem(grid.select());
-    dataItem.CountryId = val;
-    dataItem.dirty = true;
-    grid.trigger("change");
+    function onCountryChange(e) { 
+        var grid = $("#ExcursionInvoiceItemsGrid").data("kendoGrid");
+        var val = $("#CountryId").val();        
+        var dataItem = grid.dataItem(grid.select());
+        dataItem.CountryId = val;
+        dataItem.dirty = true;
+        grid.trigger("change");
     }
 
 
@@ -276,8 +276,94 @@ function fetchInvoiceNumber() {
 }
 
 
+  
+function openAgencyWindow() { 
+     
+        $.ajax({
+        url: `/register-agency`,
+        type: 'GET',
+        success: function (data, status, xhr) {
+            var wnd = $("#wndAgency").data("kendoWindow");   
+            wnd.content(data);
+            wnd.center().open(); 
 
+            setTimeout(function () {
+                $.validator.unobtrusive.parse($("#wndAgency").find("form"));
+            }, 300);
+        },
+        error: function (error) {
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'Došlo je do greške', confirmButtonText: `U redu` });
+        }
+    }); 
+}
 
+function submitAgencyForm() { 
+    var $form = $("#wndAgency").find("form");
+    
+    var validator = $form.kendoValidator().data('kendoValidator');
+    validator.validate();  
+    if (!$form.valid()) {
+        return; 
+    } 
+
+    var formData = $form.serialize(); 
+
+    $.ajax({
+        url: "/agency-create",
+        type: "POST",
+        data: formData,
+        success: function (data, status, xhr) { 
+            //console.log(data); 
+
+            if (data && data.Data && data.Data[0]) {
+                newAgency = data.Data[0]; 
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Uspješno!', 
+                    html: `Kreirana je nova agencija: ${newAgency.Name}`,
+                    confirmButtonText: 'U redu',
+                    allowOutsideClick: false
+                }).then(function() {  
+                        var comboBox = $("#AgencyId").data("kendoMultiColumnComboBox");
+    
+                        if (comboBox) { 
+                            comboBox.value(newAgency.Id);
+                            comboBox.text(newAgency.Name);
+                        } else {
+                            console.error("MultiColumnComboBox nije inicijalizovan.");
+                        }
+
+                        $("#wndAgency").data("kendoWindow").close();
+                });
+                  
+            } else if (data && data.Errors) {  
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Greška',
+                    text: data.Errors.join(', '),
+                    confirmButtonText: 'U redu',
+                    allowOutsideClick: false
+                }).then(function() {
+                        location.reload();
+                    });
+            } 
+        },
+        error: function (xhr, status, error) { 
+            Swal.fire({
+                icon: 'error',
+                title: 'Greška pri slanju',
+                text: 'Došlo je do greške prilikom slanja podataka na server.',
+                confirmButtonText: 'U redu',
+                allowOutsideClick: false
+            }).then(function() {
+                        location.reload();
+                    });; 
+        }
+    });
+}
+ 
 </script>
 
 <style type="text/css">
@@ -330,32 +416,40 @@ function fetchInvoiceNumber() {
 
     <div class="fieldset-like" style="width:350px; margin-left:0px">
         <span class="legend">Faktura</span>
-        <div style="">
-            <label for="propertyDropdown">Izaberite agenciju:</label>
-            @(Html.Kendo().MultiColumnComboBox()
-                    .Name("AgencyId")
-                    .Placeholder("Izaberite agenciju")
-                    .DataTextField("Name")
-                    .DataValueField("Id")
-                    .Enable(enbl)
-                    .Columns(columns =>
-                    {
-                        columns.Add().Field("Id").Title("ID").Width("80px");
-                        columns.Add().Field("Name").Title("Naziv").Width("200px");
-                        columns.Add().Field("Address").Title("Adresa").Width("220px");                    
-                    })
-                    .HtmlAttributes(new { id = "AgencyId", style = "width:100%;", autocomplete = "off", autocorrect = "off", autocapitalize = "off", spellcheck = "false" })
-                    .DropDownWidth("500px")                
-                    .Messages(m => m.NoData("Nema podataka").Clear("Poništi"))
-                    .Filter("contains").FilterFields(new string[] { "Name" })
-                    .AutoBind(false)
-                    .MinLength(3)
-                    //.Events(e => e.Change("propertyChanged"))
-                    //.ValuePrimitive(true)
-                    .Value(i.AgencyId.ToString())
-                    .Text(i.AgencyName)
-                    .DataSource(source => { source.Read(read => { read.Action("ReadAdmin", "Agency"); }).ServerFiltering(true); })
-                    )
+        <div style="display: flex; align-items: center; gap: 5px;">
+            <div style="flex: 1;">
+                <label for="propertyDropdown">Izaberite agenciju:</label>
+                @(Html.Kendo().MultiColumnComboBox()
+                        .Name("AgencyId")
+                        .Placeholder("Izaberite agenciju")
+                        .DataTextField("Name")
+                        .DataValueField("Id")
+                        .Enable(enbl)
+                        .Columns(columns =>
+                        {
+                            columns.Add().Field("Id").Title("ID").Width("80px");
+                            columns.Add().Field("Name").Title("Naziv").Width("200px");
+                            columns.Add().Field("Address").Title("Adresa").Width("220px");                    
+                        })
+                        .HtmlAttributes(new { id = "AgencyId", style = "width:100%;", autocomplete = "off", autocorrect = "off", autocapitalize = "off", spellcheck = "false" })
+                        .DropDownWidth("500px")                
+                        .Messages(m => m.NoData("Nema podataka").Clear("Poništi"))
+                        .Filter("contains").FilterFields(new string[] { "Name" })
+                        .AutoBind(false)
+                        .MinLength(3)
+                        //.Events(e => e.Change("propertyChanged"))
+                        //.ValuePrimitive(true)
+                        .Value(i.AgencyId.ToString())
+                        .Text(i.AgencyName)
+                        .DataSource(source => { source.Read(read => { read.Action("ReadAdmin", "Agency"); }).ServerFiltering(true); })
+                        )
+            </div>
+
+            @(Html.Kendo().Button().Name("btnCreateAgency")
+                .Content("<span class='fa-2x fa-plus' style='color:cadetblue;' ></span>")
+                .HtmlAttributes(new { @class = "k-button", style = "min-width:29px; height:29px; padding:0; margin-top:auto;" })
+                .Events(ev => ev.Click("openAgencyWindow"))
+            )
         </div>
 
         <div>
@@ -606,3 +700,17 @@ function fetchInvoiceNumber() {
         )
     )
 </div>
+
+@(Html.Kendo().Window().Name("wndAgency")
+    .Title("Nova agencija")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(400)
+    .Height(650) 
+    .HtmlAttributes(new { style = "padding:20px; padding-bottom:10px; font-size:14px;" })
+    .Actions(actions => actions.Close()) 
+) 
+
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>

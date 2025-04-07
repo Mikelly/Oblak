@@ -247,6 +247,9 @@ namespace Oblak.Controllers
                 
         public async Task<IActionResult> Mjesta(int opstina, [DataSourceRequest] DataSourceRequest request)
         {
+            if (opstina == 0) 
+                return Json(new List<object>()); 
+
             var m = _db.Municipalities.FirstOrDefault(a => a.Id == opstina); 
             var txt = Request.Query["filter[filters][0][value]"].ToString()?.Trim() ?? "";
 

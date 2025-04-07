@@ -108,7 +108,7 @@ namespace Oblak.Controllers
                 return Json(new DataSourceResult { Errors = ex.Message });
             }
         }
-
+        
         [HttpPost("agency-update")]
         public async Task<ActionResult> Update(AgencyDto input, [DataSourceRequest] DataSourceRequest request)
         {
@@ -162,6 +162,13 @@ namespace Oblak.Controllers
             {
                 return Json(new DataSourceResult { Errors = ex.Message });
             }
+        }
+
+        [HttpGet]
+        [Route("register-agency", Name = "register-agency")]
+        public IActionResult Register()
+        {
+            return PartialView(new AgencyDto()); 
         }
     }
 }

@@ -32,5 +32,34 @@ namespace Oblak.Helpers
             }
             return File.OpenRead(main_path);
         }
+        public byte[] GenerateErrorPdf(string message)
+        {
+            var report = new Telerik.Reporting.Report();
+            var detail = new Telerik.Reporting.DetailSection
+            {
+                Height = Telerik.Reporting.Drawing.Unit.Cm(2)
+            };
+            var textBox = new Telerik.Reporting.TextBox
+            {
+                Value = message,
+                Size = new Telerik.Reporting.Drawing.SizeU(
+                    Telerik.Reporting.Drawing.Unit.Cm(15),
+                    Telerik.Reporting.Drawing.Unit.Cm(2)),
+                Style =
+                {
+                    Color = System.Drawing.Color.Red
+                }
+            };
+            detail.Items.Add(textBox);
+            report.Items.Add(detail);
+
+            var processor = new Telerik.Reporting.Processing.ReportProcessor();
+            var result = processor.RenderReport("PDF", new Telerik.Reporting.InstanceReportSource
+            {
+                ReportDocument = report
+            }, null);
+
+            return result.DocumentBytes;
+        }
     }
 }

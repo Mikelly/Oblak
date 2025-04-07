@@ -358,6 +358,9 @@ namespace Oblak.Controllers
 
             if (!result.HasErrors)
             {
+                Response.Headers.Append("Cache-Control", "private, max-age=1800"); 
+                Response.Headers.Append("Content-Disposition", "inline; filename=Report.pdf");
+
                 return File(result.DocumentBytes, "application/pdf");
             }
 

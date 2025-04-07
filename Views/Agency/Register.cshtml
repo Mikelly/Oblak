@@ -1,0 +1,135 @@
+﻿@model Oblak.Models.Api.AgencyDto
+
+@{
+    Layout = null; 
+}
+
+
+<div class="container mt-5">
+    <form spellcheck="false" id="registerAgencyForm">
+        <div class="mb-5">
+            <label for="Name" class="form-label">Naziv</label>
+            @Html.EditorFor(m => m.Name, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="mb-5">
+            <label for="CountryId" class="form-label">Nacionalnost</label>
+            @(Html.Kendo().DropDownListFor(m => m.CountryId)
+                .DataValueField("Id")
+                .DataTextField("CountryName")
+                .Filter(FilterType.Contains) 
+                .DataSource(dataSource => dataSource.Read(read => read.Action("GetItems", "Country")))
+                .OptionLabel("Izaberite državu")
+                .HtmlAttributes(new { @class = "form-control" })) 
+            @(Html.ValidationMessageFor(m => m.CountryId, "", new { @class = "text-danger" }))
+        </div>
+
+        <div class="mb-5">
+            <label for="TIN" class="form-label">Poreski broj</label>
+            @Html.EditorFor(m => m.TIN, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(m => m.TIN, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="mb-5">
+            <label for="TAX" class="form-label">PDV broj</label>
+            @Html.EditorFor(m => m.TAX, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(m => m.TAX, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="mb-5">
+            <label for="PhoneNo" class="form-label">Broj telefona</label>
+            @Html.EditorFor(m => m.PhoneNo, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(m => m.PhoneNo, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="mb-5">
+            <label for="Address" class="form-label">Adresa</label>
+            @Html.EditorFor(m => m.Address, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(m => m.Address, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="mb-5">
+            <label for="Email" class="form-label">E-mail</label>
+            @Html.EditorFor(m => m.Email, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="mb-5">
+            <label for="ContactPerson" class="form-label">Kontakt osoba</label>
+            @Html.EditorFor(m => m.ContactPerson, new { htmlAttributes = new { @class = "form-control" } })
+            @Html.ValidationMessageFor(m => m.ContactPerson, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="button-container mt-30">
+            @(Html.Kendo().Button().Name("btnRegisterNewAgency")
+                .Content("<div class='btn-content'><img class='btn-icon' src='/Content/Icons/save.png' alt='Save'></img><div class='btn-text'>SAČUVAJ</div></div>")
+                .HtmlAttributes(new { onclick = "submitAgencyForm()", type = "button", @class = "btn-action" })
+                )
+
+            @(Html.Kendo().Button().Name("btnCancelNewAgnecy")
+                .Content("<div class='btn-content'><img class='btn-icon' src='/Content/Icons/cancel_color.png' alt='Cancel'></img><div class='btn-text'>OTKAŽI</div></div>")
+                .HtmlAttributes(new { onclick = "closeAgencyModal()", type = "button", @class = "btn-action" })
+                )
+        </div>  
+    </form>
+</div>
+
+<style>
+    .mt-30 {
+        margin-top: 30px;
+    }
+
+    .mt-5 {
+        margin-top: 5px;
+    }
+
+    .mb-5 {
+        margin-bottom: 5px;
+    }
+
+    .text-danger {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        display: block;
+    }
+
+    /* Flexbox container for horizontal alignment */
+    .button-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+    }
+
+    /* Styling for button content */
+    .btn-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    /* Styling for icons inside the button */
+    .btn-icon {
+        width: 35px;
+        height: 35px;
+        text-align: center;
+        position: relative;
+        top: 0px;
+    }
+
+    /* Styling for button text */
+    .btn-text {
+        padding-left: 10px;
+        padding-right: 10px;
+        font-size: smaller;
+        font-weight: bold;
+    }
+
+    /* Styling for button itself */
+    .btn-action {
+        width: 120px;
+        height: 50px;
+    }
+</style>

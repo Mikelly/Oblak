@@ -19,8 +19,7 @@ using Oblak.Services.Reporting;
 using Oblak.Services.Payment;
 using Newtonsoft.Json.Linq;
 using Microsoft.AspNetCore.Authorization;
-using SkiaSharp;
-using static SQLite.SQLite3;
+using Oblak.Services.Uniqa;
 
 namespace Oblak.Controllers
 {
@@ -49,6 +48,7 @@ namespace Oblak.Controllers
         private readonly IConfiguration _configuration;
         private readonly PaymentService _paymentService;
         private readonly GroupService _groupService;
+        private readonly UniqaService _uniqaService;
 
         public ApiController(   
             IServiceProvider serviceProvider,
@@ -70,7 +70,8 @@ namespace Oblak.Controllers
             ReportingService reporting,
             PaymentService paymentService,
             IConfiguration configuration,
-            GroupService groupService
+            GroupService groupService,
+            UniqaService uniqaService
             )
         {             
             _signInManager = signInManager;
@@ -89,6 +90,7 @@ namespace Oblak.Controllers
             _configuration = configuration;
             _paymentService = paymentService;
             _groupService = groupService;
+            _uniqaService = uniqaService;
 
             var username = httpContextAccessor.HttpContext?.User?.Identity?.Name;
             if (username != null)
@@ -1762,6 +1764,40 @@ namespace Oblak.Controllers
             };
 
             return Json(result);
+        }
+
+        [HttpPost]
+        [Route("syncUniqaLead")]
+        [Authorize]
+        public async Task<ActionResult> SyncUniqaLead()
+        {
+            if (_legalEntity == null)
+            {
+                Response.StatusCode = 401;
+                return Json(new { info = "", error = "Korisnik nije ulogovan!" });
+            }
+
+            var uniqaRequest = new
+            {
+                mobilePhone = _legalEntity.PhoneNumber ?? "",
+                countryCode = _legalEntity.Country.ToString(),
+                email = _legalEntity.Email ?? "",
+                channel = "uniqa",
+                customerType = "INDIVIDUAL",
+                detail = new
+                {
+                    firstName = _legalEntity.FirstName ?? "",
+                    lastName = _legalEntity.LastName ?? "",
+                    fullName = _legalEntity.Name ?? ""
+                }
+            };
+
+            var success = await _uniqaService.SyncLeadAsync(uniqaRequest);
+
+            if (success)
+                return Json(new { message = "success" });
+            else
+                return StatusCode(500, "Failed to sync lead with Uniqa.");
         }
     }
 }

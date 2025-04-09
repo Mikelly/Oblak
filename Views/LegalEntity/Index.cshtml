@@ -517,11 +517,16 @@
          var leId = item.Id;
          var newPassVal = $("#Password").val();
 
+         var reqData = {
+            LegalEntityId: leId,
+            NewPassword: newPassVal
+        };
+
          $.ajax({
-         url: `/legal-entity-reset-password?legalEntityId=${leId}`,
+         url: `/legal-entity-reset-password`,
          type: 'POST',
          contentType: 'application/json',
-         data: JSON.stringify({ NewPassword: newPassVal }),
+         data: JSON.stringify(reqData),
          success: function(data) {
 
              if(data != null && data.success){
@@ -548,8 +553,8 @@
          error: function(xhr) {
              var data = xhr.responseJSON;
              Swal.fire({
-                     icon: 'warning',
-                     title: 'Upozorenje!',
+                     icon: 'error',
+                     title: 'Greška!',
                      html: data.error || 'Greška prilikom reseta password-a!',
                      confirmButtonText: 'U redu',
                      allowOutsideClick: false
@@ -558,12 +563,60 @@
          });
      }
 
-     function accountLockUnlock(cmd){ 
-         var grid = $('#legalEntitiesGrid').data('kendoGrid');
-         var item = grid.dataItem(grid.select());
-         var leId = item.Id; 
-          
-     }
+    function accountLockUnlock(cmd) {
+        if (cmd !== 'lock' && cmd !== 'unlock') { 
+            alert("Nepoznata komanda: " + cmd);
+            return;
+        } 
+        var grid = $('#legalEntitiesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+        var leId = item.Id;
+       
+        var reqData = {
+            LegalEntityId: leId,
+            Lock: cmd === 'lock'
+        };
+         
+        $.ajax({
+            url: `/legal-entity-lock-unlock`,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(reqData),
+            success: function(data) {
+                if(data != null && data.success){
+                 Swal.fire({
+                     icon: 'success',
+                     title: 'Uspješno!',
+                     html: `${data.error}`,
+                     confirmButtonText: 'U redu',
+                     allowOutsideClick: false
+                 }).then(function() {
+                     $("#wndAccount").data("kendoWindow").close();
+                 });
+                 }
+                 else {
+                     Swal.fire({
+                     icon: 'warning',
+                     title: 'Upozorenje!',
+                     html: `${data.error}`,
+                     confirmButtonText: 'U redu',
+                     allowOutsideClick: false
+                 });
+                 } 
+            },
+            error: function(xhr) { 
+                var data = xhr.responseJSON;
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Greška!',
+                    html: data.error || 'Greška prilikom zaključavanja/otključavanja korisnika!',
+                    confirmButtonText: 'U redu',
+                    allowOutsideClick: false
+                });
+            }
+        });
+    }
+
       
 
     function payments(taxType) {

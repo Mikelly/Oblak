@@ -34,6 +34,7 @@
 			{ $"ExcursionTaxCash", "Naplata izletničke takse - Gotovina" },
 			{ $"ExcursionTaxVoucher", "Naplata izletničke takse - Vaučeri" },
 			{ $"ExcursionCountryStats", "Statistika izletnika po državama" },
+			{ $"Excursion", "Pregled vaučera po agencijama" },
 		};	
 	}
 
@@ -191,7 +192,7 @@
 		// 	$('#datumDo').show();
 		// }
 
-		if (report == "ExcursionCountryStats") {
+		if (report == "ExcursionCountryStats" || report == "Excursion") {
 			$('#datumOd').show();
 			$('#datumDo').show();
 		}

@@ -319,7 +319,58 @@
             if (errors != undefined) grid.shouldSync = false;
             else grid.shouldSync = true;
         }
-        debugger;
+
+        if (response && response.Errors) { 
+            alert(response.Errors); 
+            grid.shouldSync = false;
+        }
+        debugger; 
+    }
+     
+    //funkcija za filter u kendo gridu za kolone koje imaju combobox sa EditorTemplate-om
+    function entityComboBoxFilter(element, options) {
+        const combo = element.kendoComboBox({
+            placeholder: options.placeholder || "Izaberite...",
+            dataTextField: options.textField || "Name",
+            dataValueField: options.valueField || "Id",
+            filter: "contains",
+            suggest: true,
+            autoBind: false,
+            minLength: 2,
+            dataSource: {
+                serverFiltering: true,
+                transport: {
+                    read: {
+                        url: options.url,
+                        dataType: "json"
+                    }
+                }
+            },
+            filtering: function(e) {
+                const filterValue = e.filter?.value || "";
+                e.sender.dataSource.transport.options.read.data = {
+                    text: filterValue
+                };
+            },
+            change: function(e) { 
+                if (typeof options.onChange === "function") {
+                    options.onChange(e);
+                }
+            }
+        }).data("kendoComboBox");
+         
+        combo.dataSource.read().then(function () {
+            const selectedValue = combo.value();
+            if (selectedValue) {
+                combo.value(selectedValue);
+                const selectedItem = combo.dataSource.get(selectedValue);
+                if (selectedItem) {
+                    combo.text(selectedItem[options.textField || "Name"]);
+                }
+            }
+        });
     }
 
+
 </script>
+ 

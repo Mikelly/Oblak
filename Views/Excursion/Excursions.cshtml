@@ -37,6 +37,73 @@
         grid.trigger("change");
     }
 
+    // function agencyFilter(element) {
+    //     let combo;
+    //     combo = element.kendoComboBox({
+    //         placeholder: "Izaberite agenciju",
+    //         dataTextField: "Name",
+    //         dataValueField: "Id",   
+    //         filter: "contains",
+    //         suggest: true,
+    //         autoBind: false,
+    //         minLength: 2,
+    //         dataSource: {
+    //             serverFiltering: true,
+    //             transport: {
+    //                 read: {
+    //                     url: "/agency-read-admin",
+    //                     dataType: "json"
+    //                 }
+    //             }
+    //         },
+    //         filtering: function(e) {
+    //             const filterValue = e.filter?.value || "";
+    //             e.sender.dataSource.transport.options.read.data = {
+    //                 text: filterValue
+    //             };
+    //         },
+    //         change: function(e) { 
+    //         }
+    //     }).data("kendoComboBox");
+
+    //     combo.dataSource.read().then(function() {
+    //         const selectedValue = combo.value();
+    //         if (selectedValue) {
+
+    //             combo.value(selectedValue);
+    //             const selectedItem = combo.dataSource.get(selectedValue);
+    //             if (selectedItem) {
+    //                 combo.text(selectedItem.Name); 
+    //             }
+    //         }
+    //     }); 
+    // }
+
+    function agencyFilter(element) {
+        entityComboBoxFilter(element, {
+            url: "/agency-read-admin",
+            placeholder: "Izaberite agenciju...",
+            valueField: "Id",
+            textField: "Name",
+            onChange: function(e) {
+                //console.log("item:", e.sender.dataItem());
+            }
+        });
+    }
+    function countryFilter(element) {
+        entityComboBoxFilter(element, {
+            url: "/countries-get-items",
+            placeholder: "Izaberite nacionalnost...",
+            valueField: "Id",
+            textField: "CountryName",
+            onChange: function(e) {
+                //console.log("item:", e.sender.dataItem());
+            }
+        });
+    }
+         
+
+
 </script>
 
 <div style="position:absolute; top:25px; bottom: 15px; left: 15px; right:15px;">
@@ -50,11 +117,24 @@
                 command.Destroy().Text(" "); 
             })
             .Width(70);
-            columns.Bound(g => g.AgencyId).Title("Agencija").ClientTemplate("#= AgencyName ?? '' #").EditorTemplateName("Agency").EditorViewData(new { Foo = "onAgencyChange", ValueField = "Id", TextField = "Name" }).Width("30%");
+
+            columns.Bound(g => g.AgencyId)
+            .Title("Agencija")
+            .Filterable(filter => filter.UI("agencyFilter").Extra(false))
+            .ClientTemplate("#= AgencyName ?? '' #")
+            .EditorTemplateName("Agency")
+            .EditorViewData(new { Foo = "onAgencyChange", ValueField = "Id", TextField = "Name" })
+            .Width("30%"); 
             columns.Bound(g => g.Date).Title("Datum").Format("{0:dd.MM.yyyy}").EditorTemplateName("Date").Width(140).HtmlAttributes(new { style = "text-align:center;" });
             columns.Bound(g => g.VoucherNo).Title("Vaučer").Width("25%").HtmlAttributes(new { style = "text-align:left;" });
             columns.Bound(g => g.NoOfPersons).Title("Broj osoba").EditorTemplateName("Integer").Format("{0:n0}").Width(120).HtmlAttributes(new { style = "text-align:center;" });
-            columns.Bound(g => g.CountryId).Title("Nacionalnost").ClientTemplate("#= CountryName ?? '' #").EditorTemplateName("Country").EditorViewData(new { Foo = "onCountryChange", ValueField = "Id", TextField = "CountryName" }).Width("30%");
+            columns.Bound(g => g.CountryId)
+            .Title("Nacionalnost")
+            .Filterable(filter => filter.UI("countryFilter").Extra(false))
+            .ClientTemplate("#= CountryName ?? '' #")
+            .EditorTemplateName("Country")
+            .EditorViewData(new { Foo = "onCountryChange", ValueField = "Id", TextField = "CountryName" })
+            .Width("30%");
             columns.Bound(g => g.ExcursionTaxAmount).Title("Iznos takse").Width(150).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" });
             columns.Bound(g => g.ExcursionTaxTotal).Title("Ukupno").Width(150).Format("{0:n2}").HtmlAttributes(new { style = "text-align:right;" });            
         })

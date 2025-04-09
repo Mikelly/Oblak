@@ -350,8 +350,13 @@ namespace Oblak.Controllers
                 parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
             }
+            else if (report == "Excursion")
+            {
+                parameters.Add(new Parameter() { Name = "od", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
+                parameters.Add(new Parameter() { Name = "do", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
+            }
 
-            var reportProcessor = new Telerik.Reporting.Processing.ReportProcessor();
+                var reportProcessor = new Telerik.Reporting.Processing.ReportProcessor();
             var deviceInfo = new System.Collections.Hashtable();
             var reportSource = new Telerik.Reporting.UriReportSource();
 

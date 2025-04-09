@@ -16,6 +16,7 @@ using System.Net.Http.Headers;
 using System.IO;
 using SkiaSharp;
 using Oblak.Data.Api;
+using Newtonsoft.Json;
 
 
 namespace Oblak.Controllers
@@ -66,7 +67,10 @@ namespace Oblak.Controllers
             text = (text ?? "").ToLower();
 
             var final = data
-                .Where(a => a.Name.ToLower().Contains(text) || a.Address.ToLower().Contains(text))
+                .Where(a =>
+                    (!string.IsNullOrEmpty(a.Name) && a.Name.ToLower().Contains(text.ToLower())) ||
+                    (!string.IsNullOrEmpty(a.Address) && a.Address.ToLower().Contains(text.ToLower()))
+                )
                 .Take(100)
                 .ToList()
                 .Select(_mapper.Map<AgencyDto>)
@@ -95,10 +99,10 @@ namespace Oblak.Controllers
 
                 var agency = _mapper.Map<AgencyDto, Agency>(input);
                 agency.PartnerId = appUser.PartnerId ?? 0;
-
-                await _db.Agencies.AddAsync(agency);
-                await _db.SaveChangesAsync();
-
+                 
+                _db.Agencies.Add(agency); 
+                _db.SaveChanges();
+                 
                 _db.Entry(agency).Reference(a => a.Country).Load();
 
                 return Json(new[] { _mapper.Map(agency, input) }.ToDataSourceResult(request, ModelState));

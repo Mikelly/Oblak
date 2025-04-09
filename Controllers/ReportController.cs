@@ -370,6 +370,9 @@ namespace Oblak.Controllers
             {
                 reportSource.Parameters.AddRange(parameters);
 
+                Response.Headers.Append("Cache-Control", "private, max-age=1800");
+                Response.Headers.Append("Content-Disposition", "inline; filename=Report.pdf");
+
                 Telerik.Reporting.Processing.RenderingResult result = reportProcessor.RenderReport(format, reportSource, deviceInfo);
 
                 if (result.HasErrors)

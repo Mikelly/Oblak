@@ -32,6 +32,7 @@ namespace Oblak.Helpers
             }
             return File.OpenRead(main_path);
         }
+
         public byte[] GenerateErrorPdf(string message)
         {
             var report = new Telerik.Reporting.Report();

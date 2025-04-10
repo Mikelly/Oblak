@@ -270,7 +270,15 @@
                     var grid = $('#mnePersonGrid').data('kendoGrid');
                     $('#groupdesc').load('/group-desc?groupid=@ViewBag.Group');
                     grid.dataSource.read();
-                    Swal.fire({ icon: 'success', title: 'Uspješno sačuvane izmjene!', confirmButtonText: `U redu`, timer: 1000 });
+
+                    let userUnknownMsg = ``; 
+                    var timerN = 1500;
+                    if (data.UserCreated === 'unknown') {
+                        userUnknownMsg += `<b style="color: red;">Operater nije dodeljen, javite se administratoru!</b>`;
+                        timerN = 5000;
+                    }
+
+                    Swal.fire({ icon: 'success', title: 'Uspješno sačuvane izmjene!', html: userUnknownMsg,  confirmButtonText: `U redu`, timer: timerN });
                     if (isgroup == false) {
                         var wnd = $("#wndGuest").data("kendoWindow");
                         wnd.close();
@@ -910,7 +918,8 @@
                         .HeaderHtmlAttributes(new { style = "text-align: center;" })
                         .Columns(col =>
                             {
-                                col.Bound(g => g.PropertyName).Title("Smještajni objekat").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(250);
+                                col.Bound(g => g.PropertyName).Title("Smještajni objekat").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(250)
+                                    .ClientTemplate("# if (UserCreated == 'unknown') { # <div style='color:red;'><span>#= PropertyName #</span></div> # } else { # <span>#= PropertyName #</span> # } #");
                                 col.Bound(g => g.LegalEntityName).Title("Izdavaoc").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(200);
                                 col.Bound(g => g.FullName).Title("Ime i prezime").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(200);
                                 //col.Bound(g => g.PersonType).Title("Tip gosta").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(150).ClientTemplate("#= PersonType == 1 ? 'Domaći gost' : 'Strani gost' #");
@@ -966,26 +975,26 @@
                 a.Add(b => b.ResTaxFee).Sum(); 
             })
             .PageSize(20)
-        .Model(m =>
-        {
-            m.Id(g => g.Id);
-            m.Field(g => g.Id);
-            m.Field(g => g.FullName);
-            m.Field(g => g.PropertyName);
-            m.Field(g => g.PersonType);
-            m.Field(g => g.CheckIn);
-            m.Field(g => g.CheckOut);
-            m.Field(g => g.DocumentType);
-            m.Field(g => g.DocumentNumber);
-            m.Field(g => g.DocumentValidTo);
-            m.Field(g => g.Registered);
-            m.Field(g => g.Locked);
-            m.Field(g => g.ResTaxAmount);
-            m.Field(g => g.ResTaxFee);
-            m.Field(g => g.Deleted);
-        })
-        .Read(read => read.Action("ReadMnePersons", "Person", new { groupId = ViewBag.Group }))
-        )
+            .Model(m =>
+            {
+                m.Id(g => g.Id);
+                m.Field(g => g.Id);
+                m.Field(g => g.FullName);
+                m.Field(g => g.PropertyName);
+                m.Field(g => g.PersonType);
+                m.Field(g => g.CheckIn);
+                m.Field(g => g.CheckOut);
+                m.Field(g => g.DocumentType);
+                m.Field(g => g.DocumentNumber);
+                m.Field(g => g.DocumentValidTo);
+                m.Field(g => g.Registered);
+                m.Field(g => g.Locked);
+                m.Field(g => g.ResTaxAmount);
+                m.Field(g => g.ResTaxFee);
+                m.Field(g => g.Deleted);
+            })
+            .Read(read => read.Action("ReadMnePersons", "Person", new { groupId = ViewBag.Group }))
+            )
     )
 </div>
 

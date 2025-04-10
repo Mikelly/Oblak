@@ -681,7 +681,7 @@ namespace Oblak.Controllers
             if (User.IsInRole("TouristOrgOperator"))
             {
                 var user = User.Identity.Name;
-                query = query.Where(a => a.UserCreated == user);
+                query = query.Where(a => a.UserCreated == user || a.UserCreated == "unknown");
             }
 
             if (groupId != 0)
@@ -708,7 +708,7 @@ namespace Oblak.Controllers
             if (to)
             {
                 var user = User.Identity.Name;
-                query = query.Where(a => a.UserCreated == user);
+                query = query.Where(a => a.UserCreated == user || a.UserCreated == "unknown");
             }
 
             var data = query                
@@ -867,7 +867,7 @@ namespace Oblak.Controllers
 
                 var mnep = person as MnePerson;
 
-                return Json(new { info = "Uspješno sačuvan gost", error = "", id = person.Id, mnep.ResTaxTypeId, mnep.ResTaxAmount, mnep.ResTaxFee });
+                return Json(new { info = "Uspješno sačuvan gost", error = "", id = person.Id, mnep.ResTaxTypeId, mnep.ResTaxAmount, mnep.ResTaxFee, mnep.UserCreated });
             }
             catch (Exception ex)
             {

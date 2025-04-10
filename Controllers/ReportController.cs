@@ -209,7 +209,7 @@ namespace Oblak.Controllers
 
         [HttpPost]
         [Route("/treport")]
-        public async Task<FileResult> TouristOrgRunReport()
+        public async Task<FileStreamResult> TouristOrgRunReport()
         {
             var report = Request.Form["Report"];
             var format = Request.Form["Format"];
@@ -226,6 +226,7 @@ namespace Oblak.Controllers
             var firstName = Request.Form["FirstName"];
             var lastName = Request.Form["LastName"];
             var documentNumber = Request.Form["DocumentNumber"];
+            var agency = Request.Form["AgencyId"];
 
             //Dictionary<string, object> parameters = new Dictionary<string, object>();
             List<Parameter> parameters = new List<Parameter>();
@@ -352,6 +353,7 @@ namespace Oblak.Controllers
             }
             else if (report == "Excursion")
             {
+                parameters.Add(new Parameter() { Name = "Agencija", Value = int.Parse(agency) });
                 parameters.Add(new Parameter() { Name = "od", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "do", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
             }
@@ -384,17 +386,34 @@ namespace Oblak.Controllers
                     }
 
                     byte[] errorPdf = new Pdf().GenerateErrorPdf($"Report '{report}' greska pri renderovanju.");
-                    return File(errorPdf, "application/pdf");
+                     
+                    var errorStream = new MemoryStream(errorPdf);
+                    errorStream.Seek(0, SeekOrigin.Begin);
+                    return new FileStreamResult(errorStream, "application/pdf")
+                    {
+                        FileDownloadName = "ReportError.pdf"
+                    };
                 }
+                
+                var stream = new MemoryStream(result.DocumentBytes);
+                stream.Seek(0, SeekOrigin.Begin);
+                var fsr = new FileStreamResult(stream, "application/pdf");
+                fsr.FileDownloadName = $"Report.pdf";
 
-                return File(result.DocumentBytes, "application/pdf");
+                return fsr;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Exception - Telerik report {Report}. Inner: {InnerException}", report, ex.InnerException?.Message);
 
                 byte[] errorPdf = new Pdf().GenerateErrorPdf($"Report '{report}' exception tokom generisanja.\n{ex.Message}");
-                return File(errorPdf, "application/pdf");
+                 
+                var errorStream = new MemoryStream(errorPdf);
+                errorStream.Seek(0, SeekOrigin.Begin);
+                return new FileStreamResult(errorStream, "application/pdf")
+                {
+                    FileDownloadName = "ReportException.pdf"
+                };
             }
         }  
     }

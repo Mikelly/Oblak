@@ -9,20 +9,21 @@ namespace Oblak.Data
 {
     public class ApplicationDbContext : IdentityDbContext
     {
-        readonly string _user;
+        private readonly IHttpContextAccessor _accessor;
+        private string _user;
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IHttpContextAccessor accessor) : base(options)
         {
-			if (accessor != null) _user = accessor.HttpContext?.User.Identity?.Name ?? "unknown";
+            _accessor = accessor;  
 		}
 
         public ApplicationDbContext(IHttpContextAccessor accessor)
         {
-            if (accessor != null) _user = accessor.HttpContext?.User.Identity?.Name ?? "unknown";
-        }		
-
+            _accessor = accessor;  
+        }	 
         public override int SaveChanges()
         {
+            _user = GetCurrentUserName();
             if (_user != null)
             {
                 foreach (var e in this.ChangeTracker.Entries().Where(a => a.State == EntityState.Modified || a.State == EntityState.Added))
@@ -337,5 +338,10 @@ namespace Oblak.Data
         public string PropertyDesc(int id) => throw new NotImplementedException();
         public int Nights(int id, DateTime last) => throw new NotImplementedException();
         public decimal Balance(string taxType, int legalEntity, int agency) => throw new NotImplementedException();
+
+        private string GetCurrentUserName()
+        {
+            return _accessor.HttpContext?.User?.Identity?.Name ?? "unknown";
+        }
     }
 }

@@ -192,10 +192,17 @@
 		// 	$('#datumDo').show();
 		// }
 
-		if (report == "ExcursionCountryStats" || report == "Excursion") {
+		if (report == "ExcursionCountryStats") {
 			$('#datumOd').show();
 			$('#datumDo').show();
 		}
+		if (report == "Excursion") {
+			$('#agency').show();
+			$('#datumOd').show();
+			$('#datumDo').show();
+		}
+
+	
 		
 
 	}
@@ -218,7 +225,8 @@
 		$('#ftaxPaymentType').val($('#TaxPaymentType').val());
 		$('#ffirstName').val($('#FirstName').val());
 		$('#flastName').val($('#LastName').val());
-		$('#fdocumentNumber').val($('#DocumentNumber').val());
+		$('#fdocumentNumber').val($('#DocumentNumber').val()); 
+		$('#fagencyId').val($('#AgencyId').val());
 
 		$('#reportForm').submit();
 	}
@@ -247,6 +255,7 @@
 	<input type="hidden" id="flastName" name="lastName" />
 	<input type="hidden" id="fdocumentNumber" name="documentNumber" />
 	<input type="hidden" id="ftaxPaymentType" name="taxPaymentType" />
+	<input type="hidden" id="fagencyId" name="agencyId" />
 </form>
 
 <div style="width:400px; margin-left:auto; margin-right:auto; margin-top:50px; font-size:larger;">
@@ -391,6 +400,19 @@
 		@(Html.Kendo().TextBox().Name("DocumentNumber"))
 		<br />
 	</div>
+
+	<div class="parameter" style="display:none" id="agency">
+		Za agenciju
+		@(Html.Kendo().DropDownList().Name("AgencyId")
+				.DataValueField("Id")
+				.DataTextField("Name")
+				.Filter(FilterType.Contains)
+				.DataSource(dataSource => dataSource.Read(read => read.Action("ReadAdmin", "Agency")))
+				.OptionLabel("Izaberite agenciju")
+				)
+		<br />
+	</div>
+
 	<br />
 	<br />
 

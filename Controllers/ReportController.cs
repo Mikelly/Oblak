@@ -4,11 +4,18 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Oblak.Data;
+using Oblak.Data.Enums;
 using Oblak.Helpers;
 using Oblak.Migrations;
+using Oblak.Models.Api;
+using Oblak.Services;
+using Oblak.Services.MNE;
+using Oblak.Services.SRB;
 using System.Xml.Linq;
 using Telerik.Reporting;
+using Telerik.SvgIcons;
 
 namespace Oblak.Controllers
 {
@@ -18,12 +25,14 @@ namespace Oblak.Controllers
         private readonly ILogger<ReportController> _logger;
         private readonly ApplicationDbContext _db;
         private readonly ApplicationUser _appUser;
+        private readonly Register _registerClient;
         private LegalEntity _legalEntity;
 
         public ReportController(
             IWebHostEnvironment env,
             ILogger<ReportController> logger,
             ApplicationDbContext db,
+            IServiceProvider serviceProvider,
             IHttpContextAccessor httpContextAccessor)
         {
             _db = db;
@@ -35,6 +44,8 @@ namespace Oblak.Controllers
             {
                 _appUser = _db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.Properties).FirstOrDefault(a => a.UserName == username)!;
                 _legalEntity = _appUser.LegalEntity;
+                if (_appUser.LegalEntity.Country == CountryEnum.MNE) _registerClient = serviceProvider.GetRequiredService<MneClient>();
+                if (_appUser.LegalEntity.Country == CountryEnum.SRB) _registerClient = serviceProvider.GetRequiredService<SrbClient>();
             }
         }
 
@@ -202,6 +213,20 @@ namespace Oblak.Controllers
             ViewBag.Places = places;
             ViewBag.TaxType = taxType;
             ViewBag.PartnerId = _legalEntity.PartnerId.ToString();
+             
+            var legalEntity = _db.LegalEntities.Find(_appUser.LegalEntityId);
+            FiscalEnu? fiscalEnu = new FiscalEnu();
+            if(legalEntity != null)
+            {
+                using var _ = _registerClient.Initialize(_legalEntity);
+                var properties = _registerClient.GetProperties();  
+                var fProp = properties.Result.FirstOrDefault();
+                if (fProp != null)
+                {
+                    fiscalEnu = _db.FiscalEnu.FirstOrDefault(a => a.PropertyId == fProp.Id);
+                } 
+            } 
+            ViewBag.ENUCode = fiscalEnu?.FiscalEnuCode;
 
             return View("TouristOrg");
         }
@@ -227,6 +252,7 @@ namespace Oblak.Controllers
             var lastName = Request.Form["LastName"];
             var documentNumber = Request.Form["DocumentNumber"];
             var agency = Request.Form["AgencyId"];
+            var enuCode = Request.Form["ENUCode"];
 
             //Dictionary<string, object> parameters = new Dictionary<string, object>();
             List<Parameter> parameters = new List<Parameter>();
@@ -357,8 +383,14 @@ namespace Oblak.Controllers
                 parameters.Add(new Parameter() { Name = "od", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "do", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
             }
+            else if (report == "PeriodicFiscal")
+            {
+                parameters.Add(new Parameter() { Name = "enu", Value = enuCode });
+                parameters.Add(new Parameter() { Name = "od", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
+                parameters.Add(new Parameter() { Name = "do", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
+            }
 
-                var reportProcessor = new Telerik.Reporting.Processing.ReportProcessor();
+            var reportProcessor = new Telerik.Reporting.Processing.ReportProcessor();
             var deviceInfo = new System.Collections.Hashtable();
             var reportSource = new Telerik.Reporting.UriReportSource();
 

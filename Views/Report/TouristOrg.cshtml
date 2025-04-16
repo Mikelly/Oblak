@@ -53,6 +53,7 @@
 			{ $"Debt", "Pregled dugovanja" },
 			{ $"Ledger", "KarticaIzdavaoca" },
 			{ $"GuestHistory", "Istorija posjete gosta" },
+			{ $"PeriodicFiscal", "Periodični fiskalni izvještaj" },
 		};
 	}
 
@@ -202,6 +203,13 @@
 			$('#datumDo').show();
 		}
 
+		if (report == "PeriodicFiscal"){
+			$('#datumOd').show();
+			$('#datumDo').show();
+			$('#enuCode').show();
+		}
+
+
 	
 		
 
@@ -226,6 +234,8 @@
 		$('#ffirstName').val($('#FirstName').val());
 		$('#flastName').val($('#LastName').val());
 		$('#fdocumentNumber').val($('#DocumentNumber').val()); 
+		$('#fenuCode').val($('#ENUCode').val());
+
 		$('#fagencyId').val($('#AgencyId').val());
 
 		$('#reportForm').submit();
@@ -254,6 +264,7 @@
 	<input type="hidden" id="ffirstName" name="firstName" />
 	<input type="hidden" id="flastName" name="lastName" />
 	<input type="hidden" id="fdocumentNumber" name="documentNumber" />
+	<input type="hidden" id="fenuCode" name="enuCode" />
 	<input type="hidden" id="ftaxPaymentType" name="taxPaymentType" />
 	<input type="hidden" id="fagencyId" name="agencyId" />
 </form>
@@ -398,6 +409,12 @@
 	<div class="parameter" style="display:none" id="documentNumber">
 		Unesite broj dokumenta
 		@(Html.Kendo().TextBox().Name("DocumentNumber"))
+		<br />
+	</div>
+
+	<div class="parameter" style="display:none" id="enuCode">
+		Šifra ENU
+		@(Html.Kendo().TextBox().Name("ENUCode").Value(ViewBag.ENUCode))
 		<br />
 	</div>
 

@@ -294,7 +294,7 @@ app.UseRouting();
 app.UseAuthentication();
 //app.UseMiddleware<ClientCertMiddleware>();
 
-app.UseMiddleware<AuthenticationRedirectMiddleware>();
+//app.UseMiddleware<AuthenticationRedirectMiddleware>();
 
 app.UseAuthorization();
 

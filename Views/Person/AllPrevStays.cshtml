@@ -1,0 +1,120 @@
+﻿@using Oblak.Models.Api
+@model dynamic
+
+@{
+    var initialPersonId = ViewBag.PersonId ?? "null";
+}
+
+<script type="text/javascript">
+
+    var selectedPersonId = @initialPersonId;
+
+    function onGuestSelected(e) {
+        var dataItem = this.dataItem(e.item);
+        var grid = $("#gridPrevStays").data("kendoGrid");
+
+        if (!dataItem || (!dataItem.DocumentNumber && !dataItem.DocumentCountry)) {
+            selectedPersonId = null;  
+            grid.dataSource.data([]);
+            return;
+        }
+
+        selectedPersonId = dataItem.PersonId;
+        var document = dataItem.DocumentNumber;
+        var country = dataItem.DocumentCountry;
+         
+        grid.dataSource.transport.options.read.url = `/Person/GetPrevStays?document=${document}&country=${country}`;
+        grid.dataSource.read();
+    }
+
+</script>
+
+<div id="prevStaysContainer">
+
+    @if ((bool?)ViewBag.ShowSearch == true)
+    {
+        @(Html.Kendo().MultiColumnComboBox()
+            .Name("guestSearch")
+            .Placeholder("Unesite ime i prezime gosta...")
+            .DataTextField("Display")
+            .DataValueField("PersonId")
+            .Enable(true)
+            .Columns(columns =>
+            {
+                columns.Add().Field("FirstName").Title("Ime").Width("130px");
+                columns.Add().Field("LastName").Title("Prezime").Width("130px");
+                columns.Add().Field("BirthDate").Title("Datum rođenja").Width("130px");
+                columns.Add().Field("DocumentCountry").Title("Država").Width("100px");
+                columns.Add().Field("DocumentType").Title("Tip dokumenta").Width("130px");
+                columns.Add().Field("DocumentNumber").Title("Broj dokumenta").Width("150px");
+            })
+            .HtmlAttributes(new { style = "width: 100%;" })
+            .DropDownWidth("600px")
+            .Messages(m => m.NoData("Nema podataka").Clear("Poništi"))
+            .Filter("contains")
+            .FilterFields(new string[] { "FirstName" })
+            .MinLength(4)
+            .AutoBind(false)
+            .ValuePrimitive(true)
+            .Events(events => events.Change("onGuestSelected"))
+            .DataSource(source =>
+            {
+                source.Read(read =>
+                {
+                    read.Action("SearchGuest", "Person");
+                }).ServerFiltering(true);
+            })
+            )
+        <br />
+        <br />
+    }
+    else
+    {
+        <div style="text-align: center; margin-bottom: 10px;">
+            <span style="font-weight: bold; padding-right: 20px;">
+                @ViewBag.FirstName @ViewBag.LastName
+            </span>
+            <span style="font-size:small;">
+                br. dokumenta:
+            </span>
+            <span style="font-weight: bold;">@ViewBag.Document (@ViewBag.Country)</span>
+        </div>
+    }
+
+    <div id="staysGrid">
+        @(Html.Kendo().Grid<PrevStayDto>()
+            .Name("gridPrevStays")
+            .Columns(columns =>
+            {
+                columns.Bound(p => p.CheckIn).Title("Prijava").Format("{0:dd.MM.yyyy}").Width("10%");
+                columns.Bound(p => p.CheckOut).Title("Odjava").Format("{0:dd.MM.yyyy}").Width("10%");
+                columns.Bound(p => p.LegalEntityName).Title("Izdavalac");
+                columns.Bound(p => p.PropertyName).Title("Smještaj");
+                columns.Bound(p => p.PropertyAddress).Title("Adresa");
+                columns.Bound(p => p.EntryPointDate).Title("Ušao u CG").Format("{0:dd.MM.yyyy}").Width("10%"); 
+                columns.Bound(p => p.PersonId).Title("Potvrda").Width("10%").ClientTemplate(@"
+                <div style='text-align:center;'>
+                <img onclick='sendCert(0, #=PersonId#)' style='width:32px; height:32px; cursor:pointer;' title='Potvrda o prijavi' src='/Content/Icons/licence_color.png'/>
+                </div>");
+            })
+            .DataSource(ds => ds
+            .Ajax()
+            .PageSize(20)
+            .Read(r => r.Action("GetPrevStays", "Person", new
+            {
+                document = ViewBag.Document,
+                country = ViewBag.Country
+            })
+            )
+            )
+            .AutoBind(ViewBag.Document != null && ViewBag.Country != null)
+            .Pageable()
+            .Scrollable()
+            .Height(530)
+            )
+    </div> 
+
+</div>
+
+
+

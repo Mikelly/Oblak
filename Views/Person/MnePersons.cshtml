@@ -1028,6 +1028,15 @@
     .HtmlAttributes(new { style = "padding:25px; font-size:16px" })
 )
 
+@(Html.Kendo().Window().Name("wndAllPrevStays")
+        .Title("Svi prethodni boravci")
+        .Visible(false)
+        .Modal(true)
+        .Draggable(true)
+        .Width(1000)
+        .Height(670)
+        .HtmlAttributes(new { style = "padding:25px; font-size:16px" })
+)  
 
 @(Html.Kendo().Window().Name("wndExtPay")
     .Title("Externa uplata")

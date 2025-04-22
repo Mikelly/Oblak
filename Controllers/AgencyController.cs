@@ -70,8 +70,7 @@ namespace Oblak.Controllers
                 .Where(a =>
                     (!string.IsNullOrEmpty(a.Name) && a.Name.ToLower().Contains(text.ToLower())) ||
                     (!string.IsNullOrEmpty(a.Address) && a.Address.ToLower().Contains(text.ToLower()))
-                )
-                .Take(100)
+                ) 
                 .ToList()
                 .Select(_mapper.Map<AgencyDto>)
                 .ToList();

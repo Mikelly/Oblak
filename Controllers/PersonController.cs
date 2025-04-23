@@ -540,24 +540,21 @@ namespace Oblak.Controllers
             var documentTypeDictionary = await _db.CodeLists
                 .Where(x => x.Country == countryCode && x.Type == "isprava")
                 .ToDictionaryAsync(x => x.ExternalId, x => x.Name);
-             
-            var guests = await _db.MnePersons
+              
+            var guests = _db.MnePersons
                 .Where(a => a.LegalEntityId == _legalEntityId)
-                .Where(p => p.FirstName.Contains(firstName) && p.LastName.Contains(lastName)) 
-                .Take(50)
-                .Select(p => new
+                .Where(p => p.FirstName.Contains(firstName) && p.LastName.Contains(lastName))
+                .Take(100)
+                .AsEnumerable()
+                .DistinctBy(p => new
                 {
-                    p.Id,
-                    p.FirstName,
-                    p.LastName,
+                    FirstName = p.FirstName?.ToUpperInvariant(),
+                    LastName = p.LastName?.ToUpperInvariant(),
                     p.BirthDate,
                     p.DocumentCountry,
                     p.DocumentType,
                     p.DocumentNumber
                 })
-                .ToListAsync();
-             
-            var result = guests
                 .Select(p => new
                 {
                     PersonId = p.Id,
@@ -570,8 +567,8 @@ namespace Oblak.Controllers
                     Display = $"{p.FirstName} {p.LastName} | {p.DocumentCountry} | {documentTypeDictionary.GetValueOrNull(p.DocumentType)} | {p.DocumentNumber}"
                 })
                 .ToList();
-
-            return Json(result);
+              
+            return Json(guests);
         } 
 
         public ActionResult ResTax(int? resType, int? payType, int? exemptType, string birthDate, string checkIn, string checkOut, int group)

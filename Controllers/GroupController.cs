@@ -138,7 +138,7 @@ namespace RegBor.Controllers
         [Route("save-group")]
         [HttpPost]
         public ActionResult Create(GroupDto groupDto, [DataSourceRequest] DataSourceRequest request)
-        {
+       {
             try
             {
                 //var property = _db.Properties.Where(p => p.Id == groupDto.PropertyId).First();
@@ -157,6 +157,7 @@ namespace RegBor.Controllers
                     VesselId = groupDto.VesselId,
                     EntryPoint = groupDto.EntryPoint,
                     EntryPointDate = groupDto.EntryPointDate,
+                    NauticalLegalEntityData = groupDto.NauticalLegalEntityData,
                     NauticalLegalEntityId = groupDto.NauticalLegalEntityId,
                     ResTaxPaymentTypeId = groupDto.ResTaxPaymentTypeId,
                     Guid = Guid.NewGuid().ToString(),
@@ -466,7 +467,8 @@ namespace RegBor.Controllers
                         Date = a.Date,
                         PropertyName = a.Property.PropertyName,
                         VesselDesc = a.Vessel.Name + ", " + a.Vessel.Registration,
-                        NauticalLegalEntity = a.NauticalLegalEntity.Name,
+                        //NauticalLegalEntity = a.NauticalLegalEntity.Name,
+                        NauticalLegalEntityData = a.NauticalLegalEntityData,
                         LegalEntity = a.Property.LegalEntity.Name,
                         CheckIn = a.CheckIn,
                         CheckOut = a.CheckOut,
@@ -508,7 +510,8 @@ namespace RegBor.Controllers
                     if (g.VesselId.HasValue)
                     {
                         ViewBag.Vessel = $"{g.Vessel?.Name}, {g.Vessel?.Registration}, {g.Vessel?.OwnerName}";
-                        ViewBag.NauticalLegalEntity = $"{g.Vessel?.LegalEntity?.Name}";
+                        //ViewBag.NauticalLegalEntity = $"{g.Vessel?.LegalEntity?.Name}";
+                        ViewBag.NauticalLegalEntityData = g.NauticalLegalEntityData;
                     }                    
                     ViewBag.ResidenceTaxAmount = g.ResTaxAmount ?? 0m;
                     ViewBag.ResidenceTaxFee = g.ResTaxFee ?? 0m;

@@ -19,10 +19,43 @@
             url: `/edit-group?nautical=@nautical`,
             type: 'GET',
             success: function (data, status, xhr) {
-                $('#wndGroup').data('kendoWindow').content(data).center().open();                
+                $('#wndGroup').data('kendoWindow').content(data).center().open();
+                var nautical = @((bool)ViewBag.Nautical ? "true" : "false"); 
+                if (nautical === true) {
+                    setTimeout(function() {
+                        var combo = $("#PropertyId").data("kendoMultiColumnComboBox");
+                        if (combo) { 
+                             
+                        combo.text("LUKA BUDVA");
+
+                        combo.dataSource.filter({
+                            field: "Name",
+                            operator: "contains",
+                            value: "LUKA BUDVA"
+                        });
+
+                        combo.one("dataBound", function () {
+                            var items = combo.dataSource.view();
+                            for (var i = 0; i < items.length; i++) {
+                                if (items[i].Name === "LUKA BUDVA" && items[i].Address === "MARINA BUDVA,STARI GRAD, BUDVA") {
+                                    combo.select(i);
+                                    break;
+                                }
+                            }
+                        });
+                             
+
+                        } else {
+                            console.log("Kendo ComboBox nije pronađen.");
+                        }
+                    }, 300);
+                }
+                 
             }
         });
     }
+     
+    
 
     function editGroup() {
 
@@ -83,7 +116,7 @@
         var vesselId = null;
         if ($("#VesselId").length > 0) vesselId = $("#VesselId").data("kendoMultiColumnComboBox").value();
         var nauticalLegalEntityId = null;
-        if ($("#NauticalLegalEntityId").length > 0) nauticalLegalEntityId = $("#NauticalLegalEntityId").data("kendoMultiColumnComboBox").value();
+        // if ($("#NauticalLegalEntityId").length > 0) nauticalLegalEntityId = $("#NauticalLegalEntityId").data("kendoMultiColumnComboBox").value();
         var resTaxPaymentTypeId = $("#ResTaxPaymentTypeId").data("kendoDropDownList").value();
         var entryPoint = null;
         if ($("#EntryPoint").length > 0) entryPoint = $("#EntryPoint").data("kendoDropDownList").value();
@@ -92,6 +125,8 @@
             var entryPointDate = $("#EntryPointDate").data("kendoDatePicker").value();
             formattedEntryPointDate = kendo.toString(entryPointDate, "yyyy-MM-ddTHH:mm:ss");
         }
+
+        var nauticalLegalEntityData = $("#NauticalLegalEntityData").val();
 
         if (propertyId == null || propertyId == "") {
             Swal.fire({ icon: 'error', title: 'Morate odabrati smještajni objekat', confirmButtonText: `U redu` });
@@ -107,6 +142,7 @@
         groupDto.ResTaxPaymentTypeId = resTaxPaymentTypeId;
         groupDto.EntryPoint = entryPoint;
         groupDto.EntryPointDate = formattedEntryPointDate;
+        groupDto.NauticalLegalEntityData = nauticalLegalEntityData;
 
         $.ajax({
             url: '@Url.Action("Create", "Group")',
@@ -256,13 +292,13 @@
 
         var item = this.dataItem();
 
-        var nautical = $("#NauticalLegalEntityId").data("kendoMultiColumnComboBox")
+        // var nautical = $("#NauticalLegalEntityId").data("kendoMultiColumnComboBox")
 
-        nautical.dataSource.data([{ id: item.LegalEntityId, text: item.LegalEntityName }]);
+        // nautical.dataSource.data([{ id: item.LegalEntityId, text: item.LegalEntityName }]);
 
-        nautical.value(item.LegalEntityId);
-        nautical.text(item.LegalEntityName);
-        $("#NauticalLegalEntityId").val(item.LegalEntityId);
+        // nautical.value(item.LegalEntityId);
+        // nautical.text(item.LegalEntityName);
+        // $("#NauticalLegalEntityId").val(item.LegalEntityId);
     }
 
 
@@ -510,7 +546,7 @@
                         {
                             col.Bound(c => c.PropertyName).Title("Smještajni objekat").Width(200);
                             col.Bound(c => c.VesselDesc).Title("Plovilo").Width(250);
-                            col.Bound(c => c.NauticalLegalEntity).Title("Izdavaoc").Width(200);
+                            col.Bound(c => c.NauticalLegalEntityData).Title("Izdavaoc").Width(200);
                         }));
 
                     columns.Group(g => 

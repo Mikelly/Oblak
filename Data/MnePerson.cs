@@ -22,12 +22,12 @@ namespace Oblak.Data
 
         [StringLength(450)]
         public string? PermanentResidencePlace { get; set; }
-        
+
         [StringLength(450)]
         public string? PermanentResidenceAddress { get; set; }
-        
+
         public DateTime CheckIn { get; set; }
-        
+
         public DateTime? CheckOut { get; set; }
 
         [StringLength(450)]
@@ -35,7 +35,7 @@ namespace Oblak.Data
 
         [StringLength(450)]
         public string DocumentNumber { get; set; }
-        
+
         public DateTime DocumentValidTo { get; set; }
 
         [StringLength(450)]
@@ -49,9 +49,9 @@ namespace Oblak.Data
 
         [StringLength(450)]
         public string? VisaNumber { get; set; }
-        
+
         public DateTime? VisaValidFrom { get; set; }
-        
+
         public DateTime? VisaValidTo { get; set; }
 
         [StringLength(450)]
@@ -59,12 +59,12 @@ namespace Oblak.Data
 
         [StringLength(450)]
         public string? EntryPoint { get; set; }
-        
+
         public DateTime? EntryPointDate { get; set; }
 
         [StringLength(450)]
         public string? Other { get; set; }
-                
+
         public int? ResTaxTypeId { get; set; }
 
         public ResTaxType? ResTaxType { get; set; }
@@ -75,14 +75,18 @@ namespace Oblak.Data
 
         public int? ResTaxPaymentTypeId { get; set; }
 
-		public ResTaxPaymentType ResTaxPaymentType { get; set; }
+        public ResTaxPaymentType ResTaxPaymentType { get; set; }
 
         public ResTaxStatus ResTaxStatus { get; set; } = ResTaxStatus.Open;
 
         public decimal? ResTaxAmount { get; set; }
 
-		public decimal? ResTaxFee { get; set; }
+        public decimal? ResTaxFee { get; set; }
 
         public List<ResTaxHistory> ResTaxHistory { get; set; }
-	}
+                 
+        
+        public Guid? ComputerCreatedId { get; set; }
+        public Computer? Computer { get; set; }
+    }
 }

@@ -59,7 +59,7 @@ namespace Oblak.Data
         public bool UseEntryPointInGroup { get; set; } = false;
 
         public List<LegalEntity> LegalEntities { get; set; }
-
+        public List<Computer> Computers { get; set; }
 
         #region Audit Properties
 

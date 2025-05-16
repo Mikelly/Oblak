@@ -658,7 +658,7 @@ namespace Oblak.Services.MNE
                 }
                 else
                 {
-                    mnePerson = _db.MnePersons.Include(a => a.Group).FirstOrDefault(a => a.Id == dto.Id)!;
+                    mnePerson = _db.MnePersons.FirstOrDefault(a => a.Id == dto.Id)!;
                 }
 
                 _logger.LogDebug("Mne Person Legal Entity:" + _legalEntity.Id);
@@ -710,6 +710,7 @@ namespace Oblak.Services.MNE
                 mnePerson.ResTaxExemptionTypeId = dto.ResTaxExemptionTypeId;
                 mnePerson.ResTaxAmount = dto.ResTaxAmount;
                 mnePerson.Note = dto.Note;
+                mnePerson.ComputerCreatedId = dto.ComputerCreatedId;
 
                 if (_user != null && mnePerson.CheckInPointId == null)
                 {
@@ -733,9 +734,16 @@ namespace Oblak.Services.MNE
                     }
                 }
                 _db.Entry(mnePerson).Reference(a => a.ResTaxType).Load();
-
+                 
+                //Ako je gost clan posade broda (grupna prijava) ukljucujuci vlasnika taksa je 0e i fee se ne racuna
+                if (_db.Groups.Any(g => g.Id == mnePerson.GroupId && g.VesselId.HasValue))
+                {
+                    mnePerson.ResTaxTypeId = null;
+                    mnePerson.ResTaxAmount = 0;
+                    mnePerson.ResTaxFee = 0;
+                }  
                 // Ako je već definisan tip gosta za plaćanje                
-                if (mnePerson.ResTaxTypeId != null)
+                else if (mnePerson.ResTaxTypeId != null)
                 {
                     // Ovo je da eliminišemo ako je oslobođenje
                     if (new List<int>() { 1, 2, 3, 27, 28, 29 }.Contains(mnePerson.ResTaxTypeId.Value) == false || mnePerson.ResTaxExemptionTypeId != null)
@@ -744,7 +752,7 @@ namespace Oblak.Services.MNE
                         mnePerson.ResTaxFee = 0;
                     }
                     else
-                    {
+                    { 
                         // Nađemo tip gosta za plaćanje i sračunamo mu taksu 
                         var resTaxType = _db.ResTaxTypes.FirstOrDefault(a => a.Id == mnePerson.ResTaxTypeId);
                         if (mnePerson.CheckOut.HasValue)
@@ -781,8 +789,8 @@ namespace Oblak.Services.MNE
                         {
                             mnePerson.ResTaxFee = 0;
                         }
-                    }
-                }
+                    } 
+                } 
 
                 _db.SaveChanges();
 
@@ -838,18 +846,24 @@ namespace Oblak.Services.MNE
 
             // Ako je nautička taksa u pitanju, onda je računamo na potpuno drugačiji način
             if (g.VesselId.HasValue)
-            {
+            { 
                 _db.Entry(g).Reference(a => a.Vessel).Load();
                 var vessel = g.Vessel!;
-                var days = (int)(g.CheckOut!.Value - g.CheckIn!.Value).TotalDays;
 
-                var tax = _db.NauticalTax
-                    .Where(a => vessel.Length > a.LowerLimitLength && vessel.Length < a.UpperLimitLength)
-                    .Where(a => days > a.LowerLimitPeriod && days < a.UpperLimitPeriod)
-                    .FirstOrDefault();
+                if(vessel.CountryId == 505) //plovila koja plove pod MNE zastavom ne placaju taksu
+                {
+                    g.ResTaxAmount = 0;
+                }
+                else
+                {
+                    var days = (int)(g.CheckOut!.Value - g.CheckIn!.Value).TotalDays; 
+                    var tax = _db.NauticalTax
+                        .Where(a => vessel.Length > a.LowerLimitLength && vessel.Length < a.UpperLimitLength)
+                        .Where(a => days > a.LowerLimitPeriod && days < a.UpperLimitPeriod)
+                        .FirstOrDefault();
 
-                g.ResTaxAmount = tax?.Amount;
-                //g.ResTaxFee = CalcResTaxFee(g.ResTaxAmount ?? 0, partner.Id, g.ResTaxPaymentTypeId ?? 0);
+                    g.ResTaxAmount = tax?.Amount;
+                } 
             }
 
             /*

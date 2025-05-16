@@ -1,0 +1,201 @@
+﻿@using Oblak.Models.Computer 
+
+@{
+        ViewBag.Title = "Računari";            
+        Layout = "~/Views/Shared/_LayoutINV.cshtml";    
+}
+
+<script type="text/javascript"> 
+
+    function newComputer() {
+        var grid = $("#computersGrid").data("kendoGrid");
+        grid.addRow(); 
+    }    
+      
+    function resetComputer() {
+        var grid = $('#computersGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (!item) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Morate odabrati računar',
+                confirmButtonText: 'U redu'
+            });
+            return;
+        }
+         
+        Swal.fire({
+            title: 'Ponovna registracija',
+            text: 'Da li želite da tražite ponovnu registraciju ovog računara?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Da',
+            cancelButtonText: 'Ne'
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/computer-reset?computerId=${item.Id}`,
+                    type: 'GET',   
+                    success: function (res) {
+                        if (res.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Računar resetovan',
+                                text: res.message,
+                                confirmButtonText: `U redu`
+                            }); 
+                            grid.dataSource.read();
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Greška',
+                                text: res.message,
+                                confirmButtonText: `U redu`
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Greška',
+                            text: 'Došlo je do greške prilikom resetovanja.',
+                            confirmButtonText: `U redu`
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    function showComputerLogs() {
+        var grid = $("#computersGrid").data("kendoGrid");
+        var selected = grid.select();
+
+        if (selected.length === 0) {
+            alert("Molimo selektujte računar iz liste.");
+            return;
+        }
+
+        var dataItem = grid.dataItem(selected);
+        var computerId = dataItem.Id;
+
+        if(dataItem.PCName === "Administracija"){
+            alert("Aktivnosti za računar 'Administracija' se ne prikupljaju.");
+            return;
+        }
+
+        $.ajax({
+            url: '/Computer/ShowLogs',
+            type: 'GET',
+            data: { computerId: computerId },
+            success: function (result) {
+                var wnd = $("#wndComputerLogs").data("kendoWindow");
+                wnd.content(result);
+                wnd.center().open();
+            },
+            error: function () {
+                alert("Greška prilikom učitavanja aktivnosti.");
+            }
+        });
+    } 
+    
+    function onComputersGridEditSaveDelete(e) {
+        if (e.model.PCName === "Administracija" || e.model.PCName === "Privremeni") {
+            var grid = $("#computersGrid").data("kendoGrid");
+            grid.closeCell();
+            e.preventDefault();
+            alert("Uredjivanje ovog računara nije dozvoljeno."); 
+        }
+    }  
+    function checkComputersGridEditPermission(dataItem) {
+        return dataItem.PCName !== "Administracija" && dataItem.PCName !== "Privremeni";
+    }
+
+    function checkComputersGridDeletePermission(dataItem) {
+        return dataItem.PCName !== "Administracija" && dataItem.PCName !== "Privremeni";
+    }
+
+</script>
+
+<div style="position:absolute; top:25px; bottom: 15px; left: 15px; right:15px;">
+     @(Html.Kendo().Button().Name("btnNewComputer")
+        .HtmlAttributes(new { type = "button", onclick = "newComputer()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/connection-network.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>NOVI<br/>RAČUNAR<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnResetComputer")
+        .HtmlAttributes(new { type = "button", onclick = "resetComputer()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/analysis-services.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>REGISTRUJ<br/>PONOVO<div>
+                </div>"))
+
+    @(Html.Kendo().Button().Name("btnShowComputerLogs")
+        .HtmlAttributes(new { type = "button", onclick = "showComputerLogs()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/virtual-lab.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>AKTIVNOSTI<br/>RAČUNARA<div>
+                </div>"))      
+</div>
+ 
+<div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
+    @(Html.Kendo().Grid<ComputerDto>()
+        .Name("computersGrid")
+        .Events(e => e.Edit("onComputersGridEditSaveDelete").Save("onComputersGridEditSaveDelete").Remove("onComputersGridEditSaveDelete"))
+        .Columns(columns =>
+        {
+            columns.Command(command => {
+                command.Edit().Text(" ").UpdateText(" ").CancelText(" ").Visible("checkComputersGridEditPermission"); ;
+                command.Destroy().Text(" ").Visible("checkComputersGridDeletePermission");
+            })
+            .Width(70); 
+            columns.Bound(g => g.PCName).Title("Naziv");
+            columns.Bound(g => g.LocationDescription).Title("Opis");
+            columns.Bound(g => g.Registered).Title("Registrovan").ClientTemplate("#= Registered ? kendo.toString(Registered, 'dd.MM.yyyy HH:mm') : 'Ne registrovan' #").Width("150px");
+            columns.Bound(g => g.UserRegistered).Title("Registrovao").Width("150px");
+            columns.Bound(g => g.Logged).Title("Poslednja prijava").ClientTemplate("#= Logged ? kendo.toString(Logged, 'dd.MM.yyyy HH:mm') : 'Ne' #").Width("150px");
+            columns.Bound(g => g.UserLogged).Title("Poslednji prijavljen").Width("150px"); 
+            })
+            .Pageable(p => p.Refresh(true))
+            .Sortable()
+            .Selectable()
+            .Scrollable()
+            .HtmlAttributes(new { style = "height:100%;" })
+            .Editable(editable => editable.Mode(GridEditMode.InLine))
+            .DataSource(ds => ds
+                .Ajax()
+                .Batch(false)
+                .PageSize(20)
+                .Model(m =>
+                {
+                    m.Id(g => g.Id);
+                    m.Field(g => g.Id);
+                    m.Field(g => g.PCName);
+                    m.Field(g => g.LocationDescription);
+                    m.Field(g => g.Registered).Editable(false);
+                    m.Field(g => g.UserRegistered).Editable(false);
+                    m.Field(g => g.Logged).Editable(false);
+                    m.Field(g => g.UserLogged).Editable(false); 
+
+                })
+        .Events(e => e.Sync("genericSync").RequestEnd("genericRequestEnd"))
+        .Create(a => a.Action("Create", "Computer"))
+        .Read(a => a.Action("Read", "Computer"))
+        .Update(a => a.Action("Update", "Computer"))
+        .Destroy(a => a.Action("Delete", "Computer"))
+        ) 
+    )
+</div>
+ 
+@(Html.Kendo().Window().Name("wndComputerLogs")
+    .Title("Aktivnosti računara u poslednjih 15 dana")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(1200)
+    .Height(700)
+    .HtmlAttributes(new { style = "padding:20px; position:absolute; top:50px; bottom:0px; right:0px; left:0px;" })
+)

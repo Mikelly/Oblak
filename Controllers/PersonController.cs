@@ -774,7 +774,7 @@ namespace Oblak.Controllers
                 .Where(x => x.Type == "isprava")
                 .ToDictionary(x => x.ExternalId, x => x.Name);
 
-            var query = _db.MnePersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.CheckInPoint)
+            var query = _db.MnePersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.CheckInPoint).Include(a => a.Computer)
                 .Where(a => a.GroupId == groupId && groupId != 0 || groupId == 0 && a.GroupId == null)
                 .Where(a => a.LegalEntityId == _legalEntityId);
 
@@ -852,7 +852,8 @@ namespace Oblak.Controllers
                     UserCreated = a.UserCreated,
                     UserCreatedDate = a.UserCreatedDate,
                     CheckInPointName = a.CheckInPoint.Name,
-                    LegalEntityName = a.Property.LegalEntity.Name
+                    LegalEntityName = a.Property.LegalEntity.Name,
+                    ComputerCreated = a.Computer.PCName
                 });
 
             return Json(await data.ToDataSourceResultAsync(request));
@@ -872,9 +873,32 @@ namespace Oblak.Controllers
                     {
                         return Json(new BasicDto() { info = "", error = "Nemate prava da vršite izmjene na već prijavljenom gostu!" });
                     }
-                }                
+                }
 
                 var newGuest = _mapper.Map<MnePersonDto, MnePerson>(guestDto);
+
+                #region Linkovanje sa registrovanim racunarom za create new person
+                if (guestDto.Id == 0)
+                {
+                    if(Request.Cookies.TryGetValue("device_id", out var deviceId) && Guid.TryParse(deviceId, out var guid))
+                    {
+                        var computer = _db.Computers.FirstOrDefault(x => x.Id == guid);
+                        if (computer != null)
+                        { 
+                            guestDto.ComputerCreatedId = computer.Id;
+                        }
+                        else
+                            guestDto.ComputerCreatedId = null; //unknow
+                    }
+                    else
+                        guestDto.ComputerCreatedId = null; //unregistred
+                }
+                else
+                {
+                    guestDto.ComputerCreatedId = guest?.ComputerCreatedId; //zadrzavamo
+                } 
+                #endregion
+
                 _db.Entry(newGuest).Reference(a => a.LegalEntity).Load();
                 var property = _db.Properties.Include(a => a.LegalEntity).FirstOrDefault(a => a.Id == guestDto.PropertyId);
 
@@ -1453,6 +1477,13 @@ namespace Oblak.Controllers
             if (pay.HasValue && pay > 0)
             {
                 data.id = $"P{pay}";
+            }
+
+            if(taxType == TaxType.NauticalTax)
+            {
+                data.from = $"{po.PayeeName}\n{address}";
+                data.to = $"Turistička organizacija Opstine Budva";
+                data.desc = $"Uplata prijave boravka\nVlasnik plovila:{po.PayeeName}\nZa period:{po.Description}";
             }
 
             return Json(data);

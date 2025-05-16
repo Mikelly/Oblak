@@ -124,6 +124,13 @@
 										<button type="submit" class="fxt-btn-fill">Prijava</button>
 									</div>
 								</div>
+
+								<input type="hidden" name="BrowserName" id="BrowserName" />
+								<input type="hidden" name="OSName" id="OSName" />
+								<input type="hidden" name="ScreenResolution" id="ScreenResolution" />
+								<input type="hidden" name="IsMobile" id="IsMobile" />
+								<input type="hidden" name="TimeZone" id="TimeZone" />
+								<input type="hidden" name="UserAgent" id="UserAgent" />
 							</form>
 						</div>
 					</div>
@@ -141,6 +148,94 @@
 	<script src="~/js/validator.min.js"></script>
 	<!-- Custom Js -->
 	<script src="~/js/main.js"></script>
+
+	<script>
+
+		document.addEventListener('DOMContentLoaded', () => {
+					try {
+						const ua = navigator.userAgent || "";
+						let browser = "Nepoznat";
+						let os = "Nepoznat";
+						let deviceModel = "";
+						let resolution = "";
+						let isMobile = false;
+						let timeZone = "";
+
+						const populateForm = () => {
+							const inputIds = ["BrowserName", "OSName", "ScreenResolution", "IsMobile", "TimeZone", "UserAgent", "DeviceModel"];
+							const values = [browser, os, resolution, isMobile, timeZone, ua, deviceModel];
+
+							inputIds.forEach((id, index) => {
+								try {
+									const el = document.getElementById(id);
+									if (el) el.value = values[index];
+								} catch (e) {
+									// fallback
+								}
+							});
+						};
+
+						const detectInfo = () => {
+							try {
+								if (navigator.userAgentData?.brands) {
+									for (const brand of navigator.userAgentData.brands) {
+										if (brand.brand.includes("Edge")) { browser = "Edge"; break; }
+										if (brand.brand.includes("Chrome")) { browser = "Chrome"; break; }
+										if (brand.brand.includes("Firefox")) { browser = "Firefox"; break; }
+										if (brand.brand.includes("Safari")) { browser = "Safari"; break; }
+									}
+								}
+							} catch (e) {}
+
+							try {
+								if (/Android/i.test(ua)) os = "Android";
+								else if (/iPhone|iPad|iPod/i.test(ua)) os = "iOS";
+								else if (/Windows NT/i.test(ua)) os = "Windows";
+								else if (/Macintosh/i.test(ua)) os = "MacOS";
+								else if (/Linux/i.test(ua)) os = "Linux";
+							} catch (e) {}
+
+							try {
+								const w = Math.round(window.screen.width * window.devicePixelRatio);
+								const h = Math.round(window.screen.height * window.devicePixelRatio);
+								resolution = `${w}x${h}`;
+							} catch (e) {}
+
+							try {
+								isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) || (navigator.maxTouchPoints > 1);
+							} catch (e) {}
+
+							try {
+								const offsetHours = -new Date().getTimezoneOffset() / 60;
+								timeZone = (offsetHours >= 0 ? "+" : "") + offsetHours;
+							} catch (e) {}
+						};
+
+						detectInfo();
+
+						
+						if (navigator.userAgentData?.getHighEntropyValues) {
+							navigator.userAgentData.getHighEntropyValues(["model", "platform", "platformVersion"])
+								.then(uaData => {
+									deviceModel = uaData.model || "";
+									if (uaData.platform) os = uaData.platform;
+									populateForm();
+								})
+								.catch(() => {
+									
+									populateForm();
+								});
+						} else {
+							populateForm();
+						}
+					} catch (globalError) {
+						// fallback 
+					}
+				});
+
+
+	</script>
+
 
 
 

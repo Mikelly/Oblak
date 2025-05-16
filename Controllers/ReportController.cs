@@ -389,6 +389,12 @@ namespace Oblak.Controllers
                 parameters.Add(new Parameter() { Name = "od", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "do", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
             }
+            else if (report == "NbrGuestPerPC")
+            {
+                parameters.Add(new Parameter() { Name = "partnerId", Value = _legalEntity.PartnerId });
+                parameters.Add(new Parameter() { Name = "dateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
+                parameters.Add(new Parameter() { Name = "dateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
+            }
 
             var reportProcessor = new Telerik.Reporting.Processing.ReportProcessor();
             var deviceInfo = new System.Collections.Hashtable();
@@ -447,6 +453,114 @@ namespace Oblak.Controllers
                     FileDownloadName = "ReportException.pdf"
                 };
             }
-        }  
+        }
+
+        [HttpGet]
+        [Route("/generate-mne-treport")]
+        public async Task<FileStreamResult> PeriodicFiscal([FromQuery] string report, [FromQuery] string dateFrom, [FromQuery] string dateTo, [FromQuery] string enuCode)
+        {
+            string mnePartnerId = "2";
+            List<Parameter> parameters = new List<Parameter>();
+
+            if (string.IsNullOrEmpty(report) || string.IsNullOrEmpty(dateFrom) || string.IsNullOrEmpty(dateTo) || string.IsNullOrEmpty(enuCode))
+            { 
+                byte[] errorPdf = new Pdf().GenerateErrorPdf("Nedostaju neophodni parametri.");
+                var errorStream = new MemoryStream(errorPdf);
+                errorStream.Seek(0, SeekOrigin.Begin);
+                return new FileStreamResult(errorStream, "application/pdf")
+                {
+                    FileDownloadName = "MissingParamsReport.pdf"
+                };
+            }
+
+            if (report == "PeriodicFiscal")
+            {
+                parameters.Add(new Parameter() { Name = "enu", Value = enuCode });
+                parameters.Add(new Parameter() { Name = "od", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
+                parameters.Add(new Parameter() { Name = "do", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
+            }
+            else
+            { 
+                byte[] errorPdf = new Pdf().GenerateErrorPdf("Trazili ste nepostojeci izvjestaj.");
+                var errorStream = new MemoryStream(errorPdf);
+                errorStream.Seek(0, SeekOrigin.Begin);
+                return new FileStreamResult(errorStream, "application/pdf")
+                {
+                    FileDownloadName = "InvalidReportType.pdf"
+                };
+            }
+
+            var reportProcessor = new Telerik.Reporting.Processing.ReportProcessor();
+            var deviceInfo = new System.Collections.Hashtable();
+            var reportSource = new Telerik.Reporting.UriReportSource();
+
+            var toReport = $"{mnePartnerId}{report}.trdp";
+            var rep = _db.Reports.FirstOrDefault(a => a.Name == toReport);
+            var path = Path.Combine(_env.ContentRootPath, "Reports", toReport);
+            var fileName = string.Empty;
+
+            reportSource.Uri = path;
+
+            try
+            {
+                reportSource.Parameters.AddRange(parameters); 
+
+                Telerik.Reporting.Processing.RenderingResult result = reportProcessor.RenderReport("PDF", reportSource, deviceInfo);
+                
+                Response.Headers.Append("Cache-Control", "private, max-age=1800");
+
+                if (result.HasErrors)
+                {
+                    _logger.LogError("Telerik report - greske za {Report}:", report);
+                    foreach (var error in result.Errors)
+                    {
+                        _logger.LogError(" - {Error}", error.Message);
+                    }
+
+                    byte[] errorPdf = new Pdf().GenerateErrorPdf($"Report '{report}' greska pri renderovanju.");
+
+                    var errorStream = new MemoryStream(errorPdf);
+                    errorStream.Seek(0, SeekOrigin.Begin);
+
+                    fileName = $"ReportError-{report}.pdf";
+                    Response.Headers.Append("Content-Disposition", $"inline; filename={fileName}");
+
+                    return new FileStreamResult(errorStream, "application/pdf")
+                    {
+                        FileDownloadName = fileName
+                    };
+                }
+
+                var stream = new MemoryStream(result.DocumentBytes);
+                stream.Seek(0, SeekOrigin.Begin);
+                var fsr = new FileStreamResult(stream, "application/pdf");
+
+                fileName = $"Report-{report}.pdf";
+                Response.Headers.Append("Content-Disposition", $"inline; filename={fileName}");
+
+                fsr.FileDownloadName = fileName;
+                 
+                return fsr;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception - Telerik report {Report}. Inner: {InnerException}", report, ex.InnerException?.Message);
+
+                byte[] errorPdf = new Pdf().GenerateErrorPdf($"Report '{report}' exception tokom generisanja.\n{ex.Message}");
+
+                var errorStream = new MemoryStream(errorPdf);
+                errorStream.Seek(0, SeekOrigin.Begin);
+
+                fileName = $"ReportEx-{report}.pdf";
+                Response.Headers.Append("Content-Disposition", $"inline; filename={fileName}");
+
+                return new FileStreamResult(errorStream, "application/pdf")
+                {
+                    FileDownloadName = fileName
+                };
+            }
+        }
+
+
     }
 }

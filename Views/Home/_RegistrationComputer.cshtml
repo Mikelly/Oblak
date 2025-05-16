@@ -1,0 +1,198 @@
+﻿@model List<Computer>
+
+<script>
+    $(document).ready(function () {
+        $("#computers").change(function () {
+            var selectedText = $("#computers").data("kendoDropDownList").text();
+            if (selectedText === "Administracija" || selectedText === "Privremeni") {
+                $("#pinContainer").show();
+            } else {
+                $("#pinContainer").hide();
+            }
+        });
+    });
+
+    function registerComputer(e) { 
+        var selectedId = $("#computers").val();
+        var selectedText = $("#computers").data("kendoDropDownList").text();
+        var pin = $("#pinInput").val();
+
+        if (!selectedId) {
+            Swal.fire({
+                icon: 'warning',
+                text: 'Morate odabrati računar.',
+                confirmButtonText: 'U redu'
+            });
+            e.preventDefault();
+            return;
+        }
+
+        if ((selectedText === "Administracija" || selectedText === "Privremeni") && !pin) {
+            Swal.fire({
+                icon: 'warning',
+                text: 'Morate uneti PIN kod!',
+                confirmButtonText: 'U redu'
+            });
+            e.preventDefault();
+            return;
+        }
+         
+        var userAgent = navigator.userAgent || "";
+        var browserName = "Nepoznat";
+        var osName = "Nepoznat";
+        var deviceModel = "";
+        var resolution = "";
+        var timeZone = "";
+        var isMobile = false;
+         
+        try { 
+            try {
+                if (navigator.userAgentData?.brands) {
+                    for (const brand of navigator.userAgentData.brands) {
+                        if (brand.brand.includes("Edge")) { browserName = "Edge"; break; }
+                        if (brand.brand.includes("Chrome")) { browserName = "Chrome"; break; }
+                        if (brand.brand.includes("Firefox")) { browserName = "Firefox"; break; }
+                        if (brand.brand.includes("Safari")) { browserName = "Safari"; break; }
+                    }
+                }
+            } catch (err) {
+                //
+            } 
+            if (browserName === "Nepoznat") {
+                if (userAgent.includes("Chrome"))
+                    browserName = "Chrome";
+                else if (userAgent.includes("Firefox"))
+                    browserName = "Firefox";
+                else if (userAgent.includes("Safari"))
+                    browserName = "Safari";
+                else if (userAgent.includes("Opera") || userAgent.includes("OPR"))
+                    browserName = "Opera";
+                else if (userAgent.includes("Edge"))
+                    browserName = "Edge";
+            }
+             
+            try {
+                if (/Android/i.test(userAgent))
+                    osName = "Android";
+                else if (/iPhone|iPad|iPod/i.test(userAgent))
+                    osName = "iOS";
+                else if (/Windows NT/i.test(userAgent))
+                    osName = "Windows";
+                else if (/Macintosh/i.test(userAgent))
+                    osName = "MacOS";
+                else if (/Linux/i.test(userAgent))
+                    osName = "Linux";
+            } catch (err) {}
+             
+            try {
+                var w = Math.round(window.screen.width * (window.devicePixelRatio || 1));
+                var h = Math.round(window.screen.height * (window.devicePixelRatio || 1));
+                resolution = `${w}x${h}`;
+            } catch (err) {}
+             
+            try {
+                isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent) ||
+                           (navigator.maxTouchPoints && navigator.maxTouchPoints > 1);
+            } catch (err) {}
+             
+            try {
+                var offsetHours = -new Date().getTimezoneOffset() / 60;
+                timeZone = (offsetHours >= 0 ? "+" : "") + offsetHours;
+            } catch (err) {}
+             
+            if (navigator.userAgentData?.getHighEntropyValues) {
+                navigator.userAgentData.getHighEntropyValues(["model", "platform", "platformVersion"])
+                    .then(uaData => {
+                        deviceModel = uaData.model || "";
+                        if (uaData.platform)
+                            osName = uaData.platform; 
+
+                        registration();
+                    })
+                    .catch(() => { 
+
+                        registration();
+                    }); 
+                return;
+            }
+        } catch (globalError) {
+             //
+        }
+         
+        registration();
+         
+        function registration() {
+            $.ajax({
+                url: "/registration-computer",
+                type: "POST",
+                data: {
+                    Id: selectedId,
+                    UserAgent: userAgent,
+                    BrowserName: browserName,
+                    OSName: osName,
+                    ScreenResolution: resolution,
+                    TimeZone: timeZone,
+                    IsMobile: isMobile,
+                    PIN: pin,
+                    DeviceModel: deviceModel
+                },
+                success: function (res) {
+                    if (res.success) {
+                        $("#wndRegistrationComputer").data("kendoWindow").close();
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Obavijestite administratora o grešci',
+                            text: res.error ? res.error : "Greška pri registraciji računara!",
+                            confirmButtonText: 'U redu'
+                        });
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Obavijestite administratora o grešci',
+                        text: "Neočekivana greška pri registraciji računara!",
+                        confirmButtonText: 'U redu'
+                    });
+                }
+            });
+        }
+    }
+
+</script>
+
+<div>
+    @(Html.Kendo().DropDownList()
+        .Name("computers")
+        .Label(l => l.Content("Računar:"))
+        .DataTextField("PCName")
+        .DataValueField("Id")
+        .BindTo(Model)
+        .OptionLabel("Odaberite računar...")
+        .HtmlAttributes(new { style = "width: 100%; margin-top: 5px;" })
+        )
+</div>
+
+<br />
+
+<div id="pinContainer" style="display: none;">
+    @(Html.Kendo().TextBox()
+        .Name("pinInput")
+        .Label(l => l.Content("PIN kod:"))
+        .HtmlAttributes(new { style = "width: 100%; margin-top: 5px;" })
+        )
+</div>
+
+<br />
+
+<div style="text-align: center;">
+    @(Html.Kendo().Button()
+        .Name("btnRegisterComputer")
+        .Content("Potvrdi")
+        .ThemeColor(ThemeColor.Primary)
+        .Size(ComponentSize.Medium)
+        .Events(e => e.Click("registerComputer"))
+        )
+</div>
+

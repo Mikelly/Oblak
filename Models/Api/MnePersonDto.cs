@@ -57,6 +57,8 @@ namespace Oblak.Models.Api
         public string? UserCreated { get; set; }
         public DateTime? UserCreatedDate { get; set; }
         public string? CheckInPointName { get; set; }
+        public Guid? ComputerCreatedId { get; set; }
+        public string? ComputerCreated { get; set; }
 
         public MnePerson SetMnePerson(MnePerson mnePerson, int legalEntityId)
         {
@@ -183,6 +185,6 @@ namespace Oblak.Models.Api
         public string? LegalEntity { get; set; } //
         public bool? Registered { get; set; } = true;
         public bool? Locked { get; set; } = true;
-        public bool? Deleted { get; set; } = false;
+        public bool? Deleted { get; set; } = false; 
     }
 }

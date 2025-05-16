@@ -27,7 +27,8 @@ namespace Oblak.Data.Api
         public string OwnerName { get; set; }
                 
         public string? OwnerAddress { get; set; }
-                
+
+        [Required]
         public string? OwnerTIN { get; set; }
                 
         public string? OwnerPhone { get; set; }

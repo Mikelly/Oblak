@@ -22,6 +22,7 @@
         public bool ResTaxPaid { get; set; }
         public int ResTaxPaymentTypeId { get; set; }
         public string? UserCreated { get; set; }
+        public string? NauticalLegalEntityData { get; set; }
     }
 
     public class GroupEnrichedDto : GroupDto

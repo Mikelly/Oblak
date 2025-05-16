@@ -162,8 +162,9 @@ namespace Oblak.Data
 			modelBuilder.Entity<MnePerson>().HasOne(a => a.ResTaxType);
             modelBuilder.Entity<MnePerson>().HasOne(a => a.ResTaxPaymentType);
             modelBuilder.Entity<MnePerson>().HasOne(a => a.ResTaxExemptionType);
-            modelBuilder.Entity<MnePerson>().HasOne(a => a.CheckInPoint);			
-			modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxAmount).HasPrecision(18, 2);
+            modelBuilder.Entity<MnePerson>().HasOne(a => a.CheckInPoint);
+            modelBuilder.Entity<MnePerson>().HasOne(a => a.Computer).WithMany(b => b.MnePersons).HasForeignKey(a => a.ComputerCreatedId); ;
+            modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxAmount).HasPrecision(18, 2);
 			modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxFee).HasPrecision(18, 2);
             modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxStatus).HasConversion(new EnumToStringConverter<ResTaxStatus>());
 
@@ -186,8 +187,8 @@ namespace Oblak.Data
 
             modelBuilder.Entity<ResTaxExemptionType>().HasOne(a => a.Partner);
 
-			modelBuilder.Entity<ResTaxHistory>().HasOne(a => a.Person).WithMany(a => a.ResTaxHistory).OnDelete(DeleteBehavior.ClientNoAction);
-			modelBuilder.Entity<ResTaxHistory>().Property(a => a.PrevResTaxAmount).HasPrecision(18, 2);
+			modelBuilder.Entity<ResTaxHistory>().HasOne(a => a.Person).WithMany(a => a.ResTaxHistory).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<ResTaxHistory>().Property(a => a.PrevResTaxAmount).HasPrecision(18, 2);
             modelBuilder.Entity<ResTaxHistory>().Property(a => a.PrevResFeeAmount).HasPrecision(18, 2);
 
             modelBuilder.Entity<ResTaxPaymentType>().HasOne(a => a.Partner);
@@ -288,6 +289,15 @@ namespace Oblak.Data
             modelBuilder
                 .HasDbFunction(typeof(ApplicationDbContext).GetMethod(nameof(Balance), new[] { typeof(string), typeof(int), typeof(int) })!)
                 .HasName("Balance");
+
+            modelBuilder.Entity<Computer>().HasOne(a => a.Partner).WithMany(a => a.Computers);
+            modelBuilder.Entity<Computer>().HasMany(a => a.MnePersons).WithOne(a => a.Computer);
+            modelBuilder.Entity<Computer>().HasMany(a => a.ComputerLogs).WithOne(a => a.Computer).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Computer>().HasIndex(c => c.PCName); 
+
+            modelBuilder.Entity<ComputerLog>().HasIndex(cl => cl.ComputerId); 
+            modelBuilder.Entity<ComputerLog>().HasIndex(cl => cl.Seen);
+
         }
 
         public DbSet<LegalEntity> LegalEntities { get; set; }
@@ -332,8 +342,11 @@ namespace Oblak.Data
         public DbSet<Country> Countries { get; set; }
         public DbSet<Log> Logs { get; set; }
 		public DbSet<MneMupData> MneMupData { get; set; }
+        public DbSet<Computer> Computers { get; set; }
+        public DbSet<ComputerLog> ComputerLogs { get; set; }
 
-		public string GuestList(int id) => throw new NotImplementedException();
+
+        public string GuestList(int id) => throw new NotImplementedException();
         public string GroupDesc(int id) => throw new NotImplementedException();
         public string PropertyDesc(int id) => throw new NotImplementedException();
         public int Nights(int id, DateTime last) => throw new NotImplementedException();

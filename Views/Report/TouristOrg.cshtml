@@ -20,12 +20,17 @@
 
 	if (prtnid == "4")
 	{
-		reports.Add($"Ledger", "Kartica izdavaoca");
+		reports.Add($"Ledger", "Kartica izdavaoca"); 
 	}
 
 	if (User.IsInRole("TouristOrgAdmin"))
 	{
 		reports.Add($"ResTaxHistory", "Istorija izmjena");
+	}
+
+	if (prtnid == "4" && User.IsInRole("TouristOrgAdmin"))
+	{
+		reports.Add($"NbrGuestPerPC", "Broj prijava po računarima");
 	}
 
 	if ((string)ViewBag.TaxType == "E")
@@ -209,6 +214,10 @@
 			$('#enuCode').show();
 		}
 
+		if(report == "NbrGuestPerPC"){
+			$('#datumOd').show();
+			$('#datumDo').show();
+		}
 
 	
 		

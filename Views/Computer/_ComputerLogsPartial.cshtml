@@ -1,0 +1,39 @@
+﻿@model List<Oblak.Data.ComputerLog>
+  
+<script>
+    function dateTimePicker(element) {
+        element.kendoDateTimePicker({
+            format: "dd.MM.yyyy HH:mm"
+        });
+    }
+</script>
+
+@(Html.Kendo().Grid<Oblak.Data.ComputerLog>()
+    .Name("gridComputerLogs")
+    .Height(600)
+    .Columns(columns =>
+    {
+        columns.Bound(c => c.Action).Title("Akcija");
+        columns.Bound(c => c.Seen).Title("Vrijeme").Format("{0:dd.MM.yyyy HH:mm}").Filterable(ftb => ftb.UI("dateTimePicker"));
+        columns.Bound(c => c.UsedByUser).Title("Korisnik");
+        columns.Bound(c => c.IPAddress).Title("IP adresa");
+        columns.Bound(c => c.BrowserName).Title("Browser");
+        columns.Bound(c => c.OSName).Title("OS");
+        columns.Bound(c => c.ScreenResolution).Title("Rezolucija").Width("110px");
+        @* columns.Bound(c => c.TimeZone).Title("Zona korisnika").Width("130px"); *@
+        columns.Bound(c => c.IsMobile).Title("Mobilni uredjaj").ClientTemplate("#= IsMobile ? 'Da' : 'Ne' #").Width("130px");
+    })
+    .Pageable(p => p.Refresh(true))
+    .Scrollable()
+    .Sortable()
+    .Filterable() 
+    .DataSource(ds => ds
+        .Ajax()
+        .PageSize(20)
+        .Read(read => read.Action("ReadLogs", "Computer", new { computerId = ViewBag.ComputerId }))
+    ) 
+)
+ 
+
+
+ 

@@ -1,8 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Oblak.Models.Computer;
+using System.ComponentModel.DataAnnotations;
 
 namespace Oblak.Models.Account;
 
-public class SignInViewModel
+public class SignInViewModel : RegistrationComputerViewModel
 {
     [Display(Name = "Username")]
     [Required(ErrorMessage = "Molimo vas unesite e-mail ili korisničko ime")]    

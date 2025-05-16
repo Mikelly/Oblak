@@ -1,4 +1,44 @@
 ﻿@{
     ViewBag.Title = "OBLAK";
-    Layout = "~/Views/Shared/_LayoutINV.cshtml";
+    Layout = "~/Views/Shared/_LayoutINV.cshtml"; 
+}
+
+@(Html.Kendo().Window()
+    .Name("wndRegistrationComputer")
+    .Title("Izaberite računar na kojem radite")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Resizable(win=>win.Enabled(false))
+    .Actions(actions => { })
+    .Width(450)
+    .HtmlAttributes(new { style = "padding:20px;" })
+)
+
+@if (ViewBag.IsComputerRegistered == false)
+{
+    <script>
+        $(document).ready(function () {
+            $.ajax({
+                url: "/available-computers",
+                type: "GET",
+                success: function (data, status, jqXHR) {
+                    const contentType = jqXHR.getResponseHeader("content-type") || ""; 
+                    if (contentType.includes("application/json")) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Obavijestite administratora!',
+                            text: data.error ? data.error : "Greška pri registraciji računara!",
+                            confirmButtonText: 'U redu'
+                        });
+                    }
+                    if (contentType.includes("text/html")) {
+                        var wnd = $("#wndRegistrationComputer").data("kendoWindow");
+                        wnd.content(data);
+                        wnd.center().open();
+                    }
+                }
+            });
+        });
+    </script>
 }

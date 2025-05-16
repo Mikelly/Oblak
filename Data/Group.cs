@@ -63,7 +63,7 @@ namespace Oblak.Data
         public bool? ResTaxCalculated { get; set; }
 
         public bool? ResTaxPaid { get; set; }
-
+        public string? NauticalLegalEntityData { get; set; }
 
 
         [StringLength(450)]

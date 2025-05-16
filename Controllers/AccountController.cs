@@ -182,6 +182,46 @@ namespace Oblak.Controllers
                     if (checkPassword.Succeeded)
                     {
                         await _signInManager.SignInAsync(user, true);
+
+                        #region Update computer logged state 
+                        if (Request.Cookies.TryGetValue("device_id", out var deviceIdStr) && Guid.TryParse(deviceIdStr, out Guid deviceId))
+                        {
+                            var computer = _db.Computers.FirstOrDefault(c => c.Id == deviceId);
+                            if (computer != null && computer.Registered.HasValue)
+                            {
+                                computer.Logged = DateTime.Now;
+                                computer.UserLogged = user.UserName;
+
+                                if (computer.PCName != "Administracija")
+                                {
+                                    string ipAddress = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+                                    if (string.IsNullOrEmpty(ipAddress))
+                                    {
+                                        ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+                                    }
+
+                                    ComputerLog log = new ComputerLog
+                                    {
+                                        ComputerId = computer.Id,
+                                        Action = "Prijava na sistem",
+                                        BrowserName = model.BrowserName,
+                                        OSName = model.OSName,
+                                        ScreenResolution = model.ScreenResolution,
+                                        IsMobile = model.IsMobile,
+                                        Seen = DateTime.Now,
+                                        UsedByUser = user.UserName,
+                                        TimeZone = model.TimeZone,
+                                        UserAgent = model.UserAgent,
+                                        IPAddress = ipAddress,
+                                    };
+                                    _db.ComputerLogs.Add(log);
+                                }
+
+                                _db.SaveChanges();
+                            }
+                        } 
+                        #endregion
+
                         if (User.IsInRole("TouristOrgOperator"))
                         {
                             

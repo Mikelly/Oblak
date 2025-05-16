@@ -7,793 +7,818 @@
     var admin = User.IsInRole("TouristOrgAdmin");
     var control = User.IsInRole("TouristOrgControllor");
     var grp = ViewBag.Group != null;
+    var nautical = @ViewBag.Nautical;
 }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
 
 <script type="text/javascript">
-    
+
     var dsbl = '@((bool)admin == false && (bool)control == false)';
     var group = '@(ViewBag.Group ?? 0)';
     var nautical = @ViewBag.Nautical;
-    
+
     $(document).ready(function () {
 
-        setTimeout(function () {
-            console.log('initialize native messaging');
-            window.postMessage({ type: "FROM_PAGE", message: { type: "Initialize" } }, "*");
-        }, 500);   
-        
-        $('#groupdesc').load('/group-desc?groupid=@ViewBag.Group');
+    setTimeout(function () {
+    console.log('initialize native messaging');
+    window.postMessage({ type: "FROM_PAGE", message: { type: "Initialize" } }, "*");
+    }, 500);   
 
-        const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/messageHub")
-            .configureLogging(signalR.LogLevel.Information)
-            .withAutomaticReconnect()
-            .build();
+    $('#groupdesc').load('/group-desc?groupid=@ViewBag.Group');
 
-        async function start() {
-            try {
-                await connection.start();
-                console.log("SignalR Connected.");
-            } catch (err) {
-                console.log(err);
-                setTimeout(start, 5000);
-            }
-        };
+    const connection = new signalR.HubConnectionBuilder()
+    .withUrl("/messageHub")
+    .configureLogging(signalR.LogLevel.Information)
+    .withAutomaticReconnect()
+    .build();
 
-        connection.onclose(async () => {
-            await start();
-        });
+    async function start() {
+    try {
+    await connection.start();
+    console.log("SignalR Connected.");
+    } catch (err) {
+    console.log(err);
+    setTimeout(start, 5000);
+    }
+    };
 
-        start();
+    connection.onclose(async () => {
+    await start();
+    });
 
-        connection.on("status", (progress, message, guest) => {            
-            if(guest != "") Swal.update({ text: `${message} - ${guest}` });            
-            else Swal.update({ text: `${message}` });
-        });
+    start();
+
+    connection.on("status", (progress, message, guest) => {            
+    if(guest != "") Swal.update({ text: `${message} - ${guest}` });            
+    else Swal.update({ text: `${message}` });
+    });
 
     });
 
     window.addEventListener("FromContextScript", function (evt) {
-        var mrz = evt.detail;
+    var mrz = evt.detail;
 
-        var obj = jQuery.parseJSON(mrz);
+    var obj = jQuery.parseJSON(mrz);
 
-        //alert(mrz);
+    //alert(mrz);
 
-        if ($('#wndGuest').is(':visible')) {
+    if ($('#wndGuest').is(':visible')) {
 
-            $('#p_Tip').data('kendoDropDownList').value(obj.DocIssuer == 'MNE' ? '1' : '4');
-            $('#p_Prezime').val(obj.HolderNamePrimary);
-            $('#p_Ime').val(obj.HolderNameSecondary);
-            $('#p_JMBG').val(obj.HolderNumber ?? "-");
-            $('#p_LD_Broj').val(obj.DocNumber);
-            $('#p_Pol').data('kendoDropDownList').value(obj.HolderSex);
-            $('#p_LD_Vrsta').data('kendoDropDownList').value(obj.DocType == 'IcaoTd1' || obj.DocType == 'IcaoTd2' ? '2' : '1');
+    $('#p_Tip').data('kendoDropDownList').value(obj.DocIssuer == 'MNE' ? '1' : '4');
+    $('#p_Prezime').val(obj.HolderNamePrimary);
+    $('#p_Ime').val(obj.HolderNameSecondary);
+    $('#p_JMBG').val(obj.HolderNumber ?? "-");
+    $('#p_LD_Broj').val(obj.DocNumber);
+    $('#p_Pol').data('kendoDropDownList').value(obj.HolderSex);
+    $('#p_LD_Vrsta').data('kendoDropDownList').value(obj.DocType == 'IcaoTd1' || obj.DocType == 'IcaoTd2' ? '2' : '1');
 
-            var dr = obj.HolderDateOfBirth;
-            var day = dr.substring(4, 6);
-            var month = dr.substring(2, 4);
-            var year = dr.substring(0, 2);
-            var curr_year = parseInt(new Date().getFullYear().toString().substr(2, 2));
-            if (Number(year) < curr_year) year = '20' + year; else year = '19' + year;
-            $('#p_Rodj_Datum').data('kendoDatePicker').value(new Date(year, month - 1, day));
+    var dr = obj.HolderDateOfBirth;
+    var day = dr.substring(4, 6);
+    var month = dr.substring(2, 4);
+    var year = dr.substring(0, 2);
+    var curr_year = parseInt(new Date().getFullYear().toString().substr(2, 2));
+    if (Number(year) < curr_year) year = '20' + year; else year = '19' + year;
+    $('#p_Rodj_Datum').data('kendoDatePicker').value(new Date(year, month - 1, day));
 
-            var dr = obj.DocExpiry;
-            var day = dr.substring(4, 6);
-            var month = dr.substring(2, 4);
-            var year = dr.substring(0, 2);
-            year = '20' + year;
-            $('#p_LD_Rok').data('kendoDatePicker').value(new Date(year, month - 1, day));
+    var dr = obj.DocExpiry;
+    var day = dr.substring(4, 6);
+    var month = dr.substring(2, 4);
+    var year = dr.substring(0, 2);
+    year = '20' + year;
+    $('#p_LD_Rok').data('kendoDatePicker').value(new Date(year, month - 1, day));
 
-            obj.DocIssuer = obj.DocIssuer.replaceAll('<', '');
-            obj.HolderNationality = obj.HolderNationality.replaceAll('<', ''); 	
+    obj.DocIssuer = obj.DocIssuer.replaceAll('<', '');
+    obj.HolderNationality = obj.HolderNationality.replaceAll('<', ''); 	
 
-            $('#p_LD_Drzava').data('kendoDropDownList').value(obj.DocIssuer);
-            $('#p_Drzava').data('kendoDropDownList').value(obj.HolderNationality);
-            $('#p_Rodj_Drzava').data('kendoDropDownList').value(obj.HolderNationality);
-            $('#p_Preb_Drzava').data('kendoDropDownList').value(obj.HolderNationality);
+    $('#p_LD_Drzava').data('kendoDropDownList').value(obj.DocIssuer);
+    $('#p_Drzava').data('kendoDropDownList').value(obj.HolderNationality);
+    $('#p_Rodj_Drzava').data('kendoDropDownList').value(obj.HolderNationality);
+    $('#p_Preb_Drzava').data('kendoDropDownList').value(obj.HolderNationality);
 
-            $.ajax({
-                url: '@Url.Content("~/rbgrp/fsetall")',
-                type: 'POST',
-                data: $('#prijavaForm').serialize(),
-                success: function (data) {
-                    debugger;
-                    if (data.error != "") {
-                        alert(data.error);
-                    }
-                    else if (data.js != "") {
-                        eval(data.js);
-                    }
-                }
-            });
-        }
-        else {
+    $.ajax({
+    url: '@Url.Content("~/rbgrp/fsetall")',
+    type: 'POST',
+    data: $('#prijavaForm').serialize(),
+    success: function (data) {
+    debugger;
+    if (data.error != "") {
+    alert(data.error);
+    }
+    else if (data.js != "") {
+    eval(data.js);
+    }
+    }
+    });
+    }
+    else {
 
-            if(mrz.HolderSex == 'F') mrz.HolderSex = 'Z';
+    if(mrz.HolderSex == 'F') mrz.HolderSex = 'Z';
 
-            if (obj.DocIssuer != "") {
-                $.ajax({
-                    url: `/person/get?person=0&group=${group}`,
-                    type: 'POST',
-                    data: { mrz: mrz },
-                    success: function (data, status, xhr) {
-                        var wnd = $("#wndGuest").data("kendoWindow");
-                        wnd.content(data);
-                        wnd.setOptions({
-                            width: $(window).width() * 0.95,
-                            height: $(window).height() * 0.95
-                        });
-                        wnd.center().open();
-                        setTimeout(() => {
-                            $('#PropertyId').data('kendoMultiColumnComboBox').focus();
-                            $('#PropertyId_input').focus();                            
-                        }, 500);
-                    }
-                });
-            }
-        }
+    if (obj.DocIssuer != "") {
+    $.ajax({
+    url: `/person/get?person=0&group=${group}`,
+    type: 'POST',
+    data: { mrz: mrz },
+    success: function (data, status, xhr) {
+    var wnd = $("#wndGuest").data("kendoWindow");
+    wnd.content(data);
+    wnd.setOptions({
+    width: $(window).width() * 0.95,
+    height: $(window).height() * 0.95
+    });
+    wnd.center().open();
+    setTimeout(() => {
+    $('#PropertyId').data('kendoMultiColumnComboBox').focus();
+    $('#PropertyId_input').focus();                            
+    }, 500);
+    }
+    });
+    }
+    }
 
     }, false);
 
-    
+
     function registerGroup(e, r) {
 
-        Swal.fire({
-            title: 'Provjera i slanje podataka...',
-            text: 'Molimo sačekajte',
-            position: 'bottom',
-            showClass: {
-                popup: `
-                        animate__animated
-                        animate__fadeInUp
-                        animate__faster
-                        `
-            },
-            hideClass: {
-                popup: `
-                    animate__animated
-                    animate__fadeOutDown
-                    animate__faster
-                    `
-            },
-            grow: 'row',
-            showConfirmButton: false,
-            showCloseButton: false,
-            imageUrl: "/content/icons/loading.gif",
-            imageWidth: 80,
-            imageHeight: 80,
-            allowOutsideClick: false
-        });
+    Swal.fire({
+    title: 'Provjera i slanje podataka...',
+    text: 'Molimo sačekajte',
+    position: 'bottom',
+    showClass: {
+    popup: `
+    animate__animated
+    animate__fadeInUp
+    animate__faster
+    `
+    },
+    hideClass: {
+    popup: `
+    animate__animated
+    animate__fadeOutDown
+    animate__faster
+    `
+    },
+    grow: 'row',
+    showConfirmButton: false,
+    showCloseButton: false,
+    imageUrl: "/content/icons/loading.gif",
+    imageWidth: 80,
+    imageHeight: 80,
+    allowOutsideClick: false
+    });
 
-        $.ajax({
-            url: `/api/groupRegister?id=${@(ViewBag.Group ?? 0)}`,
-            type: 'GET',
-            success: function (data, status, xhr) {
-                setTimeout(function () {
-                    
-                    if (data.length > 0) {
-                        var extErrors = data.filter(a => a.ExternalErrors.length > 0);
-                        if (extErrors.length > 0) {
-                            var errorMessages = extErrors.map((a) => { return a.PersonId + '<br/>' + a.ExternalErrors.map((b) => { return b; }).join('<br/>') }).join('<br/><br/>');
-                            Swal.fire({ icon: 'error', title: errorMessages, confirmButtonText: `U redu` });
-                        }                        
-                    }
-                    else {
-                        Swal.fire({ icon: 'success', title: 'Gosti su uspješno prijavljeni!', confirmButtonText: `U redu` });
-                        $('#mnePersonGrid').data('kendoGrid').dataSource.read();
-                    }
-                }, 750);                
-            },
-            error: function (data, error, xhr) {
-                Swal.fire({
-                    title: "Greška",
-                    text: "Desila se greška prilikom slanja podataka MUP-u. Molimo pokušajte ponovo.",
-                    icon: "error"
-                });
-            }
-        });
+    $.ajax({
+    url: `/api/groupRegister?id=${@(ViewBag.Group ?? 0)}`,
+    type: 'GET',
+    success: function (data, status, xhr) {
+    setTimeout(function () {
+
+    if (data.length > 0) {
+    var extErrors = data.filter(a => a.ExternalErrors.length > 0);
+    if (extErrors.length > 0) {
+    var errorMessages = extErrors.map((a) => { return a.PersonId + '<br/>' + a.ExternalErrors.map((b) => { return b; }).join('<br/>') }).join('<br/><br/>');
+    Swal.fire({ icon: 'error', title: errorMessages, confirmButtonText: `U redu` });
+    }                        
+    }
+    else {
+    Swal.fire({ icon: 'success', title: 'Gosti su uspješno prijavljeni!', confirmButtonText: `U redu` });
+    $('#mnePersonGrid').data('kendoGrid').dataSource.read();
+    }
+    }, 750);                
+    },
+    error: function (data, error, xhr) {
+    Swal.fire({
+    title: "Greška",
+    text: "Desila se greška prilikom slanja podataka MUP-u. Molimo pokušajte ponovo.",
+    icon: "error"
+    });
+    }
+    });
     }
 
     function guest(person) {
-        
-        $.ajax({
-            url: `/person/get?person=${person}&group=${@(ViewBag.Group ?? 0)}`,
-            type: 'POST',
-            data: { mrz: '' },
-            success: function (data, status, xhr) {
-                var wnd = $("#wndGuest").data("kendoWindow");
-                wnd.content(data);
-                wnd.setOptions({
-                    width: $(window).width() * 0.95,
-                    height: $(window).height() * 0.95
-                });
-                wnd.center().open();
 
-                if (person != 0) {
-                    var grid = $('#mnePersonGrid').data('kendoGrid');
-                    var item = grid.dataItem(grid.select());                    
-                    wnd.title(`Izmjena prijave: ${item.FullName}`);
-                }
-            }
-        });
+    $.ajax({
+    url: `/person/get?person=${person}&group=${@(ViewBag.Group ?? 0)}`,
+    type: 'POST',
+    data: { mrz: '' },
+    success: function (data, status, xhr) {
+    var wnd = $("#wndGuest").data("kendoWindow");
+    wnd.content(data);
+    wnd.setOptions({
+    width: $(window).width() * 0.95,
+    height: $(window).height() * 0.95
+    });
+    wnd.center().open();
+
+    if (person != 0) {
+    var grid = $('#mnePersonGrid').data('kendoGrid');
+    var item = grid.dataItem(grid.select());                    
+    wnd.title(`Izmjena prijave: ${item.FullName}`);
+    }
+    }
+    });
     }
 
     function virmanfoo() {
 
-        var id = $('#Id');
+    var id = $('#Id');
 
-        $.ajax({
-            url: `/virman?id=${id}`,
-            type: 'GET',            
-            success: function (data, status, xhr) {
-                var wnd = $("#wndVirman").data("kendoWindow");
-                wnd.content(data);                
-                wnd.center().open();
-            }
-        });
+    $.ajax({
+    url: `/virman?id=${id}`,
+    type: 'GET',            
+    success: function (data, status, xhr) {
+    var wnd = $("#wndVirman").data("kendoWindow");
+    wnd.content(data);                
+    wnd.center().open();
+    }
+    });
     }
 
 
     function showGuest(id) {
 
-        var grid = $('#mnePersonGrid').data('kendoGrid');
-        var item = grid.dataItem(grid.select());
-        var person = item.Id;
-        
-        guest(person);
+    var grid = $('#mnePersonGrid').data('kendoGrid');
+    var item = grid.dataItem(grid.select());
+    var person = item.Id;
+
+    guest(person);
     }
 
 
 
     function saveGuest() {
-        $.ajax({
-            url: '/save-mne-person',
-            type: 'POST',
-            data: $('#mnePersonForm').serialize(),
-            success: function (data) {
-                if(data.id != null) {
-                    $('#Id').val(data.id);
-                }
-                if (data.ResTaxTypeId != null) {
-                    $('#ResTaxTypeId').data('kendoDropDownList')?.value(data.ResTaxTypeId);
-                }
-                if (data.ResTaxAmount != null) {
-                    $('#ResTaxAmount').data('kendoNumericTextBox')?.value(data.ResTaxAmount);
-                }
-                if (data.ResTaxFee != null) {
-                    $('#ResTaxFee').data('kendoNumericTextBox')?.value(data.ResTaxFee);
-                }
-                if (data.info != "") {
-                    var grid = $('#mnePersonGrid').data('kendoGrid');
-                    $('#groupdesc').load('/group-desc?groupid=@ViewBag.Group');
-                    grid.dataSource.read();
+    $.ajax({
+    url: '/save-mne-person',
+    type: 'POST',
+    data: $('#mnePersonForm').serialize(),
+    success: function (data) {
+    if(data.id != null) {
+    $('#Id').val(data.id);
+    }
+    if (data.ResTaxTypeId != null) {
+    $('#ResTaxTypeId').data('kendoDropDownList')?.value(data.ResTaxTypeId);
+    }
+    if (data.ResTaxAmount != null) {
+    $('#ResTaxAmount').data('kendoNumericTextBox')?.value(data.ResTaxAmount);
+    }
+    if (data.ResTaxFee != null) {
+    $('#ResTaxFee').data('kendoNumericTextBox')?.value(data.ResTaxFee);
+    }
+    if (data.info != "") {
+    var grid = $('#mnePersonGrid').data('kendoGrid');
+    $('#groupdesc').load('/group-desc?groupid=@ViewBag.Group');
+    grid.dataSource.read();
 
-                    let userUnknownMsg = ``; 
-                    var timerN = 1500;
-                    if (data.UserCreated === 'unknown') {
-                        userUnknownMsg += `<b style="color: red;">Operater nije dodeljen, javite se administratoru!</b>`;
-                        timerN = 5000;
-                    }
+    let userUnknownMsg = ``; 
+    var timerN = 1500;
+    if (data.UserCreated === 'unknown') {
+    userUnknownMsg += `<b style="color: red;">Operater nije dodeljen, javite se administratoru!</b>`;
+    timerN = 5000;
+    }
 
-                    Swal.fire({ icon: 'success', title: 'Uspješno sačuvane izmjene!', html: userUnknownMsg,  confirmButtonText: `U redu`, timer: timerN });
-                    if (isgroup == false) {
-                        var wnd = $("#wndGuest").data("kendoWindow");
-                        wnd.close();
-                    }
-                }
-                else if (data.error != "") {
-                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
-                }
-                else if (data.errors) {
-                    var errorMessages = data.errors.map(function (v) {
-                        return v.Error;
-                    }).join('<br>');
+    Swal.fire({ icon: 'success', title: 'Uspješno sačuvane izmjene!', html: userUnknownMsg,  confirmButtonText: `U redu`, timer: timerN });
+    if (isgroup == false) {
+    var wnd = $("#wndGuest").data("kendoWindow");
+    wnd.close();
+    }
+    }
+    else if (data.error != "") {
+    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+    }
+    else if (data.errors) {
+    var errorMessages = data.errors.map(function (v) {
+    return v.Error;
+    }).join('<br>');
 
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Greške u unosu podataka',
-                        html: errorMessages,
-                        width: '500px',
-                        footer: 'Molimo ispravite greške.',
-                        confirmButtonText: 'U redu'
-                    });
-                }                
-            },
-            error: function () {
-                alert("Došlo je do greške.");
-            }
-        });
+    Swal.fire({
+    icon: 'error',
+    title: 'Greške u unosu podataka',
+    html: errorMessages,
+    width: '500px',
+    footer: 'Molimo ispravite greške.',
+    confirmButtonText: 'U redu'
+    });
+    }                
+    },
+    error: function () {
+    alert("Došlo je do greške.");
+    }
+    });
     }
 
     function registerGuest(person) {
 
-        // var grid = $('#mnePersonGrid').data('kendoGrid');
-        // var item = grid.dataItem(grid.select());
+    // var grid = $('#mnePersonGrid').data('kendoGrid');
+    // var item = grid.dataItem(grid.select());
 
-        // if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati gosta', confirmButtonText: `U redu` });
+    // if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati gosta', confirmButtonText: `U redu` });
 
-        // var person = item.Id;
+    // var person = item.Id;
 
-        var person = $('#Id').val();
-        
-        $.ajax({
-            url: `/api/personRegister?id=${person}`,
-            type: 'GET',
-            success: function (data, status, xhr) {
-                if (data.ExternalErrors != undefined) {
-                    var errorMessages = data.ExternalErrors.map(function (v) {
-                        return v;
-                    }).join('<br>');
-                    Swal.fire({ icon: 'error', title: errorMessages, confirmButtonText: `U redu` });
-                }
-                else {
-                    var grid = $('#mnePersonGrid').data('kendoGrid');
-                    grid.dataSource.read();
-                    Swal.fire({ icon: 'success', title: 'Gost je uspješno prijavljen!', confirmButtonText: `U redu`, timer: 1500 });
-                    disableResTax();
-                }
-                //var wnd = $("#wndGuest").data("kendoWindow");                
-            }
-        });
+    var person = $('#Id').val();
+
+    $.ajax({
+    url: `/api/personRegister?id=${person}`,
+    type: 'GET',
+    success: function (data, status, xhr) {
+    if (data.ExternalErrors != undefined) {
+    var errorMessages = data.ExternalErrors.map(function (v) {
+    return v;
+    }).join('<br>');
+    Swal.fire({ icon: 'error', title: errorMessages, confirmButtonText: `U redu` });
+    }
+    else {
+    var grid = $('#mnePersonGrid').data('kendoGrid');
+    grid.dataSource.read();
+    Swal.fire({ icon: 'success', title: 'Gost je uspješno prijavljen!', confirmButtonText: `U redu`, timer: 1500 });
+    disableResTax();
+    }
+    //var wnd = $("#wndGuest").data("kendoWindow");                
+    }
+    });
     }
 
     function disableResTax() {
-        
-        $("#mnePersonForm").find(".k-datepicker, .k-dropdownlist, .k-numerictextbox, .k-combobox, .k-autocomplete, .k-textbox").each(function () {
-            var widget = $(this).data("kendoDatePicker") ||
-                $(this).data("kendoDropDownList") ||
-                $(this).data("kendoNumericTextBox") ||
-                $(this).data("kendoComboBox") ||
-                $(this).data("kendoTextBox") ||
-                $(this).data("kendoMultiColumnComboBox") ||
-                $(this).data("kendoAutoComplete");
 
-            if (widget && typeof widget.enable === "function") {
-                widget.enable(false);
-            }
-        });
+    $("#mnePersonForm").find(".k-datepicker, .k-dropdownlist, .k-numerictextbox, .k-combobox, .k-autocomplete, .k-textbox").each(function () {
+    var widget = $(this).data("kendoDatePicker") ||
+    $(this).data("kendoDropDownList") ||
+    $(this).data("kendoNumericTextBox") ||
+    $(this).data("kendoComboBox") ||
+    $(this).data("kendoTextBox") ||
+    $(this).data("kendoMultiColumnComboBox") ||
+    $(this).data("kendoAutoComplete");
 
-        $("#mnePersonForm").find(":input").each(function () {
-            var widget = $(this).data("kendoDatePicker") ||
-                $(this).data("kendoDropDownList") ||
-                $(this).data("kendoNumericTextBox") ||
-                $(this).data("kendoComboBox") ||
-                $(this).data("kendoTextBox") ||
-                $(this).data("kendoMultiColumnComboBox") ||
-                $(this).data("kendoAutoComplete");
-
-            if (widget && typeof widget.enable === "function") {
-                widget.enable(false);
-            }
-        });
+    if (widget && typeof widget.enable === "function") {
+    widget.enable(false);
     }
+    });
 
+    $("#mnePersonForm").find(":input").each(function () {
+    var widget = $(this).data("kendoDatePicker") ||
+    $(this).data("kendoDropDownList") ||
+    $(this).data("kendoNumericTextBox") ||
+    $(this).data("kendoComboBox") ||
+    $(this).data("kendoTextBox") ||
+    $(this).data("kendoMultiColumnComboBox") ||
+    $(this).data("kendoAutoComplete");
+
+    if (widget && typeof widget.enable === "function") {
+    widget.enable(false);
+    }
+    });
+    }
+      
     function deleteGuest() {
-
         var grid = $('#mnePersonGrid').data('kendoGrid');
         var item = grid.dataItem(grid.select());
 
-        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati gosta', confirmButtonText: `U redu` });
+        if (!item) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Morate odabrati gosta',
+                confirmButtonText: 'U redu'
+            });
+            return;
+        }
 
         var person = item.Id;
 
-        $.ajax({
-            url: `/delete-mne-person?guestId=${person}`,
-            type: 'GET',
-            success: function (data, status, xhr) {
-                if (data.error != "") {
-                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
-                }
-                if (data.info != "") {
-                    var grid = $('#mnePersonGrid').data('kendoGrid');
-                    grid.dataSource.read();
-                    Swal.fire({ icon: 'success', title: data.info, confirmButtonText: `U redu` });
-                }
-                //var wnd = $("#wndGuest").data("kendoWindow");
+        Swal.fire({
+            title: 'Da li ste sigurni?',
+            text: 'Da li ste sigurni da želite da obrišete ovaj podatak?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Da, obriši!',
+            cancelButtonText: 'Odustani'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/delete-mne-person?guestId=${person}`,
+                    type: 'GET',
+                    success: function (data) {
+                        if (data.error) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: data.error,
+                                confirmButtonText: 'U redu'
+                            });
+                        } else if (data.info) {
+                            var grid = $('#mnePersonGrid').data('kendoGrid');
+                            grid.dataSource.read();
+                            Swal.fire({
+                                icon: 'success',
+                                title: data.info,
+                                confirmButtonText: 'U redu'
+                            });
+                        }
+                    }
+                });
             }
         });
     }
+
 
     function extPayGroup() {
 
-        var g = @(ViewBag.Group ?? 0);
+    var g = @(ViewBag.Group ?? 0);
 
-        $.ajax({
-            url: `/ext-pay?g=${g}`,
-            type: 'GET',
-            success: function (data, status, jqXHR) {
+    $.ajax({
+    url: `/ext-pay?g=${g}`,
+    type: 'GET',
+    success: function (data, status, jqXHR) {
 
-                const contentType = jqXHR.getResponseHeader("content-type") || "";
+    const contentType = jqXHR.getResponseHeader("content-type") || "";
 
-                if (contentType.includes("application/json")) {
-                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
-                }
-                else if (contentType.includes("text/html")) {
-                    var wnd = $("#wndExtPay").data("kendoWindow");
-                    wnd.content(data);
-                    wnd.center().open();
-                }
-                else {
-                    console.log("Other response type:", contentType);
-                }
-            },
-            complete: function (data) {
+    if (contentType.includes("application/json")) {
+    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+    }
+    else if (contentType.includes("text/html")) {
+    var wnd = $("#wndExtPay").data("kendoWindow");
+    wnd.content(data);
+    wnd.center().open();
+    }
+    else {
+    console.log("Other response type:", contentType);
+    }
+    },
+    complete: function (data) {
 
-            }
-        });
+    }
+    });
     }
 
     function doExtPay() {
-        $.ajax({
-            url: '/do-ext-pay',
-            type: 'POST',
-            data: $('#extPayForm').serialize(),
-            success: function (data) {
-                if (data.id != null) {
-                    $('#PayId').val(data.id);
-                }
-                if (data.info != "") {
-                    Swal.fire({ icon: 'success', title: 'Uspješno sačuvane izmjene!', confirmButtonText: `U redu`, timer: 1000 });
-                    var wnd = $("#wndExtPay").data("kendoWindow");
-                    wnd.close();
+    $.ajax({
+    url: '/do-ext-pay',
+    type: 'POST',
+    data: $('#extPayForm').serialize(),
+    success: function (data) {
+    if (data.id != null) {
+    $('#PayId').val(data.id);
+    }
+    if (data.info != "") {
+    Swal.fire({ icon: 'success', title: 'Uspješno sačuvane izmjene!', confirmButtonText: `U redu`, timer: 1000 });
+    var wnd = $("#wndExtPay").data("kendoWindow");
+    wnd.close();
 
-                }
-                else if (data.error != "") {
-                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
-                }
-            },
-            error: function () {
-                alert("Došlo je do greške.");
-            }
-        });
+    }
+    else if (data.error != "") {
+    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+    }
+    },
+    error: function () {
+    alert("Došlo je do greške.");
+    }
+    });
     }
 
     function sendCert(g, p) {    
 
-        //var g = 0;
-        //var p = $('#Id').val();
+    //var g = 0;
+    //var p = $('#Id').val();
 
-        var html =
-            `<label for="latefisc" class="swal2-input-label">e-Mail adresa na koju želite poslati potvrde:</label>` +
-            `<input value="@ViewBag.Email" class="swal2-input" id="swal2-input-email" placeholder="Unesite e-mail adresu" type="email" style="display: flex;" autocomplete="off"/>` +
-            `<button onclick="certsend(${g},${p})" type="button" class="swal2-confirm swal2-styled" aria-label="" style="display: inline-block;">Pošalji na e-mail</button>` +
-            `<button onclick="certprint(${g},${p})" type="button" class="swal2-deny swal2-styled" aria-label="" style="display: inline-block;">Odštampaj</button>`;
+    var html =
+    `<label for="latefisc" class="swal2-input-label">e-Mail adresa na koju želite poslati potvrde:</label>` +
+    `<input value="@ViewBag.Email" class="swal2-input" id="swal2-input-email" placeholder="Unesite e-mail adresu" type="email" style="display: flex;" autocomplete="off"/>` +
+    `<button onclick="certsend(${g},${p})" type="button" class="swal2-confirm swal2-styled" aria-label="" style="display: inline-block;">Pošalji na e-mail</button>` +
+    `<button onclick="certprint(${g},${p})" type="button" class="swal2-deny swal2-styled" aria-label="" style="display: inline-block;">Odštampaj</button>`;
 
-        Swal.fire({
-            title: 'Potvrda o prijavi',
-            showConfirmButton: false,
-            focusConfirm: false,
-            html: html
-        });
+    Swal.fire({
+    title: 'Potvrda o prijavi',
+    showConfirmButton: false,
+    focusConfirm: false,
+    html: html
+    });
     }
 
     function certsend(g, p) {
-        var email = $('#swal2-input-email').val();
-        kendo.ui.progress($(body), true);
-        swal.close();
+    var email = $('#swal2-input-email').val();
+    kendo.ui.progress($(body), true);
+    swal.close();
 
-        $.ajax({
-            url: `/api/certificatepdf?group=${g}&person=${p}&email=${email}`,
-            type: 'POST',
-            success: function (data) {
-                if (data.info != "") {
-                    Swal.fire({ icon: 'info', title: data.info, confirmButtonText: `U redu` });
-                }
-                if (data.error != "") {
-                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
-                }
-            },
-            complete: function (data) {
-                kendo.ui.progress($(body), false);
-            }
-        });
+    $.ajax({
+    url: `/api/certificatepdf?group=${g}&person=${p}&email=${email}`,
+    type: 'POST',
+    success: function (data) {
+    if (data.info != "") {
+    Swal.fire({ icon: 'info', title: data.info, confirmButtonText: `U redu` });
+    }
+    if (data.error != "") {
+    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+    }
+    },
+    complete: function (data) {
+    kendo.ui.progress($(body), false);
+    }
+    });
     }
 
     function copyLast() {
 
-        $.ajax({
-            url: `/person/copylast`,
-            type: 'POST',
-            success: function (data) {
-                if (data.info != "") {
-                    var mccb = $('#PropertyId').data("kendoMultiColumnComboBox");
+    $.ajax({
+    url: `/person/copylast`,
+    type: 'POST',
+    success: function (data) {
+    if (data.info != "") {
+    var mccb = $('#PropertyId').data("kendoMultiColumnComboBox");
 
-                    mccb.dataSource.data([{ id: data.propertyId, text: data.propertyName }]);
+    mccb.dataSource.data([{ id: data.propertyId, text: data.propertyName }]);
 
-                    mccb.value(data.propertyId);
-                    mccb.text(data.propertyName);   
-                    
-                    $('#PropertyId').val(data.propertyId);
-                    
-                    const out = Date.parse(data.checkOut);
-                    const ind = Date.parse(data.checkIn);
-                    const epd = Date.parse(data.entryPointDate);
+    mccb.value(data.propertyId);
+    mccb.text(data.propertyName);   
 
-                    var indate = new Date(ind);
-                    var outdate = new Date(out);
-                    var entdate = new Date(epd);
-                    
-                    debugger;
-                    
-                    $('#CheckIn').data("kendoDatePicker").value(indate);
+    $('#PropertyId').val(data.propertyId);
 
-                    if (isNaN(out) == false) {
-                        $('#CheckOut').data("kendoDatePicker").value(outdate);
-                    }
+    const out = Date.parse(data.checkOut);
+    const ind = Date.parse(data.checkIn);
+    const epd = Date.parse(data.entryPointDate);
 
-                    if (isNaN(epd) == false) {
-                        $('#person_EntryPointDate').data("kendoDatePicker").value(entdate);
-                    }
+    var indate = new Date(ind);
+    var outdate = new Date(out);
+    var entdate = new Date(epd);
 
-                    var epdd = $('#person_EntryPoint').data("kendoDropDownList");
-                    epdd.value(data.entryPoint)
+    debugger;
 
-                    if(nautical == false) resTaxCalc();                    
-                }
-                if (data.error != "") {
-                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
-                }
-            },
-            complete: function (data) {
-                
-            }
-        });
+    $('#CheckIn').data("kendoDatePicker").value(indate);
+
+    if (isNaN(out) == false) {
+    $('#CheckOut').data("kendoDatePicker").value(outdate);
+    }
+
+    if (isNaN(epd) == false) {
+    $('#person_EntryPointDate').data("kendoDatePicker").value(entdate);
+    }
+
+    var epdd = $('#person_EntryPoint').data("kendoDropDownList");
+    epdd.value(data.entryPoint)
+
+    if(nautical == false) resTaxCalc();                    
+    }
+    if (data.error != "") {
+    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+    }
+    },
+    complete: function (data) {
+
+    }
+    });
     }
 
     function certprint(g, p) {
-        window.open(`/api/certificatepdf?group=${g}&person=${p}`, "_blank");
+    window.open(`/api/certificatepdf?group=${g}&person=${p}`, "_blank");
     }
 
     function guestDateChanged(e) { 
-        dtchng(e);
-        if (nautical == false) resTaxCalc();
+    dtchng(e);
+    if (nautical == false) resTaxCalc();
     }
 
     function resTaxCalc() {                 
-        if (isto) {
-            var birthDate = $('#BirthDate').data('kendoDatePicker').value();
-            var checkIn = $('#CheckIn').data('kendoDatePicker').value();
-            var checkOut = $('#CheckOut').data('kendoDatePicker').value();
-            var property = $('#PropertyId').data('kendoMultiColumnComboBox').value();
-            var taxType = $('#ResTaxTypeId').data('kendoDropDownList').value();
-            var payType = $('#ResTaxPaymentTypeId').data('kendoDropDownList').value();
-            var exemptType = $('#ResTaxExemptionTypeId').data('kendoDropDownList').value();
+    if (isto) {
+    var birthDate = $('#BirthDate').data('kendoDatePicker').value();
+    var checkIn = $('#CheckIn').data('kendoDatePicker').value();
+    var checkOut = $('#CheckOut').data('kendoDatePicker').value();
+    var property = $('#PropertyId').data('kendoMultiColumnComboBox').value();
+    var taxType = $('#ResTaxTypeId').data('kendoDropDownList').value();
+    var payType = $('#ResTaxPaymentTypeId').data('kendoDropDownList').value();
+    var exemptType = $('#ResTaxExemptionTypeId').data('kendoDropDownList').value();
 
-            if (checkIn != null && checkOut != null) {
-                if (checkIn > checkOut) Swal.fire({ icon: 'error', title: 'Datum odjave mora biti veći od datuma odjave!', confirmButtonText: `U redu` });
-                if (checkIn > new Date()) Swal.fire({ icon: 'error', title: 'Datum prijave ne smije biti u budućnosti!', confirmButtonText: `U redu` });
-            }
+    if (checkIn != null && checkOut != null) {
+    if (checkIn > checkOut) Swal.fire({ icon: 'error', title: 'Datum odjave mora biti veći od datuma odjave!', confirmButtonText: `U redu` });
+    if (checkIn > new Date()) Swal.fire({ icon: 'error', title: 'Datum prijave ne smije biti u budućnosti!', confirmButtonText: `U redu` });
+    }
 
-            if (birthDate != null) birthDate = kendo.toString(birthDate, "dd.MM.yyyy");
-            if (checkIn != null) checkIn = kendo.toString(checkIn, "dd.MM.yyyy");
-            if (checkOut != null) checkOut = kendo.toString(checkOut, "dd.MM.yyyy");
+    if (birthDate != null) birthDate = kendo.toString(birthDate, "dd.MM.yyyy");
+    if (checkIn != null) checkIn = kendo.toString(checkIn, "dd.MM.yyyy");
+    if (checkOut != null) checkOut = kendo.toString(checkOut, "dd.MM.yyyy");
 
-            debugger;
+    debugger;
 
-            if (group == 0) {
-                if (alreadyPaidIds.includes(parseInt(payType))) {
-                    $("#btnExtPay").data("kendoButton").enable(true);
-                }
-                else {
-                    $("#btnExtPay").data("kendoButton").enable(false);
-                }
-            }
+    if (group == 0) {
+    if (alreadyPaidIds.includes(parseInt(payType))) {
+    $("#btnExtPay").data("kendoButton").enable(true);
+    }
+    else {
+    $("#btnExtPay").data("kendoButton").enable(false);
+    }
+    }
 
-            $.ajax({
-                url: `/person/restax?property=${property}&resType=${taxType}&payType=${payType}&exemptType=${exemptType}&birthDate=${birthDate}&checkIn=${checkIn}&checkOut=${checkOut}&group=${group}`,
-                type: 'GET',
-                success: function (data) {
-                    $('#ResTaxTypeId').data('kendoDropDownList').value(data.resType);
-                    $('#ResTaxAmount').data('kendoNumericTextBox').value(data.tax);
-                    $('#ResTaxFee').data('kendoNumericTextBox').value(Math.round(data.fee * 100) / 100);
-                },
-                complete: function (data) {
-                    kendo.ui.progress($(body), false);
-                }
-            });
-        }
+    $.ajax({
+    url: `/person/restax?property=${property}&resType=${taxType}&payType=${payType}&exemptType=${exemptType}&birthDate=${birthDate}&checkIn=${checkIn}&checkOut=${checkOut}&group=${group}`,
+    type: 'GET',
+    success: function (data) {
+    $('#ResTaxTypeId').data('kendoDropDownList').value(data.resType);
+    $('#ResTaxAmount').data('kendoNumericTextBox').value(data.tax);
+    $('#ResTaxFee').data('kendoNumericTextBox').value(Math.round(data.fee * 100) / 100);
+    },
+    complete: function (data) {
+    kendo.ui.progress($(body), false);
+    }
+    });
+    }
     }
 
 
     function durationCalc() { 
-        var duration = $('#Duration').data('kendoNumericTextBox').value();        
-        var checkIn = $('#CheckIn').data('kendoDatePicker').value();
-        var checkOut = $('#CheckOut').data('kendoDatePicker');
-        
-        var out = addDays(checkIn, duration);
-        
-        checkOut.value(out);
+    var duration = $('#Duration').data('kendoNumericTextBox').value();        
+    var checkIn = $('#CheckIn').data('kendoDatePicker').value();
+    var checkOut = $('#CheckOut').data('kendoDatePicker');
 
-        resTaxCalc();
+    var out = addDays(checkIn, duration);
 
-        //$('#CheckIn').data('kendoDatePicker').trigger(change);
+    checkOut.value(out);
+
+    if(nautical == false) resTaxCalc();
+
+    //$('#CheckIn').data('kendoDatePicker').trigger(change);
     }
 
     function addDays(date, days) {
-        const result = new Date(date);
-        result.setDate(result.getDate() + days);
-        return result;
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
     }
 
 
     function virman() {        
-        
-        var id = $('#Id').val();
-        
-        $.ajax({
-            url: `/print-direct?id=${id}&g=${group}&tax='R'`,
-            type: 'GET',
-            success: function (data) {
-                disableResTax();
-                window.postMessage({
-                    type: "FROM_PAGE",
-                    message: {
-                        type: "Virman",
-                        data: data
-                    }
-                }, "*");
-            },
-            complete: function (data) {
-                
-            }
-        });
+
+    var id = $('#Id').val();
+
+    $.ajax({
+    url: `/print-direct?id=${id}&g=${group}&tax=@ViewBag.TaxType`,
+    type: 'GET',
+    success: function (data) {
+    disableResTax();
+    window.postMessage({
+    type: "FROM_PAGE",
+    message: {
+    type: "Virman",
+    data: data
+    }
+    }, "*");
+    },
+    complete: function (data) {
+
+    }
+    });
     }
 
     function virmangroup() {
 
-        var id = $('#Id').val();
+    var id = $('#Id').val();
 
-        $.ajax({
-            url: `/print-direct?g=@ViewBag.Group&tax='@ViewBag.TaxType'`,
-            type: 'GET',
-            success: function (data) {
-                window.postMessage({
-                    type: "FROM_PAGE",
-                    message: {
-                        type: "Virman",
-                        data: data
-                    }
-                }, "*");
-            },
-            complete: function (data) {
+    $.ajax({
+    url: `/print-direct?g=@ViewBag.Group&tax='@ViewBag.TaxType'`,
+    type: 'GET',
+    success: function (data) {
+    window.postMessage({
+    type: "FROM_PAGE",
+    message: {
+    type: "Virman",
+    data: data
+    }
+    }, "*");
+    },
+    complete: function (data) {
 
-            }
-        });
+    }
+    });
     }
 
     function periodSelect(e) {
-        var idx = e.indices;
-        if (idx == undefined) idx = 0;
-        var period = idx == 0 ? 'D' : idx == 1 ? 'W' : idx == 2 ? 'M' : idx == 3 ? 'Y' : 'C';
+    var idx = e.indices;
+    if (idx == undefined) idx = 0;
+    var period = idx == 0 ? 'D' : idx == 1 ? 'W' : idx == 2 ? 'M' : idx == 3 ? 'Y' : 'C';
 
-        var cod = '';
-        var cdo = '';
+    var cod = '';
+    var cdo = '';
 
-        if (period == 'C') {
-            $('#dtmOd').data('kendoDatePicker').enable(true);
-            $('#dtmDo').data('kendoDatePicker').enable(true);
-            var codval = $('#dtmOd').data('kendoDatePicker').value();
-            if (codval != null) cod = kendo.toString(codval, 'dd.MM.yyyy');
-            var cdoval = $('#dtmDo').data('kendoDatePicker').value();
-            if (cdoval != null) cdo = kendo.toString(cdoval, 'dd.MM.yyyy');
-        }
-        else {
-            $('#dtmOd').data('kendoDatePicker').enable(false);
-            $('#dtmOd').data('kendoDatePicker').value(null);
-            $('#dtmDo').data('kendoDatePicker').enable(false);
-            $('#dtmDo').data('kendoDatePicker').value(null);
-        }
+    if (period == 'C') {
+    $('#dtmOd').data('kendoDatePicker').enable(true);
+    $('#dtmDo').data('kendoDatePicker').enable(true);
+    var codval = $('#dtmOd').data('kendoDatePicker').value();
+    if (codval != null) cod = kendo.toString(codval, 'dd.MM.yyyy');
+    var cdoval = $('#dtmDo').data('kendoDatePicker').value();
+    if (cdoval != null) cdo = kendo.toString(cdoval, 'dd.MM.yyyy');
+    }
+    else {
+    $('#dtmOd').data('kendoDatePicker').enable(false);
+    $('#dtmOd').data('kendoDatePicker').value(null);
+    $('#dtmDo').data('kendoDatePicker').enable(false);
+    $('#dtmDo').data('kendoDatePicker').value(null);
+    }
 
-        debugger;
+    debugger;
 
-        var grid = $('#mnePersonGrid').data('kendoGrid');
-        grid.dataSource.transport.options.read.url = `/Person/ReadMnePersons?groupId=@ViewBag.Group&period=${period}&dtmod=${cod}&dtmdo=${cdo}`;
-        grid.dataSource.read();
+    var grid = $('#mnePersonGrid').data('kendoGrid');
+    grid.dataSource.transport.options.read.url = `/Person/ReadMnePersons?groupId=@ViewBag.Group&period=${period}&dtmod=${cod}&dtmdo=${cdo}`;
+    grid.dataSource.read();
     }
 
     function dtmChanged() {
-        //$('#grpPeriod').data('kendoButtonGroup').trigger('select');
-        periodSelect({ indices: 4 });
+    //$('#grpPeriod').data('kendoButtonGroup').trigger('select');
+    periodSelect({ indices: 4 });
     }
 
     function propertyChanged(e) {
-        
-        var item = this.dataItem();
 
-        debugger;
+    var item = this.dataItem();
 
-        if (item) {
-             
-            $.ajax({
-            url: `/legal-entity-is-suspended?legalEntityId=${item.LegalEntityId}`,
-            type: 'GET',
-            success: function (data, status, xhr) {
-                if (data.isSuspended) {
+    debugger;
 
-                    var suspendedErrorInfo = data.errInfo;
-                    var paymentErrorInfo = "";
-                    var paymentDebtInfo = "";
+    if (item) {
 
-                    $.ajax({
-                            url: `/payments?property=${item.Id}`,
-                            type: 'GET',
-                            success: function (data, status, xhr) { 
-                                if(data.errInfo || data.debtInfo){
-                                    paymentErrorInfo = data.errInfo;
-                                    paymentDebtInfo = data.debtInfo;
-                                }
-                                Swal.fire({
-                                    icon: 'warning',
-                                    title: 'Upozorenje!',
-                                    html: `${suspendedErrorInfo} <br> ${paymentErrorInfo} <br> ${paymentDebtInfo} `,
-                                    confirmButtonText: 'U redu',
-                                    allowOutsideClick: false
-                                }).then(function() {
-                                    location.reload();
-                                });
-                            },
-                            error: function () {
-                                paymentErrorInfo = "Greška pri provjeri dugovanja";
-                                Swal.fire({
-                                    icon: 'warning',
-                                    title: 'Upozorenje!',
-                                    html: `${suspendedErrorInfo} <br> ${paymentErrorInfo} <br> ${paymentDebtInfo} `,
-                                    confirmButtonText: 'U redu',
-                                    allowOutsideClick: false
-                                }).then(function() {
-                                    location.reload();
-                                });
-                            }
-                        });
-                         
-                }
-                else{ 
-                    $.ajax({
-                            url: `/payments?property=${item.Id}`,
-                            type: 'GET',
-                            success: function (data, status, xhr) {
-                                var dropdown = $("#ResTaxPaymentTypeId").data("kendoDropDownList");
-                                dropdown.dataTextField = "Text";
-                                dropdown.dataValueField = "Value";
-                                dropdown.setDataSource(data.payments);
-                                dropdown.refresh();
-                                if(data.errInfo || data.debtInfo){
-                                    Swal.fire({
-                                        icon: 'warning',
-                                        title: 'Upozorenje!',
-                                        html: `${data.errInfo} <br> ${data.debtInfo}`,
-                                        confirmButtonText: `U redu`,
-                                        allowOutsideClick: false });
-                                }
-                            },
-                            error: function () {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Došlo je do greške!',
-                                    confirmButtonText: 'U redu',
-                                    allowOutsideClick: false
-                                });
-                            }
-                        }); 
-                } 
-            },
-            error: function () {
-                Swal.fire({ 
-                    icon: 'error',
-                    title: 'Došlo je do greške!',
-                    confirmButtonText: 'U redu',
-                    allowOutsideClick: false
-                }).then(function() {
-                        location.reload();
-                    });
-            }
-        }); 
-        } else {
-            console.log("No item selected."); 
-        }
+    $.ajax({
+    url: `/legal-entity-is-suspended?legalEntityId=${item.LegalEntityId}`,
+    type: 'GET',
+    success: function (data, status, xhr) {
+    if (data.isSuspended) {
+
+    var suspendedErrorInfo = data.errInfo;
+    var paymentErrorInfo = "";
+    var paymentDebtInfo = "";
+
+    $.ajax({
+    url: `/payments?property=${item.Id}`,
+    type: 'GET',
+    success: function (data, status, xhr) { 
+    if(data.errInfo || data.debtInfo){
+    paymentErrorInfo = data.errInfo;
+    paymentDebtInfo = data.debtInfo;
+    }
+    Swal.fire({
+    icon: 'warning',
+    title: 'Upozorenje!',
+    html: `${suspendedErrorInfo} <br> ${paymentErrorInfo} <br> ${paymentDebtInfo} `,
+    confirmButtonText: 'U redu',
+    allowOutsideClick: false
+    }).then(function() {
+    location.reload();
+    });
+    },
+    error: function () {
+    paymentErrorInfo = "Greška pri provjeri dugovanja";
+    Swal.fire({
+    icon: 'warning',
+    title: 'Upozorenje!',
+    html: `${suspendedErrorInfo} <br> ${paymentErrorInfo} <br> ${paymentDebtInfo} `,
+    confirmButtonText: 'U redu',
+    allowOutsideClick: false
+    }).then(function() {
+    location.reload();
+    });
+    }
+    });
+
+    }
+    else{ 
+    $.ajax({
+    url: `/payments?property=${item.Id}`,
+    type: 'GET',
+    success: function (data, status, xhr) {
+    var dropdown = $("#ResTaxPaymentTypeId").data("kendoDropDownList");
+    dropdown.dataTextField = "Text";
+    dropdown.dataValueField = "Value";
+    dropdown.setDataSource(data.payments);
+    dropdown.refresh();
+    if(data.errInfo || data.debtInfo){
+    Swal.fire({
+    icon: 'warning',
+    title: 'Upozorenje!',
+    html: `${data.errInfo} <br> ${data.debtInfo}`,
+    confirmButtonText: `U redu`,
+    allowOutsideClick: false });
+    }
+    },
+    error: function () {
+    Swal.fire({
+    icon: 'error',
+    title: 'Došlo je do greške!',
+    confirmButtonText: 'U redu',
+    allowOutsideClick: false
+    });
+    }
+    }); 
+    } 
+    },
+    error: function () {
+    Swal.fire({ 
+    icon: 'error',
+    title: 'Došlo je do greške!',
+    confirmButtonText: 'U redu',
+    allowOutsideClick: false
+    }).then(function() {
+    location.reload();
+    });
+    }
+    }); 
+    } else {
+    console.log("No item selected."); 
+    }
     }
 
 </script>
@@ -802,7 +827,7 @@
 
     .k-input-loading-icon
     {
-        padding:0px!important;
+    padding:0px!important;
     }
 
 </style>
@@ -810,22 +835,22 @@
 <div style="display:flex; margin-left:15px; margin-top:25px; margin-right:15px;">
 
     @(Html.Kendo().Button().Name("btnNewGuest")
-        .HtmlAttributes(new { type = "button", onclick = "guest(0)", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
-        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+            .HtmlAttributes(new { type = "button", onclick = "guest(0)", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
                     <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/new_contact_plus.png'/>
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>NOVI<br/>GOST<div>
                 </div>"))
 
     @(Html.Kendo().Button().Name("btnOpenGuest")
-        .HtmlAttributes(new { type = "button", onclick = "showGuest(event)", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
-        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+            .HtmlAttributes(new { type = "button", onclick = "showGuest(event)", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
                     <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/edit_color.png'/>
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>IZMJENA<br/>PODATAKA<div>
                 </div>"))
 
     @(Html.Kendo().Button().Name("btnDeleteGuest")
-        .HtmlAttributes(new { type = "button", onclick = "deleteGuest(event)", style = "height:95px; width:95px; margin-right:10px;  cursor:pointer;" })
-        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+            .HtmlAttributes(new { type = "button", onclick = "deleteGuest(event)", style = "height:95px; width:95px; margin-right:10px;  cursor:pointer;" })
+            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
                     <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/remove.png'/>
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>OBRIŠI<br/>GOSTA<div>
                 </div>"))
@@ -833,9 +858,9 @@
     @if(grp)
     {
         @(Html.Kendo().Button().Name("btnExtPayGroup")
-            .HtmlAttributes(new { type = "button", onclick = $"extPayGroup()", style = "height:95px; width:95px; cursor:pointer;" })
-            .Enable((bool)ViewBag.AlreadyPaid)
-            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
+                .HtmlAttributes(new { type = "button", onclick = $"extPayGroup()", style = "height:95px; width:95px; cursor:pointer;" })
+                .Enable((bool)ViewBag.AlreadyPaid)
+                .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
                         <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/virman.png'/>
                         <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>EXTERNA<br/>UPLATA<div>
                     </div>"))
@@ -848,16 +873,16 @@
         <div style="flex-basis:390px;position:relative;top:-2px;">
             Odaberite period:
             @(Html.Kendo().ButtonGroup().HtmlAttributes(new { style = "height:30px;" })
-                .Name("grpPeriod")
-                .Items(t =>
-                {
-                    t.Add().Text("Dan").Selected(true);
-                    t.Add().Text("Nedelja");
-                    t.Add().Text("Mjesec");
-                    t.Add().Text("Godina");
-                    t.Add().Text("Proizvoljni period");
-                }).Events(e => e.Select("periodSelect"))
-                )
+                    .Name("grpPeriod")
+                    .Items(t =>
+                    {
+                        t.Add().Text("Dan").Selected(true);
+                        t.Add().Text("Nedelja");
+                        t.Add().Text("Mjesec");
+                        t.Add().Text("Godina");
+                        t.Add().Text("Proizvoljni period");
+                    }).Events(e => e.Select("periodSelect"))
+                    )
 
             <div id="dtmPeriod" style="width:390px; vertical-align:top;">
                 <div style="margin-bottom:10px; margin-top:3px; display:inline-block; width:175px;">
@@ -874,7 +899,7 @@
     else
     {
         <div id="groupdesc" style="font-size:15px;">            
-            
+
         </div>
     }
 
@@ -883,44 +908,46 @@
     @if(ViewBag.Group != null)
     {
         @(Html.Kendo().Button().Name("btnRegisterGroup")
-            .HtmlAttributes(new { type = "button", onclick = $"registerGroup({@ViewBag.Group})", style = "height:95px; width:95px; margin-right:10px;" })
-            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0; cursor:pointer;'>
+                .HtmlAttributes(new { type = "button", onclick = $"registerGroup({@ViewBag.Group})", style = "height:95px; width:95px; margin-right:10px;" })
+                .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0; cursor:pointer;'>
                         <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/police.png'/>
                         <div style='font-weight:bold;display:block;position:relative;top:6px;line-height:110%;font-size:90%'>PRIJAVI<br/>GOSTE<div>
                     </div>"))
 
         @(Html.Kendo().Button().Name("btnVirman")
-            .HtmlAttributes(new { type = "button", onclick = $"virman()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
-            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
+                .HtmlAttributes(new { type = "button", onclick = $"virman()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+                .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
                 <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/receipt.png'/>
                 <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>ŠTAMPA<br/>UPLATNICE<div>
                 </div>"))
 
         @(Html.Kendo().Button().Name("btnCert")
-            .HtmlAttributes(new { type = "button", onclick = $"sendCert({@ViewBag.Group}, 0)", style = "height:95px; width:95px; cursor:pointer;" })
-            .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
+                .HtmlAttributes(new { type = "button", onclick = $"sendCert({@ViewBag.Group}, 0)", style = "height:95px; width:95px; cursor:pointer;" })
+                .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center; flex-grow:0; flex-shrink:0;'>
                     <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/licence_color.png'/>
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>POTVRDE<br/>O PRIJAVI<div>
                     </div>"))
     }
-    
+
 </div>
 
 <div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
     @(
         Html.Kendo().Grid<MnePersonEnrichedDto>()
-                    .Name("mnePersonGrid")
-                    .Columns(columns =>
-                    {
-                        // First Level Header
-                        columns.Group(group => group
-                        .Title("Boravak")
-                        .HeaderHtmlAttributes(new { style = "text-align: center;" })
-                        .Columns(col =>
-                            {
+                        .Name("mnePersonGrid")
+                        .Columns(columns =>
+                        {
+                            // First Level Header
+                            columns.Group(group => group
+                            .Title("Boravak")
+                            .HeaderHtmlAttributes(new { style = "text-align: center;" })
+                            .Columns(col =>
+                                {
                                 col.Bound(g => g.PropertyName).Title("Smještajni objekat").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(250)
-                                    .ClientTemplate("# if (UserCreated == 'unknown') { # <div style='color:red;'><span>#= PropertyName #</span></div> # } else { # <span>#= PropertyName #</span> # } #");
-                                col.Bound(g => g.LegalEntityName).Title("Izdavaoc").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(200);
+                                        .ClientTemplate("# if (UserCreated == 'unknown') { # <div style='color:red;'><span>#= PropertyName #</span></div> # } else { # <span>#= PropertyName #</span> # } #");
+                               if (nautical == "false") {
+                                    col.Bound(g => g.LegalEntityName).Title("Izdavaoc").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(200);
+                                }
                                 col.Bound(g => g.FullName).Title("Ime i prezime").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(200);
                                 //col.Bound(g => g.PersonType).Title("Tip gosta").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(150).ClientTemplate("#= PersonType == 1 ? 'Domaći gost' : 'Strani gost' #");
                                 col.Bound(g => g.CheckIn).Title("Prijava").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Format("{0:dd.MM.yyyy}").Width(90).HtmlAttributes(new { style = "text-align:center;" });
@@ -956,6 +983,7 @@
                             if (admin || control)
                             { 
                                 col.Bound(g => g.UserCreated).Title("Operater").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(140).HtmlAttributes(new { style = "text-align:center;" });
+                                col.Bound(g => g.ComputerCreated).Title("Računar").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(140).HtmlAttributes(new { style = "text-align:center;" });
                                 col.Bound(g => g.CheckInPointName).Title("Punkt").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width(155).HtmlAttributes(new { style = "text-align:center;" });
                             }
                         })

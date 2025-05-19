@@ -26,7 +26,8 @@ namespace Oblak.Data
                 
 		public int? CountryId { get; set; }
 
-		public int Length { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Length { get; set; }
 
         [StringLength(450)]
         public string OwnerName { get; set; }

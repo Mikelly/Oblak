@@ -856,11 +856,11 @@ namespace Oblak.Services.MNE
                 }
                 else
                 {
-                    var days = (int)(g.CheckOut!.Value - g.CheckIn!.Value).TotalDays; 
+                    var days = (int)(g.CheckOut!.Value - g.CheckIn!.Value).TotalDays;
                     var tax = _db.NauticalTax
-                        .Where(a => vessel.Length > a.LowerLimitLength && vessel.Length < a.UpperLimitLength)
-                        .Where(a => days > a.LowerLimitPeriod && days < a.UpperLimitPeriod)
-                        .FirstOrDefault();
+                                .Where(a => vessel.Length >= a.LowerLimitLength && vessel.Length <= a.UpperLimitLength)
+                                .Where(a => days >= a.LowerLimitPeriod && days <= a.UpperLimitPeriod)
+                                .FirstOrDefault();
 
                     g.ResTaxAmount = tax?.Amount;
                 } 

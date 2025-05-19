@@ -187,6 +187,14 @@ namespace Oblak.Controllers
         }
 
         [HttpGet]
+        [Route("reports-nau-tax")]
+        [Authorize(Roles = "TouristOrgControllor,TouristOrgAdmin")]
+        public ActionResult TouristOrgNauTax()
+        {
+            return TouristOrg("N");
+        }
+
+        [HttpGet]
         [Route("reports-tourist-org")]
         public ActionResult TouristOrg(string taxType)
         {
@@ -213,19 +221,19 @@ namespace Oblak.Controllers
             ViewBag.Places = places;
             ViewBag.TaxType = taxType;
             ViewBag.PartnerId = _legalEntity.PartnerId.ToString();
-             
+
             var legalEntity = _db.LegalEntities.Find(_appUser.LegalEntityId);
             FiscalEnu? fiscalEnu = new FiscalEnu();
-            if(legalEntity != null)
+            if (legalEntity != null)
             {
                 using var _ = _registerClient.Initialize(_legalEntity);
-                var properties = _registerClient.GetProperties();  
+                var properties = _registerClient.GetProperties();
                 var fProp = properties.Result.FirstOrDefault();
                 if (fProp != null)
                 {
                     fiscalEnu = _db.FiscalEnu.FirstOrDefault(a => a.PropertyId == fProp.Id);
-                } 
-            } 
+                }
+            }
             ViewBag.ENUCode = fiscalEnu?.FiscalEnuCode;
 
             return View("TouristOrg");
@@ -392,6 +400,12 @@ namespace Oblak.Controllers
             else if (report == "NbrGuestPerPC")
             {
                 parameters.Add(new Parameter() { Name = "partnerId", Value = _legalEntity.PartnerId });
+                parameters.Add(new Parameter() { Name = "dateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
+                parameters.Add(new Parameter() { Name = "dateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
+            }
+            else if (report == "NauticalTax")
+            {
+                parameters.Add(new Parameter() { Name = "partnerid", Value = _legalEntity.PartnerId });
                 parameters.Add(new Parameter() { Name = "dateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "dateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
             }

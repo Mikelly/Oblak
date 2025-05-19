@@ -22,7 +22,7 @@ namespace Oblak.Data.Api
                 
         public string Registration { get; set; }
 
-        public int Length { get; set; }
+        public decimal Length { get; set; }
                 
         public string OwnerName { get; set; }
                 

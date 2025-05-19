@@ -62,6 +62,13 @@
 		};
 	}
 
+	if ((string)ViewBag.TaxType == "N")
+	{
+		reports = new Dictionary<string, string>() {
+			{ $"NauticalTax", "Naplata nautičke takse" },
+		};
+	}
+
 	var resTaxGroups = new Dictionary<string, string>() { 
 		{ $"CheckInPoint", "po punktu" },
 		{ $"Operator", "po operatoru" },
@@ -219,6 +226,10 @@
 			$('#datumDo').show();
 		}
 
+		if(report == "NauticalTax"){
+			$('#datumOd').show();
+			$('#datumDo').show();
+		}
 	
 		
 

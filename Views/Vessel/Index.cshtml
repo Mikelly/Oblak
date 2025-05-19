@@ -108,7 +108,7 @@
     }
 
 </script>
-
+ 
 
 <div style="display:flex; margin-left:15px; margin-top:25px; margin-right:15px;">
 
@@ -154,7 +154,7 @@
                     col.Bound(c => c.Name).Title("Naziv").Width(200); ;
                     col.Bound(c => c.Registration).Title("Registracija").Width(150); ;
                     col.Bound(g => g.CountryId).Title("Država").ClientTemplate("#= CountryName ?? '' #").EditorTemplateName("Country").EditorViewData(new { Foo = "onCountryChange", ValueField = "Id", TextField = "CountryName" }).Width(250);
-                    col.Bound(c => c.Length).Title("Dužina").EditorTemplateName("Integer").Format("{0:n2}").Width(110).HtmlAttributes(new { style = "text-align:right;" }); ;
+                col.Bound(c => c.Length).Title("Dužina").Format("{0:n2}").Width(110).HtmlAttributes(new { style = "text-align:right; " }).EditorTemplateName("NumericEditorLarge");
                 }));
 
                 columns.Bound(c => c.LegalEntityName).Title("Izdavaoc").Width(250);

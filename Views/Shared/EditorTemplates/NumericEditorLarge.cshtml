@@ -1,0 +1,9 @@
+﻿@model decimal?
+
+@(Html.Kendo().NumericTextBoxFor(m => m)
+    .Format("n2")
+    .HtmlAttributes(new
+    {
+        style = "font-size:16px; text-align:right; font-family: 'Roboto Mono';"
+    })
+)

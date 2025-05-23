@@ -1,4 +1,6 @@
 ﻿using RestSharp;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 
 namespace Oblak.Services.Payten
@@ -112,6 +114,41 @@ namespace Oblak.Services.Payten
                 var authError = JsonSerializer.Deserialize<Error>(response.Content);
                 return null;
             }
+        }
+
+        public string DecryptPayload(string base64Encrypted, string key)
+        {
+            // Convert key and base64 payload
+            byte[] keyBytes = Encoding.UTF8.GetBytes(key);
+            byte[] fullCipher = Convert.FromBase64String(base64Encrypted);
+
+            // Validate key length
+            if (keyBytes.Length != 32)
+                throw new ArgumentException("Key must be 32 bytes long (256-bit AES).");
+
+            // Extract IV and cipher
+            byte[] iv = new byte[16];
+            byte[] cipherBytes = new byte[fullCipher.Length - 16];
+            Array.Copy(fullCipher, iv, 16);
+            Array.Copy(fullCipher, 16, cipherBytes, 0, cipherBytes.Length);
+
+            // Decrypt
+            using var aes = Aes.Create();
+            aes.Key = keyBytes;
+            aes.IV = iv;
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
+
+            using var decryptor = aes.CreateDecryptor();
+            byte[] plainBytes = decryptor.TransformFinalBlock(cipherBytes, 0, cipherBytes.Length);
+            var json = Encoding.UTF8.GetString(plainBytes);
+
+            if (json.StartsWith("\":"))
+            {
+                json = "{ \"Transaction " + json + " }";
+            }
+
+            return json;
         }
     }
 }

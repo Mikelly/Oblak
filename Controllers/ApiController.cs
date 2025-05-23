@@ -20,6 +20,10 @@ using Oblak.Services.Payment;
 using Newtonsoft.Json.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Oblak.Services.Uniqa;
+using Newtonsoft.Json;
+using System.Security.Cryptography;
+using System.Text;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Oblak.Controllers
 {
@@ -1284,6 +1288,96 @@ namespace Oblak.Controllers
                 PaymentSessionToken = paymentSessionToken,
                 TransactionId = transaction.Entity.Id
             });
+        }
+
+        [HttpPost]
+        [Route("webhookPosPaymentResult")]
+        public async Task<ActionResult> WebhookPosPaymentResult()
+        {
+            // Extract headers
+            var apiKeyHeader = Request.Headers["X-API-KEY"].FirstOrDefault();
+            var tokenHeader = Request.Headers["X-Payment-Session-Token"].FirstOrDefault();
+
+            if (string.IsNullOrEmpty(apiKeyHeader) || string.IsNullOrEmpty(tokenHeader))
+            {
+                Response.StatusCode = 400;
+                return Json(new { info = "", error = "Missing required headers." });
+            }
+
+            // Validate API key
+            var accessKey = _configuration["PAYTEN:AccessKey"];
+            var secretKey = _configuration["PAYTEN:SecretKey"];
+            var expectedApiKey = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{accessKey}:{secretKey}"));
+
+            if (apiKeyHeader != expectedApiKey)
+            {
+                Response.StatusCode = 401;
+                return Json(new { info = "", error = "Unauthorized." });
+            }
+
+            // Read and parse encrypted body
+            string body;
+            using (var reader = new StreamReader(Request.Body))
+            {
+                body = await reader.ReadToEndAsync();
+            }
+
+            if (string.IsNullOrEmpty(body))
+            {
+                Response.StatusCode = 400;
+                return Json(new { info = "", error = "Request body is empty." });
+            }
+
+            string encryptedData;
+            try
+            {
+                var bodyJson = JsonConvert.DeserializeObject<JObject>(body);
+                encryptedData = bodyJson["data"]?.ToString();
+            }
+            catch
+            {
+                Response.StatusCode = 400;
+                return Json(new { info = "", error = "Invalid JSON format." });
+            }
+
+            if (string.IsNullOrEmpty(encryptedData))
+            {
+                Response.StatusCode = 400;
+                return Json(new { info = "", error = "Missing encrypted data." });
+            }
+
+            // Decrypt data
+            string decryptedJson;
+            try
+            {
+                var decryptionKey = _configuration["PAYTEN:DecryptionKey"];
+                decryptedJson = _paytenService.DecryptPayload(encryptedData, decryptionKey);
+            }
+            catch (Exception ex)
+            {
+                Response.StatusCode = 500;
+                return Json(new { error = "Decryption failed.", detail = ex.Message });
+            }
+
+            // Fetch transaction by token
+            var transaction = await db.PaymentTransactions
+                .Where(x => x.Token == tokenHeader)
+                .FirstOrDefaultAsync();
+
+            if (transaction == null)
+            {
+                Response.StatusCode = 404;
+                return Json(new { info = "", error = "Transaction not found." });
+            }
+
+            // Update transaction
+            transaction.ResponseJson = decryptedJson;
+            transaction.UserModified = "Webhook";
+            transaction.UserModifiedDate = DateTime.UtcNow;
+
+            await db.SaveChangesAsync();
+
+            return Json(new { info = "Webhook processed successfully.", error = "" });
         }
 
         [HttpPost]

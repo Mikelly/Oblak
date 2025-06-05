@@ -34,6 +34,7 @@ using Oblak.Middleware;
 using Microsoft.AspNetCore.Http.Features;
 using System.Diagnostics;
 using Oblak;
+using Oblak.Services.Uniqa;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -200,6 +201,7 @@ builder.Services.AddScoped<EfiClient>();
 builder.Services.AddScoped<ApiService>();
 builder.Services.AddScoped<PaymentService>();
 builder.Services.AddScoped<GroupService>();
+builder.Services.AddScoped<UniqaService>();
 
 builder.Services.AddTransient<SrbScheduler>();
 builder.Services.AddTransient<UpdateRegisteredScheduler>();

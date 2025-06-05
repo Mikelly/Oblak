@@ -1,6 +1,6 @@
 ﻿@{
-    var propertyTypes = new SelectList(new List<SelectListItem> { new SelectListItem { Text = "K", Value = "Kuća" }, new SelectListItem { Text = "A", Value = "Apartman" } }, "Text", "Value");
-    var legalEntityTypes = new SelectList(new List<SelectListItem> { new SelectListItem { Text = "Person", Value = "Fizičko lice" }, new SelectListItem { Text = "Company", Value = "Pravno lice" } }, "Text", "Value");
+     var propertyTypes = new SelectList(new List<SelectListItem> { new SelectListItem { Text = "K", Value = "Kuća" }, new SelectListItem { Text = "A", Value = "Apartman" } }, "Text", "Value");
+     var legalEntityTypes = new SelectList(new List<SelectListItem> { new SelectListItem { Text = "Person", Value = "Fizičko lice" }, new SelectListItem { Text = "Company", Value = "Pravno lice" } }, "Text", "Value");
 }
 
 <script type="text/javascript">
@@ -144,9 +144,9 @@
                   .Name("propertyMunicipality")
                   .HtmlAttributes(new { style = "width:100%" })
                   .OptionLabel("Izaberite opštinu...")
-                  .BindTo(ViewBag.Opstine as List<Municipality>)
-                  .DataTextField("Name")
-                  .DataValueField("Id")
+                    .BindTo((SelectList)ViewBag.Opstine)
+                    .DataTextField("Text")    
+                    .DataValueField("Value")
                   .Value(ViewBag.Opstina)
                 )
             </div>

@@ -22,6 +22,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Oblak.Data.Enums;
 using Oblak.Services.MNE;
 using Oblak.Services.SRB;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 
 namespace Oblak.Controllers
@@ -72,7 +73,7 @@ namespace Oblak.Controllers
                 ViewBag.Opstina = "";
             }
 
-            ViewBag.Opstine = _db.Municipalities.ToList();
+            ViewBag.Opstine = new SelectList(_db.Municipalities.ToList(), "Id", "Name");
 
             return PartialView();
         }

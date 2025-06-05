@@ -1,7 +1,6 @@
 ﻿@model int
 
-@(Html.Kendo().DropDownList()
-    .Name("propertyPlace")
+@(Html.Kendo().DropDownListFor(model => model)
     .Filter("contains")
     .HtmlAttributes(new { style = "width:100%" })
     .OptionLabel("Izaberite mjesto...")
@@ -15,6 +14,7 @@
         })
         .ServerFiltering(true);
     })    
-    .AutoBind(true)    
+    .AutoBind(false)    
     .Events(e => e.Cascade("cascadePlace"))
     )
+     

@@ -60,15 +60,21 @@ namespace Oblak.Controllers
 
             var municipalityList = new List<CodeList>();
             var typeList = new List<CodeList>();
+            SelectList opstine = new SelectList(new List<string>()); 
+
             if (_appUser.LegalEntity.Country == CountryEnum.MNE)
             {
                 municipalityList = _db.Municipalities.Where(a => a.Country == _appUser.LegalEntity.Country).Select(a => new CodeList { ExternalId = a.Id.ToString(), Name = a.Name }).ToList();
                 typeList = codeLists.Where(x => x.Type == "vrstaobjekta").ToList();
+
+                opstine = new SelectList(_db.Municipalities.Where(a => a.Country == CountryEnum.MNE).ToList(), "Id", "Name"); 
             }
             else if (_appUser.LegalEntity.Country == CountryEnum.SRB)
             {
                 municipalityList = codeLists.Where(x => x.Type == "ResidenceMunicipality").ToList();
                 typeList = codeLists.Where(x => x.Type == "Property_Type").ToList();
+
+                opstine = new SelectList(_db.Municipalities.Where(a => a.Country == CountryEnum.SRB).ToList(), "Id", "Name");
             }
 
             var municipalistySelectList = new SelectList(municipalityList, "ExternalId", "Name");
@@ -82,11 +88,13 @@ namespace Oblak.Controllers
             ViewBag.MunicipalityCodeList = municipalistySelectList;
             ViewBag.TypeCodeList = typeSelectList;
             ViewBag.StatusList = statusSelectList;
-            ViewBag.Opstine = new SelectList(_db.Municipalities.ToList(), "Name", "Id");
 
-            ViewBag.LegalEntity = legalEntity;
+            ViewBag.Opstine = opstine;
+            ViewBag.Places = new SelectList(_db.CodeLists.Where(a => a.Type == "mjesto").ToList(), "ExternalId", "Name");
 
-            if (how == "P")
+            ViewBag.LegalEntity = legalEntity; //?? _appUser.LegalEntity.Id;
+
+           if (how == "P")
             {
                 ViewBag.Partial = true;
                 return PartialView();
@@ -109,7 +117,7 @@ namespace Oblak.Controllers
             await _registerClient.Initialize(_legalEntity);
             var properties = await _registerClient.GetProperties();
 
-            var data = _mapper.Map<List<PropertyEnrichedDto>>(properties);
+            var data = _mapper.Map<List<PropertyEnrichedDto>>(properties).OrderByDescending(x => x.Id); 
 
             return Json(await data.ToDataSourceResultAsync(request));
         }
@@ -119,17 +127,28 @@ namespace Oblak.Controllers
         {
             try
             {
-                var existingEntity = _db.Properties.Include(a => a.LegalEntity).Where(a => a.Id == input.Id).FirstOrDefault();
+                Property? existingEntity = _db.Properties.Where(a => a.Id == input.Id).FirstOrDefault();
 
                 if (existingEntity == null)
                 {
-                    return Json(new DataSourceResult { Errors = "Entity not found." });
+                    return Json(new DataSourceResult { Errors = "Property not found." });
                 }
-                var dto = (PropertyDto)input;
+                  
+                existingEntity.Name = input.Name;
+                existingEntity.MunicipalityId = input.MunicipalityId;
+                existingEntity.Place = input.Place;
+                existingEntity.RegNumber = input.RegNumber;
+                existingEntity.RegDate = input.RegDate;
+                existingEntity.Type = input.Type;
+                existingEntity.Status = input.Status;
+                existingEntity.Address = input.Address;
 
-                dto.ToEntity(existingEntity);
+                _db.Update(existingEntity);
+                _db.Entry(existingEntity).State = EntityState.Modified;
 
-                await _db.SaveChangesAsync();
+                //_mapper.Map(input, existingEntity);
+
+                _db.SaveChanges(); 
 
                 return Json(new[] { input }.ToDataSourceResult(request, ModelState));
             }
@@ -140,29 +159,43 @@ namespace Oblak.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Create(PropertyEnrichedDto dto, [DataSourceRequest] DataSourceRequest request, [FromQuery] int? legalEntity)
+        public async Task<ActionResult> Create(PropertyEnrichedDto input, [DataSourceRequest] DataSourceRequest request, [FromQuery] int? legalEntity)
         {
             try
             {
+                if (input.MunicipalityId == null)
+                {
+                    ModelState.AddModelError("MunicipalityId", "Opština je obavezna.");
+                }
+                if (!ModelState.IsValid)
+                {
+                    return Json(new DataSourceResult { Errors = ModelState });
+                }
+
                 var property = new Property();
 
-                _mapper.Map(dto, property);
+                property.Name = input.Name;
+                property.MunicipalityId = input.MunicipalityId;
+                property.Place = input.Place;
+                property.RegNumber = input.RegNumber;
+                property.RegDate = input.RegDate;
+                property.Type = input.Type;
+                property.Status = input.Status;
+                property.Address = input.Address;
 
-                property.PropertyName = property.Name;
+                property.PropertyName = input.Name;
 
                 if (legalEntity.HasValue)
                 {
                     _legalEntity = await _db.LegalEntities.FindAsync(legalEntity.Value);
                 }
 
-                property.LegalEntityId = _legalEntity.Id;
+                property.LegalEntityId = _legalEntity.Id; 
 
-                // validation
+                _db.Properties.Add(property);
+                _db.SaveChanges();
 
-                _db.Add(property);
-                await _db.SaveChangesAsync();
-
-                return Json(new[] { dto }.ToDataSourceResult(request, ModelState));
+                return Json(new[] { input }.ToDataSourceResult(request, ModelState));
             }
             catch (Exception ex)
             {
@@ -175,6 +208,8 @@ namespace Oblak.Controllers
         {
             try
             {
+                return Json(new { error = "Nije dostupno." });
+
                 var property = await _db.Properties.Include(x => x.Groups)
                     .Where(x => x.Id == model.Id)
                     .FirstOrDefaultAsync();
@@ -263,8 +298,7 @@ namespace Oblak.Controllers
                 data = data.Where(a => a.Name.ToLower().Contains(txt.ToLower()) || string.IsNullOrEmpty(txt)); 
             }
 
-            Console.WriteLine(data.ToQueryString());
             return Json(data.ToList());
-        }
+      }
     }
 }

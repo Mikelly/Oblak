@@ -1,11 +1,12 @@
-﻿@model int
+﻿@model int?
 
-@(Html.Kendo().DropDownList()
-    .Name("MunicipalityId")
+@(Html.Kendo().DropDownListFor(model => model)
     .HtmlAttributes(new { style = "width:100%" })
     .OptionLabel("Izaberite opštinu...")
     .BindTo(ViewBag.Opstine as SelectList)
-    .DataTextField("Value")
-    .DataValueField("Key")          
+    .DataTextField("Text")
+    .DataValueField("Value")    
+    .Value(Model.ToString())
+    .ValuePrimitive(true)
     .Events(e => e.Change("opstinaChanged"))
 )

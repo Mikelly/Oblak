@@ -59,6 +59,6 @@ namespace Oblak.Models.Api
         public string? PaymentType { get; set; }
         public string? PropertyName { get; set; }
         public string? LegalEntity { get; set; }
-        public string? TIN { get; set; }
+        public string? TIN { get; set; } 
     }
 }

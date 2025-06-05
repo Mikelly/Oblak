@@ -386,7 +386,10 @@ namespace Oblak.Controllers
                     EntryPointCodeList = codeLists.Where(x => x.Type == "prelaz").ToList(),
                     PersonTypeCodeList = codeLists.Where(x => x.Type == "gost").ToList(),
                     VisaTypeCodeList = codeLists.Where(x => x.Type == "viza").ToList(),
-                    ResTaxPaymentTypes = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.Status == "A").ToDictionary(a => a.Id.ToString(), b => b.Description),
+                    ResTaxPaymentTypes = ((person.HasValue && person.Value > 0)
+                                        ? _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.Status == "A")
+                                        : _db.ResTaxPaymentTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.Status == "A" && a.Id != 6)
+                                        ).ToDictionary(a => a.Id.ToString(), b => b.Description), 
                     ResTaxExemptionTypes = _db.ResTaxExemptionTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.Status == "A").ToDictionary(a => a.Id.ToString(), b => b.Description),
                     ResTaxTypes = _db.ResTaxTypes.Where(a => a.PartnerId == _appUser.PartnerId && a.Status == "A").ToDictionary(a => a.Id.ToString(), b => b.Description)
 

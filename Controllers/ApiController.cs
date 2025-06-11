@@ -24,6 +24,7 @@ using Newtonsoft.Json;
 using System.Security.Cryptography;
 using System.Text;
 using JsonSerializer = System.Text.Json.JsonSerializer;
+using Oblak.Models.Payment;
 
 namespace Oblak.Controllers
 {
@@ -1381,31 +1382,105 @@ namespace Oblak.Controllers
         }
 
         [HttpPost]
+        [Authorize]
         [Route("storePosPaymentResult")]
-        public async Task<ActionResult<bool>> StorePosPaymentResult(StorePosPaymentResultInput input)
-        {
-            // fetch transaction from database
+        public async Task<IActionResult> StorePosPaymentResult(StorePosPaymentResultInput input)
+        { 
+            if (input.TransactionId <= 0 ||
+                string.IsNullOrWhiteSpace(input.Status) ||
+                string.IsNullOrWhiteSpace(input.JsonResult))
+            {
+                return BadRequest(new { success = false, info = "", error = "Nedostaje TransactionId, Status ili JsonResult!" });
+            }
+             
             var transaction = await db.PaymentTransactions
                 .Where(x => x.Id == input.TransactionId && x.LegalEntityId == _legalEntity.Id)
                 .FirstOrDefaultAsync();
 
             if (transaction == null)
+                return NotFound(new { success = false, info = "", error = "Nepostojeca transakcija!" }); 
+             
+            transaction.MobileResponseJson = input.JsonResult;
+             
+            if (Enum.TryParse(transaction.Status, true, out PaymentResponseTypes transactionEnum) &&
+                Enum.TryParse(input.Status, true, out PaymentResponseTypes inputEnum))
             {
-                Response.StatusCode = 400;
-                return Json(new { info = "", error = "Nepostojeća transakcija!" });
+                if (transactionEnum != inputEnum)
+                {
+                    _logger.LogError(
+                        "StorePosPaymentResult: Transakcioni rezultat {UserModified}:{TransactionStatus} NIJE isti mobileApp:{InputStatus}. TransactionId: {TransactionId}",
+                        transaction.UserModified, transaction.Status, input.Status, input.TransactionId);
+                }
             }
-
-            // update transaction with payment result
+            else
+            {
+                _logger.LogWarning("StorePosPaymentResult: Neuspješno parsiranje enum vrijednosti za transakciju {TransactionId}.", input.TransactionId);
+            }
+             
             transaction.Status = input.Status;
             transaction.Success = input.Success;
             transaction.UserModified = _legalEntity.Name;
             transaction.UserModifiedDate = DateTime.UtcNow;
 
-            // save changes
             await db.SaveChangesAsync();
 
-            return Json(new { info = "Rezultat transakcije je uspješno sačuvan!", error = "" });
+            return Ok(new { success = true, info = "Rezultat transakcije je uspješno sačuvan!", error = "" });
         }
+
+        [HttpGet]
+        [Authorize]
+        [Route("getPosPaymentsResult")]
+        public async Task<IActionResult> GetPosPaymentsResult(string? status = "OK", int page = 1, int pageSize = 10)
+        { 
+            if (page <= 0 || pageSize <= 0)
+            {
+                return BadRequest(new { success = false, info = "", error = "Stranica i veličina stranice moraju biti veći od 0." });
+            }
+             
+            var query = db.PaymentTransactions
+                          .Where(x => x.LegalEntityId == _legalEntity.Id);
+             
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                query = query.Where(x => x.Status == status);
+            }
+
+            var totalTransactions = await query.CountAsync();
+
+            if (totalTransactions == 0) 
+                return NotFound(new { success = false, info = "", error = "Nema podataka za prikaz!" }); 
+             
+            var transactions = await query
+                .OrderBy(x => x.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new PaymentTransactionViewModel
+                {
+                    Id = x.Id,
+                    Type = x.Type,
+                    Amount = x.Amount,
+                    SurchargeAmount = x.SurchargeAmount,
+                    Status = x.Status,
+                    Success = x.Success,
+                    UserCreatedDate = x.UserCreatedDate
+                })
+                .ToListAsync();
+
+            var result = new
+            {
+                success = true,
+                info = "Rezultat transakcija",
+                page,
+                pageSize,
+                totalItems = totalTransactions,
+                totalPages = (int)Math.Ceiling(totalTransactions / (double)pageSize),
+                transactions
+            };
+
+            return Ok(result);
+        }
+
+
 
         [HttpPost]
         [Authorize]

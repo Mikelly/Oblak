@@ -6,5 +6,6 @@
         public DateTime? TransactionDate { get; set; } = DateTime.UtcNow;
         public string? Status { get; set; }
         public bool Success { get; set; }
+        public string? JsonResult { get; set; }
     }
 }

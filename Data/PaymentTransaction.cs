@@ -31,6 +31,8 @@ namespace Oblak.Data
         public string? ReferenceUuid { get; set; }
         [Column(TypeName = "NVARCHAR(MAX)")]
         public string? ResponseJson { get; set; }
+        [Column(TypeName = "NVARCHAR(MAX)")]
+        public string? MobileResponseJson { get; set; }
         [StringLength(450)]
         public string UserCreated { get; set; }
         public DateTime UserCreatedDate { get; set; }

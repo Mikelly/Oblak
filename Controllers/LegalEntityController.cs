@@ -23,6 +23,7 @@ using Oblak.Data.Enums;
 using Oblak.Services.MNE;
 using Oblak.Services.SRB;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Oblak.Models.Payment;
 
 
 namespace Oblak.Controllers
@@ -36,7 +37,7 @@ namespace Oblak.Controllers
         private readonly ApplicationUser _appUser;
 
         public LegalEntityController(
-            ApplicationDbContext db, 
+            ApplicationDbContext db,
             ILogger<LegalEntityController> logger,
             IHttpContextAccessor httpAccessor,
             IMapper mapper)
@@ -49,8 +50,8 @@ namespace Oblak.Controllers
             var username = _context?.User?.Identity?.Name;
             if (username != null)
             {
-                _appUser = _db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.Properties).FirstOrDefault(a => a.UserName == username)!; 
-            } 
+                _appUser = _db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.Properties).FirstOrDefault(a => a.UserName == username)!;
+            }
         }
 
         [HttpGet]
@@ -64,7 +65,7 @@ namespace Oblak.Controllers
             {
                 ViewBag.IsAdministered = true;
                 ViewBag.IsPassThrough = true;
-                ViewBag.Opstina = appUser.PartnerId  == 3 ? "3" : "6";
+                ViewBag.Opstina = appUser.PartnerId == 3 ? "3" : "6";
             }
             else
             {
@@ -80,7 +81,7 @@ namespace Oblak.Controllers
 
         [HttpPost]
         [Route("register-client", Name = "registerClient")]
-        public IActionResult RegisterClient(string name, string type, string address, string tin, bool isInVat, bool isAdministered, bool isPassThrough, 
+        public IActionResult RegisterClient(string name, string type, string address, string tin, bool isInVat, bool isAdministered, bool isPassThrough,
             string propertyName, string propertyExternalId, string propertyAddress, string propertyType, string propertyMunicipality, string propertyPlace,
             string phoneNumber, string email, string documentNumber, string regNumber, string regDate)
         {
@@ -104,7 +105,7 @@ namespace Oblak.Controllers
             }
 
             if (errors != string.Empty) return Json(new BasicDto() { error = errors, info = "" });
-             
+
             var newLegalEntity = new LegalEntity();
             newLegalEntity.Name = name;
             newLegalEntity.Address = address;
@@ -123,18 +124,18 @@ namespace Oblak.Controllers
 
             if (string.IsNullOrEmpty(propertyName) == false)
             {
-				prop = new Property();				
+                prop = new Property();
 
                 if (string.IsNullOrEmpty(propertyAddress)) errors += "Morate unijeti adresu objekta!" + Environment.NewLine;
-                if (isPassThrough == false) 
-                { 
+                if (isPassThrough == false)
+                {
                     if (string.IsNullOrEmpty(propertyExternalId)) errors += "Morate unijeti eksternu šifru objekta!" + Environment.NewLine;
-					prop.ExternalId = int.Parse(propertyExternalId);
-				}
+                    prop.ExternalId = int.Parse(propertyExternalId);
+                }
                 //if (string.IsNullOrEmpty(propertyType)) errors += "Morate unijeti vrstu objekta!" + Environment.NewLine;
 
                 if (isPassThrough == true)
-                {                    
+                {
                     if (string.IsNullOrEmpty(propertyMunicipality)) errors += "Morate unijeti opštinu objekta!" + Environment.NewLine;
                     if (string.IsNullOrEmpty(propertyPlace)) errors += "Morate unijeti mjesto objekta!" + Environment.NewLine;
                 }
@@ -152,8 +153,8 @@ namespace Oblak.Controllers
 
                 prop.PropertyName = propertyName;
                 prop.Name = propertyName;
-				prop.Address = propertyAddress;				
-				prop.Type = propertyType;
+                prop.Address = propertyAddress;
+                prop.Type = propertyType;
                 prop.RegNumber = regNumber;
 
                 if (regDate != null)
@@ -161,7 +162,7 @@ namespace Oblak.Controllers
                     DateTime.TryParseExact(regDate, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var date);
                     prop.RegDate = date;
                 }
-			}
+            }
 
             if (errors != string.Empty) return Json(new BasicDto() { error = errors, info = "" });
 
@@ -172,8 +173,8 @@ namespace Oblak.Controllers
 
                 if (prop != null)
                 {
-					prop.LegalEntityId = newLegalEntity.Id;
-					_db.Properties.Add(prop);
+                    prop.LegalEntityId = newLegalEntity.Id;
+                    _db.Properties.Add(prop);
                     _db.SaveChanges(true);
                 }
             }
@@ -335,7 +336,7 @@ namespace Oblak.Controllers
                     return Json(new DataSourceResult { Errors = "Entity not found." });
                 }
 
-                if(_db.MnePersons.Any(a => a.Property.LegalEntityId == input.Id) || _db.MnePersons.Any(a => a.Property.LegalEntityId == input.Id))
+                if (_db.MnePersons.Any(a => a.Property.LegalEntityId == input.Id) || _db.MnePersons.Any(a => a.Property.LegalEntityId == input.Id))
                     return Json(new DataSourceResult { Errors = "Ne možete obrisati klijenta, jer postoje prijave vezane za njega." });
 
                 if (_db.Groups.Any(a => a.Property.LegalEntityId == input.Id))
@@ -385,15 +386,15 @@ namespace Oblak.Controllers
         }
 
         [HttpGet]
-		[Route("upload-cert", Name = "UploadCertGet")]
-		public IActionResult UploadCert(string certType, int legalEntity)
+        [Route("upload-cert", Name = "UploadCertGet")]
+        public IActionResult UploadCert(string certType, int legalEntity)
         {
-			var firma = _db.LegalEntities.FirstOrDefault(a => a.Id == legalEntity);
+            var firma = _db.LegalEntities.FirstOrDefault(a => a.Id == legalEntity);
 
             if (certType == "rb90")
             {
                 var certData = firma.Rb90CertData;
-				var certPassword = firma.Rb90Password;
+                var certPassword = firma.Rb90Password;
                 if (certData == null)
                 {
                     ViewBag.CERT = false;
@@ -403,9 +404,9 @@ namespace Oblak.Controllers
                     X509Certificate2 certificate = new X509Certificate2(certData, certPassword, X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.MachineKeySet);
                     ViewBag.CERT = true;
                     ViewBag.ValidFrom = certificate.NotBefore;
-					ViewBag.ValidTo = certificate.NotAfter;
-				}
-			}
+                    ViewBag.ValidTo = certificate.NotAfter;
+                }
+            }
             if (certType == "efi")
             {
                 var certData = firma.EfiCertData;
@@ -424,7 +425,7 @@ namespace Oblak.Controllers
             }
 
 
-			ViewBag.CertType = certType;
+            ViewBag.CertType = certType;
             ViewBag.LegalEntity = legalEntity;
             return PartialView();
         }
@@ -448,7 +449,7 @@ namespace Oblak.Controllers
                     if (certType == "rb90")
                     {
                         firma.Rb90CertData = bytes;
-                        firma.Rb90Password = certPassword;                        
+                        firma.Rb90Password = certPassword;
                     }
                     if (certType == "efi")
                     {
@@ -462,12 +463,12 @@ namespace Oblak.Controllers
             {
                 if ((ex.HResult & 0xFFFF) == 0x56)
                 {
-					return Json(new BasicDto() { info = "", error = "Neispravna lozinka za sertifikat!" });
-					
+                    return Json(new BasicDto() { info = "", error = "Neispravna lozinka za sertifikat!" });
+
                 }
                 else
                 {
-					return Json(new BasicDto() { info = "", error = "Nijeste odabrali odgovarajući fajl, ili je sertifikat neispravan!" });					
+                    return Json(new BasicDto() { info = "", error = "Nijeste odabrali odgovarajući fajl, ili je sertifikat neispravan!" });
                 }
             }
 
@@ -481,7 +482,7 @@ namespace Oblak.Controllers
             try
             {
                 var firma = _db.LegalEntities.FirstOrDefault(a => a.Id == legalEntity);
-                
+
                 byte[] bytes = new byte[0];
                 string certPassword = string.Empty;
 
@@ -493,12 +494,12 @@ namespace Oblak.Controllers
                 if (certType == "efi")
                 {
                     bytes = firma.EfiCertData;
-                    certPassword = firma.EfiPassword;                        
+                    certPassword = firma.EfiPassword;
                 }
 
                 var invalids = System.IO.Path.GetInvalidFileNameChars();
                 var newName = string.Join("_", firma.Name.Split(invalids, StringSplitOptions.RemoveEmptyEntries)).TrimEnd('.');
-                                
+
                 using (MemoryStream zipStream = new MemoryStream())
                 {
                     using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create, leaveOpen: true))
@@ -512,13 +513,13 @@ namespace Oblak.Controllers
                         var entry2 = archive.CreateEntry($"{newName}.pfx", CompressionLevel.Fastest);
                         using (Stream stream = entry2.Open())
                         {
-                            byte[] passwordBytes = Encoding.Unicode.GetBytes(certPassword);                            
+                            byte[] passwordBytes = Encoding.Unicode.GetBytes(certPassword);
                             await stream.WriteAsync(bytes, 0, bytes.Length);
                         }
                     }// disposal of archive will force data to be written to memory stream.
                     zipStream.Position = 0; //reset memory stream position.
                     var finalbytes = zipStream.ToArray(); //get all flushed data
-                    return File(finalbytes, "application/zip", $"{newName}_{certType}.zip");                     
+                    return File(finalbytes, "application/zip", $"{newName}_{certType}.zip");
                 }
             }
             catch (CryptographicException ex)
@@ -528,34 +529,34 @@ namespace Oblak.Controllers
         }
 
         [HttpPost]
-		[Route("delete-cert", Name = "DeleteCert")]
-		public async Task<IActionResult> DeleteCert([FromForm] string certType, [FromForm] int legalEntity)
-		{
-			var firma = _db.LegalEntities.FirstOrDefault(a => a.Id == legalEntity);
-			if (firma != null)
-			{
-				if (certType == "rb90")
-				{
-					firma.Rb90CertData = null;
-					firma.Rb90Password = null;
-				}
-				if (certType == "efi")
-				{
-					firma.EfiCertData = null;
-					firma.EfiPassword = null;
-				}
-				_db.SaveChanges();
-			}
+        [Route("delete-cert", Name = "DeleteCert")]
+        public async Task<IActionResult> DeleteCert([FromForm] string certType, [FromForm] int legalEntity)
+        {
+            var firma = _db.LegalEntities.FirstOrDefault(a => a.Id == legalEntity);
+            if (firma != null)
+            {
+                if (certType == "rb90")
+                {
+                    firma.Rb90CertData = null;
+                    firma.Rb90Password = null;
+                }
+                if (certType == "efi")
+                {
+                    firma.EfiCertData = null;
+                    firma.EfiPassword = null;
+                }
+                _db.SaveChanges();
+            }
 
-			return Json(new BasicDto(){ info = "SSL Certifikat uspješno obrisan!", error = "" });
-		}
+            return Json(new BasicDto() { info = "SSL Certifikat uspješno obrisan!", error = "" });
+        }
 
 
         [HttpGet]
         [Route("upload-logo", Name = "UploadLogoGet")]
         public IActionResult UploadLogo(int legalEntity, string hide)
         {
-            var firma = _db.LegalEntities.FirstOrDefault(a => a.Id == legalEntity);            
+            var firma = _db.LegalEntities.FirstOrDefault(a => a.Id == legalEntity);
             ViewBag.LegalEntity = legalEntity;
             ViewBag.Logo = firma.Logo;
             ViewBag.Hide = hide == "Y";
@@ -629,9 +630,76 @@ namespace Oblak.Controllers
                 {
                     return Json(new { isSuspended = true, errInfo = "Ovaj stanodavac je <b style=\"color: red;\">suspendovan</b> od strane turističke inspekcije!" });
                 }
-            } 
-            
+            }
+
             return Json(new { isSuspended = false });
         }
+
+        [HttpGet("legal-entities-settings")]
+        public IActionResult Settings(int legalEntityId)
+        {
+            var username = _context.User.Identity.Name;
+            var appUser = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username);
+            var legalEntity = appUser.LegalEntity;
+            var partner = legalEntity.PartnerId;
+
+            var ids = _db.Users.Join(_db.UserRoles, a => a.Id, b => b.UserId, (a, b) => new { a.LegalEntityId, b.RoleId }).Join(_db.Roles.Where(a => a.NormalizedName == "PROPERTYADMIN"), a => a.RoleId, b => b.Id, (a, b) => a.LegalEntityId).ToList();
+            var admins = _db.LegalEntities.Where(a => a.PartnerId == partner).Where(a => ids.Contains(a.Id)).ToList();
+
+            ViewBag.Admins = admins;
+            ViewBag.PartnerId = partner;
+
+            return View();
+        }
+
+        [HttpGet("legal-entity-payten-settings")]
+        public async Task<ActionResult> PaytenSettingsAsync(int legalentity)
+        {
+            var existingEntity = await _db.LegalEntities.FindAsync(legalentity);
+
+            if (existingEntity == null)
+            { 
+                return NotFound("Entity not found.");
+            }
+
+            var model = new PaytenSettingsViewModel
+            {
+                Name = existingEntity.Name,
+                LegalEntityId = existingEntity.Id,
+                PaytenUserId = existingEntity.PaytenUserId
+            };
+
+            return PartialView("_PaytenSettings", model);
+        }
+
+        [HttpPost("save-legal-entity-payten-settings")]
+        public async Task<IActionResult> SavePaytenSettingsAsync(PaytenSettingsViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Json(new { error = "Podaci nisu validni." });
+            }
+
+            try
+            { 
+                var entity = await _db.LegalEntities.FindAsync(model.LegalEntityId);
+                if (entity == null)
+                {
+                    return Json(new { error = "Entitet nije pronađen." });
+                }
+                 
+                entity.PaytenUserId = string.IsNullOrEmpty(model.PaytenUserId) ? null : model.PaytenUserId; 
+
+                await _db.SaveChangesAsync(); 
+
+                return Json(new { id = entity.Id, info = "Uspješno ažurirano." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Greska prilikom azuriranja Payten podesavanja za LegalEntityId: {LegalEntityId}", model.LegalEntityId);
+                return Json(new { error = ex.Message });
+            }
+        }
+
     }
 }

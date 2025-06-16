@@ -1,0 +1,37 @@
+﻿@using Oblak.Models.Payment
+@model PaytenSettingsViewModel
+
+<div style="padding: 20px; height: calc(100% - 150px); overflow-y: auto;">
+    <form id="paytenSettingsForm">
+        @Html.HiddenFor(m => m.LegalEntityId)
+
+        <div class="k-form">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="Name">Naziv</label>
+                    @(Html.Kendo().TextBoxFor(m => m.Name)
+                        .HtmlAttributes(new { @readonly = "readonly", style = "width: 100%;" }))
+                </div>
+                <div class="col-md-6 mb-3" style="padding-top: 15px;">
+                    <label for="PaytenUserId">Payten korisnički ID</label>
+                    @(Html.Kendo().TextBoxFor(m => m.PaytenUserId)
+                        .HtmlAttributes(new { placeholder = "Unesite Payten korisnički ID", style = "width: 100%;" }))
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div style="display: flex; justify-content: flex-end; gap: 10px; position: absolute; left: 20px; right: 20px; bottom: 20px; height: 60px; align-items: center; background-color: #f9f9f9; border-top: 1px solid #ddd; padding: 0 20px;">
+    @(Html.Kendo().Button()
+        .Name("btnSave")
+        .Content("💾 Sačuvaj")
+        .HtmlAttributes(new { type = "button", onclick = "savePaytenSettings()", @class = "k-button k-primary" })
+        )
+
+    @(Html.Kendo().Button()
+        .Name("btnCancel")
+        .Content("✖ Otkaži")
+        .HtmlAttributes(new { type = "button", onclick = "cancelPaytenSettings()", @class = "k-button" })
+        )
+</div>

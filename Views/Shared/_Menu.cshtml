@@ -2,16 +2,16 @@
 <link rel="stylesheet" href="css/sky-mega-menu.css">
 
 <div class="body">
-			
+
 	<!-- mega menu -->
 	<ul class="sky-mega-menu sky-mega-menu-fixed sky-mega-menu-response-to-icons sky-mega-menu-anim-scale">
-		
+
 		<!-- home -->
 		<li>
 			<a href="/home"><i class="fa fa-single fa-home"></i></a>
 		</li>
 		<!--/ home -->
-				
+
 		<!-- prijava gostiju -->
 		<li aria-haspopup="true">
 			<a href="#"><i class="fa fa-bed"></i>Prijava gostiju</a>
@@ -28,7 +28,7 @@
 					@if (User.IsInRole("TouristOrg"))
 					{
 						<li><a href="/guest-list"><i class="fa fa-book"></i>Knjiga gostiju</a></li>
-						
+
 						<li><a href="/post-office"><i style="margin-left:-4px; margin-right:10px;" class="fa-solid fa-truck"></i>Export za Poštu CG</a></li>
 					}					
 					@if (User.IsInRole("TouristOrgAdmin"))
@@ -83,7 +83,7 @@
 			</li>
 		}
 		<!--/ about -->
-				
+
 		<!-- news -->
 		@if (User.IsInRole("TouristOrg") == false)
 		{
@@ -94,6 +94,10 @@
 						<li><a href="/items"><i class="fa fa-shop"></i>Artikli</a></li>
 						<li><a href="/items"><i class="fa fa-address-book"></i>Kupci</a></li>
 						<li><a href="#"><i class="fa fa-print"></i>Izvještaji</a></li>
+						@if (User.IsInRole("InvoiceAdmin"))
+						{
+							<li><a href="/legal-entities-settings"><i class="fa fa-calculator"></i>Payten povezivanje</a></li>
+						}
 					</ul>
 				</div>
 			</li>

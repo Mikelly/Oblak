@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oblak.Data;
 
@@ -11,9 +12,11 @@ using Oblak.Data;
 namespace Oblak.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250614102139_UpdateGroupFKSetNull")]
+    partial class UpdateGroupFKSetNull
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3744,9 +3747,8 @@ namespace Oblak.Migrations
                         .HasForeignKey("DocumentId");
 
                     b.HasOne("Oblak.Data.Group", "Group")
-                        .WithMany("PaymentTransactions")
-                        .HasForeignKey("GroupId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .WithMany()
+                        .HasForeignKey("GroupId");
 
                     b.HasOne("Oblak.Data.LegalEntity", "LegalEntity")
                         .WithMany()
@@ -4077,8 +4079,6 @@ namespace Oblak.Migrations
 
             modelBuilder.Entity("Oblak.Data.Group", b =>
                 {
-                    b.Navigation("PaymentTransactions");
-
                     b.Navigation("Persons");
                 });
 

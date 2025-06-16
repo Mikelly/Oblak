@@ -12,7 +12,7 @@ namespace Oblak.Data
         public int? DocumentId { get; set; }
         public Document Document { get; set; }
         public int? GroupId { get; set; }
-        public Group Group { get; set; }
+        public Group? Group { get; set; }
         public int? LegalEntityId { get; set; }
         public LegalEntity LegalEntity { get; set; }
         public int? PropertyId { get; set; }

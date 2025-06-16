@@ -59,6 +59,7 @@
 			{ $"Ledger", "KarticaIzdavaoca" },
 			{ $"GuestHistory", "Istorija posjete gosta" },
 			{ $"PeriodicFiscal", "Periodični fiskalni izvještaj" },
+			{ $"CountryStatsFirmaPeriod", "Broj noćenja i broj dolazaka po državama" },
 		};
 	}
 
@@ -230,8 +231,11 @@
 			$('#datumOd').show();
 			$('#datumDo').show();
 		}
-	
-		
+
+		if(report == "CountryStatsFirmaPeriod"){
+			$('#datumOd').show();
+			$('#datumDo').show();
+		} 
 
 	}
 

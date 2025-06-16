@@ -92,6 +92,8 @@ namespace Oblak.Data
 
         public List<Person> Persons { get; set; }
 
+        public virtual ICollection<PaymentTransaction> PaymentTransactions { get; set; }
+
         #endregion
     }
 }

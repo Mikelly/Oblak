@@ -162,7 +162,7 @@
             columns.Command(command =>
             {
                 command.Edit().Text(" ").UpdateText(" ").CancelText(" ");
-                @* command.Destroy().Text(" "); *@
+                command.Destroy().Text(" ");
             })
             .Width(70);
 
@@ -192,7 +192,7 @@
         {
             m.Id(g => g.Id);
             m.Field(g => g.Id).Editable(false);
-            m.Field(g => g.ExternalId).Editable(false);
+            m.Field(g => g.ExternalId);
             m.Field(g => g.RegNumber);
             m.Field(g => g.RegDate);
             m.Field(g => g.Name);

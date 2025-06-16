@@ -1,0 +1,164 @@
+﻿@page
+@using Oblak.Models.Payment
+
+@{
+    ViewBag.Title = "Podešavanja"; 
+    Layout = "~/Views/Shared/_LayoutINV.cshtml";
+    var legalEntityTypes = new SelectList(new List<SelectListItem> { new SelectListItem { Text = "Person", Value = "Fizičko lice" }, new SelectListItem { Text = "Company", Value = "Pravno lice" } }, "Text", "Value");
+    var property_admin = User.IsInRole("PropertyAdmin");
+    var partnerId = ViewBag.PartnerId;
+    var ladmins = (ViewBag.Admins as List<LegalEntity>).Select(a => new SelectListItem { Text = a.Id.ToString(), Value = a.Name }).ToList();
+    ladmins.Insert(0, new SelectListItem() { Text = "", Value = "" });
+    var admins = new SelectList(ladmins, "Text", "Value");
+}
+
+<script>
+    function getPaytenSettings() {
+        var grid = $('#legalEntitiesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (!item) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Morate odabrati klijenta',
+                confirmButtonText: 'U redu'
+            });
+            return;
+        }
+
+        var legalEntityId = item.Id;
+
+        $.ajax({
+            url: `/legal-entity-payten-settings`,
+            type: 'GET',
+            data: { legalentity: legalEntityId },
+            success: function (data, status, xhr) {
+                var wnd = $("#wndPaytenSettings").data("kendoWindow");
+                wnd.content(data); 
+                wnd.center().open();
+            },
+            error: function (xhr, status, error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Greška prilikom učitavanja podešavanja',
+                    text: error,
+                    confirmButtonText: 'U redu'
+                });
+            }
+        });
+    }
+
+    function savePaytenSettings() { 
+        $.ajax({
+            url: 'save-legal-entity-payten-settings',
+            type: 'POST',
+            data: $('#paytenSettingsForm').serialize(),
+            success: function (data) {
+                if (data.id != null) { 
+                }
+                if (data.info && data.info !== "") {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Uspješno sačuvane izmjene!',
+                        confirmButtonText: 'U redu',
+                        timer: 1000
+                    });
+
+                    $("#wndPaytenSettings").data("kendoWindow").close();
+                    $('#legalEntitiesGrid').data('kendoGrid').dataSource.read();
+                }
+                else if (data.error && data.error !== "") {
+                    Swal.fire({
+                        icon: 'error',
+                        title: data.error,
+                        confirmButtonText: 'U redu'
+                    });
+                }
+                else{
+                    $("#wndPaytenSettings").data("kendoWindow").close();
+                    $('#legalEntitiesGrid').data('kendoGrid').dataSource.read();
+                } 
+            },
+            error: function () {
+                alert("Došlo je do greške.");
+            }
+        });
+    }
+
+</script>
+
+<div style="display:flex; margin-left:15px; margin-top:25px; margin-right:15px;">
+    @(Html.Kendo().Button().Name("btnPayments")
+        .HtmlAttributes(new { type = "button", onclick = "getPaytenSettings()", style = "height:95px; width:95px; margin-left:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/pos.png'/>
+    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>PAYTEN<br/>POVEZIVANJE<div>
+    </div>"))
+</div>
+
+<div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
+    @(Html.Kendo().Grid<LegalEntityViewModel>()
+        .Name("legalEntitiesGrid")
+        .Columns(columns =>
+        {  
+            columns.Bound(g => g.Id).Title("Id").Width("80px");
+            columns.Bound(g => g.Name).Title("Naziv").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Width("30%");
+            columns.ForeignKey(g => g.Type, legalEntityTypes).Title("Vrsta").Width("100px");
+            if (property_admin && User.IsInRole("TouristOrg") == false)
+                columns.ForeignKey(g => g.AdministratorId, admins).Title("Administrator").Width("250px").HtmlAttributes(new { style = "text-align:center;" });
+            columns.Bound(g => g.TIN).Title("Poreski broj").Width("120px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+            columns.Bound(g => g.PhoneNumber).Title("Broj telefona").Width("130px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f));
+            columns.Bound(g => g.Email).Title("Email").Width("200px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+            columns.Bound(g => g.Address).Title("Adresa").Width("40%").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f));
+            columns.Bound(g => g.Country).Title("Država").Width("150px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" });
+            if (partnerId == 4 && User.IsInRole("TouristOrgAdmin"))
+            {
+                columns.Bound(g => g.IsSuspended).Title("Suspendovan?").Width("100px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).HtmlAttributes(new { style = "text-align:center;" }).ClientTemplate("#= IsSuspended ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"  ><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
+            }
+            columns.Bound(g => g.PaytenUserId)
+            .Title("Payten omogućen")
+            .Width("150px")
+            .Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f))
+            .HtmlAttributes(new { style = "text-align:center;" })
+            .ClientTemplate("#= PaytenUserId && PaytenUserId !== '' ? 'Da' : 'Ne' #"); 
+            columns.Bound(g => g.UserCreated).Title("Korisnik").Width("130px").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f));
+            columns.Bound(g => g.UserCreatedDate).Title("Vrijeme").Width("130px").Format("{0:dd.MM.yyyy HH:mm}").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f));
+        })
+        .Pageable(p => p.Refresh(true)) 
+        .Sortable()
+        .Selectable()
+        .Scrollable()
+        .Filterable()
+        .HtmlAttributes(new { style = "height:100%;" })
+        .DataSource(ds => ds
+        .Ajax()
+        .PageSize(20)
+        .Model(m =>
+        {
+            m.Id(g => g.Id);
+            m.Field(g => g.Id).Editable(false);
+            m.Field(g => g.Type);
+            m.Field(g => g.Name);
+            m.Field(g => g.TIN);
+            m.Field(g => g.AdministratorId);
+            m.Field(g => g.Address);
+            m.Field(g => g.Country);
+            m.Field(g => g.InVat);
+            m.Field(g => g.IsSuspended);
+            m.Field(g => g.IsRegistered);
+        })
+        .Read(a => a.Url("legal-entity-read")) 
+        )
+        )
+
+</div>
+
+@(Html.Kendo().Window().Name("wndPaytenSettings")
+    .Title("Payten podešavanja")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(400)
+    .Height(500)
+    .HtmlAttributes(new { style = "padding:20px;" })
+)

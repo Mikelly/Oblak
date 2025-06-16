@@ -135,6 +135,7 @@ namespace Oblak.Controllers
                 }
                   
                 existingEntity.Name = input.Name;
+                existingEntity.ExternalId = input.ExternalId ?? 0;
                 existingEntity.MunicipalityId = input.MunicipalityId;
                 existingEntity.Place = input.Place;
                 existingEntity.RegNumber = input.RegNumber;
@@ -208,7 +209,7 @@ namespace Oblak.Controllers
         {
             try
             {
-                return Json(new { error = "Nije dostupno." });
+                //return Json(new { error = "Nije dostupno." });
 
                 var property = await _db.Properties.Include(x => x.Groups)
                     .Where(x => x.Id == model.Id)

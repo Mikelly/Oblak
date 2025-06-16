@@ -41,6 +41,7 @@ namespace Oblak.Models
         public bool IsRegistered { get; set; }
 
         public string? Email { get; set; }
+        public string? PaytenUserId { get; set; }
 
         public string? UserCreated { get; set; }
 

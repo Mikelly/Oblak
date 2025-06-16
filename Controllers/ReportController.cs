@@ -409,8 +409,14 @@ namespace Oblak.Controllers
                 parameters.Add(new Parameter() { Name = "dateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "dateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
             }
+            else if(report == "CountryStatsFirmaPeriod")
+            {
+                parameters.Add(new Parameter() { Name = "firmaid", Value = _legalEntity.Id });
+                parameters.Add(new Parameter() { Name = "datefrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
+                parameters.Add(new Parameter() { Name = "dateto", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
+            }
 
-            var reportProcessor = new Telerik.Reporting.Processing.ReportProcessor();
+                var reportProcessor = new Telerik.Reporting.Processing.ReportProcessor();
             var deviceInfo = new System.Collections.Hashtable();
             var reportSource = new Telerik.Reporting.UriReportSource();
 

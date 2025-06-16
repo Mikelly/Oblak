@@ -81,8 +81,8 @@ public class DocumentService
         var boravak_buff = g.Persons.Select(a => a as MnePerson).ToList().Select(a => new
         {
             Item = bor,
-            Quant = (int)Math.Round(((a.CheckOut ?? DateTime.Now) - a.CheckIn).TotalDays, 0),
-			Price = bor.Price
+            Quant = Math.Max(1, (a.CheckOut ?? DateTime.Now).Date.Subtract(a.CheckIn.Date).Days),
+            Price = bor.Price
         }).ToList();
 
 		var boravak = boravak_buff.GroupBy(a => new { a.Item, a.Price })
@@ -91,7 +91,7 @@ public class DocumentService
 		var taxes_buff = g.Persons.Select(a => a as MnePerson).ToList().Select(a => new
         {
             Item = btax,
-            Quant = (int)Math.Round(((a.CheckOut ?? DateTime.Now) - a.CheckIn).TotalDays, 0),            
+            Quant = Math.Max(1, (a.CheckOut ?? DateTime.Now).Date.Subtract(a.CheckIn.Date).Days),
             Price = btax.Price * ((new DateTime(1, 1, 1) + (DateTime.Now - a.BirthDate)).Year - 1) switch { >= 18 => 1m, >= 12 => 0.5m, _ => 0m }
         }).Where(a => a.Price != 0).ToList();
         

@@ -142,8 +142,9 @@ namespace Oblak.Data
             modelBuilder.Entity<Vessel>().HasOne(a => a.LegalEntity);
 			modelBuilder.Entity<Vessel>().Property(a => a.VesselType).HasConversion(new EnumToStringConverter<VesselType>()).HasPrecision(450);
 			
-			modelBuilder.Entity<Group>().HasOne(a => a.LegalEntity);
-            modelBuilder.Entity<Group>().HasMany(a => a.Persons);
+			modelBuilder.Entity<Group>().HasOne(a => a.LegalEntity); 
+            modelBuilder.Entity<Group>().HasMany(g => g.Persons).WithOne(p => p.Group).HasForeignKey(p => p.GroupId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Group>().HasMany(g => g.PaymentTransactions).WithOne(p => p.Group).HasForeignKey(p => p.GroupId).OnDelete(DeleteBehavior.SetNull);
             modelBuilder.Entity<Group>().HasOne(a => a.Property);			
 			modelBuilder.Entity<Group>().HasOne(a => a.Vessel);
             modelBuilder.Entity<Group>().HasOne(a => a.CheckInPoint);

@@ -65,6 +65,8 @@ namespace RegBor.Controllers
             var username = _context!.User!.Identity!.Name;
             var appUser = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username);
 
+            ViewBag.PartnerId = appUser.PartnerId;
+
             var partner = _db.Partners.Where(a => a.Id == appUser.PartnerId).FirstOrDefault();
 
             var sl = _db.ResTaxPaymentTypes

@@ -1425,8 +1425,12 @@ namespace Oblak.Controllers
 
             var partner = _db.Partners.FirstOrDefault(x => x.Id == _appUser.PartnerId);
             var settings = _db.PartnerTaxSettings.Where(a => a.PartnerId == _appUser.PartnerId && a.TaxType == taxType).FirstOrDefault();
+            if (settings == null)
+            { 
+                return BadRequest($"Nema konfiguracije za TaxType '{taxType}' i partner '{partner.Id}'.");
+            }
 
-			var sql = $"EXEC TouristOrgPostOffice '{DateTime.Now.Date.ToString("dd-MMM-yyyy", CultureInfo.InvariantCulture).ToUpper()}', {partner.Id}, {0}, '{taxName}', {id ?? 0}, {g ?? 0}, {inv ?? 0}, {pay ?? 0}";
+            var sql = $"EXEC TouristOrgPostOffice '{DateTime.Now.Date.ToString("dd-MMM-yyyy", CultureInfo.InvariantCulture).ToUpper()}', {partner.Id}, {0}, '{taxName}', {id ?? 0}, {g ?? 0}, {inv ?? 0}, {pay ?? 0}";
 			var po = _db.Database.SqlQuery<PostOfficeData>(FormattableStringFactory.Create(sql)).ToList().FirstOrDefault();
 
             if (id.HasValue)

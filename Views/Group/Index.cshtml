@@ -6,6 +6,7 @@
     Layout = "~/Views/Shared/_LayoutINV.cshtml";
     var nautical = (bool)ViewBag.Nautical;
     var entrypoint = (bool)ViewBag.EntryPoint;
+    int loggedInPartnerId = ViewBag.PartnerId;
 }
 
 <script type="text/javascript">
@@ -25,19 +26,25 @@
                     setTimeout(function() {
                         var combo = $("#PropertyId").data("kendoMultiColumnComboBox");
                         if (combo) { 
+
+                        var lukaName = (@loggedInPartnerId === 4) ? "LUKA BUDVA" : "LUKA BAR";
+                        var lukaAddress = (@loggedInPartnerId === 4)
+                            ? "MARINA BUDVA,STARI GRAD, BUDVA"
+                            : "OBALA 13 JULA BROJ 2, BAR";
                              
-                        combo.text("LUKA BUDVA");
+                        combo.text(lukaName);
 
                         combo.dataSource.filter({
                             field: "Name",
                             operator: "contains",
-                            value: "LUKA BUDVA"
+                            value: lukaName
                         });
 
                         combo.one("dataBound", function () {
                             var items = combo.dataSource.view();
+
                             for (var i = 0; i < items.length; i++) {
-                                if (items[i].Name === "LUKA BUDVA" && items[i].Address === "MARINA BUDVA,STARI GRAD, BUDVA") {
+                                if (items[i].Name === lukaName && items[i].Address === lukaAddress) {
                                     combo.select(i);
                                     break;
                                 }

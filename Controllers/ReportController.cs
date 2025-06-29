@@ -246,6 +246,7 @@ namespace Oblak.Controllers
         {
             var report = Request.Form["Report"];
             var format = Request.Form["Format"];
+            var legalEntityName = Request.Form["LegalEntityName"];
             var date = Request.Form["Date"];
             var dateFrom = Request.Form["DateFrom"];
             var dateTo = Request.Form["DateTo"];
@@ -269,6 +270,13 @@ namespace Oblak.Controllers
             {
                 parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
                 parameters.Add(new Parameter() { Name = "Date", Value = DateTime.ParseExact(date, "ddMMyyyy", null) });
+            }
+            else if (report == "CountryMupAgeStatsPeriod")
+            {
+                parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
+                parameters.Add(new Parameter() { Name = "LegalEntityname", Value = string.IsNullOrEmpty(legalEntityName) ? "-1" : legalEntityName }); 
+                parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
+                parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
             }
             else if (report == "CountryStatsPeriod" || report == "ResTaxHistory" || report.ToString().StartsWith("ExcursionTax") || report.ToString().StartsWith("CountryMup"))
             {
@@ -409,7 +417,7 @@ namespace Oblak.Controllers
                 parameters.Add(new Parameter() { Name = "dateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "dateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
             }
-            else if(report == "CountryStatsFirmaPeriod")
+            else if (report == "CountryStatsFirmaPeriod")
             {
                 parameters.Add(new Parameter() { Name = "firmaid", Value = _legalEntity.Id });
                 parameters.Add(new Parameter() { Name = "datefrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });

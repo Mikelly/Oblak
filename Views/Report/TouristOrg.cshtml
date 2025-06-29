@@ -183,7 +183,13 @@
 			$('#datumDo').show();
 		}
 
-		if (report == "CountryMupStatsPeriod" || report == "CountryMupAgeStatsPeriod") {
+		if (report == "CountryMupStatsPeriod") {
+			$('#datumOd').show();
+			$('#datumDo').show();
+		}
+
+		if( report == "CountryMupAgeStatsPeriod"){
+			$('#legalEntityName').show(); 
 			$('#datumOd').show();
 			$('#datumDo').show();
 		}
@@ -245,6 +251,7 @@
 
 		$('#reportForm')[0].reset();
 
+		$('#flegalEntityName').val($('#LegalEntityName').val());
 		$('#fdate').val(kendo.toString($('#Date').data('kendoDatePicker').value(), 'ddMMyyyy'));
 		$('#fdateFrom').val(kendo.toString($('#DateFrom').data('kendoDatePicker').value(), 'ddMMyyyy'));
 		$('#fdateTo').val(kendo.toString($('#DateTo').data('kendoDatePicker').value(), 'ddMMyyyy'));
@@ -276,6 +283,7 @@
 <form target="_blank" action="/treport" method="post" id="reportForm">
 	<input type="hidden" id="freport" name="report" />
 	<input type="hidden" id="fformat" name="format" />
+	<input type="hidden" id="flegalEntityName" name="legalEntityName" />
 	<input type="hidden" id="fdate" name="date" />
 	<input type="hidden" id="fdateFrom" name="dateFrom" />
 	<input type="hidden" id="fdateTo" name="dateTo" />
@@ -365,6 +373,12 @@
 			.Value("All")
 			.BindTo(new SelectList(legalEntityStatuses as Dictionary<string, string>, "Key", "Value"))
 			)
+		<br />
+	</div>
+
+	<div class="parameter" style="display:none" id="legalEntityName">
+		Unesite ime i prezime / naziv:
+		@(Html.Kendo().TextBox().Name("LegalEntityName"))
 		<br />
 	</div>
 

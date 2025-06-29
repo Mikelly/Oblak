@@ -1295,6 +1295,39 @@ namespace Oblak.Controllers
         [Route("webhookPosPaymentResult")]
         public async Task<ActionResult> WebhookPosPaymentResult()
         {
+            //ZA TESTIRANJE
+            //HttpContext.Request.EnableBuffering();
+             
+            //string rawBody;
+            //try
+            //{
+            //    using var reader = new StreamReader(
+            //        Request.Body,
+            //        Encoding.UTF8,
+            //        false,
+            //        1024,
+            //        leaveOpen: true);
+
+            //    rawBody = await reader.ReadToEndAsync();
+            //    Request.Body.Position = 0;
+            //}
+            //catch (Exception ex)
+            //{
+            //    _logger.LogError(ex, "Error reading Payten webhook body");
+            //    return StatusCode(500);
+            //}
+             
+            //var headers = Request.Headers
+            //    .ToDictionary(h => h.Key, h => (string)h.Value);
+            //var headersJson = JsonConvert.SerializeObject(headers, Formatting.Indented);
+             
+            //_logger.LogInformation(
+            //    "=== PAYTEN WEBHOOK START ==={NewLine}" +
+            //    "Headers: {Headers}{NewLine}" +
+            //    "RawBody: {RawBody}{NewLine}" +
+            //    "=== PAYTEN WEBHOOK END ===",
+            //    headersJson, rawBody);
+
             // Extract headers
             var apiKeyHeader = Request.Headers["X-API-KEY"].FirstOrDefault();
             var tokenHeader = Request.Headers["X-Payment-Session-Token"].FirstOrDefault();
@@ -1451,7 +1484,7 @@ namespace Oblak.Controllers
                 return NotFound(new { success = false, info = "", error = "Nema podataka za prikaz!" }); 
              
             var transactions = await query
-                .OrderBy(x => x.Id)
+                .OrderByDescending(x => x.UserCreatedDate)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(x => new PaymentTransactionViewModel

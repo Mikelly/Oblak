@@ -1489,7 +1489,7 @@ namespace Oblak.Controllers
             if(taxType == TaxType.NauticalTax)
             {
                 data.from = $"{po.PayeeName}\n{address}";
-                data.to = $"Turistička organizacija Opstine Budva";
+                data.to = _appUser.PartnerId == 4 ? "Turistička organizacija Opstine Budva" : "Turistička organizacija Opstine Bar";
                 data.desc = $"Uplata prijave boravka\nVlasnik plovila:{po.PayeeName}\nZa period:{po.Description}";
             }
 

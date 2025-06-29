@@ -118,6 +118,37 @@ namespace Oblak.Services.Payten
 
         public string DecryptPayload(string base64Encrypted, string key)
         {
+            //// ZA TEST
+            //byte[] keyBytes = Convert.FromBase64String(key);
+            //if (keyBytes.Length != 32)
+            //    throw new ArgumentException("Decryption key must be 256 bits (32 bytes) in Base64.");
+
+            //// dekodiranje
+            //byte[] fullCipher = Convert.FromBase64String(base64Encrypted);
+
+            //// prvih 16 bajtova IV, ostatak ciphertext
+            //byte[] iv = new byte[16];
+            //Buffer.BlockCopy(fullCipher, 0, iv, 0, iv.Length);
+            //byte[] cipherBytes = new byte[fullCipher.Length - iv.Length];
+            //Buffer.BlockCopy(fullCipher, iv.Length, cipherBytes, 0, cipherBytes.Length);
+
+            //// Config aes
+            //using var aes = Aes.Create();
+            //aes.Key = keyBytes;
+            //aes.IV = iv;
+            //aes.Mode = CipherMode.CBC;
+            //aes.Padding = PaddingMode.PKCS7;
+
+            //// Decrypt
+            //using var decryptor = aes.CreateDecryptor();
+            //byte[] plainBytes = decryptor.TransformFinalBlock(cipherBytes, 0, cipherBytes.Length);
+
+            //// konvert i ciscenje- BOM - whitespace
+            //var json = Encoding.UTF8.GetString(plainBytes)
+            //                       .Trim('\uFEFF', '\r', '\n', ' ');
+
+            //return json;
+
             // Convert key and base64 payload
             byte[] keyBytes = Encoding.UTF8.GetBytes(key);
             byte[] fullCipher = Convert.FromBase64String(base64Encrypted);

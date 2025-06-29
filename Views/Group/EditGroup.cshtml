@@ -4,6 +4,17 @@
     var nautical = (bool)ViewBag.Nautical;
     var entrypoint = (bool)ViewBag.EntryPoint;
     var dto = (GroupEnrichedDto)ViewBag.Dto;
+     
+    var ddl = (SelectList)ViewBag.ResTaxPaymentTypes; 
+
+    var defaultCash = ddl
+        .Cast<SelectListItem>()
+        .FirstOrDefault(x => x.Text == "Plaćena gotovinom")?
+        .Value;
+
+    var selectedValue = (ViewBag.Nautical == true && dto.ResTaxPaymentTypeId == 0)
+        ? defaultCash
+        : dto.ResTaxPaymentTypeId.ToString();
 } 
 
 <div id="newGroupForm">
@@ -158,9 +169,16 @@
         <label for="resTaxPaymentType"><b>Naplata takse:</b></label>
         @(Html.Kendo().DropDownList()
             .Name("ResTaxPaymentTypeId")
+            .BindTo(ddl)
+            .Value(selectedValue ?? "")
+            .HtmlAttributes(new { id = "ResTaxPaymentTypeId", style = "width:100%" })
+        )
+
+        @* @(Html.Kendo().DropDownList()
+            .Name("ResTaxPaymentTypeId")
             .BindTo(ViewBag.ResTaxPaymentTypes as SelectList)
             .Value(dto.ResTaxPaymentTypeId == null ? "" : dto.ResTaxPaymentTypeId.ToString())
-            .HtmlAttributes(new { id = "ResTaxPaymentTypeId", style = "width:100%" }))
+            .HtmlAttributes(new { id = "ResTaxPaymentTypeId", style = "width:100%" })) *@
     }
 
     <br /><br /><br />

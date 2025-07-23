@@ -618,6 +618,44 @@ namespace Oblak.Controllers
 
             return Json(new BasicDto() { info = "Zaglavlje računa uspješno sačuvano!", error = "" });
         }
+         
+        [HttpGet("legal-entity-is-registered")]
+        public ActionResult IsRegistered(int legalEntityId)
+        {
+            if (_appUser.PartnerId == 4)
+            {
+                //najnovije resenje
+                var prop = _db.Properties
+                .Where(p => p.LegalEntityId == legalEntityId && p.RegDate != null)
+                .OrderByDescending(p => p.RegDate)
+                .FirstOrDefault();
+
+                if (prop == null)
+                {
+                    return Json(new
+                    {
+                        isRegistered = false,
+                        errInfo = "Nije moguća uplata jer korisnik nije registrovan!"
+                    });
+                }
+
+                var date = prop.RegDate.Value;
+                var diff = date - DateTime.Now.Date;
+
+                // ako je resenje isteklo
+                if (diff.TotalDays <= 0)
+                {
+                    return Json(new
+                    {
+                        isRegistered = false,
+                        errInfo = $"Rješenje je isteklo! Datum isteka: <b>{date:dd.MM.yyyy}</b>"
+                    });
+                }
+            }
+             
+            return Json(new { isRegistered = true });
+        }
+
 
         [HttpGet("legal-entity-is-suspended")]
         public ActionResult IsSuspended(int? legalEntityId)

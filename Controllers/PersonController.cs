@@ -1008,7 +1008,12 @@ namespace Oblak.Controllers
         {
             try
             {
-                var guest = _db.MnePersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity).FirstOrDefault(a => a.Id == guestId);
+                var guest = _db.MnePersons.Include(a => a.Property)
+                    .Include(a => a.Group)
+                    .Include(a => a.Property)
+                    .ThenInclude(a => a.LegalEntity)
+                    .FirstOrDefault(a => a.Id == guestId);
+
                 var partner = _db.Partners.FirstOrDefault(a => a.Id == _appUser.PartnerId);
                 int? le = null;
 
@@ -1020,6 +1025,7 @@ namespace Oblak.Controllers
                     }
 
                     le = guest.Property.LegalEntityId;
+                    var groupId = guest.GroupId;
 
                     var hist = new ResTaxHistory();
 					hist.PrevCheckIn = guest.CheckIn;
@@ -1037,6 +1043,24 @@ namespace Oblak.Controllers
                         _db.ResTaxHistory.Add(hist);
                         _db.SaveChanges();
                     }
+
+                    // azuriranje taksi grupe, ako je gost bio clan neke grupe
+                    if (groupId.HasValue)
+                    {
+                        var group = _db.Groups
+                            .Include(g => g.Persons)
+                            .FirstOrDefault(g => g.Id == groupId.Value);
+
+                        if (group != null)
+                        { 
+                            _db.Entry(group).Collection(g => g.Persons).Load(); 
+                            _db.Entry(group).Reference(g => g.ResTaxPaymentType).Load();
+
+                            (_registerClient as MneClient)!.CalcGroupResTax(group, group.ResTaxPaymentType?.PaymentStatus ?? TaxPaymentStatus.None);
+                            _db.SaveChanges();
+                        }
+                    }
+
 
                     if (partner.CheckRegistered)
                     {
@@ -1068,6 +1092,7 @@ namespace Oblak.Controllers
             }
         }
 
+        
         public async Task<ActionResult> ReadSrbPersons([DataSourceRequest] DataSourceRequest request, int groupId)
         {
             var reqCodeLists = new List<string>()

@@ -617,39 +617,116 @@
         });
     }
 
-      
-
     function payments(taxType) {
-    var grid = $('#legalEntitiesGrid').data('kendoGrid');
-    var item = grid.dataItem(grid.select());
+        var grid = $('#legalEntitiesGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+         
+        if (item == null) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Morate odabrati izdavaoca',
+                confirmButtonText: 'U redu'
+            });
+            return;
+        }
 
-    if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati izdavaoca', confirmButtonText: `U redu` });
+        le = item.Id;
+          // Provjera suspendovanja
+          $.ajax({
+          url: `/legal-entity-is-suspended?legalEntityId=${le}`,
+          type: 'GET',
+          success: function(susData) {
+            if (susData.isSuspended) {
+              return Swal.fire({
+                icon: 'warning',
+                title: 'Upozorenje!',
+                html: susData.errInfo,
+                confirmButtonText: 'U redu',
+                allowOutsideClick: false
+              }).then(function() {
+                location.reload();
+              });
+            }
 
-    le = item.Id;
+            // Provjera registracije
+            $.ajax({
+              url: `/legal-entity-is-registered?legalEntityId=${le}`,
+              type: 'GET',
+              success: function(regData) {
+                if (!regData.isRegistered) {
+                  return Swal.fire({
+                    icon: 'warning',
+                    title: 'Upozorenje!',
+                    html: regData.errInfo,
+                    confirmButtonText: 'U redu',
+                    allowOutsideClick: false
+                  });
+                }
 
-    $.ajax({
-    url: `legal-entity-payments?taxType=${taxType}&le=${le}`,
-    type: 'GET',
-    success: function (data) {
-    console.log(data);                
-    var wnd = $("#wndPayments").data("kendoWindow");
-    wnd.title(`Unos uplata - ${item.Name}`)
-    wnd.content(data);
-    wnd.setOptions({
-    width: $(window).width() * 0.80,
-    height: $(window).height() * 0.80
-    });
-    wnd.center().open();
-    },
-    error: function (error) {
-    console.error(error);
-    Swal.fire({ icon: 'error', title: 'Došlo je do greške', confirmButtonText: `U redu` });
-    },
-    complete: function () {
+                // otvaranje prozora za uplatu
+                $.ajax({
+                  url: `legal-entity-payments?taxType=${taxType}&le=${le}`,
+                  type: 'GET',
+                  success: function(html) {
+                    var wnd = $("#wndPayments").data("kendoWindow");
+                    wnd.title(`Unos uplata - ${item.Name}`);
+                    wnd.content(html);
+                    wnd.setOptions({
+                      width: $(window).width() * 0.80,
+                      height: $(window).height() * 0.80
+                    });
+                    wnd.center().open();
+                  },
+                  error: function() {
+                    Swal.fire({
+                      icon: 'error',
+                      title: 'Došlo je do greške pri učitavanju prozora',
+                      confirmButtonText: 'U redu'
+                    });
+                  }
+                });
+              },
+              error: function() {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Greška pri provjeri registracije',
+                  confirmButtonText: 'U redu'
+                });
+              }
+            });
+          },
+          error: function() {
+            Swal.fire({
+              icon: 'error',
+              title: 'Greška pri provjeri suspendovanja',
+              confirmButtonText: 'U redu'
+            });
+          }
+        });
+
+        // $.ajax({
+        // url: `legal-entity-payments?taxType=${taxType}&le=${le}`,
+        // type: 'GET',
+        // success: function (data) {
+        // console.log(data);                
+        // var wnd = $("#wndPayments").data("kendoWindow");
+        // wnd.title(`Unos uplata - ${item.Name}`)
+        // wnd.content(data);
+        // wnd.setOptions({
+        // width: $(window).width() * 0.80,
+        // height: $(window).height() * 0.80
+        // });
+        // wnd.center().open();
+        // },
+        // error: function (error) {
+        // console.error(error);
+        // Swal.fire({ icon: 'error', title: 'Došlo je do greške', confirmButtonText: `U redu` });
+        // },
+        // complete: function () {
+        // }
+        // });
     }
-    });
-    }
-
+      
 </script>
 
 <style type="text/css">

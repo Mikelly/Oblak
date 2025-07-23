@@ -90,7 +90,7 @@ namespace Oblak.Controllers
 			await _db.SaveChangesAsync();
 
 			ViewBag.Balance = _db.TaxPaymentBalances.Where(a => a.TaxType == TaxType.ResidenceTax && a.LegalEntityId == le).Select(a => a.Balance).FirstOrDefault();
-
+              
 			return PartialView();
         }
 

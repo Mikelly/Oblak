@@ -484,48 +484,76 @@ namespace Oblak.Services.MNE
                 body = $"Poštovani,\n\nU prilogu se nalazi prijava boravišne takse za period od {tax.DateFrom.ToString("dd.MM.yyyy")} od {tax.DateTo.ToString("dd.MM.yyyy")} za smještajni objekat {obj.Name}.\n\nSrdačan pozdrav,"
             }, ("Boravišna taksa.pdf", pdfStream));
         }
-
+         
         public void CalcResTax(ResTaxCalc tax, int objekat, DateTime OD, DateTime DO, string vrsta, string tip_gosta)
         {
             try
             {
-                var obj = _db.Properties.Include(a => a.Municipality).FirstOrDefault(a => a.Id == objekat);
-                var firma = obj!.LegalEntityId;
-                var last_date = DO;
-                var limit18 = last_date.AddYears(-18);
-                var btx = new ResTaxCalcItem();
+                var obj = _db.Properties
+                    .Include(a => a.Municipality)
+                    .FirstOrDefault(a => a.Id == objekat);
 
-                var data = _db.MnePersons
-                    .Where(a => a.LegalEntityId == firma && a.PropertyId == obj.Id)
-                    .Where(a => a.CheckIn.Date >= OD && a.CheckIn.Date <= DO);
+                if (obj == null) return;
 
-                if (tip_gosta == "STRANI") data = data.Where(a => a.PersonType != "1");
-                if (tip_gosta == "DOMACI") data = data.Where(a => a.PersonType == "1");
+                var firma = obj.LegalEntityId;
+                var iznos_tax = obj.Municipality?.ResidenceTaxAmount ?? 1m;
 
-                if (vrsta == "FULL") data = data.Where(a => EF.Functions.DateDiffYear(a.BirthDate, DO) >= 18);
-                if (vrsta == "HALF") data = data.Where(a => EF.Functions.DateDiffYear(a.BirthDate, DO) < 18 && EF.Functions.DateDiffYear(a.BirthDate, DO) >= 12);
-                if (vrsta == "NONE") data = data.Where(a => EF.Functions.DateDiffYear(a.BirthDate, DO) < 12);
+                var data = _db.MnePersons.Where(a => a.LegalEntityId == firma
+                                                    && a.PropertyId == obj.Id
+                                                    && a.CheckOut != null
+                                                    && a.CheckIn < DO
+                                                    && a.CheckOut > OD); 
 
-                var lica = data.Count();
-                var noc = data.Select(a => _db.Nights(a.Id, DO)).Sum();
+                if (tip_gosta == "STRANI")
+                    data = data.Where(a => a.PersonType != "1");
 
-                var iznos_tax = obj.Municipality != null ? obj.Municipality.ResidenceTaxAmount : 1;
+                if (tip_gosta == "DOMACI")
+                    data = data.Where(a => a.PersonType == "1");
 
-                btx.NumberOfGuests = lica;
-                btx.NumberOfNights = noc;
-                btx.TaxPerNight = vrsta == "FULL" ? iznos_tax : vrsta == "HALF" ? iznos_tax / 2m : 0m;
-                btx.TotalTax = btx.TaxPerNight * noc;
-                btx.TaxType = vrsta;
-                btx.GuestType = tip_gosta;
+                if (vrsta == "FULL")
+                {
+                    data = data.Where(a => a.BirthDate.AddYears(18) <= a.CheckIn);
+                }
+                else if (vrsta == "HALF")
+                {
+                    data = data.Where(a =>
+                        a.BirthDate.AddYears(12) <= a.CheckIn &&
+                        a.BirthDate.AddYears(18) > a.CheckIn);
+                }
+                else if (vrsta == "NONE")
+                {
+                    data = data.Where(a => a.BirthDate.AddYears(12) > a.CheckIn);
+                } 
 
-                //tax.Items = new List<ResTaxCalcItem>();
-                tax.Items.Add(btx);
+                var brojGostiju = data.Count();
 
+                var brojNocenja = data.Select(a => _db.TotalNightsWithinPeriod(a.Id, OD, DO)).Sum();
+
+                var taksaPoNoci = vrsta switch
+                {
+                    "FULL" => iznos_tax,
+                    "HALF" => iznos_tax / 2m,
+                    _ => 0m
+                };
+
+                var totalTaksa = taksaPoNoci * brojNocenja;
+
+                var item = new ResTaxCalcItem
+                {
+                    NumberOfGuests = brojGostiju,
+                    NumberOfNights = brojNocenja,
+                    TaxPerNight = taksaPoNoci,
+                    TotalTax = totalTaksa,
+                    TaxType = vrsta,
+                    GuestType = tip_gosta
+                };
+
+                tax.Items.Add(item);
                 _db.SaveChanges();
             }
             catch (Exception e)
             {
-
+                _logger.LogDebug("MneClient:CalcResTax: " + Exceptions.StringException(e));
             }
         }
 
@@ -1000,6 +1028,7 @@ namespace Oblak.Services.MNE
             if (p.DocumentValidTo < now) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.DocumentValidTo), Error = "Datum važenja ličnog dokumenta mora biti u budućnosti." });
             if (p.BirthDate.Date >= now) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.BirthDate), Error = "Datum rođenja mora biti u prošlosti." });
             if (p.CheckIn.Date >= now) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.CheckIn), Error = "Datum prijave ne smije biti u budućnosti." });
+            if (!p.CheckOut.HasValue) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.CheckOut), Error = "Datum odjave je obavezan!" });
             if (p.CheckOut.HasValue && p.CheckOut.Value.Date < p.CheckIn.Date) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.CheckIn), Error = "Datum odjave mora biti nakon datuma prijave." });
             if (p.ExternalId != null && p.CheckOut.HasValue && p.CheckOut.Value.Date < now.Date) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.ExternalId), Error = "Neaktivan boravak se ne može mijenjati." });
             if (string.IsNullOrEmpty(p.FirstName)) err.ValidationErrors.Add(new PersonValidationError() { Field = nameof(p.FirstName), Error = "Morate unijeti ime gosta." });

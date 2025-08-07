@@ -234,6 +234,7 @@
 function fetchInvoiceNumber() {
     var taxPaymentTypeId = $("#TaxPaymentTypeId").val();
     var invoiceNoControl = $("#InvoiceNo").data("kendoNumericTextBox"); 
+    var taxPaymentTypeId = $("#TaxPaymentTypeId").val();
 
     if (taxPaymentTypeId == 2) {
         $.ajax({
@@ -273,6 +274,8 @@ function fetchInvoiceNumber() {
         invoiceNoControl.value(0);
         $("#InvoiceNumber").val("0");
     }
+
+    $("input[name='TaxPaymentTypeId'][type='hidden']").val(taxPaymentTypeId);
 }
 
 
@@ -413,6 +416,7 @@ function submitAgencyForm() {
                 </div>")) *@
 
     @Html.Hidden("Id", ((int)i.Id).ToString())
+     
 
     <div class="fieldset-like" style="width:350px; margin-left:0px">
         <span class="legend">Faktura</span>
@@ -525,7 +529,10 @@ function submitAgencyForm() {
                         .Name("TaxPaymentTypeId").Enable(enbl && enableNaplataTakse)
                         .BindTo(ViewBag.TaxPaymentTypes as SelectList)
                         .HtmlAttributes(new { id = "TaxPaymentTypeId", style = "width:100%", onchange = "fetchInvoiceNumber()" })                
-                    )        
+                    )       
+
+                <input type="hidden" name="TaxPaymentTypeId" value="@i.TaxPaymentTypeId" />
+
             </div>
             <div style="width:130px;display:inline-block;margin-left:5px;">
                 <label for="BillingAmount">Uplatnica</label>

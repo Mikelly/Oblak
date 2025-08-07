@@ -1,7 +1,12 @@
 ﻿@using Oblak.Models.Api;
-@using Oblak.Models.EFI;
+@using Oblak.Models.EFI; 
+
+@{ 
+    var partnerId = (int)ViewBag.PartnerId;
+}
 
 <script type="text/javascript">
+    var partnerId = @partnerId;
 
     $(document).ready(function () {
         cashPaymentIds = @System.Text.Json.JsonSerializer.Serialize((int[])ViewBag.CashPaymentIds);
@@ -41,18 +46,13 @@
     }
 
     function paymentError(e) {
-        debugger;
-        if (e.xhr.status === 401) {
+        debugger; 
+        if (e.xhr && e.xhr.status === 401) {
             Swal.fire({ icon: 'error', title: 'Nemate prava da mijenjate ili brišete uplatu!', confirmButtonText: `U redu` });
-        } else {
-            Swal.fire({ icon: 'error', title: e.errorThrown, confirmButtonText: `U redu` });            
-        }
-
-        if (isDeleteRequest) {
-            isDeleteRequest = false;
-            e.sender.read();
-        }
-    }
+        } 
+         
+         e.sender.cancelChanges();
+    } 
 
     function requestStart(e) {        
         if (e.type === "destroy") {
@@ -82,6 +82,34 @@
         var grid = $("#taxPaymentsGrid").data("kendoGrid");
         grid.addRow();
     }
+
+     
+    function onPaymentSave(e) {
+      var m = e.model; 
+   
+      // TO BD i Bezgotovinsko placanje
+      if (partnerId === 4 && m.TaxPaymentTypeId === 2) {
+        if (!m.TransactionDate) {
+          e.preventDefault();
+          Swal.fire({
+            icon: 'error',
+            title: 'Datum uplate je obavezan.',
+            confirmButtonText: 'U redu'
+          });
+          return;
+        }
+        if (!m.Reference || !m.Reference.trim()) {
+          e.preventDefault();
+          Swal.fire({
+            icon: 'error',
+            title: 'Broj uplatnice je obavezan.',
+            confirmButtonText: 'U redu'
+          });
+          return;
+        }
+      } 
+    }
+
 
 
 </script>
@@ -123,6 +151,7 @@
 <div style="position:absolute; top:130px; bottom: 15px; left: 15px; right:15px;">
     @(Html.Kendo().Grid<TaxPaymentDto>()
         .Name("taxPaymentsGrid")
+        .Events(e => e.Save("onPaymentSave")) 
         //.ToolBar(t => t.Create().Text("Nova uplata"))
         .Columns(columns =>
         {
@@ -153,7 +182,7 @@
             .Model(m =>
             {
                 m.Id(g => g.Id);
-                m.Field(g => g.Id).Editable(false);
+                m.Field(g => g.Id).Editable(false); 
                 m.Field(g => g.TransactionDate).DefaultValue(DateTime.Now.Date);
                 m.Field(g => g.Amount);
                 m.Field(g => g.Fee).Editable(false);

@@ -535,7 +535,12 @@ namespace RegBor.Controllers
             try
             {
                 // TODO: Implement your logic to delete the group with the specified ID
-                var group = _db.Groups.Find(groupId);
+                var group = _db.Groups.Include(x => x.Persons).SingleOrDefault(g => g.Id == groupId);
+                  
+                if (group.Persons.Any())
+                {
+                    return Json(new { error = "Grupa sadrži prijave i ne može se obrisati." });
+                }
 
                 if (group != null)
                 {

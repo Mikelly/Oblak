@@ -265,10 +265,14 @@ namespace Oblak.Controllers
             var username = _context.User.Identity.Name;
             var appUser = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username);
 
-            var data = await _db.LegalEntities.Include(a => a.Properties).Where(x => x.PartnerId == appUser.PartnerId).OrderByDescending(x => x.Id).ToListAsync();
+            var data = await _db.LegalEntities
+                                .Where(x => x.PartnerId == appUser.PartnerId)
+                                .Include(x => x.Properties)
+                                .OrderByDescending(x => x.Id)
+                                .ToListAsync();
 
             var legalEntities = _mapper.Map<List<LegalEntityViewModel>>(data);
-
+             
             return Json(await legalEntities.ToDataSourceResultAsync(request));
         }
 

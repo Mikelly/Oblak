@@ -5,6 +5,7 @@
     var group = (int)ViewBag.Group == 0;
     var groupId = (int?)ViewBag.Group;
     var nautical = false;
+    var partnerId = (int)ViewBag.PartnerId;
 }
 
 <script type="text/javascript">
@@ -507,16 +508,15 @@
                         }
                         <label for="ResTaxPaymentTypeId">Plaćanje boravišne takse<span style="color: red;">*</span></label>
                         @(Html.Kendo().DropDownList().Value(dto.ResTaxPaymentTypeId.ToString())
-                            .Name("ResTaxPaymentTypeId")
-                            .DataTextField("Text")
-                            .DataValueField("Value")
-                            .OptionLabel("Izaberite način plaćanja")
-                            .AutoWidth(true)
-                            .Events(e => { if(nautical == false) e.Change("resTaxCalc");} )                            
-                            .BindTo(new SelectList(Model.ResTaxPaymentTypes as Dictionary<string, string>, "Key", "Value"))
-                            .HtmlAttributes(new { id = "ResTaxPaymentTypeId", style = "width:100%" })
-                            .HtmlAttributes(htmls2)
-                            )
+                                                .Name("ResTaxPaymentTypeId")
+                                                .DataTextField("Text")
+                                                .DataValueField("Value") 
+                                                .AutoWidth(true)
+                                                .Events(e => { if (nautical == false) e.Change("resTaxCalc"); })
+                                                .BindTo(new SelectList(Model.ResTaxPaymentTypes as Dictionary<string, string>, "Key", "Value"))
+                                                .HtmlAttributes(new { id = "ResTaxPaymentTypeId", style = "width:100%" })
+                                                .HtmlAttributes(htmls2)
+                                                )  
                     </div>
                     <div class="one">
                         <label for="ResTaxAmount">Iznos boravišne takse</label>

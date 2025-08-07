@@ -13,27 +13,27 @@ namespace Oblak.Controllers
 {
     public class FiscalController : Controller
     {
-        
+
         private readonly ApplicationDbContext _db;
-        private readonly ILogger<FiscalController> _logger;        
+        private readonly ILogger<FiscalController> _logger;
         private readonly ApplicationUser _user;
         private readonly int _legalEntityId;
 
 
-        public FiscalController(            
+        public FiscalController(
             IHttpContextAccessor httpContextAccessor,
-            ApplicationDbContext db,            
+            ApplicationDbContext db,
             ILogger<FiscalController> logger
             )
         {
             _db = db;
-            _logger = logger;            
+            _logger = logger;
 
             var username = httpContextAccessor.HttpContext?.User?.Identity?.Name;
             if (username != null)
             {
                 _user = _db.Users.Include(a => a.LegalEntity).ThenInclude(a => a.Properties).FirstOrDefault(a => a.UserName == username)!;
-                _legalEntityId = _user.LegalEntityId;                
+                _legalEntityId = _user.LegalEntityId;
             }
         }
 
@@ -45,7 +45,7 @@ namespace Oblak.Controllers
 
         [HttpGet]
         [Route("fiscal-enu")]
-        public IActionResult FiscalEnu(int property) 
+        public IActionResult FiscalEnu(int property)
         {
             var prop = _db.Properties.FirstOrDefault(a => a.Id == property);
             var enu = _db.FiscalEnu.FirstOrDefault(a => a.PropertyId == property);
@@ -67,16 +67,16 @@ namespace Oblak.Controllers
         [HttpPost]
         [Route("fiscal-enu")]
         public IActionResult FiscalEnu(FiscalDto model)
-        {            
+        {
             var prop = _db.Properties.FirstOrDefault(a => a.Id == model.PropertyId);
             var enu = _db.FiscalEnu.FirstOrDefault(a => a.Id == model.Id);
 
             try
             {
                 if (enu == null)
-                { 
+                {
                     enu = new FiscalEnu();
-                    enu.PropertyId = model.PropertyId;  
+                    enu.PropertyId = model.PropertyId;
                     enu.LegalEntityId = _legalEntityId;
                     _db.FiscalEnu.Add(enu);
                 }
@@ -95,5 +95,50 @@ namespace Oblak.Controllers
                 return Json(new BasicDto() { error = ex.Message, info = "" });
             }
         }
+
+        [HttpGet("fiscal-enu-all")]
+        public async Task<IActionResult> FiscalEnuAll(int legalEntityId)
+        {
+            if (_legalEntityId <= 0)
+            {
+                Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return Json(new BasicDto { error = "Korisnik nije ulogovan!" });
+            } 
+
+            var exists = await _db.LegalEntities.AnyAsync(le => le.Id == legalEntityId);
+            if (!exists)
+            {
+                Response.StatusCode = StatusCodes.Status404NotFound;
+                return Json(new BasicDto { error = "Korisnik nije pronadjen!" });
+            }
+
+            try
+            { 
+                var result = await _db.Properties
+                    .Where(p => p.LegalEntityId == legalEntityId)
+                    .GroupJoin(
+                        _db.FiscalEnu,
+                        prop => prop.Id,
+                        fe => fe.PropertyId,
+                        (prop, feGroup) => new FiscalEnuAllDto
+                        {
+                            PropertyId = prop.Id,
+                            Codes = feGroup
+                                .Select(f => f.FiscalEnuCode)
+                                .ToList()
+                        }
+                    )
+                    .ToListAsync();
+                  
+                return Json(result);
+            }
+            catch (Exception ex)
+            { 
+                _logger.LogError(ex, "Greska pri citanju fiscal ENU codes za LegalEntityId {LegalEntityId}", legalEntityId);
+                Response.StatusCode = StatusCodes.Status500InternalServerError;
+                return Json(new BasicDto { id = legalEntityId, error = "Došlo je do interne greške." });
+            }
+        }
     }
+       
 }

@@ -54,22 +54,22 @@ namespace Oblak.Data
         {
             base.OnModelCreating(modelBuilder);
 
-			modelBuilder.Entity<IdentityUser>(b => { b.ToTable("Users"); });
-			modelBuilder.Entity<IdentityUserClaim<string>>(b => { b.ToTable("UserClaims"); });
-			modelBuilder.Entity<IdentityUserLogin<string>>(b => { b.ToTable("UserLogins"); });
-			modelBuilder.Entity<IdentityUserToken<string>>(b => { b.ToTable("UserTokens"); });
-			modelBuilder.Entity<IdentityRole>(b => { b.ToTable("Roles"); });
-			modelBuilder.Entity<IdentityRoleClaim<string>>(b => { b.ToTable("RoleClaims"); });
-			modelBuilder.Entity<IdentityUserRole<string>>(b => { b.ToTable("UserRoles"); });
+            modelBuilder.Entity<IdentityUser>(b => { b.ToTable("Users"); });
+            modelBuilder.Entity<IdentityUserClaim<string>>(b => { b.ToTable("UserClaims"); });
+            modelBuilder.Entity<IdentityUserLogin<string>>(b => { b.ToTable("UserLogins"); });
+            modelBuilder.Entity<IdentityUserToken<string>>(b => { b.ToTable("UserTokens"); });
+            modelBuilder.Entity<IdentityRole>(b => { b.ToTable("Roles"); });
+            modelBuilder.Entity<IdentityRoleClaim<string>>(b => { b.ToTable("RoleClaims"); });
+            modelBuilder.Entity<IdentityUserRole<string>>(b => { b.ToTable("UserRoles"); });
 
             modelBuilder.Entity<ApplicationUser>().Property(a => a.Type).HasConversion(new EnumToStringConverter<UserType>()).HasPrecision(450);
-            
+
             modelBuilder.Entity<LegalEntity>().HasMany(a => a.Properties).WithOne(a => a.LegalEntity).OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<LegalEntity>().HasMany(a => a.Groups).WithOne(a => a.LegalEntity).OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<LegalEntity>().HasMany(a => a.Documents).WithOne(a => a.LegalEntity).OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<LegalEntity>().HasMany(a => a.ResTaxes).WithOne(a => a.LegalEntity).OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<LegalEntity>().HasOne(a => a.Partner).WithMany(a => a.LegalEntities);
-			modelBuilder.Entity<LegalEntity>().HasOne(a => a.Administrator).WithMany(a => a.Clients);
+            modelBuilder.Entity<LegalEntity>().HasOne(a => a.Administrator).WithMany(a => a.Clients);
 
             modelBuilder.Entity<LegalEntity>().HasOne(a => a.PassThrough);
             modelBuilder.Entity<LegalEntity>().Property(a => a.Type).HasConversion(new EnumToStringConverter<LegalEntityType>()).HasPrecision(450);
@@ -121,7 +121,7 @@ namespace Oblak.Data
             modelBuilder.Entity<Municipality>().Property(a => a.ResidenceTaxAmount).HasPrecision(18, 2);
             modelBuilder.Entity<Municipality>().HasMany(a => a.Properties).WithOne(a => a.Municipality).OnDelete(DeleteBehavior.NoAction);
 
-			modelBuilder.Entity<LegalEntity>().Property(a => a.Type).HasConversion(new EnumToStringConverter<LegalEntityType>()).HasPrecision(450);
+            modelBuilder.Entity<LegalEntity>().Property(a => a.Type).HasConversion(new EnumToStringConverter<LegalEntityType>()).HasPrecision(450);
             modelBuilder.Entity<LegalEntity>().Property(a => a.Country).HasConversion(new EnumToStringConverter<CountryEnum>()).HasPrecision(450);
 
             modelBuilder.Entity<Property>().HasOne(a => a.LegalEntity);
@@ -140,19 +140,19 @@ namespace Oblak.Data
             modelBuilder.Entity<Vessel>().HasOne(a => a.Partner);
             modelBuilder.Entity<Vessel>().HasOne(a => a.Country);
             modelBuilder.Entity<Vessel>().HasOne(a => a.LegalEntity);
-			modelBuilder.Entity<Vessel>().Property(a => a.VesselType).HasConversion(new EnumToStringConverter<VesselType>()).HasPrecision(450);
-			
-			modelBuilder.Entity<Group>().HasOne(a => a.LegalEntity); 
+            modelBuilder.Entity<Vessel>().Property(a => a.VesselType).HasConversion(new EnumToStringConverter<VesselType>()).HasPrecision(450);
+
+            modelBuilder.Entity<Group>().HasOne(a => a.LegalEntity);
             modelBuilder.Entity<Group>().HasMany(g => g.Persons).WithOne(p => p.Group).HasForeignKey(p => p.GroupId).OnDelete(DeleteBehavior.SetNull);
             modelBuilder.Entity<Group>().HasMany(g => g.PaymentTransactions).WithOne(p => p.Group).HasForeignKey(p => p.GroupId).OnDelete(DeleteBehavior.SetNull);
-            modelBuilder.Entity<Group>().HasOne(a => a.Property);			
-			modelBuilder.Entity<Group>().HasOne(a => a.Vessel);
+            modelBuilder.Entity<Group>().HasOne(a => a.Property);
+            modelBuilder.Entity<Group>().HasOne(a => a.Vessel);
             modelBuilder.Entity<Group>().HasOne(a => a.CheckInPoint);
             modelBuilder.Entity<Group>().HasOne(a => a.ResTaxPaymentType);
-			modelBuilder.Entity<Group>().Property(a => a.ResTaxAmount).HasPrecision(18, 2);
-			modelBuilder.Entity<Group>().Property(a => a.ResTaxFee).HasPrecision(18, 2);
+            modelBuilder.Entity<Group>().Property(a => a.ResTaxAmount).HasPrecision(18, 2);
+            modelBuilder.Entity<Group>().Property(a => a.ResTaxFee).HasPrecision(18, 2);
 
-			modelBuilder.Entity<Person>().UseTpcMappingStrategy();
+            modelBuilder.Entity<Person>().UseTpcMappingStrategy();
             modelBuilder.Entity<Person>().HasOne(a => a.Group);
             modelBuilder.Entity<Person>().HasOne(a => a.Property);
             modelBuilder.Entity<Person>().HasOne(a => a.CheckInPoint);
@@ -160,14 +160,14 @@ namespace Oblak.Data
             modelBuilder.Entity<MnePerson>().ToTable("MnePersons");
             modelBuilder.Entity<MnePerson>().HasOne(a => a.Group);
             modelBuilder.Entity<MnePerson>().HasOne(a => a.Property);
-			modelBuilder.Entity<MnePerson>().HasOne(a => a.ResTaxType);
+            modelBuilder.Entity<MnePerson>().HasOne(a => a.ResTaxType);
             modelBuilder.Entity<MnePerson>().HasOne(a => a.ResTaxPaymentType);
             modelBuilder.Entity<MnePerson>().HasOne(a => a.ResTaxExemptionType);
             modelBuilder.Entity<MnePerson>().HasOne(a => a.CheckInPoint);
             modelBuilder.Entity<MnePerson>().HasOne(a => a.Computer).WithMany(b => b.MnePersons).HasForeignKey(a => a.ComputerCreatedId); ;
             modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxAmount).HasPrecision(18, 2);
-			modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxFee).HasPrecision(18, 2);
-            modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxStatus).HasConversion(new EnumToStringConverter<ResTaxStatus>());
+            modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxFee).HasPrecision(18, 2);
+            modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxStatus).HasConversion(new EnumToStringConverter<ResTaxStatus>()); 
 
             modelBuilder.Entity<SrbPerson>().ToTable("SrbPersons");
             modelBuilder.Entity<SrbPerson>().HasOne(a => a.Group);
@@ -183,33 +183,33 @@ namespace Oblak.Data
             modelBuilder.Entity<ResTaxCalcItem>().Property(a => a.TaxPerNight).HasPrecision(18, 2);
             modelBuilder.Entity<ResTaxCalcItem>().Property(a => a.TotalTax).HasPrecision(18, 2);
 
-			modelBuilder.Entity<ResTaxType>().HasOne(a => a.Partner);
+            modelBuilder.Entity<ResTaxType>().HasOne(a => a.Partner);
             modelBuilder.Entity<ResTaxType>().Property(a => a.Amount).HasPrecision(18, 2);
 
             modelBuilder.Entity<ResTaxExemptionType>().HasOne(a => a.Partner);
 
-			modelBuilder.Entity<ResTaxHistory>().HasOne(a => a.Person).WithMany(a => a.ResTaxHistory).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<ResTaxHistory>().HasOne(a => a.Person).WithMany(a => a.ResTaxHistory).OnDelete(DeleteBehavior.SetNull);
             modelBuilder.Entity<ResTaxHistory>().Property(a => a.PrevResTaxAmount).HasPrecision(18, 2);
             modelBuilder.Entity<ResTaxHistory>().Property(a => a.PrevResFeeAmount).HasPrecision(18, 2);
 
             modelBuilder.Entity<ResTaxPaymentType>().HasOne(a => a.Partner);
-			modelBuilder.Entity<ResTaxPaymentType>().HasMany(a => a.PaymentFees).WithOne(a => a.ResTaxPaymentType).OnDelete(DeleteBehavior.NoAction); ;
+            modelBuilder.Entity<ResTaxPaymentType>().HasMany(a => a.PaymentFees).WithOne(a => a.ResTaxPaymentType).OnDelete(DeleteBehavior.NoAction); ;
             modelBuilder.Entity<ResTaxPaymentType>().Property(a => a.PaymentStatus).HasConversion(new EnumToStringConverter<Enums.TaxPaymentStatus>());
 
-			modelBuilder.Entity<ResTaxFee>().HasOne(a => a.Partner);
-			modelBuilder.Entity<ResTaxFee>().HasOne(a => a.ResTaxPaymentType);
+            modelBuilder.Entity<ResTaxFee>().HasOne(a => a.Partner);
+            modelBuilder.Entity<ResTaxFee>().HasOne(a => a.ResTaxPaymentType);
             modelBuilder.Entity<ResTaxFee>().Property(a => a.FeeAmount).HasPrecision(18, 2);
             modelBuilder.Entity<ResTaxFee>().Property(a => a.FeePercentage).HasPrecision(18, 2);
             modelBuilder.Entity<ResTaxFee>().Property(a => a.UpperLimit).HasPrecision(18, 2);
             modelBuilder.Entity<ResTaxFee>().Property(a => a.LowerLimit).HasPrecision(18, 2);
 
-			modelBuilder.Entity<NauticalTax>().HasOne(a => a.Partner);
-			modelBuilder.Entity<NauticalTax>().Property(a => a.VesselType).HasConversion(new EnumToStringConverter<VesselType>());
-			modelBuilder.Entity<NauticalTax>().Property(a => a.Amount).HasPrecision(18, 2);
-			modelBuilder.Entity<NauticalTax>().Property(a => a.LowerLimitLength).HasPrecision(18, 2);
-			modelBuilder.Entity<NauticalTax>().Property(a => a.UpperLimitLength).HasPrecision(18, 2);
-			
-			modelBuilder.Entity<SelfRegisterToken>().HasOne(a => a.Property);
+            modelBuilder.Entity<NauticalTax>().HasOne(a => a.Partner);
+            modelBuilder.Entity<NauticalTax>().Property(a => a.VesselType).HasConversion(new EnumToStringConverter<VesselType>());
+            modelBuilder.Entity<NauticalTax>().Property(a => a.Amount).HasPrecision(18, 2);
+            modelBuilder.Entity<NauticalTax>().Property(a => a.LowerLimitLength).HasPrecision(18, 2);
+            modelBuilder.Entity<NauticalTax>().Property(a => a.UpperLimitLength).HasPrecision(18, 2);
+
+            modelBuilder.Entity<SelfRegisterToken>().HasOne(a => a.Property);
 
             modelBuilder.Entity<Document>().HasMany(a => a.DocumentItems);
             modelBuilder.Entity<Document>().HasMany(a => a.DocumentPayments);
@@ -252,7 +252,7 @@ namespace Oblak.Data
             modelBuilder.Entity<FiscalRequest>().HasOne(a => a.LegalEntity);
             modelBuilder.Entity<FiscalRequest>().Property(a => a.Amount).HasPrecision(18, 4);
             modelBuilder.Entity<FiscalRequest>().Property(a => a.RequestType).HasConversion(new EnumToStringConverter<FiscalRequestType>());
-            
+
             modelBuilder.Entity<PaymentTransaction>().ToTable("PaymentTransactions");
             modelBuilder.Entity<PaymentTransaction>().HasOne(a => a.Document);
             modelBuilder.Entity<PaymentTransaction>().HasOne(a => a.Group);
@@ -284,6 +284,10 @@ namespace Oblak.Data
                 .HasName("Nights");
 
             modelBuilder
+                .HasDbFunction(typeof(ApplicationDbContext).GetMethod(nameof(TotalNightsWithinPeriod), new[] { typeof(int), typeof(DateTime), typeof(DateTime) })!)
+                .HasName("TotalNightsWithinPeriod");
+
+            modelBuilder
                 .HasDbFunction(typeof(ApplicationDbContext).GetMethod(nameof(PropertyDesc), new[] { typeof(int) })!)
                 .HasName("PropertyDesc");
 
@@ -294,11 +298,20 @@ namespace Oblak.Data
             modelBuilder.Entity<Computer>().HasOne(a => a.Partner).WithMany(a => a.Computers);
             modelBuilder.Entity<Computer>().HasMany(a => a.MnePersons).WithOne(a => a.Computer);
             modelBuilder.Entity<Computer>().HasMany(a => a.ComputerLogs).WithOne(a => a.Computer).OnDelete(DeleteBehavior.Restrict);
-            modelBuilder.Entity<Computer>().HasIndex(c => c.PCName); 
+            modelBuilder.Entity<Computer>().HasIndex(c => c.PCName);
 
-            modelBuilder.Entity<ComputerLog>().HasIndex(cl => cl.ComputerId); 
+            modelBuilder.Entity<ComputerLog>().HasIndex(cl => cl.ComputerId);
             modelBuilder.Entity<ComputerLog>().HasIndex(cl => cl.Seen);
 
+            modelBuilder.Entity<MnePerson>(b =>
+            {
+                b.ToTable("MnePersons", tb =>
+                {
+                    tb.HasTrigger("trg_MnePersons_Insert");
+                    tb.HasTrigger("trg_MnePersons_Update");
+                    tb.HasTrigger("trg_MnePersons_Delete");
+                });
+            });
         }
 
         public DbSet<LegalEntity> LegalEntities { get; set; }
@@ -351,6 +364,7 @@ namespace Oblak.Data
         public string GroupDesc(int id) => throw new NotImplementedException();
         public string PropertyDesc(int id) => throw new NotImplementedException();
         public int Nights(int id, DateTime last) => throw new NotImplementedException();
+        public int TotalNightsWithinPeriod(int personId, DateTime from, DateTime to) => throw new NotImplementedException();
         public decimal Balance(string taxType, int legalEntity, int agency) => throw new NotImplementedException();
 
         private string GetCurrentUserName()

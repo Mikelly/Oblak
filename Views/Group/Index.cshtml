@@ -221,15 +221,21 @@
                         url: '@Url.Content("~/Group/DeleteGroup/")',
                         data: { groupId: item.Id },
                         type: 'GET',
-                        success: function (data, status, xhr) {
-                            if (data.error != "") {
-                                Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                        success: function (data, status, xhr) { 
+                            if (data.error) {
+                                return Swal.fire({
+                                    icon: 'error',
+                                    title: data.error,
+                                    confirmButtonText: 'U redu'
+                                });
                             }
-                            if (data.info != "") {
-                                // Refresh the grid after deleting the group
-                                grid.dataSource.read();
-                                Swal.fire({ icon: 'info', title: data.info, confirmButtonText: `U redu` });
-                            }
+                             
+                            grid.dataSource.read();
+                            Swal.fire({
+                                icon: 'info',
+                                title: data.info,
+                                confirmButtonText: 'U redu'
+                            });
                         },
                         error: function () {
                             Swal.fire({ icon: 'error', title: 'Došlo je do greške prilikom brisanja grupe.', confirmButtonText: `U redu` });

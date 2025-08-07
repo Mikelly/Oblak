@@ -15,7 +15,8 @@
 		{ $"Debt", "Pregled dugovanja" },
 		{ $"TaxExemptions", "Oslobođenja od boravišne takse" },
 		{ $"GuestHistory", "Istorija posjete gosta" },
-		
+		{ $"CountryStatsPeriodGuest", "Prijave po državama za period" },
+
 	};
 
 	if (prtnid == "4")
@@ -123,7 +124,7 @@
 			$('#datum').show();
 		}
 
-		if (report == "CountryStatsPeriod") {
+		if (report == "CountryStatsPeriod" || report == "CountryStatsPeriodGuest") {
 			$('#datumOd').show();
 			$('#datumDo').show();	
 		}

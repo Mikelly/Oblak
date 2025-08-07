@@ -366,6 +366,12 @@ namespace Oblak.Controllers
                             dto.ResTaxPaymentTypeId = partner.DefaultPaymentId;
                         }
                     }
+
+                    //ako se prijava vezuje za grupu onda se ne setuje DefaultPaymentId vec se cita iz grupe
+                    if (!(group.HasValue && group != 0))
+                    {
+                        dto.ResTaxPaymentTypeId = partner.Id == 4 ? partner.DefaultPaymentId : dto.ResTaxPaymentTypeId;
+                    } 
                 }
                 else
                 {
@@ -429,9 +435,12 @@ namespace Oblak.Controllers
                     ViewBag.TO = true;
                     if (User.IsInRole("TouristOrgOperator"))
                     {
-                        if (dto.ExternalId != null || dto.Status == "Closed") ViewBag.Disabled = true;                        
+                        if (dto.ExternalId != null || dto.Status == "Closed") ViewBag.Disabled = true;
                     }
                 }
+
+                ViewBag.PartnerId = partner.Id;
+
                 return PartialView("MnePerson", model);
             }
 

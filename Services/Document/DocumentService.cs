@@ -4,6 +4,7 @@ using Kendo.Mvc.Extensions;
 using Oblak.Helpers;
 using Microsoft.EntityFrameworkCore;﻿
 using Oblak.Data.Enums;
+using AspNetCoreGeneratedDocument;
 
 namespace Oblak.Services;
 
@@ -124,71 +125,157 @@ public class DocumentService
 
         return doc;
     }
-
-
+     
     public Document CreateInvoice(Invoice racun, Property property)
     {
         var enu = _db.FiscalEnu.FirstOrDefault(a => a.PropertyId == property.Id);
-        var doc = _db.Documents.Where(a => a.Id == racun!.Id).FirstOrDefault();
+        var doc = _db.Documents
+            .Include(d => d.DocumentItems)
+            .Include(d => d.DocumentPayments)
+            .SingleOrDefault(d => d.Id == racun.Id);
+         
         if (doc == null)
         {
-            doc = new Document();
+            doc = new Document
+            {
+                LegalEntityId = property.LegalEntityId,
+                PropertyId = property.Id,
+                IdEncrypted = string.Empty,
+                BusinessUnitCode = property.BusinessUnitCode ?? string.Empty,
+                FiscalEnuCode = enu == null ? "" : enu.FiscalEnuCode,
+                OperatorCode = enu == null ? "" : enu.OperatorCode,
+                Status = DocumentStatus.Active,
+                No = 0,
+                ExternalNo = string.Empty,
+                OrdinalNo = 0,
+                InvoiceDate = racun.InvoiceDate,
+                GroupId = racun.GroupId
+            };
+              
             _db.Documents.Add(doc);
-            doc.LegalEntityId = property.LegalEntityId;
-            doc.PropertyId = property.Id;
-            doc.IdEncrypted = string.Empty;
-            doc.BusinessUnitCode = property.BusinessUnitCode;
-            doc.FiscalEnuCode = enu == null ? "" : enu.FiscalEnuCode;
-            doc.OperatorCode = enu == null ? "" : enu.OperatorCode;
-            doc.Status = DocumentStatus.Active;
-            doc.No = 0;
-            doc.ExternalNo = "";
-            doc.OrdinalNo = 0;
-            doc.InvoiceDate = racun.InvoiceDate;
-            doc.GroupId = racun.GroupId;
-
-            if (racun.PartnerId.HasValue)
-            {
-            }
-            else
-            {
-                doc.PartnerName = racun.PartnerName;
-                doc.PartnerType = racun.PartnerType;
-                doc.PartnerIdType = racun.PartnerIdType;
-                doc.PartnerIdNumber = racun.PartnerIdNumber;
-
-                if (doc.PartnerType == Data.Enums.BuyerType.Company) doc.PartnerIdType = BuyerIdType.TaxIdNumber;
-
-            }
-
-            _db.SaveChanges();
-            doc.IdEncrypted = Encryptor.Base64Encode(Encryptor.EncryptSimple(doc.Id.ToString()));
-            _db.SaveChanges();
         }
-        else
+        else if (doc.Status == DocumentStatus.Fiscalized)
         {
-            if (doc.Status == DocumentStatus.Fiscalized)
-            {
-                return doc;
-            }
+            // fiskalizovan
+            return doc;
         }
 
-        var to_delete = doc.DocumentItems.Where(a => racun.DocumentItems.Any(b => b.Id != 0 && b.Id == a.Id) == false).ToList();
-        foreach (var del in to_delete) _db.DocumentItems.Remove(del);
+        if(!racun.PartnerId.HasValue)
+        {
+            doc.PartnerName = racun.PartnerName;
+            doc.PartnerType = racun.PartnerType;
+            doc.PartnerIdType = racun.PartnerType == BuyerType.Company
+                                ? BuyerIdType.TaxIdNumber
+                                : racun.PartnerIdType;
+            doc.PartnerIdNumber = racun.PartnerIdNumber;
+        }
+
+        // add/update items
+        SyncDocumentItems(doc, racun.DocumentItems);
+
+        //payment
+        SyncDocumentPayments(doc, racun.PaymentType);
+         
         _db.SaveChanges();
 
-        foreach (var stavka in racun.DocumentItems)
-        {
-            var s = UpdateStavka(doc, stavka, "N");
-        }
-
-        _db.Entry(doc).Collection(a => a.DocumentPayments).Load();
-
-        Payment(doc, racun.PaymentType);
-
+        doc.IdEncrypted = Encryptor.Base64Encode(Encryptor.EncryptSimple(doc.Id.ToString())); 
         _db.SaveChanges();
 
         return doc;
+    }
+
+    private void SyncDocumentItems(Document doc, IList<InvoiceItem> incoming)
+    { 
+        var existing = doc.DocumentItems.ToList();
+
+        //batch load item.a
+        var itemIds = incoming.Select(i => i.ItemId).Distinct().ToList();
+        var itemsById = _db.Items
+            .Where(it => itemIds.Contains(it.Id))
+            .ToDictionary(it => it.Id);
+
+        //brisanje stavki kojih nema u incoming
+        var toDelete = existing
+            .Where(e => incoming.All(i => i.Id != e.Id))
+            .ToList();
+
+        foreach (var del in toDelete)
+        {
+            // uklanjanje iz liste i baze
+            doc.DocumentItems.Remove(del);          
+            _db.DocumentItems.Remove(del); 
+        }
+
+        foreach (var dto in incoming)
+        {
+            DocumentItem entity;
+            if (dto.Id > 0)
+            {
+                // update
+                entity = existing.Single(e => e.Id == dto.Id);
+            }
+            else
+            {
+                // insert
+                entity = new DocumentItem { DocumentId = doc.Id };
+                doc.DocumentItems.Add(entity);
+            }
+
+            var art = itemsById[dto.ItemId];
+
+            entity.ItemId = art.Id;
+            entity.ItemCode = art.Code;
+            entity.ItemName = art.Name;
+            entity.ItemUnit = art.Unit;
+            entity.Quantity = dto.Quantity;
+            entity.UnitPrice = dto.Price;
+            entity.Discount = 0m;
+            entity.FinalPrice = entity.UnitPrice; 
+            entity.VatRate = art.VatRate;
+            //calc
+            entity.UnitPriceWoVat = entity.UnitPrice * 100m / (100m + entity.VatRate);
+            entity.LineAmount = entity.Quantity * entity.UnitPrice;
+            entity.LineTotalWoVat = entity.Quantity * entity.FinalPrice * 100m / (100m + entity.VatRate);
+            entity.VatAmount = entity.Quantity * entity.FinalPrice * entity.VatRate / (100m + entity.VatRate);
+            entity.LineTotal = entity.Quantity * entity.FinalPrice; 
+        }
+    } 
+    private void SyncDocumentPayments(Document doc, PaymentType payType)
+    { 
+        var existing = doc.DocumentPayments.ToList();
+
+        //brisanje svih koji nisu odabrani payType
+        var toDelete = existing
+            .Where(p => p.PaymentType != payType)
+            .ToList();
+        _db.DocumentPayments.RemoveRange(toDelete);
+
+        //insert/update
+        var payment = existing
+            .SingleOrDefault(p => p.PaymentType == payType);
+
+        var total = doc.DocumentItems.Select(a => a.LineTotal).Sum().Round2();
+        
+        if (payment == null)
+        {
+            payment = new DocumentPayment
+            {
+                DocumentId = doc.Id,
+                PaymentType = payType,
+                Amount = total
+            };
+            doc.DocumentPayments.Add(payment);
+        }
+        else
+        {
+            payment.Amount = total;
+        }
+
+        //set tip racuna
+        doc.TypeOfInvoce = doc.DocumentPayments
+            .All(p => p.PaymentType == PaymentType.BankAccount)
+            ? TypeOfInvoice.NonCash
+            : TypeOfInvoice.Cash;
     }
 
 

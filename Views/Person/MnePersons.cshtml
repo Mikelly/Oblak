@@ -138,88 +138,102 @@
     }
 
     }, false);
+     
 
+    function registerGroup(e, r) { 
+          Swal.fire({
+            title: 'Provjera i slanje podataka...',
+            text: 'Molimo sačekajte',
+            position: 'bottom',
+            showClass: { popup: 'animate__animated animate__fadeInUp animate__faster' },
+            hideClass: { popup: 'animate__animated animate__fadeOutDown animate__faster' },
+            grow: 'row',
+            showConfirmButton: false,
+            showCloseButton: false,
+            imageUrl: '/content/icons/loading.gif',
+            imageWidth: 80,
+            imageHeight: 80,
+            allowOutsideClick: false
+          });
 
-    function registerGroup(e, r) {
+          $.ajax({
+            url: `/api/groupRegister?id=${@(ViewBag.Group ?? 0)}`,
+            type: 'GET',
+            dataType: 'json',            
+            success: function (data) {
+              Swal.close();
+              const list = Array.isArray(data) ? data : [data];
 
-    Swal.fire({
-    title: 'Provjera i slanje podataka...',
-    text: 'Molimo sačekajte',
-    position: 'bottom',
-    showClass: {
-    popup: `
-    animate__animated
-    animate__fadeInUp
-    animate__faster
-    `
-    },
-    hideClass: {
-    popup: `
-    animate__animated
-    animate__fadeOutDown
-    animate__faster
-    `
-    },
-    grow: 'row',
-    showConfirmButton: false,
-    showCloseButton: false,
-    imageUrl: "/content/icons/loading.gif",
-    imageWidth: 80,
-    imageHeight: 80,
-    allowOutsideClick: false
-    });
+              const global = list.find(x => x.error);
+              if (global) {
+                return Swal.fire({
+                  icon: 'error',
+                  title: global.error,
+                  confirmButtonText: 'U redu'
+                });
+              }
 
-    $.ajax({
-    url: `/api/groupRegister?id=${@(ViewBag.Group ?? 0)}`,
-    type: 'GET',
-    success: function (data, status, xhr) {
-    setTimeout(function () {
+              const personsWithErrors = list.filter(x => Array.isArray(x.errors) && x.errors.length);
+              if (personsWithErrors.length) {
+                const msg = personsWithErrors
+                  .map(x =>
+                    (x.PersonId ? x.PersonId + '<br/>' : '') +
+                    x.errors.join('<br/>')
+                  )
+                  .join('<br/><br/>');
 
-    if (data.length > 0) {
-    var extErrors = data.filter(a => a.ExternalErrors.length > 0);
-    if (extErrors.length > 0) {
-    var errorMessages = extErrors.map((a) => { return a.PersonId + '<br/>' + a.ExternalErrors.map((b) => { return b; }).join('<br/>') }).join('<br/><br/>');
-    Swal.fire({ icon: 'error', title: errorMessages, confirmButtonText: `U redu` });
-    }                        
-    }
-    else {
-    Swal.fire({ icon: 'success', title: 'Gosti su uspješno prijavljeni!', confirmButtonText: `U redu` });
-    $('#mnePersonGrid').data('kendoGrid').dataSource.read();
-    }
-    }, 750);                
-    },
-    error: function (data, error, xhr) {
-    Swal.fire({
-    title: "Greška",
-    text: "Desila se greška prilikom slanja podataka MUP-u. Molimo pokušajte ponovo.",
-    icon: "error"
-    });
-    }
-    });
-    }
+                return Swal.fire({
+                  icon: 'error',
+                  title: msg,
+                  confirmButtonText: 'U redu'
+                });
+              }
+
+              Swal.fire({
+                icon: 'success',
+                title: 'Gosti su uspješno prijavljeni!',
+                timer: 1500,
+                showConfirmButton: false
+              });
+
+              $('#mnePersonGrid').data('kendoGrid').dataSource.read();
+            },
+
+            error: function (xhr, status, error) {
+              Swal.close();
+              Swal.fire({
+                icon: 'error',
+                title: 'Greška',
+                text: 'Desila se greška prilikom slanja podataka MUP-u. Molimo pokušajte ponovo.'
+              });
+            }
+          });
+        }
+
 
     function guest(person) {
+         
+        $.ajax({
+            url: `/person/get?person=${person}&group=${@(ViewBag.Group ?? 0)}`,
+            type: 'POST',
+            data: { mrz: '' },
+            success: function (data, status, xhr) {
 
-    $.ajax({
-    url: `/person/get?person=${person}&group=${@(ViewBag.Group ?? 0)}`,
-    type: 'POST',
-    data: { mrz: '' },
-    success: function (data, status, xhr) {
-    var wnd = $("#wndGuest").data("kendoWindow");
-    wnd.content(data);
-    wnd.setOptions({
-    width: $(window).width() * 0.95,
-    height: $(window).height() * 0.95
-    });
-    wnd.center().open();
+                var wnd = $("#wndGuest").data("kendoWindow");
+                wnd.content(data);
+                wnd.setOptions({
+                width: $(window).width() * 0.95,
+                height: $(window).height() * 0.95
+                });
+                wnd.center().open();
 
-    if (person != 0) {
-    var grid = $('#mnePersonGrid').data('kendoGrid');
-    var item = grid.dataItem(grid.select());                    
-    wnd.title(`Izmjena prijave: ${item.FullName}`);
-    }
-    }
-    });
+                if (person != 0) {
+                    var grid = $('#mnePersonGrid').data('kendoGrid');
+                    var item = grid.dataItem(grid.select());                    
+                    wnd.title(`Izmjena prijave: ${item.FullName}`);
+                }
+            }
+        });
     }
 
     function virmanfoo() {
@@ -311,34 +325,48 @@
 
     function registerGuest(person) {
 
-    // var grid = $('#mnePersonGrid').data('kendoGrid');
-    // var item = grid.dataItem(grid.select());
+        // var grid = $('#mnePersonGrid').data('kendoGrid');
+        // var item = grid.dataItem(grid.select());
 
-    // if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati gosta', confirmButtonText: `U redu` });
+        // if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati gosta', confirmButtonText: `U redu` });
 
-    // var person = item.Id;
+        // var person = item.Id;
 
-    var person = $('#Id').val();
-
-    $.ajax({
-    url: `/api/personRegister?id=${person}`,
-    type: 'GET',
-    success: function (data, status, xhr) {
-    if (data.ExternalErrors != undefined) {
-    var errorMessages = data.ExternalErrors.map(function (v) {
-    return v;
-    }).join('<br>');
-    Swal.fire({ icon: 'error', title: errorMessages, confirmButtonText: `U redu` });
-    }
-    else {
-    var grid = $('#mnePersonGrid').data('kendoGrid');
-    grid.dataSource.read();
-    Swal.fire({ icon: 'success', title: 'Gost je uspješno prijavljen!', confirmButtonText: `U redu`, timer: 1500 });
-    disableResTax();
-    }
-    //var wnd = $("#wndGuest").data("kendoWindow");                
-    }
-    });
+        var person = $('#Id').val();
+          
+        $.ajax({
+              url: `/api/personRegister?id=${person}`,
+              type: 'GET',
+              success: function (data) { 
+                if (data.error) {
+                  Swal.fire({
+                    icon: 'error',
+                    title: data.error,
+                    confirmButtonText: 'U redu'
+                  });
+                  return;
+                }
+                 
+                if (data.ExternalErrors && data.ExternalErrors.length) {
+                  const msg = data.ExternalErrors.join('<br>');
+                  Swal.fire({
+                    icon: 'error',
+                    title: msg,
+                    confirmButtonText: 'U redu'
+                  });
+                  return;
+                }
+                 
+                const grid = $('#mnePersonGrid').data('kendoGrid');
+                grid.dataSource.read();
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Gost je uspješno prijavljen!',
+                  timer: 1500
+                });
+                disableResTax();
+              }
+            });
     }
 
     function disableResTax() {
@@ -461,28 +489,49 @@
     }
 
     function doExtPay() {
-    $.ajax({
-    url: '/do-ext-pay',
-    type: 'POST',
-    data: $('#extPayForm').serialize(),
-    success: function (data) {
-    if (data.id != null) {
-    $('#PayId').val(data.id);
-    }
-    if (data.info != "") {
-    Swal.fire({ icon: 'success', title: 'Uspješno sačuvane izmjene!', confirmButtonText: `U redu`, timer: 1000 });
-    var wnd = $("#wndExtPay").data("kendoWindow");
-    wnd.close();
+         
+        var dt = $("#TransactionDate").data("kendoDateTimePicker").value();
+        if (!dt) {
+            Swal.fire({
+            icon: 'error',
+            title: 'Greška',
+            text: 'Morate unijeti Datum uplate.'
+            });
+            return;
+        }
+         
+        var reference = $("#Reference").val().trim();
+        if (!reference) {
+            Swal.fire({
+            icon: 'error',
+            title: 'Greška',
+            text: 'Morate unijeti Broj uplatnice.'
+            });
+            return;
+        }
 
-    }
-    else if (data.error != "") {
-    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
-    }
-    },
-    error: function () {
-    alert("Došlo je do greške.");
-    }
-    });
+        $.ajax({
+            url: '/do-ext-pay',
+            type: 'POST',
+            data: $('#extPayForm').serialize(),
+            success: function (data) {
+                if (data.id != null) {
+                $('#PayId').val(data.id);
+                }
+                if (data.info != "") {
+                Swal.fire({ icon: 'success', title: 'Uspješno sačuvane izmjene!', confirmButtonText: `U redu`, timer: 1000 });
+                var wnd = $("#wndExtPay").data("kendoWindow");
+                wnd.close();
+
+                }
+                else if (data.error != "") {
+                    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                }
+            },
+            error: function () {
+            alert("Došlo je do greške.");
+            }
+        });
     }
 
     function sendCert(g, p) {    
@@ -581,9 +630,21 @@
     window.open(`/api/certificatepdf?group=${g}&person=${p}`, "_blank");
     }
 
-    function guestDateChanged(e) { 
-    dtchng(e);
-    if (nautical == false) resTaxCalc();
+    function guestDateChanged(e) {
+
+        var picker = e.sender;
+        var id     = picker.element.attr("id");
+        var value  = picker.value(); 
+
+        if (id === "CheckOut" && !value) {
+        $("#ResTaxAmount").data("kendoNumericTextBox").value(0);
+        $("#ResTaxFee"   ).data("kendoNumericTextBox").value(0); 
+        $("#Duration").data("kendoNumericTextBox").value(null);
+        return;
+        } 
+
+        dtchng(e);
+        if (nautical == false) resTaxCalc();
     }
 
     function resTaxCalc() {                 

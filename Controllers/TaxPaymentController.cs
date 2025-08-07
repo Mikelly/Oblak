@@ -18,6 +18,7 @@ using Oblak.Helpers;
 using Microsoft.OpenApi.Writers;
 using DocumentFormat.OpenXml.Office2016.Excel;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Oblak.Controllers
 {
@@ -90,8 +91,10 @@ namespace Oblak.Controllers
 			await _db.SaveChangesAsync();
 
 			ViewBag.Balance = _db.TaxPaymentBalances.Where(a => a.TaxType == TaxType.ResidenceTax && a.LegalEntityId == le).Select(a => a.Balance).FirstOrDefault();
-              
-			return PartialView();
+
+            ViewBag.PartnerId = _appUser.PartnerId;
+
+            return PartialView();
         }
 
         [HttpGet("get-balance")]
@@ -134,8 +137,8 @@ namespace Oblak.Controllers
                 if (User.IsInRole("TouristOrgAdmin") == false && User.IsInRole("TouristOrgControllor") == false)
                 {
                     return Unauthorized();
-                }
-
+                } 
+                 
                 var payment = await _db.TaxPayments.FindAsync(dto.Id);
 
                 if (payment == null)
@@ -158,9 +161,22 @@ namespace Oblak.Controllers
 
                 payment.UserModified = User.Identity.Name;
                 payment.UserModifiedDate = DateTime.Now;
+                 
+                _db.Entry(payment).Reference(a => a.TaxPaymentType).Load();
+                if (payment.TaxPaymentType.IsCash)
+                {
+                    var partner = _appUser.PartnerId ?? 0;
+                    var cash = _db.ResTaxPaymentTypes.Where(a => a.PartnerId == partner && a.PaymentStatus == TaxPaymentStatus.Cash).FirstOrDefault();
+                    var fee = _mneClient.CalcResTaxFee(payment.Amount, partner, cash.Id);
+                    payment.Fee = fee;
+                }
+                else if (dto.TaxPaymentTypeId == 2)
+                {
+                    payment.Fee = null;
+                }
 
                 await _db.SaveChangesAsync();
-                
+
                 var payments = _db.TaxPayments.Where(a => (a.LegalEntityId == (le ?? -1) || a.AgencyId == (ag ?? -1)) && a.TaxType == tt);
                 var data = _mapper.Map<List<TaxPaymentDto>>(payments);
 				return Json(await data.ToDataSourceResultAsync(request));
@@ -175,7 +191,7 @@ namespace Oblak.Controllers
         public async Task<ActionResult> Create(TaxPaymentDto dto, [DataSourceRequest] DataSourceRequest request, int? le, int? ag, [FromQuery] string taxType)
         {
             try
-            {
+            {  
                 var pay = new TaxPayment();
 
                 //_mapper.Map(dto, pay);

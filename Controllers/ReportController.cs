@@ -278,7 +278,7 @@ namespace Oblak.Controllers
                 parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
             }
-            else if (report == "CountryStatsPeriod" || report == "ResTaxHistory" || report.ToString().StartsWith("ExcursionTax") || report.ToString().StartsWith("CountryMup"))
+            else if (report == "CountryStatsPeriod" || report == "CountryStatsPeriodGuest" || report == "ResTaxHistory" || report.ToString().StartsWith("ExcursionTax") || report.ToString().StartsWith("CountryMup"))
             {
                 parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
                 parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
@@ -446,12 +446,14 @@ namespace Oblak.Controllers
                 if (result.HasErrors)
                 {
                     _logger.LogError("Telerik report - greske za {Report}:", report);
+                    string errMessage = $"Report '{report}' greska pri renderovanju.";
                     foreach (var error in result.Errors)
                     {
                         _logger.LogError(" - {Error}", error.Message);
+                        errMessage += $"\n - {error.Message}";
                     }
 
-                    byte[] errorPdf = new Pdf().GenerateErrorPdf($"Report '{report}' greska pri renderovanju.");
+                    byte[] errorPdf = new Pdf().GenerateErrorPdf(errMessage);
                      
                     var errorStream = new MemoryStream(errorPdf);
                     errorStream.Seek(0, SeekOrigin.Begin);

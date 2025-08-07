@@ -21,6 +21,7 @@ using System.Xml.Serialization;
 using Oblak.Data.Enums;
 using System.Security.Policy;
 using Net.Codecrete.QrCodeGenerator;
+using System.Text.Json;
 
 namespace Oblak.Services;
 
@@ -145,7 +146,13 @@ public class EfiClient
 
             
             response = client.registerInvoice(request);
-                        
+
+            //var logLine = "EFI RESPONSE: " + JsonSerializer.Serialize(response);
+            //System.IO.File.AppendAllText(
+            //    Path.Combine(AppContext.BaseDirectory, "temp-logs-EFI-Fiscalize.txt"),
+            //    logLine
+            //);
+
             fr.Response = response.ToXML();
             fr.FIC = response.FIC.ToUpper().Replace("-", "");
             fr.Status = "F";
@@ -157,6 +164,12 @@ public class EfiClient
         }
         catch (Exception excp)
         {
+            //var logLine1 = "EFI Exception: " + Exceptions.StringException(excp);
+            //System.IO.File.AppendAllText(
+            //    Path.Combine(AppContext.BaseDirectory, "temp-logs-EFI-Fiscalize.txt"),
+            //    logLine1
+            //);
+              
             _logger.LogDebug("fiscal error: " + excp.Message);
 
             string error = "";

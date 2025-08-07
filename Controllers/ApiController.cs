@@ -1,30 +1,34 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Mvc;
-using Oblak.Data;
+using Humanizer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using Oblak.Services;
-using Oblak.Services.MNE;
-using Oblak.Models.EFI;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
-using Oblak.Helpers;
-using System.ComponentModel.DataAnnotations;
-using Oblak.Services.SRB;
-using Oblak.Models.Api;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Oblak.Data;
 using Oblak.Data.Enums;
 using Oblak.Filters;
+using Oblak.Helpers;
+using Oblak.Migrations;
+using Oblak.Models.Api;
+using Oblak.Models.EFI;
+using Oblak.Models.Payment;
+using Oblak.Services;
 using Oblak.Services.FCM;
+using Oblak.Services.MNE;
+using Oblak.Services.Payment;
 using Oblak.Services.Payten;
 using Oblak.Services.Reporting;
-using Oblak.Services.Payment;
-using Newtonsoft.Json.Linq;
-using Microsoft.AspNetCore.Authorization;
+using Oblak.Services.SRB;
 using Oblak.Services.Uniqa;
-using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
-using Oblak.Models.Payment;
+using ResTaxStatus = Oblak.Data.Enums.ResTaxStatus;
 
 namespace Oblak.Controllers
 {
@@ -440,6 +444,23 @@ namespace Oblak.Controllers
 
             var legalEntity = group.LegalEntity;
 
+            if (group.ResTaxPaymentTypeId != null && group.ResTaxPaymentTypeId == 10)
+            {
+                var pay = db.TaxPayments.Where(a => a.GroupId == group.Id).FirstOrDefault();
+
+                if (pay == null)
+                {
+                    return Json(new BasicDto() { info = "", error = "Za odabranu vrstu plaćanja boravišne takse morate unijeti podatke o uplati." });
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(pay.Reference))
+                    {
+                        return Json(new BasicDto() { info = "", error = "Za odabranu vrstu eksternog plaćanja boravišne takse morate unijeti broj uplatnice." });
+                    }
+                }
+            }
+
             try
             {
                 if (_registerClient is MneClient)
@@ -481,6 +502,24 @@ namespace Oblak.Controllers
                         .Include(a => a.Property).ThenInclude(a => a.Municipality)
                         .Include(a => a.Property).ThenInclude(a => a.LegalEntity)
                         .Include(a => a.LegalEntity).FirstOrDefault(p => p.Id == id)!;
+                     
+                    var mnePerson = person as MnePerson;
+                    if (mnePerson != null && _appUser.PartnerId == 4 && mnePerson.ResTaxPaymentTypeId != null && mnePerson.ResTaxPaymentTypeId == 10)
+                    {
+                        var pay = db.TaxPayments.Where(a => a.PersonId == mnePerson.Id).FirstOrDefault();
+
+                        if (pay == null)
+                        {
+                            return Json(new BasicDto() { info = "", error = "Za odabranu vrstu plaćanja boravišne takse morate unijeti podatke o uplati." });
+                        }
+                        else
+                        {
+                            if (string.IsNullOrEmpty(pay.Reference))
+                            {
+                                return Json(new BasicDto() { info = "", error = "Za odabranu vrstu eksternog plaćanja boravišne takse morate unijeti broj uplatnice." });
+                            }
+                        }
+                    }
 
                     (person as MnePerson).ResTaxStatus = ResTaxStatus.Closed;
                     db.SaveChanges();
@@ -490,7 +529,7 @@ namespace Oblak.Controllers
                 {                    
                     if (person != null && (person.ExternalId ?? 0) != 0)
                     {
-                        return Json(new BasicDto() { info = "", error = "Nemate prava da vršite izmjene na već prijavljenom gostu" });
+                        return Json(new BasicDto() { info = "", error = "Nemate prava da vršite izmjene na već prijavljenom gostu. (registracija gosta)" });
                     }
                 }
 
@@ -774,14 +813,50 @@ namespace Oblak.Controllers
 
         #region Racun
 
-
         [HttpPost]
         [Route("invoiceCreate")]
         public async Task<ActionResult<Invoice>> InvoiceCreate(int? property, int? group, Invoice? racun, PaymentType? pay)
         {
             try
             {
-                _logger.LogDebug("RACUN START:");
+                string payType = pay.HasValue ? pay.Value.ToString() : "null";
+                _logger.LogDebug("RACUN START: >>>>>>>>>>>>>>>>>>");
+                //_logger.LogDebug($"RACUN START date: {DateTime.Now.ToString()}");
+                //_logger.LogDebug($"Racun property:{property}");
+                //_logger.LogDebug($"Racun group:{group}");
+                //_logger.LogDebug($"Racun pay:{payType}");
+                //_logger.LogDebug("Racun Invoice: " + JsonSerializer.Serialize(racun));
+
+                //var logLine = $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} [Debug] RACUN START\r\n";
+                //System.IO.File.AppendAllText(
+                //    Path.Combine(AppContext.BaseDirectory, "temp-logs.txt"),
+                //    logLine
+                //);
+
+                //var logLine2 = $"Racun property:{property}";
+                //System.IO.File.AppendAllText(
+                //    Path.Combine(AppContext.BaseDirectory, "temp-logs.txt"),
+                //    logLine2
+                //);
+
+                //var logLine23 = $"Racun group:{group}";
+                //System.IO.File.AppendAllText(
+                //    Path.Combine(AppContext.BaseDirectory, "temp-logs.txt"),
+                //    logLine23
+                //);
+
+                //var logLine234 = $"Racun pay:{payType}";
+                //System.IO.File.AppendAllText(
+                //    Path.Combine(AppContext.BaseDirectory, "temp-logs.txt"),
+                //    logLine234
+                //);
+
+                //var logLine2345 = "Racun Invoice: " + JsonSerializer.Serialize(racun);
+                //System.IO.File.AppendAllText(
+                //    Path.Combine(AppContext.BaseDirectory, "temp-logs.txt"),
+                //    logLine2345
+                //);
+
                 Property p;
                 if (property.HasValue) p = db.Properties.FirstOrDefault(a => a.Id == property)!;
                 else p = db.Properties.Where(a => a.LegalEntityId == _appUser.LegalEntityId).FirstOrDefault()!;
@@ -789,20 +864,65 @@ namespace Oblak.Controllers
                 if (group.HasValue && _registerClient is MneClient)
                 {
                     var g = db.Groups.Include(a => a.Persons).Include(a => a.Property).FirstOrDefault(a => a.Id == group);
-                    if (g.Persons.Any() == false) {
+                    if (g.Persons.Any() == false)
+                    {
                         return Json(new BasicDto() { info = "", error = "Grupa ne sadrži nijednog gosta, pa se račun ne može automatski napraviti!" });
                     }
+
+                    //_logger.LogDebug("RACUN GROUP!");
+                    //var logLine23456 = "RACUN GROUP!";
+                    //System.IO.File.AppendAllText(
+                    //    Path.Combine(AppContext.BaseDirectory, "temp-logs.txt"),
+                    //    logLine23456
+                    //);
+
                     var rac = await _documentService.CreateInvoice(g, pay);
                     var dto = _documentService.Doc2Invoice(rac);
+
+                    //var logLine2345678 = "Racun GROUP RETURN: " + JsonSerializer.Serialize(dto);
+                    //System.IO.File.AppendAllText(
+                    //    Path.Combine(AppContext.BaseDirectory, "temp-logs.txt"),
+                    //    logLine2345678
+                    //);
+
+                    //var logLine23456789 = "RACUN GROUP END >>>>>>>>>>>>>>>>>> ";
+                    //System.IO.File.AppendAllText(
+                    //    Path.Combine(AppContext.BaseDirectory, "temp-logs.txt"),
+                    //    logLine23456789
+                    //);
+
                     return Json(dto);
                 }
                 else
                 {
-					_logger.LogDebug("RACUN JSON: " + JsonSerializer.Serialize(racun));
-					var rac = _documentService.CreateInvoice(racun, p);
+                    //_logger.LogDebug("RACUN INVOICE!");
+
+                    //var logLine234567 = "RACUN INVOICE!";
+                    //System.IO.File.AppendAllText(
+                    //    Path.Combine(AppContext.BaseDirectory, "temp-logs.txt"),
+                    //    logLine234567
+                    //);
+
+                    var rac = _documentService.CreateInvoice(racun, p);
                     var dto = _documentService.Doc2Invoice(rac);
+                    //_logger.LogDebug("Racun INVOICE RETURN: " + JsonSerializer.Serialize(dto));
+                    //_logger.LogDebug("RACUN INVOICE END >>>>>>>>>>>>>>>>>> ");
+
+
+                    //var logLine2345678 = "Racun INVOICE RETURN: " + JsonSerializer.Serialize(dto);
+                    //System.IO.File.AppendAllText(
+                    //    Path.Combine(AppContext.BaseDirectory, "temp-logs.txt"),
+                    //    logLine2345678
+                    //);
+
+                    //var logLine23456789 = "RACUN INVOICE END >>>>>>>>>>>>>>>>>> ";
+                    //System.IO.File.AppendAllText(
+                    //    Path.Combine(AppContext.BaseDirectory, "temp-logs.txt"),
+                    //    logLine23456789
+                    //);
+
                     return Json(dto);
-                }                
+                }
             }
             catch (Exception e)
             {
@@ -811,8 +931,7 @@ namespace Oblak.Controllers
                 return Json(new { info = "", error = Exceptions.StringException(e), id = -1 });
             }
         }
-
-
+         
         [HttpGet]
         [Route("invoiceGet")]
         public ActionResult<Invoice> InvoiceGet(int id)
@@ -860,19 +979,44 @@ namespace Oblak.Controllers
         {
             var doc = db.Documents.Include(a => a.DocumentItems).Include(a => a.DocumentPayments).Where(a => a.Id == id).FirstOrDefault();
 
+            //var logLine = $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} [Debug] FISCAL START\r\n";
+            //System.IO.File.AppendAllText(
+            //    Path.Combine(AppContext.BaseDirectory, "temp-logs-InvoiceFiscal.txt"),
+            //    logLine
+            //);
+
             if (doc.Status == DocumentStatus.Fiscalized)
             {
+                //var logLine1 = $"Račun je već fiskalizovan\r\n";
+                //System.IO.File.AppendAllText(
+                //    Path.Combine(AppContext.BaseDirectory, "temp-logs-InvoiceFiscal.txt"),
+                //    logLine1
+                //);
+
                 Response.StatusCode = 400;
                 return Json(new { info = "Račun je već fiskalizovan", error = "", id = doc.Id });
             }
 
             try
             {
-                await _efiClient.Fiscalize(doc, null, null);                
+                await _efiClient.Fiscalize(doc, null, null);
+
+                //var logLine22 = "{FISCAL RETURN:Uspješno izvršena fiskalizacija \r\n";
+                //System.IO.File.AppendAllText(
+                //    Path.Combine(AppContext.BaseDirectory, "temp-logs-InvoiceFiscal.txt"),
+                //    logLine22
+                //);
+
                 return Json(new { info = "Uspješno izvršena fiskalizacija", error = "", id = doc.Id });
             }
             catch (Exception e)
             {
+                var logLine12 = "FISKAL ERROR: " + Exceptions.StringException(e);
+                System.IO.File.AppendAllText(
+                    Path.Combine(AppContext.BaseDirectory, "temp-logs-InvoiceFiscal.txt"),
+                    logLine12
+                );
+
                 Response.StatusCode = 500;
                 _logger.LogDebug("FISKAL ERROR: " + Exceptions.StringException(e));
                 return Json(new { info = "", error = Exceptions.StringException(e), id = -1 });
@@ -883,19 +1027,23 @@ namespace Oblak.Controllers
         [HttpGet]
         [Route("invoiceDelete")]
         public ActionResult InvoiceDelete(int id)
-        {
+        { 
             var doc = db.Documents.Where(a => a.Id == id).FirstOrDefault();
 
-            if (doc.Status == DocumentStatus.Fiscalized || doc.Status == DocumentStatus.NotFiscalized) return Json(new { error = "Račun je fiskalizovan ili poslat na fiskalizaciju, pa se ne može brisati", info = "", id = doc.Id });
-
+            if (doc.Status == DocumentStatus.Fiscalized || doc.Status == DocumentStatus.NotFiscalized)
+            {  
+                return Json(new { error = "Račun je fiskalizovan ili poslat na fiskalizaciju, pa se ne može brisati", info = "", id = doc.Id });
+            }
             try
             {
                 db.Documents.Remove(doc);
                 db.SaveChanges();
+                 
                 return Json(new { info = "Uspješno obrisan dokument", error = "", id = doc.Id });
             }
             catch (Exception e)
             {
+                _logger.LogDebug("InvoiceDelete ERROR: " + Exceptions.StringException(e)); 
                 return Json(new { info = "", error = Exceptions.StringException(e), id = -1 });
             }
         }
@@ -1008,38 +1156,87 @@ namespace Oblak.Controllers
         [Route("resTaxCalc")]
         public ActionResult<ResTaxCalc> ResTaxCalc(int objekat, string datumod, string datumdo)
         {
-            var obj = db.Properties.FirstOrDefault(a => a.Id == objekat);            
-                        
-            var OD = DateTime.ParseExact(datumod, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
-            var DO = DateTime.ParseExact(datumdo, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
+            try
+            {
+                var obj = db.Properties.FirstOrDefault(a => a.Id == objekat);
+                if (obj == null)
+                    return NotFound($"Objekat ID={objekat} ne postoji.");
+                 
+                if (!DateTime.TryParseExact(datumod, "dd.MM.yyyy",
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.None,
+                        out var OD))
+                {
+                    return BadRequest("Pogrešan format za datumod. Očekuje se dd.MM.yyyy.");
+                }
 
-            var tax = new ResTaxCalc();
-            tax.Status = "A";
-            tax.PropertyId = objekat;
-            tax.LegalEntityId = obj.LegalEntityId;
-            tax.Date = DateTime.Now;
-            tax.DateFrom = OD;
-            tax.DateTo = DO;
-            db.ResTaxCalc.Add(tax);
-            db.SaveChanges();
+                if (!DateTime.TryParseExact(datumdo, "dd.MM.yyyy",
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.None,
+                        out var DO))
+                {
+                    return BadRequest("Pogrešan format za datumdo. Očekuje se dd.MM.yyyy.");
+                }
+                 
+                if (OD > DO)
+                    return BadRequest("DatumOD ne može biti poslije datuma DatumDO.");
+                  
+                var tax = new ResTaxCalc
+                {
+                    Status = "A",
+                    PropertyId = objekat,
+                    LegalEntityId = obj.LegalEntityId,
+                    Date = DateTime.Now,
+                    DateFrom = OD,
+                    DateTo = DO
+                }; 
+                db.ResTaxCalc.Add(tax);
+                db.SaveChanges();
 
-            tax.Items = new List<ResTaxCalcItem>();
+                tax.Items = new List<ResTaxCalcItem>();
 
-            var rb90Client = _registerClient as MneClient;
+                var rb90Client = _registerClient as MneClient;
 
-            rb90Client.CalcResTax(tax, objekat, OD, DO, "FULL", "STRANI");
-            rb90Client.CalcResTax(tax, objekat, OD, DO, "FULL", "DOMACI");
-            rb90Client.CalcResTax(tax, objekat, OD, DO, "HALF", "STRANI");
-            rb90Client.CalcResTax(tax, objekat, OD, DO, "HALF", "DOMACI");
-            rb90Client.CalcResTax(tax, objekat, OD, DO, "NONE", "STRANI");
-            rb90Client.CalcResTax(tax, objekat, OD, DO, "NONE", "DOMACI");
+                var kombinacije = new[]
+                {
+                    ("FULL", "STRANI"),
+                    ("FULL", "DOMACI"),
+                    ("HALF", "STRANI"),
+                    ("HALF", "DOMACI"),
+                    ("NONE", "STRANI"),
+                    ("NONE", "DOMACI")
+                };
 
-            db.Entry(tax).Collection(a => a.Items).Load();
+                foreach (var (vrsta, tip) in kombinacije)
+                {
+                    try
+                    {
+                        rb90Client?.CalcResTax(tax, objekat, OD, DO, vrsta, tip);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogDebug($"[WARNING] Neuspela obrada za {vrsta} / {tip}: {ex.Message}");
+                    }
+                }
 
-            tax.Amount = tax.Items.Select(a => a.TotalTax).Sum();
-            db.SaveChanges();
-            
-            return Json(ResTaxDto.FromEntity(tax));
+                db.Entry(tax).Collection(a => a.Items).Load();
+
+                tax.Amount = tax.Items.Sum(a => a.TotalTax);
+                db.SaveChanges();
+
+                //var logLine2345678 = $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff}" + " ResTaxCalc RETURN: " + JsonSerializer.Serialize(ResTaxDto.FromEntity(tax));
+                //System.IO.File.AppendAllText(
+                //    Path.Combine(AppContext.BaseDirectory, "temp-logs-ResTaxCalc.txt"),
+                //    logLine2345678 + Environment.NewLine
+                //);
+
+                return Json(ResTaxDto.FromEntity(tax));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug($"[ERROR] Greška u ResTaxCalc: {ex.Message}");
+                return StatusCode(500, "Greška u obracunu boravišne takse.");
+            }
         }
 
 
@@ -1079,16 +1276,64 @@ namespace Oblak.Controllers
         [Route("resTaxDelete")]
         public ActionResult<BasicDto> ResTaxDelete(int id)
         {
+            //var logLine2 = $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} [Debug] ResTaxDelete START >>>>>>>>>>>>>>>>>>>>>>>>>>\r\n";
+            //System.IO.File.AppendAllText(
+            //    Path.Combine(AppContext.BaseDirectory, "temp-logs-ResTaxDelete.txt"),
+            //    logLine2
+            //);
+
+            //var logLine23 = $"Param: {id} \r\n";
+            //System.IO.File.AppendAllText(
+            //    Path.Combine(AppContext.BaseDirectory, "temp-logs-ResTaxDelete.txt"),
+            //    logLine23
+            //);
+
             var tax = db.ResTaxCalc.Where(a => a.Id == id).FirstOrDefault();
+             
+            if (tax == null)
+            {
+                //var logLine2345 = "ResTaxDelete: Boravišna taksa ne postoji!" + "\r\n";
+                //System.IO.File.AppendAllText(
+                //    Path.Combine(AppContext.BaseDirectory, "temp-logs-ResTaxDelete.txt"),
+                //    logLine2345
+                //);
 
-            if (tax == null) return Json(new BasicDto { info = "", error = "Boravišna taksa ne postoji!" });
+                return Json(new BasicDto { info = "", error = "Boravišna taksa ne postoji!" });
+            }
 
-            if (tax.Status == "P") return Json(new BasicDto { info = "", error = "Boravišna taksa je plaćena pa se ne može brisati!" });
+            if (tax.Status == "P")
+            {
+                //var logLine1 = "ResTaxDelete: Boravišna taksa je plaćena pa se ne može brisati!" + "\r\n";
+                //System.IO.File.AppendAllText(
+                //    Path.Combine(AppContext.BaseDirectory, "temp-logs-ResTaxDelete.txt"),
+                //    logLine1
+                //);
 
-            db.Remove(tax);
-            db.SaveChanges();
+                return Json(new BasicDto { info = "", error = "Boravišna taksa je plaćena pa se ne može brisati!" });
+            }
+            try
+            {
+                db.Remove(tax);
+                db.SaveChanges();
 
-            return Json(new BasicDto { info = "Boravišna taksa je uspješno obrisana!", error = "" });
+                //var logLine1 = "ResTaxDelete: Boravišna taksa je uspješno obrisana!" + "\r\n";
+                //System.IO.File.AppendAllText(
+                //    Path.Combine(AppContext.BaseDirectory, "temp-logs-ResTaxDelete.txt"),
+                //    logLine1
+                //);
+                 
+                return Json(new BasicDto { info = "Boravišna taksa je uspješno obrisana!", error = "" });
+            }
+            catch (Exception e)
+            {
+                _logger.LogDebug("ResTaxDelete ERROR: " + Exceptions.StringException(e));
+                //var logLine = "ResTaxDelete ERROR: " + Exceptions.StringException(e) + "\r\n";
+                //System.IO.File.AppendAllText(
+                //    Path.Combine(AppContext.BaseDirectory, "temp-logs-ResTaxDelete.txt"),
+                //    logLine
+                //);
+                return Json(new { info = "", error = Exceptions.StringException(e), id = -1 });
+            }
         }
 
 

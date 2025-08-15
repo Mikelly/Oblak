@@ -173,6 +173,7 @@
 		}
 
 		if (report == "LegalEntities") {
+			$('#legalEntityType').show();
 			$('#legalEntityStatus').show();
 			$('#place').show();
 			$('#datumOd').show();
@@ -269,6 +270,7 @@
 		$('#fenuCode').val($('#ENUCode').val());
 
 		$('#fagencyId').val($('#AgencyId').val());
+		$('#flegalEntityType').val($('#LegalEntityType').val());
 
 		$('#reportForm').submit();
 	}
@@ -300,6 +302,7 @@
 	<input type="hidden" id="fenuCode" name="enuCode" />
 	<input type="hidden" id="ftaxPaymentType" name="taxPaymentType" />
 	<input type="hidden" id="fagencyId" name="agencyId" />
+	<input type="hidden" id="flegalEntityType" name="legalEntityType" />
 </form>
 
 <div style="width:400px; margin-left:auto; margin-right:auto; margin-top:50px; font-size:larger;">
@@ -341,6 +344,24 @@
 				.MinLength(3)
 				.DataSource(source => { source.Read(read => { read.Action("ReadAdmin", "LegalEntity"); }).ServerFiltering(true); })
 				)
+		<br />
+	</div>
+
+	<div class="parameter" style="display:none" id="legalEntityType">
+		Odaberite tip stanodavca:
+		@(Html.Kendo().DropDownList()
+				.Name("LegalEntityType")
+				.OptionLabel("Izaberite tip")
+				.AutoWidth(true)
+				.DataTextField("Text")
+				.DataValueField("Value")
+				.BindTo(new List<SelectListItem>
+				{
+				new SelectListItem { Text = "Firma", Value = "Company" },
+				new SelectListItem { Text = "Fizičko lice", Value = "Person" }
+				})
+				)
+
 		<br />
 	</div>
 

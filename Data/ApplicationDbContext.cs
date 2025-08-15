@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oblak.Data.Enums;
+using Oblak.Models.Api;
 using System.Reflection;
 
 namespace Oblak.Data
@@ -311,6 +312,12 @@ namespace Oblak.Data
                     tb.HasTrigger("trg_MnePersons_Update");
                     tb.HasTrigger("trg_MnePersons_Delete");
                 });
+            });
+
+            modelBuilder.Entity<MneGuestListDto>(entity =>
+            {
+                entity.HasNoKey();
+                entity.ToView(null);
             });
         }
 

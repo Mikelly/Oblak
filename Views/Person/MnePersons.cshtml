@@ -264,63 +264,79 @@
 
 
     function saveGuest() {
-    $.ajax({
-    url: '/save-mne-person',
-    type: 'POST',
-    data: $('#mnePersonForm').serialize(),
-    success: function (data) {
-    if(data.id != null) {
-    $('#Id').val(data.id);
-    }
-    if (data.ResTaxTypeId != null) {
-    $('#ResTaxTypeId').data('kendoDropDownList')?.value(data.ResTaxTypeId);
-    }
-    if (data.ResTaxAmount != null) {
-    $('#ResTaxAmount').data('kendoNumericTextBox')?.value(data.ResTaxAmount);
-    }
-    if (data.ResTaxFee != null) {
-    $('#ResTaxFee').data('kendoNumericTextBox')?.value(data.ResTaxFee);
-    }
-    if (data.info != "") {
-    var grid = $('#mnePersonGrid').data('kendoGrid');
-    $('#groupdesc').load('/group-desc?groupid=@ViewBag.Group');
-    grid.dataSource.read();
 
-    let userUnknownMsg = ``; 
-    var timerN = 1500;
-    if (data.UserCreated === 'unknown') {
-    userUnknownMsg += `<b style="color: red;">Operater nije dodeljen, javite se administratoru!</b>`;
-    timerN = 5000;
-    }
+            var btn = $("#btnSaveDoc"); 
+            btn.prop("disabled", true);
+            btn.text("Čuvanje...");
 
-    Swal.fire({ icon: 'success', title: 'Uspješno sačuvane izmjene!', html: userUnknownMsg,  confirmButtonText: `U redu`, timer: timerN });
-    if (isgroup == false) {
-    var wnd = $("#wndGuest").data("kendoWindow");
-    wnd.close();
-    }
-    }
-    else if (data.error != "") {
-    Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
-    }
-    else if (data.errors) {
-    var errorMessages = data.errors.map(function (v) {
-    return v.Error;
-    }).join('<br>');
+            $.ajax({
+                url: '/save-mne-person',
+                type: 'POST',
+                data: $('#mnePersonForm').serialize(),
+                success: function (data) {
+                        if(data.id != null) {
+                            $('#Id').val(data.id);
+                        }
+                        if (data.ResTaxTypeId != null) {
+                            $('#ResTaxTypeId').data('kendoDropDownList')?.value(data.ResTaxTypeId);
+                        }
+                        if (data.ResTaxAmount != null) {
+                            $('#ResTaxAmount').data('kendoNumericTextBox')?.value(data.ResTaxAmount);
+                        }
+                        if (data.ResTaxFee != null) {
+                            $('#ResTaxFee').data('kendoNumericTextBox')?.value(data.ResTaxFee);
+                        }
+                        if (data.info != "") {
+                            var grid = $('#mnePersonGrid').data('kendoGrid');
+                            $('#groupdesc').load('/group-desc?groupid=@ViewBag.Group');
+                            grid.dataSource.read();
 
-    Swal.fire({
-    icon: 'error',
-    title: 'Greške u unosu podataka',
-    html: errorMessages,
-    width: '500px',
-    footer: 'Molimo ispravite greške.',
-    confirmButtonText: 'U redu'
-    });
-    }                
-    },
-    error: function () {
-    alert("Došlo je do greške.");
-    }
-    });
+                            let userUnknownMsg = ``; 
+                            var timerN = 1500;
+                            if (data.UserCreated === 'unknown') {
+                                userUnknownMsg += `<b style="color: red;">Operater nije dodeljen, javite se administratoru!</b>`;
+                                timerN = 5000;
+                            }
+
+                            Swal.fire({ icon: 'success', title: 'Uspješno sačuvane izmjene!', html: userUnknownMsg,  confirmButtonText: `U redu`, timer: timerN });
+                            if (isgroup == false) {
+                                var wnd = $("#wndGuest").data("kendoWindow");
+                                wnd.close();
+                            }
+                        }
+                        else if (data.error != "") {
+                            Swal.fire({ icon: 'error', title: data.error, confirmButtonText: `U redu` });
+                        }
+                        else if (data.errors) {
+                            var errorMessages = data.errors.map(function (v) {
+                                return v.Error;
+                            }).join('<br>');
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Greške u unosu podataka',
+                                html: errorMessages,
+                                width: '500px',
+                                footer: 'Molimo ispravite greške.',
+                                confirmButtonText: 'U redu'
+                            });
+                        }                
+                },
+                error: function () {
+                    alert("Došlo je do greške.");
+                }, 
+                complete: function () { 
+                    btn.prop("disabled", false); 
+                    btn.html(
+                        "<div style='width:100%;height:100%;text-align:center; align-items:center;'>" +
+                            "<img style='width:50px;height:50px;display:block;margin:0 auto;' src='/Content/Icons/save_color.png'/>" +
+                            "<div style='font-weight:bold;position:relative;top:5px;line-height:110%;font-size:90%'>" +
+                                "SAČUVAJ<br/>IZMJENE" +
+                            "</div>" +
+                        "</div>"
+                    );
+                }
+            });
     }
 
     function registerGuest(person) {
@@ -647,49 +663,67 @@
         if (nautical == false) resTaxCalc();
     }
 
-    function resTaxCalc() {                 
-    if (isto) {
-    var birthDate = $('#BirthDate').data('kendoDatePicker').value();
-    var checkIn = $('#CheckIn').data('kendoDatePicker').value();
-    var checkOut = $('#CheckOut').data('kendoDatePicker').value();
-    var property = $('#PropertyId').data('kendoMultiColumnComboBox').value();
-    var taxType = $('#ResTaxTypeId').data('kendoDropDownList').value();
-    var payType = $('#ResTaxPaymentTypeId').data('kendoDropDownList').value();
-    var exemptType = $('#ResTaxExemptionTypeId').data('kendoDropDownList').value();
+    function resTaxCalc() {   
+        debugger;
+        if (isto) {
+            var birthDate = $('#BirthDate').data('kendoDatePicker').value();
 
-    if (checkIn != null && checkOut != null) {
-    if (checkIn > checkOut) Swal.fire({ icon: 'error', title: 'Datum odjave mora biti veći od datuma odjave!', confirmButtonText: `U redu` });
-    if (checkIn > new Date()) Swal.fire({ icon: 'error', title: 'Datum prijave ne smije biti u budućnosti!', confirmButtonText: `U redu` });
-    }
+            var checkIn = $('#CheckIn').data('kendoDatePicker').value();
+            if (checkIn === null) {
+                var ciVal = $('#CheckIn').val();
+                if (ciVal) {
+                    var parts = ciVal.split(".");
+                    checkIn = new Date(parts[2], parts[1] - 1, parts[0]);
+                }
+            }
 
-    if (birthDate != null) birthDate = kendo.toString(birthDate, "dd.MM.yyyy");
-    if (checkIn != null) checkIn = kendo.toString(checkIn, "dd.MM.yyyy");
-    if (checkOut != null) checkOut = kendo.toString(checkOut, "dd.MM.yyyy");
+            var checkOut = $('#CheckOut').data('kendoDatePicker').value();
+            if (checkOut === null) {
+                var coVal = $('#CheckOut').val();
+                if (coVal) {
+                    var parts = coVal.split(".");
+                    checkOut = new Date(parts[2], parts[1] - 1, parts[0]);
+                }
+            }
 
-    debugger;
+            var property = $('#PropertyId').data('kendoMultiColumnComboBox').value();
+            var taxType = $('#ResTaxTypeId').data('kendoDropDownList').value();
+            var payType = $('#ResTaxPaymentTypeId').data('kendoDropDownList').value();
+            var exemptType = $('#ResTaxExemptionTypeId').data('kendoDropDownList').value();
 
-    if (group == 0) {
-    if (alreadyPaidIds.includes(parseInt(payType))) {
-    $("#btnExtPay").data("kendoButton").enable(true);
-    }
-    else {
-    $("#btnExtPay").data("kendoButton").enable(false);
-    }
-    }
+            if (checkIn != null && checkOut != null) {
+                if (checkIn > checkOut) Swal.fire({ icon: 'error', title: 'Datum odjave mora biti veći od datuma odjave!', confirmButtonText: `U redu` });
+                if (checkIn > new Date()) Swal.fire({ icon: 'error', title: 'Datum prijave ne smije biti u budućnosti!', confirmButtonText: `U redu` });
+            }
 
-    $.ajax({
-    url: `/person/restax?property=${property}&resType=${taxType}&payType=${payType}&exemptType=${exemptType}&birthDate=${birthDate}&checkIn=${checkIn}&checkOut=${checkOut}&group=${group}`,
-    type: 'GET',
-    success: function (data) {
-    $('#ResTaxTypeId').data('kendoDropDownList').value(data.resType);
-    $('#ResTaxAmount').data('kendoNumericTextBox').value(data.tax);
-    $('#ResTaxFee').data('kendoNumericTextBox').value(Math.round(data.fee * 100) / 100);
-    },
-    complete: function (data) {
-    kendo.ui.progress($(body), false);
-    }
-    });
-    }
+            if (birthDate != null) birthDate = kendo.toString(birthDate, "dd.MM.yyyy");
+            if (checkIn != null) checkIn = kendo.toString(checkIn, "dd.MM.yyyy");
+            if (checkOut != null) checkOut = kendo.toString(checkOut, "dd.MM.yyyy");
+
+            debugger;
+
+            if (group == 0) {
+                if (alreadyPaidIds.includes(parseInt(payType))) {
+                    $("#btnExtPay").data("kendoButton").enable(true);
+                }
+                else {
+                    $("#btnExtPay").data("kendoButton").enable(false);
+                }
+            }
+
+            $.ajax({
+                url: `/person/restax?property=${property}&resType=${taxType}&payType=${payType}&exemptType=${exemptType}&birthDate=${birthDate}&checkIn=${checkIn}&checkOut=${checkOut}&group=${group}`,
+                type: 'GET',
+                success: function (data) {
+                    $('#ResTaxTypeId').data('kendoDropDownList').value(data.resType);
+                    $('#ResTaxAmount').data('kendoNumericTextBox').value(data.tax);
+                    $('#ResTaxFee').data('kendoNumericTextBox').value(Math.round(data.fee * 100) / 100);
+                },
+                complete: function (data) {
+                    kendo.ui.progress($(body), false);
+                }
+            });
+        }
     }
 
 

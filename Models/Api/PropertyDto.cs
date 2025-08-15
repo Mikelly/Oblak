@@ -26,6 +26,8 @@ namespace Oblak.Models.Api
         public int? Capacity { get; set; }
         public string? RegNumber { get; set; }
         public DateTime? RegDate { get; set; }
+        public List<string>? EnuCodes { get; set; }
+
 
         public Property ToEntity(Property property)
         {

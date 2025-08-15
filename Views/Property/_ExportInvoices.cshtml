@@ -1,0 +1,72 @@
+﻿@using Oblak.Models.Api
+@model ExportInvoicesDto
+
+@{
+    int legalEntityId = Model.LegalEntityId;
+    int propertyId = Model.PropertyId;
+} 
+
+<div id="exportInvoicesForm" style="padding:20px;">
+    <label>Odaberite ENU:</label>
+    @(Html.Kendo().DropDownList()
+        .Name("ddlEnu")
+        .OptionLabel("– izaberite –")
+        .DataTextField("EnuCode")
+        .DataValueField("EnuCode")
+        .AutoBind(true)
+        .Events(e => e.DataBound("function(e) { if (this.dataSource.total() === 1) { this.select(1); } }"))
+        .DataSource(source =>
+        {
+            source.Read(read =>
+            {
+                read.Url($"/fiscal-enu-all-pe?legalEntityId={Model.LegalEntityId}")
+            .Type(HttpVerbs.Get);
+            });
+        })
+        .HtmlAttributes(new { style = "width:100%;" })
+        )
+
+    <label for="dtFrom" style="margin-top:10px; display:block;">Datum od:</label>
+    @(Html.Kendo().DatePicker()
+        .Name("dtFrom")
+        .Format("dd.MM.yyyy")
+        .HtmlAttributes(new { style = "width:100%;" })
+        )
+
+    <label for="dtTo" style="margin-top:10px; display:block;">Datum do:</label>
+    @(Html.Kendo().DatePicker()
+        .Name("dtTo")
+        .Format("dd.MM.yyyy")
+        .HtmlAttributes(new { style = "width:100%;" })
+        )
+
+    <div style="text-align:center; margin-top:20px;">
+        @(Html.Kendo().Button()
+                .Name("btnDownloadInvoices")
+                .Content("Preuzmi račune")
+                .HtmlAttributes(new { @class = "k-primary", type = "button", style = "min-width:180px;" })
+                .Events(e => e.Click("exportInvoicesZipFromWindow"))
+                )
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var propertyId = @propertyId;
+          
+        $(document).ready(function () {
+            var ddl = $("#ddlEnu").data("kendoDropDownList");
+            ddl.dataSource.bind("change", function () {
+                // ovde ništa, jer filter radimo nakon učitavanja
+            });
+            ddl.dataSource.bind("requestEnd", function(e) {
+                if (e.type === "read") {
+                    var filtered = e.response.filter(function (item) {
+                        return item.propertyId === propertyId;
+                    });
+                    ddl.dataSource.data(filtered);
+                }
+            });
+        });
+    </script>
+}

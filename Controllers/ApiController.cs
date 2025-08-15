@@ -13,7 +13,7 @@ using Oblak.Helpers;
 using Oblak.Migrations;
 using Oblak.Models.Api;
 using Oblak.Models.EFI;
-using Oblak.Models.Payment;
+using Oblak.Models.Payment; 
 using Oblak.Services;
 using Oblak.Services.FCM;
 using Oblak.Services.MNE;
@@ -24,6 +24,7 @@ using Oblak.Services.SRB;
 using Oblak.Services.Uniqa;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
+using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -226,19 +227,37 @@ namespace Oblak.Controllers
             else return Content("0");
         }
         */
-                
+
 
         [HttpGet]
         [Route("propertiesGet")]
         public async Task<ActionResult<List<PropertyDto>>> PropertiesGet()
         {
             await _registerClient.Initialize(_legalEntity);
+
             var properties = await _registerClient.GetProperties();
 
-            List<PropertyDto> data = properties.Select(a => { var b = _mapper.Map<Property, PropertyDto>(a); b.LegalEntityName = a.LegalEntity.Name; return b; }).ToList();
+            var propertyIds = properties.Select(p => p.Id).ToList();
+
+            var enuCodesByProperty = db.FiscalEnu
+                .Where(fe => propertyIds.Contains(fe.PropertyId))
+                .GroupBy(fe => fe.PropertyId)
+                .ToDictionary(g => g.Key, g => g.Select(fe => fe.FiscalEnuCode).ToList());
+
+            List<PropertyDto> data = properties.Select(a =>
+            {
+                var b = _mapper.Map<Property, PropertyDto>(a);
+                b.LegalEntityName = a.LegalEntity.Name;
+                b.EnuCodes = enuCodesByProperty.ContainsKey(a.Id)
+                    ? enuCodesByProperty[a.Id]
+                    : new List<string>();
+
+                return b;
+            }).ToList();
 
             return Json(data);
         }
+
 
         [HttpGet]
         [Route("propertiesExternal")]
@@ -1143,6 +1162,123 @@ namespace Oblak.Controllers
                 return Json(new { info = "", error = Exceptions.StringException(e), id = -1 });
             }
         }
+          
+        [HttpGet]
+        [Route("exportInvoicesZip")]
+        public async Task<IActionResult> ExportInvoicesZip(string enu, string datumod, string datumdo)
+        {
+            if (string.IsNullOrEmpty(enu))
+            {
+                return new JsonResult(new
+                {
+                    error = "Nije unesen ENU kod.", info = "", id = enu
+                });
+            }
+
+            if (!DateTime.TryParseExact(datumod, "dd.MM.yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var od) ||
+                !DateTime.TryParseExact(datumdo, "dd.MM.yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var doDatum))
+            {
+                return new JsonResult(new
+                {
+                    error = "Neispravan format datuma. Potreban dd.MM.yyyy.",
+                    info = "",
+                    id = enu
+                });
+            }
+
+            if ((doDatum.Date - od.Date).TotalDays > 400)
+            {
+                return new JsonResult(new
+                {
+                    error = "Period izmedju datumod i datumdo ne moze biti veci od 400 dana.",
+                    info = "",
+                    id = enu
+                });
+            }
+
+            var invoices = await db.Documents
+                .AsNoTracking()
+                .Include(d => d.LegalEntity)
+                .Where(d =>
+                    d.FiscalEnuCode == enu &&
+                    d.Status == DocumentStatus.Fiscalized &&
+                    d.InvoiceDate.Date >= od.Date &&
+                    d.InvoiceDate.Date <= doDatum.Date)
+                .ToListAsync();
+
+            if (!invoices.Any())
+            {
+                return new JsonResult(new
+                {
+                    error = "",
+                    info = $"Nema fiscalizovanih faktura za ENU '{enu}' u periodu {od:dd.MM.yyyy} – {doDatum:dd.MM.yyyy}.",
+                    id = enu
+                });
+            }
+
+            var reportWithVatName = _config["REPORTING:MNE:Invoice"];
+            var reportWithoutVatName = _config["REPORTING:MNE:InvoiceNoVat"];
+
+            var allReports = await db.Reports
+                .Where(r => r.Name == reportWithVatName || r.Name == reportWithoutVatName)
+                .ToListAsync();
+
+            var withVatReport = allReports.SingleOrDefault(r => r.Name == reportWithVatName);
+            var noVatReport = allReports.SingleOrDefault(r => r.Name == reportWithoutVatName);
+
+            var invoiceToReport = invoices.ToDictionary(
+                doc => doc.Id,
+                doc => doc.LegalEntity.InVat ? withVatReport : noVatReport
+            );
+
+            var logLines = new List<string>();
+
+            foreach (var kvp in invoiceToReport)
+            {
+                if (kvp.Value == null)
+                    logLines.Add($"[{kvp.Key}] Report nije pronadjen za PDV status fakture.");
+            }
+
+            await using var zipStream = new MemoryStream();
+            using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create, leaveOpen: true))
+            {
+                foreach (var doc in invoices)
+                {
+                    var reportEntity = invoiceToReport[doc.Id];
+                    if (reportEntity == null)
+                        continue;
+
+                    var pdfBytes = await _documentService.InvoicePdf(doc.Id, reportEntity.Id);
+                    if (pdfBytes == null || pdfBytes.Length == 0)
+                    {
+                        logLines.Add($"[{doc.Id}] PDF renderovanje nije uspjelo (reportName={reportEntity.Name}).");
+                        continue;
+                    }
+                     
+                    var entryName = $"Faktura_{doc.No:00000}_{doc.InvoiceDate:yyyyMMdd}.pdf";
+                    var entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
+                    await using var es = entry.Open();
+                    await es.WriteAsync(pdfBytes, 0, pdfBytes.Length);
+                }
+
+                if (logLines.Any())
+                {
+                    var logEntry = archive.CreateEntry("generation_errors.log", CompressionLevel.Optimal);
+                    await using var ls = new StreamWriter(logEntry.Open());
+                    foreach (var line in logLines)
+                    {
+                        await ls.WriteLineAsync(line);
+                    }
+                }
+            }
+
+            zipStream.Seek(0, SeekOrigin.Begin);
+            var zipFileName = $"Fakture_{enu}_{od:yyyyMMdd}_{doDatum:yyyyMMdd}.zip";
+            return File(zipStream.ToArray(),
+                        "application/zip",
+                        zipFileName);
+        }
+
 
 
         #endregion

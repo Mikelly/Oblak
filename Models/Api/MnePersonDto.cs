@@ -171,7 +171,7 @@ namespace Oblak.Models.Api
                 ResTaxExemptionTypeId = mnePerson.ResTaxExemptionTypeId,
                 UserCreated = mnePerson.UserCreated,
                 UserCreatedDate = mnePerson.UserCreatedDate,
-                CheckInPointName = mnePerson.CheckInPoint.Name,
+                CheckInPointName = mnePerson.CheckInPoint?.Name,
             };
 
             return enriched;

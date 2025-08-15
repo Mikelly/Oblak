@@ -139,6 +139,49 @@ namespace Oblak.Controllers
                 return Json(new BasicDto { id = legalEntityId, error = "Došlo je do interne greške." });
             }
         }
+
+        [HttpGet("fiscal-enu-all-pe")]
+        public async Task<IActionResult> FiscalEnuAllPe(int legalEntityId)
+        {
+            if (_legalEntityId <= 0)
+            {
+                Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return Json(new BasicDto { error = "Korisnik nije ulogovan!" });
+            }
+
+            var exists = await _db.LegalEntities.AnyAsync(le => le.Id == legalEntityId);
+            if (!exists)
+            {
+                Response.StatusCode = StatusCodes.Status404NotFound;
+                return Json(new BasicDto { error = "Korisnik nije pronađen!" });
+            }
+
+            try
+            {
+                var result = await _db.Properties
+                    .Where(p => p.LegalEntityId == legalEntityId)
+                    .Join(
+                        _db.FiscalEnu,
+                        prop => prop.Id,
+                        fe => fe.PropertyId,
+                        (prop, fe) => new
+                        {
+                            PropertyId = prop.Id,
+                            EnuCode = fe.FiscalEnuCode
+                        }
+                    )
+                    .ToListAsync();
+
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Greška pri čitanju fiscal ENU codes za LegalEntityId {LegalEntityId}", legalEntityId);
+                Response.StatusCode = StatusCodes.Status500InternalServerError;
+                return Json(new BasicDto { id = legalEntityId, error = "Došlo je do interne greške." });
+            }
+        }
+
     }
-       
+
 }

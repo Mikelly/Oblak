@@ -255,6 +255,7 @@ namespace Oblak.Controllers
             var resTaxGroup = Request.Form["ResTaxGroup"];
             var place = Request.Form["Place"];
             var legalEntityStatus = Request.Form["LegalEntityStatus"];
+            var legalEntityType = Request.Form["LegalEntityType"];
             var legalEntity = Request.Form["LegalEntity"];
             var taxPaymentType = Request.Form["TaxPaymentType"];
             var firstName = Request.Form["FirstName"];
@@ -342,6 +343,7 @@ namespace Oblak.Controllers
             {
                 parameters.Add(new Parameter() { Name = "Partner", Value = _legalEntity.PartnerId });
                 parameters.Add(new Parameter() { Name = "Status", Value = legalEntityStatus });
+                parameters.Add(new Parameter() { Name = "Type", Value = legalEntityType });
                 parameters.Add(new Parameter() { Name = "Place", Value = place });
                 parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });

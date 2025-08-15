@@ -879,11 +879,22 @@ namespace Oblak.Controllers
             {
                 var partner = _db.Partners.FirstOrDefault(a => a.Id == _appUser.PartnerId);
                 var guest = _db.MnePersons.FirstOrDefault(a => a.Id == guestDto.Id);
+                  
                 if (guest != null && guest.ResTaxStatus == ResTaxStatus.Closed)
                 {
                     if (User.IsInRole("TouristOrgOperator"))
                     {
-                        return Json(new BasicDto() { info = "", error = "Nemate prava da vršite izmjene na već prijavljenom gostu!" });
+                        return Json(new
+                        {
+                            info = "",
+                            error = "Nemate prava da vršite izmjene na već prijavljenom gostu!",
+                            id = guest.Id,
+                            guest.ResTaxTypeId,
+                            guest.ResTaxAmount,
+                            guest.ResTaxFee,
+                            guest.UserCreated
+                        });
+
                     }
                 }
 
@@ -1042,9 +1053,12 @@ namespace Oblak.Controllers
 					hist.PrevResTaxAmount = guest.ResTaxAmount;
 					hist.PrevResTaxPaymentTypeId = guest.ResTaxPaymentTypeId;
 					hist.PrevResTaxExemptionTypeId = guest.ResTaxExemptionTypeId;
-					hist.PrevResTaxTypeId = guest.ResTaxTypeId;
+                    hist.PrevResTaxTypeId = guest.ResTaxTypeId;
+                       
+                    guest.UserModifiedDate = DateTime.Now; 
+                    _db.SaveChanges();
 
-					_db.MnePersons.Remove(guest);
+                    _db.MnePersons.Remove(guest);
                     _db.SaveChanges();
 
                     if (User.IsInRole("TouristOrg"))
@@ -1591,19 +1605,21 @@ namespace Oblak.Controllers
 
             if (_registerClient is MneClient)
             {
-                var sql = $"EXEC PersonListMne {objekat}, '{OD.ToString("dd-MMM-yyyy", CultureInfo.InvariantCulture)}', '{DO.ToString("dd-MMM-yyyy", CultureInfo.InvariantCulture)}'";
-
-                var guestlist = _db.Database
-                                   .SqlQuery<MneGuestListDto>(FormattableStringFactory.Create(sql))
-                                   .ToList();
+                var guestlist = await _db.Set<MneGuestListDto>()
+                                        .FromSqlInterpolated(
+                                                $"EXEC PersonListMne @property = {objekat}, @od = {OD}, @do = {DO}"
+                                            )
+                                            .ToListAsync(); 
 
                 return Json(await guestlist.ToDataSourceResultAsync(request));
             }
             else if (_registerClient is SrbClient)
-            {
-                var guestlist = _db.Database
-                   .SqlQuery<MneGuestListDto>($"EXEC SrbPersonList {objekat}, {OD.ToString("dd-MMM-yyyy")}, {DO.ToString("dd-MMM-yyyy")}")
-                   .ToList();
+            {  
+                var guestlist = await _db.Set<MneGuestListDto>()
+                                        .FromSqlInterpolated(
+                                                $"EXEC SrbPersonList @property = {objekat}, @od = {OD}, @do = {DO}"
+                                            )
+                                            .ToListAsync();
 
                 return Json(await guestlist.ToDataSourceResultAsync(request));
             }
@@ -1614,20 +1630,6 @@ namespace Oblak.Controllers
         [Route("guest-list-print")]
         public async Task<FileResult> GuestListPrint(int objekat, string datumod, string datumdo, int? partnerId)
         {
-            //var OD = DateTime.ParseExact(datumod, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
-            //var DO = DateTime.ParseExact(datumdo, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
-
-            //var result = _reporting.RenderReport("GuestListMne", 
-            //    new List<Telerik.Reporting.Parameter>() { 
-            //            new Telerik.Reporting.Parameter("objekat", objekat),
-            //            new Telerik.Reporting.Parameter("od", OD),
-            //            new Telerik.Reporting.Parameter("do", DO),
-            //        }
-            //    , "PDF");
-
-            //return File(result, "application/pdf");
-
-            var a = 10;
 
             var stream = await _registerClient.GuestListPdf(objekat, datumod, datumdo, partnerId);
 

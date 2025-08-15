@@ -10,7 +10,7 @@ using Oblak.Data;
 using Oblak.Data.Enums;
 using Oblak.Helpers;
 using Oblak.Models;
-using Oblak.Models.Api;
+using Oblak.Models.Api; 
 using Oblak.Services;
 using Oblak.Services.MNE;
 using Oblak.Services.SRB;
@@ -92,7 +92,7 @@ namespace Oblak.Controllers
             ViewBag.Opstine = opstine;
             ViewBag.Places = new SelectList(_db.CodeLists.Where(a => a.Type == "mjesto").ToList(), "ExternalId", "Name");
 
-            ViewBag.LegalEntity = legalEntity; //?? _appUser.LegalEntity.Id;
+            ViewBag.LegalEntity = legalEntity ?? _appUser.LegalEntity.Id;
 
            if (how == "P")
             {
@@ -142,7 +142,7 @@ namespace Oblak.Controllers
                 existingEntity.RegDate = input.RegDate;
                 existingEntity.Type = input.Type;
                 existingEntity.Status = input.Status;
-                existingEntity.Address = input.Address;
+                existingEntity.Address = input.Address; 
 
                 _db.Update(existingEntity);
                 _db.Entry(existingEntity).State = EntityState.Modified;
@@ -301,5 +301,19 @@ namespace Oblak.Controllers
 
             return Json(data.ToList());
       }
+
+
+        [HttpGet]
+        [Route("openExportInvoices")]
+        public IActionResult OpenExportInvoices(int legalEntityId, int propertyId)
+        {
+            var model = new ExportInvoicesDto
+            {
+                LegalEntityId = legalEntityId,
+                PropertyId = propertyId
+            };
+            return PartialView("_ExportInvoices", model); 
+        }
+
     }
 }

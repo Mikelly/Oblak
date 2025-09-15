@@ -29,6 +29,7 @@ namespace Oblak.Models.Api
         public string Type { get; set; }
 
 		public bool IsCertRequired { get; set; }
+        public bool IsActive { get; set; } 
 
 	}
 }

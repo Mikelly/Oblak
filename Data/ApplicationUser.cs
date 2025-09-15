@@ -25,8 +25,7 @@ namespace Oblak.Data
         public int? CheckInPointId { get; set; }
 
         public bool IsCertRequired { get; set; } = false;
-
-
+          
         #region Audit Properties
 
         public string? UserCreated { get; set; }

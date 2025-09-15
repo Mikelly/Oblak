@@ -92,7 +92,7 @@ public class EfiClient
 
         // ------- GENERISANJE REQUESTA --------
         _logger.LogDebug("CREATE REQUEST");
-        var request = Invoice(doc, correct, late);     
+        var request = Invoice(doc, correct, late);
 
         System.Net.ServicePointManager.ServerCertificateValidationCallback += (se, cert, chain, sslerror) => { return true; };
 
@@ -284,7 +284,6 @@ public class EfiClient
         inv.Header.UUID = Guid.NewGuid().ToString();
         inv.Header.SendDateTime = now.forXML();
 
-        inv.Invoice.TypeOfInv = InvoiceSType.NONCASH;
         inv.Invoice.TypeOfInv = InvoiceSType.CASH;
         inv.Invoice.TCRCode = doc.FiscalEnuCode;
         if (late == null || late == "TAXPERIOD") inv.Invoice.IssueDateTime = now.forXML();
@@ -420,9 +419,9 @@ public class EfiClient
             itm.N = s.ItemName.Trim().GetFirst(50);
             itm.Q = (double)s.Quantity; // Kolicina
             itm.U = s.ItemUnit; // Jedinica Mjere
-            itm.VR = (s.VatRate).Round4(); // Stopa PDV-a
-            itm.UPA = (s.FinalPrice).Round4(); // Cijena sa PDV
-            itm.UPB = (s.FinalPrice / ((1 + s.VatRate / 100m) * (1m - s.Discount / 100m))).Round4(); // Cijena bez PDV
+            itm.VR = (s.VatRate).Round2(); // Stopa PDV-a
+            itm.UPA = (s.FinalPrice).Round2(); // Cijena sa PDV
+            itm.UPB = (s.FinalPrice / ((1 + s.VatRate / 100m) * (1m - s.Discount / 100m))).Round2(); // Cijena bez PDV
 
             if (s.VatExempt != null)
             {
@@ -445,9 +444,9 @@ public class EfiClient
             itm.RSpecified = true;
             itm.RRSpecified = true;
 
-            itm.PA = (s.LineTotal).Round4(); // Cijena sa PDV-a
-            itm.VA = (s.LineTotal - s.LineTotalWoVat).Round4(); // Iznos PDV-a
-            itm.PB = (s.LineTotalWoVat).Round4(); // Iznos bez PDV-a                    
+            itm.PA = (s.LineTotal).Round2(); // Cijena sa PDV-a
+            itm.VA = (s.LineTotal - s.LineTotalWoVat).Round2(); // Iznos PDV-a
+            itm.PB = (s.LineTotalWoVat).Round2(); // Iznos bez PDV-a                    
 
             itm.VRSpecified = true;
             itm.VASpecified = true;

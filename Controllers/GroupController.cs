@@ -65,12 +65,13 @@ namespace RegBor.Controllers
             var username = _context!.User!.Identity!.Name;
             var appUser = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username);
 
-            ViewBag.PartnerId = appUser.PartnerId;
+            var partnerId = appUser.PartnerId ?? appUser.LegalEntity.PartnerId;
+            ViewBag.PartnerId = partnerId;
 
-            var partner = _db.Partners.Where(a => a.Id == appUser.PartnerId).FirstOrDefault();
+            var partner = _db.Partners.Where(a => a.Id == partnerId).FirstOrDefault();
 
             var sl = _db.ResTaxPaymentTypes
-                .Where(a => a.PartnerId == appUser.PartnerId)
+                .Where(a => a.PartnerId == partnerId)
                 .Select(a =>
                     new SelectListItem() { Text = a.Description, Value = a.Id.ToString() }
                 ).ToList();
@@ -391,7 +392,7 @@ namespace RegBor.Controllers
 			//		.Select(a => _mapper.Map<Property, PropertyDto>(a)).ToList();
 			//}
 
-			var propertyIds = (await GetProperties()).Select(a => a.Id).ToArray();
+			//var propertyIds = (await GetProperties()).Select(a => a.Id).ToArray();
             //propertyIds = properties.Select(a => a.Id).ToArray();
 
             IQueryable<GroupEnrichedDto> data = null;
@@ -406,7 +407,17 @@ namespace RegBor.Controllers
                     groups = groups.Where(a => a.CheckInPointId == _appUser.CheckInPointId);
                 }
 
-				DateTime now = DateTime.Now;
+                if (_appUser.UserName.Equals("CrnaGoraAdmin")) //nalog CrnaGora moze da vidi sve grupe koje su kreirali LE za Partner.a Crna Gora
+                {
+                    groups = groups.Where(a => a.Property.LegalEntity.PartnerId == 2);
+                }
+                else
+                {
+                    groups = groups.Where(a => a.LegalEntityId == _legalEntityId);
+                }
+
+
+                    DateTime now = DateTime.Now;
 				DateTime Od = now.Date;
 				DateTime Do = now.Date;
 
@@ -416,7 +427,6 @@ namespace RegBor.Controllers
 					//.Where(a => propertyIds.Contains(a.Id))
 					.Where(a => a.UserCreatedDate >= Od && a.UserCreatedDate <= Do)
                     .Where(a => a.VesselId == null)
-                    .Where(a => a.LegalEntityId == _legalEntityId)
                     .Include(a => a.Property)
 					.ThenInclude(a => a.LegalEntity)
 					.Include(a => a.CheckInPoint)
@@ -518,7 +528,7 @@ namespace RegBor.Controllers
                     ViewBag.ResidenceTaxAmount = g.ResTaxAmount ?? 0m;
                     ViewBag.ResidenceTaxFee = g.ResTaxFee ?? 0m;
                     ViewBag.ResidenceTaxTotal = (g.ResTaxAmount ?? 0m) + (g.ResTaxFee ?? 0m);
-                    ViewBag.PaymentDesc = g.ResTaxPaymentType.Description;
+                    ViewBag.PaymentDesc = g.ResTaxPaymentType != null ? g.ResTaxPaymentType.Description : string.Empty;
                 }
                 return PartialView();
             }

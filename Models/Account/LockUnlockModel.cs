@@ -5,7 +5,7 @@ namespace Oblak.Models.Account
     public class LockUnlockModel
     {
         [Required] 
-        public int LegalEntityId { get; set; } 
+        public string EntityId { get; set; } 
 
         [Required] 
         public bool? Lock { get; set; }

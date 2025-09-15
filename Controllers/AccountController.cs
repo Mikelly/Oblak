@@ -597,7 +597,7 @@ namespace Oblak.Controllers
             ViewBag.CPS = new SelectList(_db.CheckInPoints.Where(a => a.PartnerId == _appUser.PartnerId), "Id", "Name");
             ViewBag.TPS = new SelectList(Enum.GetNames(typeof(UserType)).ToArray().Where(a => a.StartsWith("Tourist")).Select(a => new { Id = a, Name = a }), "Id", "Name");
             return PartialView();
-        }
+        } 
 
         [HttpPost("legal-entity-account")]
         public async Task<IActionResult> LegalEntityAccount(int legalEntity, AccountViewModel model)
@@ -782,7 +782,14 @@ namespace Oblak.Controllers
                     error = "Nova lozinka je obavezna."
                 }); 
 
-            var le = _db.LegalEntities.Find(model.LegalEntityId);
+            if(!int.TryParse(model.EntityId, out int leId))
+                return BadRequest(new
+                {
+                    success = false,
+                    error = "Proslijedjeni Id nije validan."
+                });
+
+            var le = _db.LegalEntities.Find(leId);
 
             if (le == null)
                 return NotFound(new
@@ -837,7 +844,14 @@ namespace Oblak.Controllers
                     error = "Parametar 'lock' nedostaje!"
                 });
 
-            var le = _db.LegalEntities.Find(model.LegalEntityId);
+            if (!int.TryParse(model.EntityId, out int leId))
+                return BadRequest(new
+                {
+                    success = false,
+                    error = "Proslijedjeni Id nije validan."
+                });
+
+            var le = _db.LegalEntities.Find(leId);
 
             if (le == null)
                 return NotFound(new

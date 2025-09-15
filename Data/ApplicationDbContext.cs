@@ -168,7 +168,8 @@ namespace Oblak.Data
             modelBuilder.Entity<MnePerson>().HasOne(a => a.Computer).WithMany(b => b.MnePersons).HasForeignKey(a => a.ComputerCreatedId); ;
             modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxAmount).HasPrecision(18, 2);
             modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxFee).HasPrecision(18, 2);
-            modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxStatus).HasConversion(new EnumToStringConverter<ResTaxStatus>()); 
+            modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxStatus).HasConversion(new EnumToStringConverter<ResTaxStatus>());
+            //modelBuilder.Entity<MnePerson>().Property(a => a.Id).HasDefaultValueSql("NEXT VALUE FOR PersonSequence");
 
             modelBuilder.Entity<SrbPerson>().ToTable("SrbPersons");
             modelBuilder.Entity<SrbPerson>().HasOne(a => a.Group);
@@ -312,7 +313,7 @@ namespace Oblak.Data
                     tb.HasTrigger("trg_MnePersons_Update");
                     tb.HasTrigger("trg_MnePersons_Delete");
                 });
-            });
+            }); 
 
             modelBuilder.Entity<MneGuestListDto>(entity =>
             {

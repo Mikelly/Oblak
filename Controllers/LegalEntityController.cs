@@ -1,29 +1,30 @@
-﻿using Kendo.Mvc.Extensions;
-using Kendo.Mvc.UI;
-using Microsoft.AspNetCore.Mvc;
-using Oblak.Data;
-using System.Security.Cryptography.X509Certificates;
-using System.Security.Cryptography;
-using AutoMapper;
-using Microsoft.EntityFrameworkCore;
-using Oblak.Models;
+﻿using AutoMapper;
 using EllipticCurve.Utils;
-using Oblak.Models.Api;
-using System.IO.Compression;
-using System.Text;
-using System.Net;
-using System.Net.Http.Headers;
-using System.IO;
-using SkiaSharp;
-using Oblak.Data.Api;
-using Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure;
+using Kendo.Mvc.Extensions;
+using Kendo.Mvc.UI;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Oblak.Data;
+using Oblak.Data.Api;
 using Oblak.Data.Enums;
+using Oblak.Helpers;
+using Oblak.Models;
+using Oblak.Models.Api;
+using Oblak.Models.Payment;
 using Oblak.Services.MNE;
 using Oblak.Services.SRB;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Oblak.Models.Payment;
+using SkiaSharp;
+using System.IO;
+using System.IO.Compression;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 
 namespace Oblak.Controllers
@@ -676,6 +677,47 @@ namespace Oblak.Controllers
 
             return Json(new { isSuspended = false });
         }
+         
+
+        [HttpGet("legal-entity-has-debt")]
+        public async Task<ActionResult> HasDebtAsync(int legalEntityId)
+        {
+            if (_appUser.PartnerId != 4)
+                return Json(new { hasDebt = false });
+
+            var taxPaymentBalance = await _db.TaxPaymentBalances
+                .FirstOrDefaultAsync(a => a.LegalEntityId == legalEntityId && a.TaxType == TaxType.ResidenceTax);
+
+            if (taxPaymentBalance == null)
+            {
+                taxPaymentBalance = new TaxPaymentBalance
+                {
+                    LegalEntityId = legalEntityId,
+                    TaxType = TaxType.ResidenceTax
+                };
+
+                _db.TaxPaymentBalances.Add(taxPaymentBalance);
+            }
+
+            var balance = _db.GetBalance("ResidenceTax", legalEntityId, 0);
+            taxPaymentBalance.Balance = balance;
+
+            await _db.SaveChangesAsync();
+
+            if (balance < 0)
+            {
+                return Json(new
+                {
+                    hasDebt = true,
+                    errInfo = $"Korisnik ima dugovanje! Trenutno stanje: <b>{balance:0.00}</b>"
+                });
+            }
+
+            return Json(new { hasDebt = false });
+        }
+
+
+
 
         [HttpGet("legal-entities-settings")]
         public IActionResult Settings(int legalEntityId)

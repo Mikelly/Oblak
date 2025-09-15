@@ -59,8 +59,8 @@
             }
         });
     }
-
-    function resetPassword() {
+     
+    function resetPasswordOld() {
         $.ajax({
             url: `/tourist-org-reset-password`,
             type: 'POST',
@@ -100,6 +100,139 @@
         });
     }
 
+    function manageUser() {
+
+        var grid = $('#usersGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati korisnika', confirmButtonText: `U redu` });
+         
+        $.ajax({
+            url: `/tourist-org-manage-user?userid=${item.Id}`,
+            type: 'GET',
+            success: function (data, status, xhr) {
+                var wnd = $("#wndManageUser").data("kendoWindow");
+                wnd.content(data);
+                wnd.center().open();
+            }
+        });
+    }
+
+    function accountLockUnlock(cmd) {
+        if (cmd !== 'lock' && cmd !== 'unlock') { 
+            alert("Nepoznata komanda: " + cmd);
+            return;
+        }  
+
+        var grid = $('#usersGrid').data('kendoGrid');
+        var item = grid.dataItem(grid.select());
+
+        if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati korisnika', confirmButtonText: `U redu` });
+
+        var userId = item.Id;
+       
+        var reqData = {
+            EntityId: userId,
+            Lock: cmd === 'lock'
+        };
+         
+        $.ajax({
+            url: `/turist-org-user-lock-unlock`,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(reqData),
+            success: function(data) {
+                if(data != null && data.success){
+                 Swal.fire({
+                     icon: 'success',
+                     title: 'Uspješno!',
+                     html: `${data.error}`,
+                     confirmButtonText: 'U redu',
+                     allowOutsideClick: false
+                 }).then(function() {
+                     $("#wndManageUser").data("kendoWindow").close(); 
+                     grid.dataSource.read();
+                     grid.refresh();
+                 });
+                 }
+                 else {
+                     Swal.fire({
+                     icon: 'warning',
+                     title: 'Upozorenje!',
+                     html: `${data.error}`,
+                     confirmButtonText: 'U redu',
+                     allowOutsideClick: false
+                 });
+                 } 
+            },
+            error: function(xhr) { 
+                var data = xhr.responseJSON;
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Greška!',
+                    html: data.error || 'Greška prilikom zaključavanja/otključavanja korisnika!',
+                    confirmButtonText: 'U redu',
+                    allowOutsideClick: false
+                });
+            }
+        });
+    }
+
+    function resetPassword() {
+
+         var grid = $('#usersGrid').data('kendoGrid');
+         var item = grid.dataItem(grid.select());
+
+         if (item == null) Swal.fire({ icon: 'error', title: 'Morate odabrati korisnika', confirmButtonText: `U redu` });
+
+         var userId = item.Id;
+         var newPassVal = $("#Password").val();
+
+         var reqData = {
+            EntityId: userId,
+            NewPassword: newPassVal
+        };
+
+         $.ajax({
+         url: `/turist-org-user-reset-password`,
+         type: 'POST',
+         contentType: 'application/json',
+         data: JSON.stringify(reqData),
+         success: function(data) {
+
+             if(data != null && data.success){
+                 Swal.fire({
+                     icon: 'success',
+                     title: 'Uspješno!',
+                     html: `${data.error}`,
+                     confirmButtonText: 'U redu',
+                     allowOutsideClick: false
+                 }).then(function() {
+                     $("#wndManageUser").data("kendoWindow").close();
+                 });
+             }
+             else {
+                 Swal.fire({
+                 icon: 'warning',
+                 title: 'Upozorenje!',
+                 html: `${data.error}`,
+                 confirmButtonText: 'U redu',
+                 allowOutsideClick: false
+             });
+             }
+         },
+         error: function(xhr) {
+             var data = xhr.responseJSON;
+             Swal.fire({
+                     icon: 'error',
+                     title: 'Greška!',
+                     html: data.error || 'Greška prilikom reseta password-a!',
+                     confirmButtonText: 'U redu',
+                     allowOutsideClick: false
+             });
+         }
+         });
+     }
 
 </script>
 
@@ -111,12 +244,20 @@
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>NOVI<br/>KORISNIK<div>
                 </div>"))
 
-    @(Html.Kendo().Button().Name("btnNewProperty")
+    @* @(Html.Kendo().Button().Name("btnNewProperty")
         .HtmlAttributes(new { type = "button", onclick = "resetPass()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
         .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
                     <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/access.png'/>
                     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>RESET<br/>LOZINKE<div>
+                </div>")) *@
+
+     @(Html.Kendo().Button().Name("btnManageUser")
+        .HtmlAttributes(new { type = "button", onclick = "manageUser()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
+        .Content(@"<div style='width:100%;height:100%;text-align:center; align-items:center;'>
+                    <img style='width:50px;height:50px;text-align:center;display:block;margin-left:auto;margin-right:auto;' src='/Content/Icons/access.png'/>
+                    <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>KORISNIČKI<br/>NALOG<div>
                 </div>"))
+    
 
     @(Html.Kendo().Button().Name("btnRoles")
         .HtmlAttributes(new { type = "button", onclick = "roles()", style = "height:95px; width:95px; margin-right:10px; cursor:pointer;" })
@@ -149,7 +290,8 @@
             columns.Bound(g => g.UserName).Title("Korisničko ime").Width("30%");
             columns.Bound(g => g.PersonName).Title("Ime i prezime").Width("30%");
             columns.Bound(g => g.Email).Title("E-Mail").Width("30%");
-            columns.Bound(g => g.IsCertRequired).Title("CERT?").Width("100px").ClientTemplate("#= IsCertRequired ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
+            //columns.Bound(g => g.IsCertRequired).Title("CERT?").Width("100px").ClientTemplate("#= IsCertRequired ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
+            columns.Bound(g => g.IsActive).Title("Aktivan").Width("100px").ClientTemplate("#= IsActive ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
             columns.ForeignKey(g => g.Type, ViewBag.TPS as SelectList).Title("Vrsta").Width("20%");
             columns.ForeignKey(g => g.CheckInPointId, ViewBag.CPS as SelectList).Title("Check-In Point").Width("30%");
             
@@ -169,11 +311,12 @@
                 {
                     m.Id(g => g.Id);
                     m.Field(g => g.Id).Editable(false);
+                    m.Field(g => g.IsActive).Editable(false); 
                     m.Field(g => g.UserName);
                     m.Field(g => g.Email);
                     m.Field(g => g.PersonName);
                     m.Field(g => g.CheckInPointId);
-                    m.Field(g => g.IsCertRequired);
+                    //m.Field(g => g.IsCertRequired);
                     m.Field(g => g.Type).DefaultValue("TO_Operator");
                 })
         .Events(e => e.Sync("genericSync").RequestEnd("genericRequestEnd"))
@@ -208,6 +351,16 @@
 
 @(Html.Kendo().Window().Name("wndRoles")
     .Title("Korisničke uloge")
+    .Visible(false)
+    .Modal(true)
+    .Draggable(false)
+    .Width(400)
+    .Height(560)
+    .HtmlAttributes(new { style = "padding:20px; padding-bottom:10px; font-size:14px;" })
+)
+
+@(Html.Kendo().Window().Name("wndManageUser")
+    .Title("Korisnički nalog")
     .Visible(false)
     .Modal(true)
     .Draggable(false)

@@ -5,7 +5,7 @@ namespace Oblak.Models.Account
     public class ResetPasswordModel
     {
         [Required]
-        public int LegalEntityId { get; set; }
+        public string EntityId { get; set; }
 
         [Required]
         [DataType(DataType.Password)]

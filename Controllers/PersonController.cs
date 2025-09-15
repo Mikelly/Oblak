@@ -785,26 +785,46 @@ namespace Oblak.Controllers
             var documentTypeDictionary = codeLists
                 .Where(x => x.Type == "isprava")
                 .ToDictionary(x => x.ExternalId, x => x.Name);
+              
 
-            var query = _db.MnePersons.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.CheckInPoint).Include(a => a.Computer)
-                .Where(a => a.GroupId == groupId && groupId != 0 || groupId == 0 && a.GroupId == null)
-                .Where(a => a.LegalEntityId == _legalEntityId);
+            IQueryable<MnePerson> query = _db.MnePersons;
+
+            query = query.Include(a => a.Property)
+                           .ThenInclude(a => a.LegalEntity)
+                           .Include(a => a.CheckInPoint)
+                           .Include(a => a.Computer);
+
+            if (groupId != 0)
+            {
+                query = query.Where(a => a.GroupId == groupId);
+            }
+            else
+            {
+                query = query.Where(a => a.GroupId == null);
+            } 
+
+            if (!(groupId != 0 && _appUser.PartnerId == 3) && !(groupId != 0 && _appUser.UserName.Equals("CrnaGoraAdmin"))) //za TO BR prikazi goste koji pripadaju grupi koju je kreiralo lice preko mob app
+            {
+                query = query.Where(a => a.LegalEntityId == _legalEntityId);
+            }
+
+            if (groupId != 0 && _appUser.UserName.Equals("CrnaGoraAdmin")) //nalog CrnaGora moze da vidi sve grupe i sve prijave u njima koje su kreirali LE za Partner.a Crna Gora
+            {
+                query = query.Where(a => a.Property.LegalEntity.PartnerId == 2);
+            }
 
             if (User.IsInRole("TouristOrgOperator"))
             {
                 var user = User.Identity.Name;
                 query = query.Where(a => a.UserCreated == user || a.UserCreated == "unknown");
-            }
 
-            if (groupId != 0)
-            {
-                query = query.Where(a => a.GroupId == groupId);
-                if (User.IsInRole("TouristOrgOperator"))
+                if (groupId != 0)
                 {
                     query = query.Where(a => a.CheckInPointId == _appUser.CheckInPointId);
                 }
             }
-            else
+
+            if (groupId == 0)
             {
                 DateTime now = DateTime.Now;
                 DateTime Od = now;
@@ -813,15 +833,7 @@ namespace Oblak.Controllers
                 CalcPeriod(now, period, dtmod, dtmdo, out Od, out Do);
 
                 query = query.Where(a => a.UserCreatedDate >= Od && a.UserCreatedDate <= Do);
-            }
-
-            var to = User.IsInRole("TouristOrgOperator");
-
-            if (to)
-            {
-                var user = User.Identity.Name;
-                query = query.Where(a => a.UserCreated == user || a.UserCreated == "unknown");
-            }
+            } 
 
             var data = query                
                 .OrderByDescending(x => x.Id)

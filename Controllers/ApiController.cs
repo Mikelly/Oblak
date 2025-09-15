@@ -630,7 +630,7 @@ namespace Oblak.Controllers
             _logger.LogDebug("START GOST");
 
             _logger.LogDebug("AFTER START GOST");
-
+               
             try
             {
                 var g = db.Groups.Where(a => a.Id == gost.GroupId).FirstOrDefault();
@@ -641,12 +641,12 @@ namespace Oblak.Controllers
                     var pass = o.LegalEntity.PassThroughId;
                     if (pass.HasValue)
                     {
-                        var passLegalEntity = db.LegalEntities.FirstOrDefault(a => a.Id == pass.Value);
+                        var passLegalEntity = db.LegalEntities.FirstOrDefault(a => a.Id == pass.Value); 
                         await _registerClient.Initialize(passLegalEntity);
                     }
                 }
                 else
-                {
+                { 
                     await _registerClient.Initialize(_legalEntity);
                 }
                 var result = await _registerClient.Person(gost);

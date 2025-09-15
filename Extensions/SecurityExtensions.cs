@@ -36,28 +36,30 @@ namespace Oblak
                 //                await context.HttpContext.SignOutAsync();
                 //                context.HttpContext.Session.Clear();
 
-                //                var request = context.HttpContext.Request;
-                //                bool isAjax = request.Headers["X-Requested-With"] == "XMLHttpRequest";
+                //                //nepotrebno ovo radi middleware
+                //                //var request = context.HttpContext.Request;
+                //                //bool isAjax = request.Headers["X-Requested-With"] == "XMLHttpRequest";
 
-                //                if (isAjax)
-                //                {
-                //                    context.Response.StatusCode = 401;
-                //                    context.Response.ContentType = "application/json";
-                //                    await context.Response.WriteAsync("{\"error\":\"Neautorizovan pristup! Ponovite proces login-a.\"}");
-                //                }
-                //                else
-                //                {
-                //                    context.Response.Redirect("/sign-in");
-                //                }
+                //                //if (isAjax)
+                //                //{
+                //                //    context.Response.StatusCode = 401;
+                //                //    context.Response.ContentType = "application/json";
+                //                //    await context.Response.WriteAsync("{\"error\":\"Neautorizovan pristup! Ponovite proces login-a.\"}");
+                //                //}
+                //                //else
+                //                //{
+                //                //    context.Response.Redirect("/sign-in");
+                //                //}
                 //            }
                 //        }
                 //    },
                 //    OnRedirectToLogin = context =>
-                //    {
+                //    { 
                 //        var request = context.HttpContext.Request;
                 //        bool isAjax = request.Headers["X-Requested-With"] == "XMLHttpRequest";
+                //        var isApi = request.Path.StartsWithSegments("/api");
 
-                //        if (isAjax)
+                //        if (isApi || isAjax)
                 //        {
                 //            context.Response.StatusCode = 401;
                 //            context.Response.ContentType = "application/json";

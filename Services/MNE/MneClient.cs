@@ -677,7 +677,7 @@ namespace Oblak.Services.MNE
             {
                 MnePerson mnePerson;
                 var dto = person as MnePersonDto;
-
+                  
                 if (dto.Id == 0)
                 {
                     mnePerson = new MnePerson();
@@ -863,6 +863,7 @@ namespace Oblak.Services.MNE
             }
             catch (Exception ex)
             {
+                _logger.LogInformation("Person ERROR: {Message}", ex.Message);
                 throw;
             }
         }

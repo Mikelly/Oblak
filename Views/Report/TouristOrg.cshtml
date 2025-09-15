@@ -58,9 +58,7 @@
 			{ $"GuestBookPayments", "Knjiga gostiju sa plaćanjima" },			
 			{ $"Debt", "Pregled dugovanja" },
 			{ $"Ledger", "KarticaIzdavaoca" },
-			{ $"GuestHistory", "Istorija posjete gosta" },
-			{ $"PeriodicFiscal", "Periodični fiskalni izvještaj" },
-			{ $"CountryStatsFirmaPeriod", "Broj noćenja i broj dolazaka po državama" },
+			{ $"GuestHistory", "Istorija posjete gosta" }, 
 		};
 	}
 
@@ -68,6 +66,14 @@
 	{
 		reports = new Dictionary<string, string>() {
 			{ $"NauticalTax", "Naplata nautičke takse" },
+		};
+	}
+
+	if (prtnid == "2")
+	{
+		reports = new Dictionary<string, string>() { 
+			{ $"PeriodicFiscal", "Periodični fiskalni izvještaj" },
+			{ $"CountryStatsFirmaPeriod", "Broj noćenja i broj dolazaka po državama" },
 		};
 	}
 
@@ -247,6 +253,22 @@
 
 	}
 
+	function resTaxGroupChanged() {
+		var selectedGroup = $('#ResTaxGroup').val();
+		 
+		$('#operatorSelection').hide();
+		$('#checkInPointSelection').hide();
+		$('#placeSelection').hide();
+		 
+		if (selectedGroup == "Operator") {
+			$('#operatorSelection').show();
+		} else if (selectedGroup == "CheckInPoint") {
+			$('#checkInPointSelection').show();
+		} else if (selectedGroup == "Place") {
+			$('#placeSelection').show();
+		}
+	}
+
 	function runReport() {
 		$('#freport').val($('#report').val());
 		$('#fformat').val($('#reportFormat').val());
@@ -268,9 +290,19 @@
 		$('#flastName').val($('#LastName').val());
 		$('#fdocumentNumber').val($('#DocumentNumber').val()); 
 		$('#fenuCode').val($('#ENUCode').val());
-
 		$('#fagencyId').val($('#AgencyId').val());
 		$('#flegalEntityType').val($('#LegalEntityType').val());
+		
+		//ResTax
+		var operatorDropDown = $('#OperatorId').data('kendoDropDownList');
+		$('#foperatorId').val(operatorDropDown ? operatorDropDown.value() : '');
+		
+		var checkInPointDropDown = $('#CheckInPointSelectedId').data('kendoDropDownList');
+		$('#fcheckInPointSelectedId').val(checkInPointDropDown ? checkInPointDropDown.value() : '');
+
+		var placeDropDown = $('#PlaceSelectedId').data('kendoDropDownList');
+		$('#fplaceSelectedId').val(placeDropDown ? placeDropDown.value() : '');
+		//End ResTax
 
 		$('#reportForm').submit();
 	}
@@ -303,6 +335,10 @@
 	<input type="hidden" id="ftaxPaymentType" name="taxPaymentType" />
 	<input type="hidden" id="fagencyId" name="agencyId" />
 	<input type="hidden" id="flegalEntityType" name="legalEntityType" />
+	
+	<input type="hidden" id="foperatorId" name="operatorId" />
+	<input type="hidden" id="fcheckInPointSelectedId" name="checkInPointSelectedId" />
+	<input type="hidden" id="fplaceSelectedId" name="placeSelectedId" />
 </form>
 
 <div style="width:400px; margin-left:auto; margin-right:auto; margin-top:50px; font-size:larger;">
@@ -439,7 +475,48 @@
 		@(Html.Kendo().DropDownList().Name("ResTaxGroup")
 				.AutoWidth(true)
 				.OptionLabel("Izaberite prikaz")
+				.Events(e => e.Change("resTaxGroupChanged"))
 				.BindTo(new SelectList(resTaxGroups as Dictionary<string, string>, "Key", "Value"))
+				)
+		<br />
+	</div>
+
+	<div class="parameter" style="display:none" id="operatorSelection">
+		Izaberite operatera
+		@(Html.Kendo().DropDownList().Name("OperatorId")
+				.AutoWidth(true)
+				.OptionLabel("Izaberite operatera")
+				.BindTo(ViewBag.Users as SelectList) 
+				.Filter(FilterType.Contains)
+				.HtmlAttributes(new { style = "width:100%;" })
+				)
+		<br />
+	</div>
+
+	<div class="parameter" style="display:none" id="checkInPointSelection">
+		Izaberite punkt
+		@(Html.Kendo().DropDownList().Name("CheckInPointSelectedId")
+				.AutoWidth(true)
+				.OptionLabel("Izaberite punkt")
+				.BindTo(ViewBag.CheckInPoints as List<CheckInPoint>)
+				.DataValueField("Id")
+				.DataTextField("Name")
+				.Filter(FilterType.Contains)
+				.HtmlAttributes(new { style = "width:100%;" })
+				)
+		<br />
+	</div>
+
+	<div class="parameter" style="display:none" id="placeSelection">
+		Izaberite naselje
+		@(Html.Kendo().DropDownList().Name("PlaceSelectedId")
+				.AutoWidth(true)
+				.OptionLabel("Izaberite naselje")
+				.BindTo(ViewBag.Places as List<CodeList>)
+				.DataValueField("ExternalId")
+				.DataTextField("Name")
+				.Filter(FilterType.Contains)
+				.HtmlAttributes(new { style = "width:100%;" })
 				)
 		<br />
 	</div>

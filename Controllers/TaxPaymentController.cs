@@ -75,22 +75,22 @@ namespace Oblak.Controllers
 
             ViewBag.PaymentMethods = new SelectList(paymethods, "Value", "Text");
 
-			var balance = _db.TaxPaymentBalances.Where(a => a.LegalEntityId == le && a.TaxType == TaxType.ResidenceTax).FirstOrDefault();
-			if (balance == null)
-			{
-				balance = new TaxPaymentBalance();
-				balance.LegalEntityId = le;
-				balance.AgencyId = ag;
-				balance.TaxType = TaxType.ResidenceTax;
-				_db.Add(balance);
-				await _db.SaveChangesAsync();
-			}
+            var balance = _db.TaxPaymentBalances.Where(a => a.LegalEntityId == le && a.TaxType == TaxType.ResidenceTax).FirstOrDefault();
+            if (balance == null)
+            {
+                balance = new TaxPaymentBalance();
+                balance.LegalEntityId = le;
+                balance.AgencyId = ag;
+                balance.TaxType = TaxType.ResidenceTax;
+                _db.Add(balance);
+                await _db.SaveChangesAsync();
+            }
 
-			var calc = _db.GetBalance("ResidenceTax", le, 0);
-			balance.Balance = calc;
-			await _db.SaveChangesAsync();
+            var calc = _db.GetBalance("ResidenceTax", le, 0);
+            balance.Balance = calc;
+            await _db.SaveChangesAsync();
 
-			ViewBag.Balance = _db.TaxPaymentBalances.Where(a => a.TaxType == TaxType.ResidenceTax && a.LegalEntityId == le).Select(a => a.Balance).FirstOrDefault();
+            ViewBag.Balance = _db.TaxPaymentBalances.Where(a => a.TaxType == TaxType.ResidenceTax && a.LegalEntityId == le).Select(a => a.Balance).FirstOrDefault();
 
             ViewBag.PartnerId = _appUser.PartnerId;
 
@@ -146,10 +146,16 @@ namespace Oblak.Controllers
                     return Json(new DataSourceResult { Errors = "Entity not found." });
                 }
 
+                if (!IsPaymentAllowedForSuspendedOrUnregistered(le, ag, dto.Amount, payment.Amount))
+                {
+                    return Json(new DataSourceResult { Errors = "Korisnik je suspendovan ili neregistrovan, uplata nije dozvoljena jer bi saldo presao 0.00." });
+                }
+
                 if (string.IsNullOrEmpty(dto.Reference) == false && _db.TaxPayments.Any(a => a.Reference == dto.Reference && a.Id != payment.Id))
                 {
                     return Json(new DataSourceResult { Errors = "Uplatnica je već iskorišćena." });
-                }
+                } 
+
 
                 _mapper.Map(dto, payment);
 
@@ -191,10 +197,13 @@ namespace Oblak.Controllers
         public async Task<ActionResult> Create(TaxPaymentDto dto, [DataSourceRequest] DataSourceRequest request, int? le, int? ag, [FromQuery] string taxType)
         {
             try
-            {  
-                var pay = new TaxPayment();
+            {
+                if (!IsPaymentAllowedForSuspendedOrUnregistered(le, ag, dto.Amount))
+                {
+                    return Json(new DataSourceResult { Errors = "Korisnik je suspendovan ili neregistrovan, uplata nije dozvoljena jer bi saldo presao 0.00." });
+                }
 
-                //_mapper.Map(dto, pay);
+                var pay = new TaxPayment(); 
 
                 if (string.IsNullOrEmpty(dto.Reference) == false && _db.TaxPayments.Any(a => a.Reference == dto.Reference))
                 {
@@ -444,5 +453,64 @@ namespace Oblak.Controllers
                 return Json(new { error = "Došlo je do greške prilikom brisanja uplate.", info = "" });
             }
         }
+
+        private bool CheckIsRegistered(int? legalEntityId)
+        {
+            if (_appUser.PartnerId == 4)
+            {
+                var prop = _db.Properties
+                    .Where(p => p.LegalEntityId == legalEntityId && p.RegDate != null)
+                    .OrderByDescending(p => p.RegDate)
+                    .FirstOrDefault();
+
+                if (prop == null)
+                    return false;
+
+                var date = prop.RegDate.Value;
+                if ((date - DateTime.Now.Date).TotalDays <= 0)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private bool CheckIsSuspended(int? legalEntityId)
+        {
+            if (_appUser.PartnerId == 4)
+            {
+                return _db.LegalEntities.Any(x => x.Id == legalEntityId && x.IsSuspended);
+            }
+
+            return false;
+        }
+         
+        private bool IsPaymentAllowedForSuspendedOrUnregistered(int? legalEntityId, int? agencyId, decimal? newPaymentAmount, decimal? oldPaymentAmount = null)
+        {
+            if (_appUser.PartnerId != 4)
+                return true;
+
+            var currentBalance = _db.GetBalance("ResidenceTax", legalEntityId ?? 0, agencyId ?? 0);
+            bool isRegistered = CheckIsRegistered(legalEntityId);
+            bool isSuspended = CheckIsSuspended(legalEntityId);
+
+            // ako LE nije registrovan ili je suspendovan
+            if (!isRegistered || isSuspended)
+            {
+                // ako se iznos uplate NIJE promenio -> dozvoli update
+                if (oldPaymentAmount.HasValue && newPaymentAmount == oldPaymentAmount)
+                    return true;
+
+                var newBalance = currentBalance + (newPaymentAmount ?? 0);
+
+                // ako bi saldo pao ispod nule -> ne dozvoli
+                if (currentBalance >= 0 || newBalance > 0)
+                    return false;
+            }
+
+            return true;
+        }
+
+
+
     }
 }

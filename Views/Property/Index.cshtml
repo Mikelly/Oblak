@@ -6,6 +6,7 @@
     var tl = ViewBag.TypeCodeList as SelectList;
     var ssl = ViewBag.StatusList as SelectList; 
     var le = (int?)ViewBag.LegalEntity;
+    var partnerId = (int?)ViewBag.PartnerId ?? 0;
     var cntr = (string)ViewBag.Country ?? "MNE";
     var partial = ViewBag.Partial;
     if (partial == false)
@@ -104,27 +105,45 @@
             }
         });
     }
-
-    function propertyEdit(e) {
-        //var container = e.container;
+    function propertyEdit(e) { 
         var model = e.model;
-        
 
+        // Popunjavanje drop-down polja
         var municipalityDropDown = $("[name='MunicipalityId']").data("kendoDropDownList");
         if (municipalityDropDown) { 
             municipalityDropDown.value(model.MunicipalityId);
-
             municipalityDropDown.trigger("change");
         }
-         
+     
         setTimeout(function() {
             var placeDropDown = $("[name='Place']").data("kendoDropDownList");
             if (placeDropDown) {
                 placeDropDown.dataSource.fetch().then(function () {
-            placeDropDown.value(model.Place);
-        });
+                    placeDropDown.value(model.Place);
+                });
             }
         }, 300);
+         
+    }
+     
+    function propertySave(e) {
+        var model = e.model;
+
+        var regNumber = model.RegNumber;
+        var regDate = model.RegDate;
+     
+        var regNumberEmpty = !regNumber || regNumber.toString().trim() === "";
+        var regDateEmpty = !regDate || regDate.toString().trim() === "";
+
+        // Ako je samo jedno prazno → greska
+        if ((regNumberEmpty && !regDateEmpty) || (!regNumberEmpty && regDateEmpty)) {
+            e.preventDefault(); 
+            Swal.fire({
+                icon: 'error',
+                title: 'Morate unijeti i broj registracije i datum isteka registracije ili ostaviti oba polja prazna.',
+                confirmButtonText: 'U redu'
+            });
+        }
     }
 
     function cascadePlace(e) {
@@ -393,7 +412,8 @@
     <div style='font-weight:bold;display:block;position:relative;top:5px;line-height:110%;font-size:90%'>FISKALNI<br/>PODACI<div>
     </div>"))
 
-    @(Html.Kendo().Button()
+    @if(partnerId == 2){
+        @(Html.Kendo().Button()
         .Name("btnExportZip")
         .HtmlAttributes(new {
             id      = "btnExportZip",
@@ -409,7 +429,8 @@
             </div>
           </div>"
         )
-    )
+        )
+    } 
      
 </div>
 
@@ -426,22 +447,22 @@
             .Width(70);
 
             columns.Bound(g => g.Id).Title("ID").Width(110).ClientTemplate("#= Id #").HtmlAttributes(new { style = "pointer-events:none;" });
-            columns.Bound(g => g.ExternalId).Title("Šifra").Width(110);
+            columns.Bound(g => g.ExternalId).Title("Šifra").Width(100);
             columns.Bound(g => g.Name).Title("Naziv").Width(250); 
-            columns.ForeignKey(g => g.MunicipalityId, (SelectList)ViewBag.Opstine, "Value", "Text").Title("Opština").Width(200).EditorTemplateName("Opstina");
-            columns.ForeignKey(g => g.Place, (SelectList)ViewBag.Places, "Value", "Text").Title("Mjesto").Width(200).EditorTemplateName("Mjesto");
-            columns.Bound(g => g.Address).Title("Adresa").Width(100);
-            columns.Bound(g => g.RegNumber).Title("Broj registr").Width(150);
-            columns.Bound(g => g.RegDate).Title("Datum registr").Format("{0:dd.MM.yyyy}").EditorTemplateName("Date").Width(150);
+            columns.ForeignKey(g => g.MunicipalityId, (SelectList)ViewBag.Opstine, "Value", "Text").Title("Opština").Width(180).EditorTemplateName("Opstina");
+            columns.ForeignKey(g => g.Place, (SelectList)ViewBag.Places, "Value", "Text").Title("Mjesto").Width(180).EditorTemplateName("Mjesto");
+            columns.Bound(g => g.Address).Title("Adresa").Width(120);
+            columns.Bound(g => g.RegNumber).Title("Broj registracije").Width(170);
+            columns.Bound(g => g.RegDate).Title("Datum isteka registracije").Format("{0:dd.MM.yyyy}").EditorTemplateName("Date").Width(170);
             columns.ForeignKey(g => g.Type, tl).Title("Vrsta").Width(250);
-            columns.ForeignKey(g => g.Status, ssl).Title("Status").Width(110);
+            columns.ForeignKey(g => g.Status, ssl).Title("Status").Width(100);
         })
         .Pageable(p => p.Refresh(true))
         .Sortable()
         .Selectable()
         .Scrollable()
         .Filterable()
-        .Events(e => e.Edit("propertyEdit"))
+        .Events(e => e.Edit("propertyEdit").Save("propertySave"))
         .HtmlAttributes(new { style = "height:100%;" })
         .Editable(editable => editable.Mode(GridEditMode.InLine))
         .DataSource(ds => ds

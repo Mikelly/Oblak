@@ -93,8 +93,9 @@ namespace Oblak.Controllers
             ViewBag.Places = new SelectList(_db.CodeLists.Where(a => a.Type == "mjesto").ToList(), "ExternalId", "Name");
 
             ViewBag.LegalEntity = legalEntity ?? _appUser.LegalEntity.Id;
+            ViewBag.PartnerId = _appUser.PartnerId;
 
-           if (how == "P")
+            if (how == "P")
             {
                 ViewBag.Partial = true;
                 return PartialView();

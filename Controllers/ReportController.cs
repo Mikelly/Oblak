@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Primitives;
 using Oblak.Data;
 using Oblak.Data.Enums;
 using Oblak.Helpers;
@@ -16,6 +17,7 @@ using Oblak.Services.SRB;
 using System.Xml.Linq;
 using Telerik.Reporting;
 using Telerik.SvgIcons;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Oblak.Controllers
 {
@@ -235,6 +237,7 @@ namespace Oblak.Controllers
                 }
             }
             ViewBag.ENUCode = fiscalEnu?.FiscalEnuCode;
+            ViewBag.UserName = _appUser.UserName;
 
             return View("TouristOrg");
         }
@@ -263,6 +266,9 @@ namespace Oblak.Controllers
             var documentNumber = Request.Form["DocumentNumber"];
             var agency = Request.Form["AgencyId"];
             var enuCode = Request.Form["ENUCode"];
+            var operatorId = Request.Form["OperatorId"].FirstOrDefault();
+            var checkInPointSelectedId = Request.Form["CheckInPointSelectedId"];
+            var placeSelectedId = Request.Form["PlaceSelectedId"].FirstOrDefault();
 
             //Dictionary<string, object> parameters = new Dictionary<string, object>();
             List<Parameter> parameters = new List<Parameter>();
@@ -332,6 +338,26 @@ namespace Oblak.Controllers
                 parameters.Add(new Parameter() { Name = "DateFrom", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "DateTo", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
                 parameters.Add(new Parameter() { Name = "Group", Value = resTaxGroup });
+                
+                string analitikaValue = "-1"; // Default
+                if (resTaxGroup == "Operator" && !string.IsNullOrEmpty(operatorId))
+                {
+                    var selectedOperator = _db.Users.FirstOrDefault(u => u.UserName == operatorId);
+                    analitikaValue = selectedOperator?.UserName ?? "-1";
+                }
+                else if (resTaxGroup == "CheckInPoint" && !string.IsNullOrEmpty(checkInPointSelectedId))
+                {
+                    int.TryParse(checkInPointSelectedId, out var cpSelectedId);
+                    var selectedCheckInPoint = _db.CheckInPoints.FirstOrDefault(c => c.Id == cpSelectedId);
+                    analitikaValue = selectedCheckInPoint?.Name ?? "-1";
+                }
+                else if (resTaxGroup == "Place" && !string.IsNullOrEmpty(placeSelectedId))
+                {
+                    var selectedPlace = _db.CodeLists.FirstOrDefault(c => c.ExternalId == placeSelectedId && c.Type == "mjesto");
+                    analitikaValue = selectedPlace?.Name ?? "-1";
+                }
+                
+                parameters.Add(new Parameter() { Name = "Analitika", Value = analitikaValue });
             }
             else if (report.ToString().StartsWith("ExcursionTax"))
             {
@@ -486,33 +512,37 @@ namespace Oblak.Controllers
                 };
             }
         }
-
+        
         [HttpGet]
-        [Route("/generate-mne-treport")]
-        public async Task<FileStreamResult> PeriodicFiscal([FromQuery] string report, [FromQuery] string dateFrom, [FromQuery] string dateTo, [FromQuery] string enuCode)
-        {
+        [Route("/generate-mne-report")]
+        public async Task<FileStreamResult> MneReport([FromQuery] MneReportDto request)
+        {  
             string mnePartnerId = "2";
-            List<Parameter> parameters = new List<Parameter>();
 
-            if (string.IsNullOrEmpty(report) || string.IsNullOrEmpty(dateFrom) || string.IsNullOrEmpty(dateTo) || string.IsNullOrEmpty(enuCode))
-            { 
-                byte[] errorPdf = new Pdf().GenerateErrorPdf("Nedostaju neophodni parametri.");
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                              .Select(e => e.ErrorMessage)
+                                              .ToList();
+                byte[] errorPdf = new Pdf().GenerateErrorPdf("Nedostaju ili nisu validni parametri:\n" + string.Join("\n", errors));
                 var errorStream = new MemoryStream(errorPdf);
                 errorStream.Seek(0, SeekOrigin.Begin);
                 return new FileStreamResult(errorStream, "application/pdf")
                 {
-                    FileDownloadName = "MissingParamsReport.pdf"
+                    FileDownloadName = "MissingOrInvalidParams.pdf"
                 };
             }
 
-            if (report == "PeriodicFiscal")
+            List<Parameter> parameters = new List<Parameter>();
+
+            if (request.Report == "PeriodicFiscal")
             {
-                parameters.Add(new Parameter() { Name = "enu", Value = enuCode });
-                parameters.Add(new Parameter() { Name = "od", Value = DateTime.ParseExact(dateFrom, "ddMMyyyy", null) });
-                parameters.Add(new Parameter() { Name = "do", Value = DateTime.ParseExact(dateTo, "ddMMyyyy", null) });
+                parameters.Add(new Parameter() { Name = "enu", Value = request.EnuCode });
+                parameters.Add(new Parameter() { Name = "od", Value = DateTime.ParseExact(request.DateFrom, "dd.MM.yyyy", null) });
+                parameters.Add(new Parameter() { Name = "do", Value = DateTime.ParseExact(request.DateTo, "dd.MM.yyyy", null) });
             }
             else
-            { 
+            {
                 byte[] errorPdf = new Pdf().GenerateErrorPdf("Trazili ste nepostojeci izvjestaj.");
                 var errorStream = new MemoryStream(errorPdf);
                 errorStream.Seek(0, SeekOrigin.Begin);
@@ -520,76 +550,55 @@ namespace Oblak.Controllers
                 {
                     FileDownloadName = "InvalidReportType.pdf"
                 };
-            }
+            } 
+              
 
             var reportProcessor = new Telerik.Reporting.Processing.ReportProcessor();
             var deviceInfo = new System.Collections.Hashtable();
             var reportSource = new Telerik.Reporting.UriReportSource();
-
-            var toReport = $"{mnePartnerId}{report}.trdp";
-            var rep = _db.Reports.FirstOrDefault(a => a.Name == toReport);
+            var toReport = $"{mnePartnerId}{request.Report}.trdp";
             var path = Path.Combine(_env.ContentRootPath, "Reports", toReport);
-            var fileName = string.Empty;
-
             reportSource.Uri = path;
+            reportSource.Parameters.AddRange(parameters);
 
             try
             {
-                reportSource.Parameters.AddRange(parameters); 
-
                 Telerik.Reporting.Processing.RenderingResult result = reportProcessor.RenderReport("PDF", reportSource, deviceInfo);
-                
                 Response.Headers.Append("Cache-Control", "private, max-age=1800");
 
                 if (result.HasErrors)
                 {
-                    _logger.LogError("Telerik report - greske za {Report}:", report);
+                    string errMessage = $"Report '{request.Report}' greska pri renderovanju.";
                     foreach (var error in result.Errors)
                     {
-                        _logger.LogError(" - {Error}", error.Message);
+                        errMessage += $"\n - {error.Message}";
                     }
 
-                    byte[] errorPdf = new Pdf().GenerateErrorPdf($"Report '{report}' greska pri renderovanju.");
-
+                    byte[] errorPdf = new Pdf().GenerateErrorPdf(errMessage);
                     var errorStream = new MemoryStream(errorPdf);
                     errorStream.Seek(0, SeekOrigin.Begin);
 
-                    fileName = $"ReportError-{report}.pdf";
-                    Response.Headers.Append("Content-Disposition", $"inline; filename={fileName}");
-
-                    return new FileStreamResult(errorStream, "application/pdf")
-                    {
-                        FileDownloadName = fileName
-                    };
+                    Response.Headers.Append("Content-Disposition", $"inline; filename=ReportError-{request.Report}.pdf");
+                    return new FileStreamResult(errorStream, "application/pdf");
                 }
 
                 var stream = new MemoryStream(result.DocumentBytes);
                 stream.Seek(0, SeekOrigin.Begin);
                 var fsr = new FileStreamResult(stream, "application/pdf");
+                fsr.FileDownloadName = $"Report-{request.Report}.pdf";
+                Response.Headers.Append("Content-Disposition", $"inline; filename={fsr.FileDownloadName}");
 
-                fileName = $"Report-{report}.pdf";
-                Response.Headers.Append("Content-Disposition", $"inline; filename={fileName}");
-
-                fsr.FileDownloadName = fileName;
-                 
                 return fsr;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception - Telerik report {Report}. Inner: {InnerException}", report, ex.InnerException?.Message);
-
-                byte[] errorPdf = new Pdf().GenerateErrorPdf($"Report '{report}' exception tokom generisanja.\n{ex.Message}");
-
+                _logger.LogError(ex, "Exception - Telerik report {Report}. Inner: {InnerException}", request.Report, ex.InnerException?.Message);
+                byte[] errorPdf = new Pdf().GenerateErrorPdf($"Report '{request.Report}' exception tokom generisanja.\n{ex.Message}");
                 var errorStream = new MemoryStream(errorPdf);
                 errorStream.Seek(0, SeekOrigin.Begin);
 
-                fileName = $"ReportEx-{report}.pdf";
-                Response.Headers.Append("Content-Disposition", $"inline; filename={fileName}");
-
-                return new FileStreamResult(errorStream, "application/pdf")
-                {
-                    FileDownloadName = fileName
-                };
+                Response.Headers.Append("Content-Disposition", $"inline; filename=ReportEx-{request.Report}.pdf");
+                return new FileStreamResult(errorStream, "application/pdf");
             }
         }
 

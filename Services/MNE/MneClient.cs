@@ -52,17 +52,31 @@ namespace Oblak.Services.MNE
             ReportingService reporting,
             eMailService eMailService,
             IHubContext<MessageHub> messageHub,
-            IWebHostEnvironment webHostEnvironment) : base(configuration, eMailService, reporting, selfRegisterService, webHostEnvironment, messageHub, db)
+            IWebHostEnvironment webHostEnvironment,
+            IBackgroundServiceContext backgroundServiceContext) : base(configuration, eMailService, reporting, selfRegisterService, webHostEnvironment, messageHub, db)
         {
             _logger = logger;
             _rb90client = rb90client;
             _context = httpContextAccessor.HttpContext;
 
-            var username = _context.User.Identity!.Name;
-            if (username != null)
+            // Handle background service scenario
+            if (backgroundServiceContext.IsBackgroundService && !string.IsNullOrEmpty(backgroundServiceContext.BackgroundServiceUsername))
             {
-                _user = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username)!;
+                var username = backgroundServiceContext.BackgroundServiceUsername;
+                _user = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username);
                 if (_user != null) _legalEntity = _user.LegalEntity;
+                
+                _logger.LogInformation($"MneClient initialized for background service with user: {username}");
+            }
+            // Handle normal HTTP request scenario
+            else if (_context != null)
+            {
+                var username = _context.User.Identity!.Name;
+                if (username != null)
+                {
+                    _user = _db.Users.Include(a => a.LegalEntity).FirstOrDefault(a => a.UserName == username)!;
+                    if (_user != null) _legalEntity = _user.LegalEntity;
+                }
             }
         }
 
@@ -89,7 +103,7 @@ namespace Oblak.Services.MNE
             {
                 var retval = new List<PersonErrorDto>();
 
-                var data = _db.MnePersons.Where(a => a.GroupId == group.Id).ToList();
+                var data = _db.MnePersons.Where(a => a.GroupId == group.Id && a.ExternalId == null).ToList();
 
                 if (checkInDate.HasValue)
                 {
@@ -152,13 +166,26 @@ namespace Oblak.Services.MNE
                             }
                         });
                     }
-                    var error = sendOne2Mup(pr, false);
-                    if (error != null)
+                    
+                    try
                     {
-                        pr.Error = error;
-                        retval.Add(new PersonErrorDto() { PersonId = $"{pr.FirstName} {pr.LastName}", ExternalErrors = new List<string>() { error } });
+                        var error = sendOne2Mup(pr, false);
+                        if (error != null)
+                        {
+                            pr.Error = error;
+                            retval.Add(new PersonErrorDto() { PersonId = $"{pr.FirstName} {pr.LastName}", ExternalErrors = new List<string>() { error } });
+                        }
+                        _db.SaveChanges();
                     }
-                    _db.SaveChanges();
+                    catch (Exception e)
+                    {
+                        var errorMsg = Exceptions.StringException(e);
+                        pr.Error = errorMsg;
+                        retval.Add(new PersonErrorDto() { PersonId = $"{pr.FirstName} {pr.LastName}", ExternalErrors = new List<string>() { errorMsg } });
+                        _logger.LogError($"RegisterGroup error for person {pr.FirstName} {pr.LastName} (ID: {pr.Id}): {errorMsg}");
+                        _db.SaveChanges();
+                    }
+                    
                     await Task.Delay(100);
                 }
 
@@ -1011,7 +1038,7 @@ namespace Oblak.Services.MNE
         {
             var result = new List<PersonErrorDto>();
             _db.Entry(group).Collection(a => a.Persons).Load();
-            foreach (MnePerson p in group.Persons)
+            foreach (MnePerson p in group.Persons.Where(x => x.ExternalId == null))
             {
                 _db.Entry(p).Reference(a => a.LegalEntity).Load();
                 var one = Validate(p, checkInDate, checkOutDate);

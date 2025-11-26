@@ -589,6 +589,7 @@
                             col.Bound(c => c.CheckIn).Title("Dolazak").Format("{0:dd.MM.yyyy}").Width(100).HtmlAttributes(new { style = "text-align:center;" }); ;
                             col.Bound(c => c.CheckOut).Title("Odlazak").Format("{0:dd.MM.yyyy}").Width(100).HtmlAttributes(new { style = "text-align:center;" }); ;                            
                             col.Bound(c => c.Guests).Title("Gosti").Width(500);
+                            col.Bound(c => c.Registered).Title("MUP?").Width(80).ClientTemplate("#= Registered ? '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" checked disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' : '<div style=\"text-align:center;\"><span class=\"k-checkbox k-checkbox-disabled\"><input type=\"checkbox\" disabled=\"disabled\" /><label class=\"k-checkbox-label\" style=\"pointer-events: none;\"></label></span></div>' #");
                             col.Bound(c => c.Date).Title("Vrijeme").Filterable(f => Oblak.Helpers.Kendo.FilterConfig(f)).Format("{0:dd.MM.yyyy HH:mm}").Width(130).HtmlAttributes(new { style = "text-align:center;" });
                         }));
 
@@ -630,6 +631,7 @@
                 m.Field(g => g.Email);
                 m.Field(g => g.Guests);
                 m.Field(g => g.ResTaxAmount);
+                m.Field(g => g.Registered);
             })
             .Read(read => read.Action("Read", "Group", new { nautical = ViewBag.Nautical }))
         )

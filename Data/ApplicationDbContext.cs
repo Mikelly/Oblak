@@ -171,6 +171,11 @@ namespace Oblak.Data
             modelBuilder.Entity<MnePerson>().Property(a => a.ResTaxStatus).HasConversion(new EnumToStringConverter<ResTaxStatus>());
             //modelBuilder.Entity<MnePerson>().Property(a => a.Id).HasDefaultValueSql("NEXT VALUE FOR PersonSequence");
 
+            modelBuilder.Entity<GuestAutoRegistrationLog>().HasOne(a => a.MnePerson).WithMany().OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<GuestAutoRegistrationLog>().HasOne(a => a.LegalEntity).WithMany().OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<GuestAutoRegistrationLog>().HasOne(a => a.Property).WithMany().OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<GuestAutoRegistrationLog>().HasOne(a => a.Group).WithMany().OnDelete(DeleteBehavior.SetNull);
+
             modelBuilder.Entity<SrbPerson>().ToTable("SrbPersons");
             modelBuilder.Entity<SrbPerson>().HasOne(a => a.Group);
             modelBuilder.Entity<SrbPerson>().HasOne(a => a.Property);
@@ -366,7 +371,7 @@ namespace Oblak.Data
 		public DbSet<MneMupData> MneMupData { get; set; }
         public DbSet<Computer> Computers { get; set; }
         public DbSet<ComputerLog> ComputerLogs { get; set; }
-
+        public DbSet<GuestAutoRegistrationLog> GuestAutoRegistrationLogs { get; set; }
 
         public string GuestList(int id) => throw new NotImplementedException();
         public string GroupDesc(int id) => throw new NotImplementedException();

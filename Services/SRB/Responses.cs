@@ -150,7 +150,7 @@ public class Objekti
     public bool pripadaSemi { get; set; }
     public object pripadaSemiTest { get; set; }
     public bool prijavaZakljucana { get; set; }
-    public int kategorizacijaId { get; set; }
+    public int? kategorizacijaId { get; set; }
     public bool kategoriseSe { get; set; }
     public object statusZahteva { get; set; }
     public string brojResenja { get; set; }

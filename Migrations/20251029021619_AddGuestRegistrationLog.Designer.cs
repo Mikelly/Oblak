@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oblak.Data;
 
@@ -11,9 +12,11 @@ using Oblak.Data;
 namespace Oblak.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251029021619_AddGuestRegistrationLog")]
+    partial class AddGuestRegistrationLog
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1319,16 +1322,13 @@ namespace Oblak.Migrations
                     b.ToTable("Groups");
                 });
 
-            modelBuilder.Entity("Oblak.Data.GuestAutoRegistrationLog", b =>
+            modelBuilder.Entity("Oblak.Data.GuestRegistrationLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime?>("CheckOut")
-                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
@@ -1340,20 +1340,11 @@ namespace Oblak.Migrations
                     b.Property<int?>("ExternalId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("GroupId")
-                        .HasColumnType("int");
-
                     b.Property<string>("InitializedBy")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("LegalEntityId")
-                        .HasColumnType("int");
-
                     b.Property<int>("MnePersonId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PropertyId")
                         .HasColumnType("int");
 
                     b.Property<bool>("Success")
@@ -1365,15 +1356,9 @@ namespace Oblak.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("GroupId");
-
-                    b.HasIndex("LegalEntityId");
-
                     b.HasIndex("MnePersonId");
 
-                    b.HasIndex("PropertyId");
-
-                    b.ToTable("GuestAutoRegistrationLogs");
+                    b.ToTable("GuestRegistrationLogs");
                 });
 
             modelBuilder.Entity("Oblak.Data.Item", b =>
@@ -3780,38 +3765,15 @@ namespace Oblak.Migrations
                     b.Navigation("Vessel");
                 });
 
-            modelBuilder.Entity("Oblak.Data.GuestAutoRegistrationLog", b =>
+            modelBuilder.Entity("Oblak.Data.GuestRegistrationLog", b =>
                 {
-                    b.HasOne("Oblak.Data.Group", "Group")
-                        .WithMany()
-                        .HasForeignKey("GroupId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("Oblak.Data.LegalEntity", "LegalEntity")
-                        .WithMany()
-                        .HasForeignKey("LegalEntityId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
                     b.HasOne("Oblak.Data.MnePerson", "MnePerson")
                         .WithMany()
                         .HasForeignKey("MnePersonId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Oblak.Data.Property", "Property")
-                        .WithMany()
-                        .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.Navigation("Group");
-
-                    b.Navigation("LegalEntity");
-
                     b.Navigation("MnePerson");
-
-                    b.Navigation("Property");
                 });
 
             modelBuilder.Entity("Oblak.Data.Item", b =>

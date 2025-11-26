@@ -40,6 +40,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpContextAccessor();
 
+// Add background service context - MUST be scoped for security!
+builder.Services.AddScoped<IBackgroundServiceContext, BackgroundServiceContext>();
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var hangfireConnectionString = builder.Configuration.GetConnectionString("HangfireConnection");
 
@@ -206,6 +209,9 @@ builder.Services.AddScoped<UniqaService>();
 builder.Services.AddTransient<SrbScheduler>();
 builder.Services.AddTransient<UpdateRegisteredScheduler>();
 builder.Services.AddTransient<FcmService>();
+
+// Add background service for automatic guest registration
+builder.Services.AddHostedService<Oblak.Services.BackgroundWorkers.GuestAutoRegistrationService>();
 
 /*
 builder.Services.AddScoped(provider => new rb90Client(

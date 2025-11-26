@@ -441,12 +441,13 @@ public class SrbClient : Register
             DatumICasOdjave = (person.PlannedCheckOut ?? DateTime.Now).ToString("yyyy-MM-dd HH:mm"),
             ExternalId = person.Guid,
             UgostiteljskiObjekatJedinstveniIdentifikator = person.Property.ExternalId,
-            BrojPruzenihUslugaSmestaja = null
+            BrojPruzenihUslugaSmestaja = null // Default je null za fizicka lica
         };
 
+        // BrojPruzenihUslugaSmestaja se setuje samo za firme
         if (person.Property.LegalEntity.Type == Data.Enums.LegalEntityType.Company) 
         {
-            request.BrojPruzenihUslugaSmestaja = person.NumberOfServices ?? 1;
+            request.BrojPruzenihUslugaSmestaja = person.NumberOfServices ?? 0;
         }
 
         return request;

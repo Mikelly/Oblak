@@ -2,6 +2,7 @@
 
 @{    
     var dto = (TaxPaymentDto)ViewBag.Dto;
+    var initialDate = dto.TransactionDate ?? DateTime.Today;
 }
 
 <form id="extPayForm">
@@ -10,11 +11,12 @@
     @Html.Hidden("PersonId", dto.PersonId)
     @Html.Hidden("GroupId", dto.GroupId)
     @Html.Hidden("InvoiceId", dto.InvoiceId)
+    @Html.Hidden("Amount", dto.Amount ?? (decimal?)ViewBag.Amount ?? 0)
 
     <div class="one">
-        <label for="TransactionDate">Datum uplate</label>
+        <label for="TransactionDate">Datum i vrijeme sa uplatnice</label>
         @(
-            Html.Kendo().DateTimePicker().Value(dto.TransactionDate ?? DateTime.Now)
+            Html.Kendo().DateTimePicker().Value(initialDate)
             .Format("dd.MM.yyyy HH:mm")
             .Name("TransactionDate")
             .Enable((bool)ViewBag.Enable)
@@ -25,13 +27,13 @@
         <label for="Amount">Iznos uplate</label>
         @(
             Html.Kendo().NumericTextBox().Value((double)(dto.Amount ?? (decimal?)ViewBag.Amount ?? 0))
-            .Name("Amount")
+            .Name("AmountDisplay")
             .Min(0)
-            .Enable((bool)ViewBag.Enable)
+            .Enable(false)
             .HtmlAttributes(new { style = "width:100%; font-family: 'Noto Sans Mono', monospace;" })
             )
     </div> 
-    <div class="one" style="margin-top:15px;>
+    <div class="one" style="margin-top:15px;">
         <label for="Reference">Broj uplatnice</label>
         @(Html.Kendo().TextBox().Value((string)dto.Reference ?? "")
             .Name("Reference")

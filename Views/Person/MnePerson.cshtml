@@ -82,6 +82,7 @@
 
         if (id == 0) {
             Swal.fire({ icon: 'error', title: 'Morate sačuvati prijavu, prije nego što unesete externu uplatu', confirmButtonText: `U redu` });
+        return;
         }
 
         $.ajax({

@@ -399,7 +399,11 @@ namespace RegBor.Controllers
 
             if (nautical == false)
             {
-                var groups = _db.Groups.Include(a => a.Property).ThenInclude(a => a.LegalEntity).Include(a => a.LegalEntity).Where(a => true);
+                var groups = _db.Groups
+                    .Include(a => a.Property).ThenInclude(a => a.LegalEntity)
+                    .Include(a => a.LegalEntity)
+                    .Include(a => a.Persons)
+                    .Where(a => true);
 
 
 				if (User.IsInRole("TouristOrgOperator"))
@@ -416,8 +420,7 @@ namespace RegBor.Controllers
                     groups = groups.Where(a => a.LegalEntityId == _legalEntityId);
                 }
 
-
-                    DateTime now = DateTime.Now;
+                DateTime now = DateTime.Now;
 				DateTime Od = now.Date;
 				DateTime Do = now.Date;
 
@@ -427,11 +430,8 @@ namespace RegBor.Controllers
 					//.Where(a => propertyIds.Contains(a.Id))
 					.Where(a => a.UserCreatedDate >= Od && a.UserCreatedDate <= Do)
                     .Where(a => a.VesselId == null)
-                    .Include(a => a.Property)
-					.ThenInclude(a => a.LegalEntity)
-					.Include(a => a.CheckInPoint)
+                    .Include(a => a.CheckInPoint)
                     .Include(a => a.ResTaxPaymentType)
-                    .Include(a => a.LegalEntity)
                     .OrderByDescending(x => x.Date)
                     .Select(a => new GroupEnrichedDto
                     {
@@ -449,12 +449,16 @@ namespace RegBor.Controllers
                         Guests = _db.GuestList(a.Id),
                         UserCreated = a.UserCreated,
                         CheckInPointName = a.CheckInPoint == null ? "" : a.CheckInPoint.Name,
-                        ResTaxPaymentTypeName = a.ResTaxPaymentType == null ? "" : a.ResTaxPaymentType.Description
+                        ResTaxPaymentTypeName = a.ResTaxPaymentType == null ? "" : a.ResTaxPaymentType.Description,
+                        Registered = a.Persons.Any() && 
+                                     a.Persons.All(p => p.ExternalId != null && p.ExternalId > 0)
                     });
             }
             else
             {
-                var groups = _db.Groups.Where(a => true);
+                var groups = _db.Groups
+                    .Include(a => a.Persons)
+                    .Where(a => true);
 
                 if (User.IsInRole("TouristOrgOperator"))
                 {
@@ -489,7 +493,9 @@ namespace RegBor.Controllers
                         ResTaxFee = a.ResTaxFee ?? 0m,
                         Guests = _db.GuestList(a.Id),
                         CheckInPointName = a.CheckInPoint == null ? "" : a.CheckInPoint.Name,
-                        ResTaxPaymentTypeName = a.ResTaxPaymentType == null ? "" : a.ResTaxPaymentType.Description
+                        ResTaxPaymentTypeName = a.ResTaxPaymentType == null ? "" : a.ResTaxPaymentType.Description,
+                        Registered = a.Persons.Any() && 
+                                     a.Persons.All(p => p.ExternalId != null && p.ExternalId > 0)
                     });
             }
 

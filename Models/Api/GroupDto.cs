@@ -36,5 +36,6 @@
         public string? PaymentStatus { get; set; }
         public string? CheckInPointName { get; set; }
         public string? ResTaxPaymentTypeName { get; set; }
+        public bool Registered { get; set; }
     }
 }

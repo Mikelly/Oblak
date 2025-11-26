@@ -162,8 +162,22 @@
             dataType: 'json',            
             success: function (data) {
               Swal.close();
+              
+              //sve je OK
+              if (!data || data.length === 0) {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Gosti su uspješno prijavljeni!',
+                  timer: 1500,
+                  showConfirmButton: false
+                });
+                $('#mnePersonGrid').data('kendoGrid').dataSource.read();
+                return;
+              }
+
               const list = Array.isArray(data) ? data : [data];
 
+              // globalne greske (error polje)
               const global = list.find(x => x.error);
               if (global) {
                 return Swal.fire({
@@ -173,22 +187,45 @@
                 });
               }
 
-              const personsWithErrors = list.filter(x => Array.isArray(x.errors) && x.errors.length);
-              if (personsWithErrors.length) {
-                const msg = personsWithErrors
-                  .map(x =>
-                    (x.PersonId ? x.PersonId + '<br/>' : '') +
-                    x.errors.join('<br/>')
-                  )
+              // ValidationErrors (greske validacije)
+              const personsWithValidationErrors = list.filter(x => Array.isArray(x.ValidationErrors) && x.ValidationErrors.length);
+              if (personsWithValidationErrors.length) {
+                const msg = personsWithValidationErrors
+                  .map(x => {
+                    const personId = x.PersonId ? x.PersonId + '<br/>' : '';
+                    const errors = x.ValidationErrors.map(err => err.Error).join('<br/>');
+                    return personId + errors;
+                  })
                   .join('<br/><br/>');
 
                 return Swal.fire({
                   icon: 'error',
-                  title: msg,
+                  title: 'Greške validacije',
+                  html: msg,
                   confirmButtonText: 'U redu'
                 });
               }
 
+              //ExternalErrors (greske eksternog servisa)
+              const personsWithExternalErrors = list.filter(x => Array.isArray(x.ExternalErrors) && x.ExternalErrors.length);
+              if (personsWithExternalErrors.length) {
+                const msg = personsWithExternalErrors
+                  .map(x => {
+                    const personId = x.PersonId ? x.PersonId + '<br/>' : '';
+                    const errors = x.ExternalErrors.join('<br/>');
+                    return personId + errors;
+                  })
+                  .join('<br/><br/>');
+
+                return Swal.fire({
+                  icon: 'error',
+                  title: 'Greške prilikom slanja',
+                  html: msg,
+                  confirmButtonText: 'U redu'
+                });
+              }
+
+              // uspjesno
               Swal.fire({
                 icon: 'success',
                 title: 'Gosti su uspješno prijavljeni!',
@@ -512,6 +549,16 @@
             icon: 'error',
             title: 'Greška',
             text: 'Morate unijeti Datum uplate.'
+            });
+            return;
+        }
+
+        var timeString = dt.getHours().toString().padStart(2, '0') + ':' + dt.getMinutes().toString().padStart(2, '0');
+        if (timeString === '00:00') {
+            Swal.fire({
+            icon: 'error',
+            title: 'Greška',
+            text: 'Morate unijeti i datum i vrijeme uplate.'
             });
             return;
         }

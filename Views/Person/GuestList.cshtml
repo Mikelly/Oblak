@@ -9,19 +9,24 @@
 
 <script type="text/javascript">
 
-    function guestListShow() {
+       function guestListShow() {
         var datumod = kendo.toString($('#DatumOd').data('kendoDatePicker').value(), 'dd.MM.yyyy');
         var datumdo = kendo.toString($('#DatumDo').data('kendoDatePicker').value(), 'dd.MM.yyyy');
         var objekat = $('#Objekat').val();
-        $('#guestListGrid').load(`/guest-list-grid?datumod=${datumod}&datumdo=${datumdo}&objekat=${objekat}`);
+        var choice  = $("#Choice").data("kendoDropDownList").value();
+
+        $('#guestListGrid').load(`/guest-list-grid?datumod=${datumod}&datumdo=${datumdo}&objekat=${objekat}&choice=${choice}`);
     };
 
     function guestListPrint() {
         var datumod = kendo.toString($('#DatumOd').data('kendoDatePicker').value(), 'dd.MM.yyyy');
         var datumdo = kendo.toString($('#DatumDo').data('kendoDatePicker').value(), 'dd.MM.yyyy');
-        var objekat = $('#Objekat').val(); 
-        window.open(`/guest-list-print?datumod=${datumod}&datumdo=${datumdo}&objekat=${objekat}&partnerId=@(partnerId)`, "_blank");
+        var objekat = $('#Objekat').val();
+        var choice  = $("#Choice").data("kendoDropDownList").value();
+
+        window.open(`/guest-list-print?datumod=${datumod}&datumdo=${datumdo}&objekat=${objekat}&partnerId=@(partnerId)&choice=${choice}`, "_blank");
     };
+
 
 </script>
 
@@ -54,28 +59,41 @@
             )
     </div>
 
-    <div style="flex-basis:20px; height:40px;"></div>
+    <div style="width:200px;">
+        <label>Tip gosta:</label>
+        @(Html.Kendo().DropDownList()
+                .Name("Choice")
+                .DataTextField("Text")
+                .DataValueField("Value")
+                .BindTo(new List<SelectListItem>
+                {
+                new SelectListItem { Text = "Svi", Value = "Svi" },
+                new SelectListItem { Text = "Domaći", Value = "Domaci" },
+                new SelectListItem { Text = "Strani", Value = "Strani" }
+                })
+                .Value("Svi")
+                .HtmlAttributes(new { style = "width:100%;" })
+                )
+    </div>
+
 
     <div style="width:200px;">
         Od datuma:
         @Html.Kendo().DatePicker().Name("DatumOd").Value(new DateTime(DateTime.Now.Year, 1, 1))
     </div>
 
-    <div style="flex-basis:20px; height:40px;"></div>
 
     <div style="width:200px;">
         Do datuma:
         @Html.Kendo().DatePicker().Name("DatumDo").Value(new DateTime(DateTime.Now.Year, 12, 31))
     </div>
 
-    <div style="flex-basis:15%; height:40px;"></div>
 
     @(Html.Kendo().Button().Name("btnGuestList")
         .Content("<div style='width:200px; display:inline-flex;align-items:center; justify-content:space-between;'><img style='width:38px;height:38px;text-align:center; position:relative; top:0px;' src='/Content/Icons/book.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>PRIKAŽI KNJIGU GOSTIJU</div></div>")
         .HtmlAttributes(new { onclick = "guestListShow()", type = "button", style = "width:200px; height:50px;" })
         )
 
-    <div style="flex-basis:20px; height:40px;"></div>
 
     @(Html.Kendo().Button().Name("btnGuestListPrint")
         .Content("<div style='width:200px; display:inline-flex;align-items:center; justify-content:space-between;'><img style='width:38px;height:38px;text-align:center; position:relative; top:0px;' src='/Content/Icons/print_invoice_color.png'></img><div style='padding-left:10px; padding-right:10px; font-size:smaller; font-weight:bold;'>ŠTAMPAJ KNJIGU GOSTIJU</div></div>")

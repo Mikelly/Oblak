@@ -529,7 +529,8 @@ namespace Oblak.Services.MNE
                                                     && a.PropertyId == obj.Id
                                                     && a.CheckOut != null
                                                     && a.CheckIn < DO
-                                                    && a.CheckOut > OD); 
+                                                    && a.CheckOut > OD
+                                                    && a.ExternalId != null);
 
                 if (tip_gosta == "STRANI")
                     data = data.Where(a => a.PersonType != "1");
@@ -550,11 +551,27 @@ namespace Oblak.Services.MNE
                 else if (vrsta == "NONE")
                 {
                     data = data.Where(a => a.BirthDate.AddYears(12) > a.CheckIn);
-                } 
+                }
 
-                var brojGostiju = data.Count();
+                var brojGostiju = data.Count(a =>
+                    a.CheckIn.Date >= OD.Date &&
+                    a.CheckIn.Date <= DO.Date);
 
-                var brojNocenja = data.Select(a => _db.TotalNightsWithinPeriod(a.Id, OD, DO)).Sum();
+                var brojNocenja = data
+                    .AsEnumerable()
+                    .Sum(a =>
+                    {
+                        var checkIn = a.CheckIn.Date;
+                        var checkOut = a.CheckOut!.Value.Date; 
+
+                        var effectiveStart = checkIn > OD.Date ? checkIn : OD.Date;
+                        var effectiveEnd = checkOut < DO.Date.AddDays(1)
+                                                ? checkOut
+                                                : DO.Date.AddDays(1);
+
+                        var nights = (effectiveEnd - effectiveStart).Days;
+                        return nights > 0 ? nights : 0;
+                    });
 
                 var taksaPoNoci = vrsta switch
                 {
@@ -1359,7 +1376,7 @@ namespace Oblak.Services.MNE
             throw new NotImplementedException();
         }
 
-        public override async Task<Stream> GuestListPdf(int objekat, string datumod, string datumdo, int? partnerId)
+        public override async Task<Stream> GuestListPdf(int objekat, string datumod, string datumdo, int? partnerId, string choice)
         {
             var reportProcessor = new Telerik.Reporting.Processing.ReportProcessor();
             var deviceInfo = new System.Collections.Hashtable();
@@ -1377,19 +1394,20 @@ namespace Oblak.Services.MNE
             reportSource.Parameters.Add("DateFrom", dateFrom);
             reportSource.Parameters.Add("DateTo", dateTo);
             reportSource.Parameters.Add("LogoUrl", ReportHelpers.GetPartnerLogoUrl(_configuration, partnerId));
+            reportSource.Parameters.Add("Choice", string.IsNullOrEmpty(choice) ? "Svi" : choice);
 
             Telerik.Reporting.Processing.RenderingResult result = reportProcessor.RenderReport("PDF", reportSource, deviceInfo);
 
-            if (!result.HasErrors)
+            if (result.HasErrors)
             {
-                return new MemoryStream(result.DocumentBytes);
+                var errors = string.Join(" | ", result.Errors.Select(e => e.Message));
+                throw new Exception("Greška pri renderovanju izvještaja Knjiga gostiju: " + errors);
             }
-            else
-            {
-                return null;
-            }
+
+            return new MemoryStream(result.DocumentBytes);
+
         }
 
-        
+
     }
 }

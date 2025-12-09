@@ -50,6 +50,6 @@ Html.Kendo().Grid<MneGuestListDto>()
         m.Field(g => g.CheckIn);
         m.Field(g => g.CheckOut);
     })
-    .Read(a => a.Action("GuestListRead", "Person", new { objekat = ViewBag.Objekat, datumod = ViewBag.DatumOd, datumdo = ViewBag.DatumDo }))
+    .Read(a => a.Action("GuestListRead", "Person", new { objekat = ViewBag.Objekat, datumod = ViewBag.DatumOd, datumdo = ViewBag.DatumDo, choice = ViewBag.Choice }))
     )
 )

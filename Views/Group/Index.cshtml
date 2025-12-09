@@ -10,6 +10,7 @@
 }
 
 <script type="text/javascript">
+    var isSerbia = @((bool)ViewBag.IsSerbia ? "true" : "false");
 
     function new1Group() {
         $("#wndNewGroup").data("kendoWindow").center().open();
@@ -111,6 +112,20 @@
         var checkInDate = $("#checkInDate").data("kendoDatePicker").value();
         var checkOutDate = $("#checkOutDate").data("kendoDatePicker").value();
 
+        if (isSerbia && checkInDate && checkOutDate) {
+        var inDateOnly = kendo.toString(checkInDate, "yyyy-MM-dd");
+        var outDateOnly = kendo.toString(checkOutDate, "yyyy-MM-dd");
+
+        if (inDateOnly === outDateOnly) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Datum dolaska i odlaska ne mogu biti isti.',
+                    confirmButtonText: 'U redu'
+                });
+                return; 
+            }
+        }
+
         // Convert the dates to a format that can be safely sent to the server
         var formattedCheckInDate = kendo.toString(checkInDate, "yyyy-MM-ddTHH:mm:ss");
         var formattedCheckOutDate = kendo.toString(checkOutDate, "yyyy-MM-ddTHH:mm:ss");
@@ -158,12 +173,21 @@
                 groupDto: groupDto
             },
             success: function (data) {
+
+                 if (data && data.error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: data.error,
+                            confirmButtonText: 'U redu'
+                        });
+                        return;
+                    }
                 // Handle success if needed
                 console.log(data);
 
-                debugger;
+                var groupId = Array.isArray(data) ? data[0] : data;
 
-                window.location = `/persons?groupid=${data}`;
+                 window.location = `/persons?groupid=${groupId}`;
 
                 // Close the window or perform any other actions
                 //$("#wndNewGroup").data("kendoWindow").close();

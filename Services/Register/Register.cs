@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using DocumentFormat.OpenXml.Drawing.Diagrams;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Oblak.Data;
 using Oblak.Interfaces;
@@ -78,7 +79,7 @@ namespace Oblak.Services
 
         public abstract Task GuestListMail(int objekat, string datumOo, string datumdo, string email);
 
-        public abstract Task<Stream> GuestListPdf(int objekat, string datumod, string datumdo, int? partnerId);
+        public abstract Task<Stream> GuestListPdf(int objekat, string datumod, string datumdo, int? partnerId, string choice = "Svi");
 
         public abstract Task SendGuestToken(int propertyId, int? unitId, string email, string phoneNo, string lang);
 

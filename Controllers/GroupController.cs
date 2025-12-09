@@ -67,6 +67,7 @@ namespace RegBor.Controllers
 
             var partnerId = appUser.PartnerId ?? appUser.LegalEntity.PartnerId;
             ViewBag.PartnerId = partnerId;
+            ViewBag.IsSerbia = appUser.LegalEntity.Country == CountryEnum.SRB;
 
             var partner = _db.Partners.Where(a => a.Id == partnerId).FirstOrDefault();
 
@@ -145,6 +146,12 @@ namespace RegBor.Controllers
             try
             {
                 //var property = _db.Properties.Where(p => p.Id == groupDto.PropertyId).First();
+                if (_appUser?.LegalEntity?.Country == CountryEnum.SRB &&
+                   groupDto.CheckIn.HasValue && groupDto.CheckOut.HasValue &&
+                   groupDto.CheckIn.Value.Date == groupDto.CheckOut.Value.Date)
+                {
+                   return Json(new { error = "Datum dolaska i odlaska ne mogu biti isti." });
+                }
 
                 // Map GroupDto properties to your Group entity properties
                 var newGroup = new Group

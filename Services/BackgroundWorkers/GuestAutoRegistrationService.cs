@@ -91,7 +91,7 @@ namespace Oblak.Services.BackgroundWorkers
                 var mneClient = scope.ServiceProvider.GetRequiredService<MneClient>();
                   
                 var nowDate = DateTime.Now.Date;
-                var twoDaysAgo = nowDate.AddDays(-1);
+                var twoDaysAgo = nowDate.AddDays(-2);
 
                 // Get all unregistered guests for PartnerId = 4
                 var unregisteredGuests = await db.MnePersons

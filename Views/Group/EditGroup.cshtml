@@ -192,3 +192,39 @@
         </div>"))
     </div>
 </div>
+
+<script>
+    (function () {
+
+        $(document).ready(function () {
+            var checkInPicker = $("#checkInDate").data("kendoDatePicker");
+            var checkOutPicker = $("#checkOutDate").data("kendoDatePicker");
+
+            if (!checkInPicker || !checkOutPicker) {
+                return;
+            }
+
+            function applyDateRules() {
+                var inDate = checkInPicker.value();
+
+                if (!inDate) {
+                    checkOutPicker.min(null);
+                    return;
+                }
+
+                var minOut = new Date(inDate.getFullYear(), inDate.getMonth(), inDate.getDate() + 1);
+                checkOutPicker.min(minOut);
+
+                var currentOut = checkOutPicker.value();
+                if (currentOut && currentOut <= inDate) {
+                    checkOutPicker.value(null);
+                }
+            }
+
+            checkInPicker.bind("change", applyDateRules);
+
+            applyDateRules();
+        });
+
+    })();
+</script>

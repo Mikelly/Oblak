@@ -1598,57 +1598,66 @@ namespace Oblak.Controllers
 
         [HttpGet]
         [Route("guest-list-grid")]
-        public async Task<ActionResult> GuestListGrid(int objekat, string datumod, string datumdo)
+        public async Task<ActionResult> GuestListGrid(int objekat, string datumod, string datumdo, string choice = "Svi")
         {
             ViewBag.Objekat = objekat;
             ViewBag.DatumOd = datumod;
             ViewBag.DatumDo = datumdo;
+            ViewBag.Choice = choice;
 
             return PartialView();
         }
 
         [HttpPost]
-        public async Task<IActionResult> GuestListRead([DataSourceRequest] DataSourceRequest request, int objekat, string datumod, string datumdo)
+        public async Task<IActionResult> GuestListRead([DataSourceRequest] DataSourceRequest request,int objekat,string datumod,string datumdo,string choice = "Svi")
         {
             var obj = _db.Properties.FirstOrDefault(a => a.Id == objekat);
 
-            var OD = DateTime.ParseExact(datumod, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
-            var DO = DateTime.ParseExact(datumdo, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
+            var OD = DateTime.ParseExact(datumod, "dd.MM.yyyy", CultureInfo.InvariantCulture);
+            var DO = DateTime.ParseExact(datumdo, "dd.MM.yyyy", CultureInfo.InvariantCulture);
 
             if (_registerClient is MneClient)
             {
                 var guestlist = await _db.Set<MneGuestListDto>()
-                                        .FromSqlInterpolated(
-                                                $"EXEC PersonListMne @property = {objekat}, @od = {OD}, @do = {DO}"
-                                            )
-                                            .ToListAsync(); 
+                    .FromSqlInterpolated(
+                        $"EXEC PersonListMne @property = {objekat}, @od = {OD}, @do = {DO}, @choice = {choice}"
+                    )
+                    .ToListAsync();
 
                 return Json(await guestlist.ToDataSourceResultAsync(request));
             }
             else if (_registerClient is SrbClient)
-            {  
+            {
                 var guestlist = await _db.Set<MneGuestListDto>()
-                                        .FromSqlInterpolated(
-                                                $"EXEC SrbPersonList @property = {objekat}, @od = {OD}, @do = {DO}"
-                                            )
-                                            .ToListAsync();
+                    .FromSqlInterpolated(
+                        $"EXEC SrbPersonList @property = {objekat}, @od = {OD}, @do = {DO}"
+                    )
+                    .ToListAsync();
 
                 return Json(await guestlist.ToDataSourceResultAsync(request));
             }
             else return null;
         }
 
+
         [HttpGet]
         [Route("guest-list-print")]
-        public async Task<FileResult> GuestListPrint(int objekat, string datumod, string datumdo, int? partnerId)
+        public async Task<FileResult> GuestListPrint(int objekat, string datumod, string datumdo, int? partnerId, string choice = "Svi")
         {
+            var stream = await _registerClient.GuestListPdf(objekat, datumod, datumdo, partnerId, choice);
 
-            var stream = await _registerClient.GuestListPdf(objekat, datumod, datumdo, partnerId);
+            if (stream == null)
+            {
+                throw new Exception("Greška pri generisanju izvještaja Knjiga gostiju (stream je null).");
+            }
 
             stream.Seek(0, SeekOrigin.Begin);
             var fsr = new FileStreamResult(stream, "application/pdf");
             fsr.FileDownloadName = $"KnjigaGostiju.pdf";
             return fsr;
         }
+
+
+
     }
 }

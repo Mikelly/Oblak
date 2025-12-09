@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.Drawing.Diagrams;
 using Kendo.Mvc.Extensions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.CodeAnalysis.RulesetToEditorconfig;
@@ -599,7 +600,7 @@ public class SrbClient : Register
         return await new Pdf().Merge(streams);
     }
 
-    public override async Task<Stream> GuestListPdf(int objekat, string datumod, string datumdo, int? partnerId)
+    public override async Task<Stream> GuestListPdf(int objekat, string datumod, string datumdo, int? partnerId,string choice)
     {
         var obj = _db.Properties.FirstOrDefault(a => a.Id == objekat);
 

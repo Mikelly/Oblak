@@ -1563,151 +1563,162 @@ namespace Oblak.Controllers
         [Route("initiatePosPaymentSession")]
         public async Task<ActionResult<InitiatePosPaymentSessionOutput>> InitiatePosPaymentSession(InitiatePosPaymentSessionInput input)
         {
-            // check if requested transaction type is allowed
-            if (!Enum.TryParse(input.TransactionType, out PaytenTransactionTypes transactionType) ||
-               !Enum.IsDefined(typeof(PaytenTransactionTypes), transactionType))
-            { 
-                Response.StatusCode = 400;
-                return Json(new { info = "", error = "Nedozvoljeni tip transakcije!" });
-            }
-
-            // fetch document from database
-            var document = db.Documents.Include(x => x.LegalEntity)
-                .Include(x => x.Property)
-                .Where(x => x.Id == input.DocumentId && x.LegalEntityId == _legalEntity.Id)
-                .FirstOrDefault();
-
-            if (document == null)
+            _logger.LogError("=== PAYTEN InitiatePosPaymentSession === \n");
+            try
             {
-                Response.StatusCode = 400;
-                return Json(new { info = "", error = "Nepostojeći račun!" });
-            }
-
-            if (document.Amount == 0m)
-            {
-                Response.StatusCode = 500;
-                return Json(new { info = "", error = "Iznos ne smije biti 0!" });
-            }
-
-            // set user id from property or legalentity
-            var userId = !string.IsNullOrEmpty(document.Property.PaytenUserId) ? document.Property.PaytenUserId : document.LegalEntity.PaytenUserId;
-
-            if (string.IsNullOrEmpty(userId))
-            {
-                Response.StatusCode = 400;
-                return Json(new { info = "", error = "Nije pronađen ID korisnika!" });
-            }
-
-            // authorize - get bearer token
-            var applicationLoginId = _configuration["PAYTEN:ApplicationLoginID"];
-            var password = _configuration["PAYTEN:Password"];
-            var authorizeResult = await _paytenService.Authorize(new AuthorizeRequest () 
-            { 
-                ApplicationLoginID = applicationLoginId, 
-                Password = password
-            });
-            if (authorizeResult.Item1 == null)
-            {
-                Response.StatusCode = 500;
-                return Json(new { info = "", error = "Neuspjela autorizacija!" });
-            }
-            var bearerToken = authorizeResult.Item1.Token;
-
-            // create payment session token based on transaction type
-            var callBackUrl = _configuration["PAYTEN:CallBackURL"];
-            var paymentSessionTokenResult = new Tuple<CreatePaymentSessionTokenResponse, Error>(null, null);
-
-            if (transactionType == PaytenTransactionTypes.Sale) 
-            {
-                paymentSessionTokenResult = await _paytenService.CreatePaymentSessionToken(new CreatePaymentSessionTokenRequest()
+                // check if requested transaction type is allowed
+                if (!Enum.TryParse(input.TransactionType, out PaytenTransactionTypes transactionType) ||
+                   !Enum.IsDefined(typeof(PaytenTransactionTypes), transactionType))
                 {
-                    UserHash = userId,
+                    Response.StatusCode = 400;
+                    return Json(new { info = "", error = "Nedozvoljeni tip transakcije!" });
+                }
+
+                // fetch document from database
+                var document = db.Documents.Include(x => x.LegalEntity)
+                    .Include(x => x.Property)
+                    .Where(x => x.Id == input.DocumentId && x.LegalEntityId == _legalEntity.Id)
+                    .FirstOrDefault();
+
+                if (document == null)
+                {
+                    Response.StatusCode = 400;
+                    return Json(new { info = "", error = "Nepostojeći račun!" });
+                }
+
+                if (document.Amount == 0m)
+                {
+                    Response.StatusCode = 500;
+                    return Json(new { info = "", error = "Iznos ne smije biti 0!" });
+                }
+
+                // set user id from property or legalentity
+                var userId = !string.IsNullOrEmpty(document.Property.PaytenUserId) ? document.Property.PaytenUserId : document.LegalEntity.PaytenUserId;
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    Response.StatusCode = 400;
+                    return Json(new { info = "", error = "Nije pronađen ID korisnika!" });
+                }
+
+                // authorize - get bearer token
+                var applicationLoginId = _configuration["PAYTEN:ApplicationLoginID"];
+                var password = _configuration["PAYTEN:Password"];
+                var authorizeResult = await _paytenService.Authorize(new AuthorizeRequest()
+                {
+                    ApplicationLoginID = applicationLoginId,
+                    Password = password
+                });
+                if (authorizeResult.Item1 == null)
+                {
+                    Response.StatusCode = 500;
+                    return Json(new { info = "", error = "Neuspjela autorizacija!" });
+                }
+                var bearerToken = authorizeResult.Item1.Token;
+
+                // create payment session token based on transaction type
+                var callBackUrl = _configuration["PAYTEN:CallBackURL"];
+                var paymentSessionTokenResult = new Tuple<CreatePaymentSessionTokenResponse, Error>(null, null);
+
+                if (transactionType == PaytenTransactionTypes.Sale)
+                {
+                    paymentSessionTokenResult = await _paytenService.CreatePaymentSessionToken(new CreatePaymentSessionTokenRequest()
+                    {
+                        UserHash = userId,
+                        Amount = document.Amount,
+                        CurrencyCode = _currencyCode,
+                        OrderID = document.PaytenOrderId.ToString(),
+                        TransactionType = input.TransactionType,
+                        CallBackURL = callBackUrl
+
+                    }, bearerToken);
+                }
+                else if (transactionType == PaytenTransactionTypes.Void)
+                {
+                    paymentSessionTokenResult = await _paytenService.CancelPaymentSessionToken(new CancelPaymentSessionTokenRequest()
+                    {
+                        UserHash = userId,
+                        OrderID = document.PaytenOrderId.ToString(),
+                        TransactionType = input.TransactionType,
+                        CallBackURL = callBackUrl
+
+                    }, bearerToken);
+                }
+
+                if (paymentSessionTokenResult.Item1 == null)
+                {
+                    Response.StatusCode = 500;
+                    return Json(new { info = "", error = "Neuspjela sesija!" });
+                }
+                var paymentSessionToken = paymentSessionTokenResult.Item1.PaymentSessionToken;
+
+                // create transaction in database
+                var transaction = await db.PaymentTransactions.AddAsync(new PaymentTransaction
+                {
+                    DocumentId = document.Id,
+                    LegalEntityId = document.LegalEntityId,
+                    PropertyId = document.PropertyId,
+                    Token = paymentSessionToken,
+                    Type = input.TransactionType,
                     Amount = document.Amount,
-                    CurrencyCode = _currencyCode,
-                    OrderID = document.PaytenOrderId.ToString(),
-                    TransactionType = input.TransactionType,
-                    CallBackURL = callBackUrl
+                    UserCreated = _legalEntity.Name,
+                    UserCreatedDate = DateTime.UtcNow
+                });
 
-                }, bearerToken);
-            }
-            else if  (transactionType == PaytenTransactionTypes.Void)
-            {
-                paymentSessionTokenResult = await _paytenService.CancelPaymentSessionToken(new CancelPaymentSessionTokenRequest()
+                await db.SaveChangesAsync();
+
+                // return payment token and transaction id
+                return Json(new InitiatePosPaymentSessionOutput
                 {
-                    UserHash = userId,
-                    OrderID = document.PaytenOrderId.ToString(),
-                    TransactionType = input.TransactionType,
-                    CallBackURL = callBackUrl
-
-                }, bearerToken);
+                    PaymentSessionToken = paymentSessionToken,
+                    TransactionId = transaction.Entity.Id
+                });
             }
-
-            if (paymentSessionTokenResult.Item1 == null)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error in InitiatePosPaymentSession");
                 Response.StatusCode = 500;
-                return Json(new { info = "", error = "Neuspjela sesija!" });
+                return Json(new { info = "", error = "Greška prilikom inicijalizacije plaćanja." });
             }
-            var paymentSessionToken = paymentSessionTokenResult.Item1.PaymentSessionToken;
-
-            // create transaction in database
-            var transaction = await db.PaymentTransactions.AddAsync(new PaymentTransaction
-            {
-                DocumentId = document.Id,
-                LegalEntityId = document.LegalEntityId,
-                PropertyId = document.PropertyId,
-                Token = paymentSessionToken,
-                Type = input.TransactionType,
-                Amount = document.Amount,
-                UserCreated = _legalEntity.Name,
-                UserCreatedDate = DateTime.UtcNow
-            });
-
-            await db.SaveChangesAsync();
-
-            // return payment token and transaction id
-            return Json(new InitiatePosPaymentSessionOutput
-            {
-                PaymentSessionToken = paymentSessionToken,
-                TransactionId = transaction.Entity.Id
-            });
         }
 
         [HttpPost]
         [Route("webhookPosPaymentResult")]
         public async Task<ActionResult> WebhookPosPaymentResult()
         {
+            _logger.LogError("=== PAYTEN WEBHOOK WebhookPosPaymentResult === \n");
             //ZA TESTIRANJE
-            //HttpContext.Request.EnableBuffering();
-             
-            //string rawBody;
-            //try
-            //{
-            //    using var reader = new StreamReader(
-            //        Request.Body,
-            //        Encoding.UTF8,
-            //        false,
-            //        1024,
-            //        leaveOpen: true);
+            HttpContext.Request.EnableBuffering();
 
-            //    rawBody = await reader.ReadToEndAsync();
-            //    Request.Body.Position = 0;
-            //}
-            //catch (Exception ex)
-            //{
-            //    _logger.LogError(ex, "Error reading Payten webhook body");
-            //    return StatusCode(500);
-            //}
-             
-            //var headers = Request.Headers
-            //    .ToDictionary(h => h.Key, h => (string)h.Value);
-            //var headersJson = JsonConvert.SerializeObject(headers, Formatting.Indented);
-             
-            //_logger.LogInformation(
-            //    "=== PAYTEN WEBHOOK START ==={NewLine}" +
-            //    "Headers: {Headers}{NewLine}" +
-            //    "RawBody: {RawBody}{NewLine}" +
-            //    "=== PAYTEN WEBHOOK END ===",
-            //    headersJson, rawBody);
+            string rawBody;
+            try
+            {
+                using var reader = new StreamReader(
+                    Request.Body,
+                    Encoding.UTF8,
+                    false,
+                    1024,
+                    leaveOpen: true);
+
+                rawBody = await reader.ReadToEndAsync();
+                Request.Body.Position = 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reading Payten webhook body");
+                return StatusCode(500);
+            }
+
+            var headers = Request.Headers
+                .ToDictionary(h => h.Key, h => (string)h.Value);
+            var headersJson = JsonConvert.SerializeObject(headers, Formatting.Indented);
+
+            _logger.LogError(
+                "=== PAYTEN WEBHOOK START === \n" +
+                "Headers: {0}\n" +
+                "RawBody: {1}\n" +
+                "=== PAYTEN WEBHOOK END ===",
+                headersJson, rawBody);
 
             // Extract headers
             var apiKeyHeader = Request.Headers["X-API-KEY"].FirstOrDefault();
@@ -1901,6 +1912,7 @@ namespace Oblak.Controllers
         [Route("initiatePayment")]
         public async Task<ActionResult<InitiatePaymentOutput>> InitiatePayment(InitiatePaymentInput input)
         {
+            _logger.LogError("=== PAYTEN InitiatePayment START=== \n");
             if (_legalEntity == null)
             {
                 Response.StatusCode = 401;
@@ -1977,6 +1989,7 @@ namespace Oblak.Controllers
 
             if (paymentResponse.Success)
             {
+                _logger.LogError("=== PAYTEN InitiatePayment-Success! {0} , {1} \n", paymentResponse.RedirectUrl, paymentResponse.RedirectType);
                 return Json(new InitiatePaymentOutput
                 {
                     RedirectUrl = paymentResponse.RedirectUrl,
@@ -1986,37 +1999,83 @@ namespace Oblak.Controllers
             else
             {
                 var errors = paymentResponse.Errors?.Select(x => x.AdapterMessage ?? x.ErrorMessage);
+                _logger.LogError("=== PAYTEN InitiatePayment-errors! {0} \n", errors);
+
                 return Json(new { info = "", error = errors });
             }
         }
 
+        [AllowAnonymous]
         [HttpPost]
         [Route("storePaymentResult")]
         public async Task<ActionResult<bool>> StorePaymentResult([FromQuery] bool testMode = false)
         {
             try
             {
+                _logger.LogError("=== PAYTEN StorePaymentResult START === \n");
+                _logger.LogError("=== PAYTEN StorePaymentResult START === testMode: {TestMode}", testMode);
+
                 // Read the request body
                 string requestBody = await new StreamReader(Request.Body).ReadToEndAsync();
                 JObject requestBodyObject = JObject.Parse(requestBody);
+                _logger.LogError("=== PAYTEN StorePaymentResult - Request body received, length: {Length}", requestBody?.Length ?? 0);
+
+                if (string.IsNullOrEmpty(requestBody))
+                {
+                    _logger.LogError("=== PAYTEN StorePaymentResult - Request body is empty or null");
+                    return BadRequest("Request body is empty.");
+                }
+
+                try
+                {
+                    requestBodyObject = JObject.Parse(requestBody);
+                    _logger.LogError("=== PAYTEN StorePaymentResult - Request body parsed successfully. Body: {RequestBody}", requestBody);
+                }
+                catch (Exception parseEx)
+                {
+                    _logger.LogError(parseEx, "=== PAYTEN StorePaymentResult - Failed to parse request body. Body: {RequestBody}", requestBody);
+                    return BadRequest("Invalid JSON format in request body.");
+                }
+
                 var apiKey = _paymentService.GetConfigurationValue(testMode, "ApiKey");
+                _logger.LogError("=== PAYTEN StorePaymentResult - ApiKey retrieved: {ApiKeyExists}", !string.IsNullOrEmpty(apiKey));
+
                 var requestUri = $"{Request.Path}{Request.QueryString}";
+                _logger.LogError("=== PAYTEN StorePaymentResult - Request URI: {RequestUri}", requestUri);
+
                 var dateHeader = Request.Headers["Date"].FirstOrDefault();
                 var xSignatureHeader = Request.Headers["X-Signature"].FirstOrDefault();
 
+                _logger.LogError("=== PAYTEN StorePaymentResult - Headers - Date: {DateHeader}, X-Signature: {XSignatureExists}",
+                    dateHeader ?? "NULL", !string.IsNullOrEmpty(xSignatureHeader));
+
                 if (string.IsNullOrEmpty(dateHeader) || string.IsNullOrEmpty(xSignatureHeader))
                 {
+                    _logger.LogError("=== PAYTEN StorePaymentResult Missing required headers. === \n");
+                    _logger.LogError("=== PAYTEN StorePaymentResult - Missing required headers");
                     return BadRequest("Missing required headers.");
                 }
 
                 bool isValidSignature = _paymentService.ValidateSignature(requestBody, requestUri, dateHeader, xSignatureHeader, testMode);
+                _logger.LogError("=== PAYTEN StorePaymentResult - Signature validation result: {IsValid}", isValidSignature);
+
                 if (!isValidSignature)
                 {
+                    _logger.LogError("=== PAYTEN StorePaymentResult Invalid signature. === \n");
+                    _logger.LogError("=== PAYTEN StorePaymentResult - Invalid signature");
                     return Unauthorized("Invalid signature.");
                 }
 
                 // fetch transaction from database
                 string transactionId = requestBodyObject.SelectToken("merchantTransactionId")?.ToString();
+                _logger.LogError("=== PAYTEN StorePaymentResult - MerchantTransactionId extracted: {TransactionId}", transactionId ?? "NULL");
+
+                if (string.IsNullOrEmpty(transactionId))
+                {
+                    _logger.LogError("=== PAYTEN StorePaymentResult - MerchantTransactionId is missing from request body");
+                    return BadRequest("Missing merchantTransactionId in request body.");
+                }
+
                 var transaction = await db.PaymentTransactions
                     .Include(x => x.LegalEntity)
                     .Where(x => x.MerchantTransactionId == transactionId)
@@ -2025,12 +2084,19 @@ namespace Oblak.Controllers
                 if (transaction == null)
                 {
                     Response.StatusCode = 400;
+                    _logger.LogError("=== PAYTEN StorePaymentResult Transaction not found. === \n");
+                    _logger.LogError("=== PAYTEN StorePaymentResult - Transaction not found for ID: {TransactionId}", transactionId);
                     return NotFound("Transaction not found.");
                 }
+
+                _logger.LogError("=== PAYTEN StorePaymentResult - Transaction found: Id={TransactionId}, GroupId={GroupId}, Type={Type}",
+                    transaction.Id, transaction.GroupId, transaction.Type);
 
                 // update transaction with payment result
                 var result = requestBodyObject.SelectToken("result")?.ToString();
                 var success = result == PaymentResponseTypes.OK.ToString();
+
+                _logger.LogError("=== PAYTEN StorePaymentResult - Payment result: {Result}, Success: {Success}", result ?? "NULL", success);
 
                 transaction.Status = result;
                 transaction.Success = success;
@@ -2042,27 +2108,45 @@ namespace Oblak.Controllers
                 var lastFourDigits = requestBodyObject.SelectToken("returnData.lastFourDigits")?.ToString();
                 var cardType = requestBodyObject.SelectToken("returnData.type")?.ToString();
 
+                _logger.LogError("=== PAYTEN StorePaymentResult - TransactionType: {TransactionType}, CardType: {CardType}, LastFourDigits: {LastFourDigits}",
+                    transactionType ?? "NULL", cardType ?? "NULL", lastFourDigits ?? "NULL");
+
                 // If status is OK, update ResTaxPaid field on the associated group to true
                 if (success && transaction.GroupId.HasValue)
                 {
+                    _logger.LogError("=== PAYTEN StorePaymentResult - Updating group ResTaxPaid for GroupId: {GroupId}", transaction.GroupId.Value);
+
                     var group = await db.Groups.FindAsync(transaction.GroupId.Value);
                     if (group != null)
                     {
                         group.ResTaxPaid = true;
+                        _logger.LogError("=== PAYTEN StorePaymentResult - Group ResTaxPaid updated successfully");
+                    }
+                    else
+                    {
+                        _logger.LogError("=== PAYTEN StorePaymentResult - Group not found for GroupId: {GroupId}", transaction.GroupId.Value);
                     }
                 }
+
                 // If status is OK and transaction type is PREAUTHORIZE, void the amount, deregister the old payment method and update PaymentMethods table
-                if (success && 
+                if (success &&
                     (transactionType == PaymentTransactionTypes.PREAUTHORIZE.ToString() ||
                     transaction.WithRegister == true))
                 {
-                    if(transactionType == PaymentTransactionTypes.PREAUTHORIZE.ToString())
+                    _logger.LogError("=== PAYTEN StorePaymentResult - Processing PREAUTHORIZE or WithRegister transaction");
+
+                    if (transactionType == PaymentTransactionTypes.PREAUTHORIZE.ToString())
                     {
+                        _logger.LogError("=== PAYTEN StorePaymentResult - Voiding PREAUTHORIZE transaction with ReferenceUuid: {ReferenceUuid}",
+                            transaction.ReferenceUuid ?? "NULL");
+
                         VoidTransactionInput input = new VoidTransactionInput
                         {
                             ReferenceUuid = transaction.ReferenceUuid!
                         };
                         _ = await VoidTransactionInternal(input, transaction.LegalEntityId!.Value, transaction.LegalEntity.Name, transaction.LegalEntity.Test);
+                        var voidResult = await VoidTransactionInternal(input, transaction.LegalEntityId!.Value, transaction.LegalEntity.Name, transaction.LegalEntity.Test);
+                        _logger.LogError("=== PAYTEN StorePaymentResult - Void transaction completed");
                     }
 
                     var oldPaymentMethod = await db.PaymentMethods
@@ -2072,12 +2156,24 @@ namespace Oblak.Controllers
 
                     if (oldPaymentMethod != null)
                     {
+                        _logger.LogError("=== PAYTEN StorePaymentResult - Old payment method found, deregistering. ReferenceUuid: {ReferenceUuid}",
+                            oldPaymentMethod.PaymentTransaction.ReferenceUuid ?? "NULL");
+
                         DeregisterPaymentMethodInput input = new DeregisterPaymentMethodInput
                         {
                             ReferenceUuid = oldPaymentMethod.PaymentTransaction.ReferenceUuid!
                         };
                         _ = await DeletePaymentMethodInternal(input, transaction.LegalEntityId!.Value, transaction.LegalEntity.Name, transaction.LegalEntity.Test);
+                        var deregisterResult = await DeletePaymentMethodInternal(input, transaction.LegalEntityId!.Value, transaction.LegalEntity.Name, transaction.LegalEntity.Test);
+                        _logger.LogError("=== PAYTEN StorePaymentResult - Old payment method deregistered");
                     }
+                    else
+                    {
+                        _logger.LogError("=== PAYTEN StorePaymentResult - No old payment method found for LegalEntityId: {LegalEntityId}",
+                            transaction.LegalEntityId);
+                    }
+
+                    _logger.LogError("=== PAYTEN StorePaymentResult - Creating new payment method");
 
                     var paymentMethod = await db.PaymentMethods.AddAsync(new PaymentMethod
                     {
@@ -2088,10 +2184,14 @@ namespace Oblak.Controllers
                         UserCreated = transaction.LegalEntity.Name,
                         UserCreatedDate = now,
                     });
+
+                    _logger.LogError("=== PAYTEN StorePaymentResult - New payment method created");
                 }
 
                 // save changes
+                _logger.LogError("=== PAYTEN StorePaymentResult - Saving changes to database");
                 await db.SaveChangesAsync();
+                _logger.LogError("=== PAYTEN StorePaymentResult - Changes saved successfully");
 
                 try
                 {
@@ -2099,10 +2199,14 @@ namespace Oblak.Controllers
                     // additionally we're making sure to send only for successful transactions, but unsuccesful transactions are also supported
                     if (success && transactionType == PaymentTransactionTypes.DEBIT.ToString())
                     {
+                        _logger.LogError("=== PAYTEN StorePaymentResult - Processing email notification for DEBIT transaction");
+
                         var email = await db.Users
                             .Where(x => x.LegalEntityId == transaction.LegalEntityId)
                             .Select(x => x.Email)
                             .FirstOrDefaultAsync();
+
+                        _logger.LogError("=== PAYTEN StorePaymentResult - User email retrieved: {Email}", email ?? "NULL");
 
                         var amount = requestBodyObject.SelectToken("totalAmount")?.ToString() ?? "N/A";
                         var currency = requestBodyObject.SelectToken("currency")?.ToString() ?? "N/A";
@@ -2112,6 +2216,9 @@ namespace Oblak.Controllers
 
                         var template = _configuration["SendGrid:Templates:PaymentConfirmation"]!;
                         var senderEmail = _configuration["SendGrid:EmailAddress"];
+
+                        _logger.LogError("=== PAYTEN StorePaymentResult - Sending payment confirmation email. Template: {Template}, Sender: {Sender}, Recipient: {Recipient}",
+                            template ?? "NULL", senderEmail ?? "NULL", email ?? "NULL");
 
                         await _eMailService.SendMail(senderEmail!, email!, template, new
                         {
@@ -2125,18 +2232,29 @@ namespace Oblak.Controllers
                             timestamp = $"{transaction.UserCreatedDate.AddHours(2):yyyy-MM-dd HH:mm:ss}", // Format the timestamp,
                             success = success
                         });
+
+                        _logger.LogError("=== PAYTEN StorePaymentResult - Payment confirmation email sent successfully");
+                    }
+                    else
+                    {
+                        _logger.LogError("=== PAYTEN StorePaymentResult - Email notification skipped. Success: {Success}, TransactionType: {TransactionType}",
+                            success, transactionType ?? "NULL");
                     }
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to send paymnent confirmation email.");
+                    _logger.LogError(ex, "=== PAYTEN StorePaymentResult - Failed to send payment confirmation email");
                 }
 
+                _logger.LogError("=== PAYTEN StorePaymentResult - Completed successfully, returning OK");
                 return Content("OK");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing payment result.");
+                _logger.LogError(ex, "=== PAYTEN StorePaymentResult - Error processing payment result. Message: {Message}, StackTrace: {StackTrace}",
+                    ex.Message, ex.StackTrace);
                 return StatusCode(500, "Internal server error.");
             }
         }

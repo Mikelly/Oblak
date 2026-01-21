@@ -17,7 +17,7 @@ public class AuthenticationRedirectMiddleware
     {
         var path = context.Request.Path;
         var user = context.User; 
-        var allowedPaths = new[] { "/sign-in", };
+        var allowedPaths = new[] { "/sign-in", "/api/login", "/api/logout", "/api/storePaymentResult", "/api/WebhookPosPaymentResult" };
 
         if (allowedPaths.Any(p => path.StartsWithSegments(p, StringComparison.OrdinalIgnoreCase)))
         {

@@ -301,10 +301,10 @@ app.UseRouting();
 
 app.UseAuthentication();
 //app.UseMiddleware<ClientCertMiddleware>();
+app.UseAuthorization();
 
 app.UseMiddleware<AuthenticationRedirectMiddleware>();
 
-app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",

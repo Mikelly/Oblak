@@ -9,6 +9,7 @@ using Oblak.Filters;
 using Oblak.Middleware;
 using Oblak.Schedulers;
 using Oblak.Services;
+using Oblak.Services.Bankart;
 using Oblak.Services.FCM;
 using Oblak.Services.MNE;
 using Oblak.Services.Payment;
@@ -198,6 +199,8 @@ builder.Services.AddTransient<SrbScheduler>();
 builder.Services.AddTransient<UpdateRegisteredScheduler>();
 builder.Services.AddTransient<FcmService>();
 
+builder.Services.AddScoped<IBankartService, BankartService>();
+
 // Add background service for automatic guest registration
 builder.Services.AddHostedService<Oblak.Services.BackgroundWorkers.GuestAutoRegistrationService>();
 
@@ -242,26 +245,26 @@ if (!app.Environment.IsDevelopment())
 app.UseSwagger();
 app.UseSwaggerUI();
 
-using (var scope = app.Services.CreateScope())
-{
-    var dataContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    if (app.Environment.IsDevelopment())
-    {
-        if (builder.Configuration["RebuildDb"] == "true")
-        {
-            dataContext.Database.EnsureDeleted();
-            dataContext.Database.Migrate();
-        }
-        else
-        { 
-            dataContext.Database.Migrate();
-        }
-    }
-    else
-    {
-        dataContext.Database.Migrate();
-    }
-}
+//using (var scope = app.Services.CreateScope())
+//{
+//    var dataContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+//    if (app.Environment.IsDevelopment())
+//    {
+//        if (builder.Configuration["RebuildDb"] == "true")
+//        {
+//            dataContext.Database.EnsureDeleted();
+//            dataContext.Database.Migrate();
+//        }
+//        else
+//        {
+//            dataContext.Database.Migrate();
+//        }
+//    }
+//    else
+//    {
+//        dataContext.Database.Migrate();
+//    }
+//}
 
 var supportedCultures = new[] { new CultureInfo("sr-Latn-ME")/*, new CultureInfo("en-US")*/ };
 
@@ -277,7 +280,7 @@ CultureInfo.CurrentCulture = new CultureInfo("sr-Latn-ME");
 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.CreateSpecificCulture("sr-Latn-ME");
 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.CreateSpecificCulture("sr-Latn-ME");
 
-app.UseCors("CORSPolicy");
+app.UseCors("CORSPolicy"); 
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
